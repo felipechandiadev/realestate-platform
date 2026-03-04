@@ -1,0 +1,23 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { UserRepository } from '../../domain/user.repository';
+import { LoginDto } from '../../dto/user.dto';
+import { UserStatus } from '../../domain/user.entity';
+
+@Injectable()
+export class LoginUseCase {
+  constructor(private readonly userRepo: UserRepository) {}
+
+  async execute(dto: LoginDto): Promise<any> {
+    const user = await this.userRepo.findOne({
+      where: { email: dto.email, deletedAt: null },
+    });
+    if (!user) {
+      throw new UnauthorizedException('Credenciales inválidas.');
+    }
+    const valid = await user.validatePassword(dto.password);
+    if (!valid || user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Credenciales inválidas.');
+    }
+    return user;
+  }
+}

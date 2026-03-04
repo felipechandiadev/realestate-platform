@@ -1,0 +1,325 @@
+# ============================================================================
+# NestJS Backend .gitignore - DDD Architecture
+# ============================================================================
+# Professional standards for enterprise Node.js/NestJS projects
+# Follows industry best practices and security guidelines
+# ============================================================================
+
+# ============================================================================
+# DEPENDENCIES
+# ============================================================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnp
+.pnp.js
+
+# ============================================================================
+# BUILD ARTIFACTS & OUTPUT
+# ============================================================================
+dist/
+build/
+*.tsbuildinfo
+*.d.ts
+out/
+bin/
+
+# ============================================================================
+# RUNTIME & TEMPORARY FILES
+# ============================================================================
+tmp/
+temp/
+*.pid
+*.seed
+*.pid.lock
+.parcel-cache
+.cache
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.vscode-test
+.nyc_output
+
+# ============================================================================
+# ENVIRONMENT VARIABLES & SECRETS
+# ============================================================================
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+env.example  # Intentionally NOT ignored if you use this pattern
+
+# ============================================================================
+# IDE & EDITOR CONFIGURATIONS
+# ============================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.ws
+.history/
+.vscode-test/
+
+# ============================================================================
+# TESTING & COVERAGE
+# ============================================================================
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+junit.xml
+.mocha-all-tests-passed
+
+# ============================================================================
+# LOGGING
+# ============================================================================
+logs/
+*.log
+npm-debug.log*
+debug.log
+
+# ============================================================================
+# USER-UPLOADED FILES & LOCAL STORAGE
+# ============================================================================
+# Local storage directory (development only)
+public/
+uploads/
+temp-uploads/
+
+# Uploaded media files (properties, users, etc.)
+public/properties/
+public/users/
+public/documents/
+public/web/
+public/slides/
+
+# Backup files created by upload processes
+*.bak
+*.backup
+*.old
+
+# ============================================================================
+# DATABASE & PERSISTENCE
+# ============================================================================
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Migration backups
+migrations-backup/
+*.migration.backup
+
+# ============================================================================
+# KEYS & CERTIFICATES
+# ============================================================================
+keys/
+certs/
+*.pem
+*.key
+*.pub
+*.p12
+*.pfx
+!keys/.gitkeep  # Keep structure for keys directory
+
+# ============================================================================
+# OS SPECIFIC
+# ============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.cab
+*.msi
+
+# ============================================================================
+# NPM PACKAGE MANAGER
+# ============================================================================
+npm-shrinkwrap.json
+package-lock.json
+.npm/
+.eslintcache
+.stylelintcache
+
+# ============================================================================
+# YARN PACKAGE MANAGER
+# ============================================================================
+.yarn/
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# ============================================================================
+# DOCKER & CONTAINERIZATION
+# ============================================================================
+.dockerignore
+docker-compose.override.yml
+.docker/
+
+# ============================================================================
+# CI/CD & DEPLOYMENT
+# ============================================================================
+.github/workflows/secrets
+.gitlab-ci.yml.backup
+circle.yml.backup
+.travis.yml.backup
+.circleci/config.yml.backup
+
+# ============================================================================
+# EDITOR SPECIFIC
+# ============================================================================
+# VSCode
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# WebStorm
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/misc.xml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================================================
+# DEVELOPMENT UTILITIES
+# ============================================================================
+.husky/
+.lint-staged files
+.prettierignore-cache
+
+# ============================================================================
+# GENERATED FILES
+# ============================================================================
+.generate/
+.generated/
+generated-types/
+*.generated.ts
+
+# ============================================================================
+# ARCHITECTURE-SPECIFIC (DDD - Domain-Driven Design)
+# ============================================================================
+# Legacy/backup files from refactoring
+*.legacy.*
+*.deprecated.*
+*-old.*
+*-backup.*
+
+# Module index files (use barrel exports wisely)
+**/index.temp.ts
+
+# ============================================================================
+# TEMPORARY PROJECT FILES
+# ============================================================================
+.tmp/
+.temp/
+.working/
+scratch/
+sandbox/
+todo.txt
+NOTES.md
+SCRATCH.md
+
+# ============================================================================
+# SECURITY & SENSITIVE DATA
+# ============================================================================
+# Credentials and sensitive information
+.credentials
+.secrets
+credentials.json
+secrets.json
+
+# SSH Keys
+id_rsa
+id_rsa.pub
+id_dsa
+id_dsa.pub
+
+# AWS credentials
+.aws/credentials
+.aws/config
+
+# API Keys
+api-keys.json
+api-keys.env
+
+# ============================================================================
+# CLUSTER & PROCESS MANAGEMENT
+# ============================================================================
+ecosystem.config.local.js
+pm2.log
+
+# ============================================================================
+# SYSTEM & NETWORK
+# ============================================================================
+.venv/
+venv/
+env/
+ENV/
+
+# ============================================================================
+# QUALITY ASSURANCE & TESTING
+# ============================================================================
+.jest/
+test-report.html
+coverage-report/
+clover.xml
+jest-results.json
+
+# ============================================================================
+# PROFILING & MONITORING
+# ============================================================================
+flamegraph.txt
+profile.heapsnapshot
+*.cpu-profile
+*.heap-profile
+
+# ============================================================================
+# DOCUMENTATION ARTIFACTS
+# ============================================================================
+docs/generated/
+docs/coverage/
+docs/reports/
+
+# ============================================================================
+# BUNDLER & BUILD TOOLS
+# ============================================================================
+.webpack/
+.rollup/
+webpack-cache/
+
+# ============================================================================
+# MISC
+# ============================================================================
+.env.example
+.env.test.example
+.env.production.example
+debug-output/
+dump.rdb

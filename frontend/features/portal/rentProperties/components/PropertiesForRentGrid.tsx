@@ -1,0 +1,179 @@
+'use client';
+
+import React from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import Card from '@/shared/components/ui/Card/Card';
+import { Button } from '@/shared/components/ui/Button/Button';
+
+interface PropertyForRent {
+  id: string;
+  title: string;
+  description?: string;
+  price: number;
+  thumbnail?: string;
+  images?: string[];
+  location?: {
+    address?: string;
+    city?: string;
+    state?: string;
+  };
+  features?: {
+    bedrooms?: number;
+    bathrooms?: number;
+    parkingSpaces?: number;
+    totalArea?: number;
+  };
+}
+
+interface PropertiesForRentGridProps {
+  properties: PropertyForRent[];
+  isLoading?: boolean;
+  error?: string | null;
+  total?: number;
+  page?: number;
+  pageSize?: number;
+  onPageChange?: (page: number) => void;
+  className?: string;
+}
+
+/**
+ * PropertiesForRentGrid component
+ * 
+ * Displays properties available for rent in a responsive grid layout.
+ * Features card-based design with property images, rental pricing, and amenities.
+ * Supports pagination for browsing through rental listings.
+ * 
+ * @param {PropertyForRent[]} properties - Array of rental properties
+ * @param {boolean} isLoading - Loading state indicator
+ * @param {string} error - Error message if any
+ * @param {number} total - Total number of properties
+ * @param {number} page - Current page number
+ * @param {number} pageSize - Number of items per page
+ * @param {Function} onPageChange - Callback when page changes
+ * @param {string} className - Additional CSS classes
+ */
+export default function PropertiesForRentGrid({
+  properties,
+  isLoading = false,
+  error = null,
+  total = 0,
+  page = 1,
+  pageSize = 9,
+  onPageChange,
+  className = '',
+}: PropertiesForRentGridProps) {
+  const totalPages = Math.ceil(total / pageSize);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-20">
+        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-red-600 mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()} variant="primary">
+          Reintentar
+        </Button>
+      </div>
+    );
+  }
+
+  if (!properties || properties.length === 0) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-gray-500 text-lg">No se encontraron propiedades en arriendo</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`properties-for-rent-grid ${className}`}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {properties.map((property) => (
+          <Link
+            key={property.id}
+            href={`/portal/properties/rent/${property.id}`}
+            className="block transition-transform hover:scale-105"
+          >
+            <Card className="h-full overflow-hidden">
+              <div className="relative h-48 w-full">
+                <Image
+                  src={property.thumbnail || property.images?.[0] || '/placeholder-property.jpg'}
+                  alt={property.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                />
+                <div className="absolute top-2 right-2 bg-green-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                  Arriendo
+                </div>
+              </div>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold mb-2 line-clamp-2">
+                  {property.title}
+                </h3>
+                <p className="text-2xl font-bold text-primary mb-2">
+                  ${property.price.toLocaleString('es-CL')}/mes
+                </p>
+                <p className="text-gray-600 text-sm mb-3">
+                  {property.location?.address || 'Ubicación no especificada'}
+                </p>
+                <div className="flex gap-4 text-sm text-gray-600">
+                  {property.features?.bedrooms && property.features.bedrooms > 0 && (
+                    <span className="flex items-center gap-1">
+                      🛏️ {property.features.bedrooms}
+                    </span>
+                  )}
+                  {property.features?.bathrooms && property.features.bathrooms > 0 && (
+                    <span className="flex items-center gap-1">
+                      🚿 {property.features.bathrooms}
+                    </span>
+                  )}
+                  {property.features?.parkingSpaces && property.features.parkingSpaces > 0 && (
+                    <span className="flex items-center gap-1">
+                      🚗 {property.features.parkingSpaces}
+                    </span>
+                  )}
+                  {property.features?.totalArea && property.features.totalArea > 0 && (
+                    <span className="flex items-center gap-1">
+                      📐 {property.features.totalArea}m²
+                    </span>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </Link>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 mt-8">
+          <Button
+            variant="outlined"
+            onClick={() => onPageChange?.(page - 1)}
+            disabled={page <= 1}
+          >
+            Anterior
+          </Button>
+          <span className="text-sm text-gray-600 px-4">
+            Página {page} de {totalPages}
+          </span>
+          <Button
+            variant="outlined"
+            onClick={() => onPageChange?.(page + 1)}
+            disabled={page >= totalPages}
+          >
+            Siguiente
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}

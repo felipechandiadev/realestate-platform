@@ -1,0 +1,55 @@
+import React, { useState, useCallback } from 'react';
+import IconButton from '@/shared/components/ui/IconButton/IconButton';
+import Dialog from '@/shared/components/ui/Dialog/Dialog';
+import FullPropertyDialog from '../../ui/fullProperty/FullPropertyDialog';
+import { useFullPropertyRevalidation } from '@/shared/hooks/useFullPropertyRevalidation';
+
+
+interface SaleMoreButtonProps {
+  property: any;
+}
+
+const SaleMoreButton: React.FC<SaleMoreButtonProps> = ({ property }) => {
+  const [openDialogs, setOpenDialogs] = useState<Record<string, boolean>>({});
+  const { revalidate } = useFullPropertyRevalidation();
+
+  const isOpen = openDialogs[property.id] || false;
+
+  const handleOpen = useCallback(() => {
+    setOpenDialogs(prev => ({
+      ...prev,
+      [property.id]: true
+    }));
+  }, [property.id]);
+
+  const handleClose = useCallback(async () => {
+    setOpenDialogs(prev => ({
+      ...prev,
+      [property.id]: false
+    }));
+    // Revalidate the current route to refresh the sales grid
+    await revalidate();
+  }, [property.id, revalidate]);
+
+  return (
+    <div className="flex-shrink-0 w-fit">
+      <IconButton
+        icon="more_horiz"
+        variant="text"
+        size="xs"
+        ariaLabel="Ver más detalles"
+        onClick={handleOpen}
+        data-test-id="sale-more-btn"
+      />
+      <FullPropertyDialog 
+        open={isOpen} 
+        onClose={handleClose}
+        propertyId={property.id}
+      />
+    
+     
+    </div>
+  );
+};
+
+export default SaleMoreButton;

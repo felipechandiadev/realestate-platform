@@ -1,0 +1,127 @@
+# ==========================================
+# GENERAL
+# ==========================================
+.DS_Store
+.env
+.env.local
+.env.*.local
+*.log
+*.logs
+.idea
+.vscode
+*.swp
+*.swo
+*~
+.cache
+.turbo
+*.pem
+
+# ==========================================
+# NODE & NPM
+# ==========================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# ==========================================
+# BACKEND (NestJS)
+# ==========================================
+backend/dist/
+backend/build/
+backend/.env.local
+backend/.env.test
+backend/tmp/
+backend/coverage/
+backend/logs/
+backend/jest-results.json
+backend/*.log
+backend/node_modules/
+backend/.turbo/
+backend/.next/
+backend/out/
+backend/tsconfig.build.json.tsbuildinfo
+
+# ==========================================
+# FRONTEND (Next.js)
+# ==========================================
+frontend/.next/
+frontend/out/
+frontend/.env.local
+frontend/.env.*.local
+frontend/build/
+frontend/dist/
+frontend/.turbo/
+frontend/coverage/
+frontend/logs/
+frontend/*.log
+frontend/node_modules/
+frontend/.cache/
+frontend/cookies.txt
+
+# ==========================================
+# DATABASE
+# ==========================================
+database/
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+
+# ==========================================
+# IDE & EDITORS
+# ==========================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.DS_Store
+.AppleDouble
+.LSOverride
+*.cer
+*.csr
+*.jks
+
+# ==========================================
+# OS SPECIFIC
+# ==========================================
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# ==========================================
+# BUILD ARTIFACTS & TEMPORARY FILES
+# ==========================================
+.env.production
+.env.development
+jest-results.json
+.eslintcache
+.nyc_output/
+./coverage/
+
+# ==========================================
+# PROJECT SPECIFIC
+# ==========================================
+keys/
+public/docs/
+public/properties/
+public/web/
+project/documentsSample/
