@@ -16,6 +16,70 @@ interface ChangeHistoryEntry {
   newValue: any
 }
 
+/**
+ * Mapa de traducción de nombres de campos del inglés al español
+ * Cubre todos los campos que pueden ser modificados en una propiedad
+ */
+const FIELD_TRANSLATIONS: Record<string, string> = {
+  // Ubicación
+  address: 'Dirección',
+  state: 'Región',
+  city: 'Comuna',
+  latitude: 'Latitud',
+  longitude: 'Longitud',
+  
+  // Información básica
+  title: 'Título',
+  description: 'Descripción',
+  price: 'Precio',
+  type: 'Tipo de propiedad',
+  propertyType: 'Tipo de propiedad',
+  
+  // Características
+  bedrooms: 'Dormitorios',
+  bathrooms: 'Baños',
+  area: 'Área',
+  plotArea: 'Área del terreno',
+  constructedArea: 'Área construida',
+  garage: 'Garaje',
+  garages: 'Garajes',
+  
+  // Detalles
+  status: 'Estado',
+  condition: 'Condición',
+  yearBuilt: 'Año de construcción',
+  
+  // Agente y asignación
+  creatorUser: 'Creado por',
+  createdBy: 'Creado por',
+  assignedAgent: 'Agente asignado',
+  agent: 'Agente',
+  
+  // Características especiales
+  isFeatured: 'Destacada',
+  featured: 'Destacada',
+  isActive: 'Activa',
+  active: 'Activa',
+  
+  // Multimedia
+  multimedia: 'Galería',
+  gallery: 'Galería',
+  images: 'Imágenes',
+  
+  // Cambios del sistema
+  changeHistory: 'Historial',
+  updatedAt: 'Actualizado',
+  createdAt: 'Creado',
+  lastModifiedAt: 'Última modificación',
+};
+
+/**
+ * Traduce un nombre de campo del inglés al español
+ */
+const translateFieldName = (field: string): string => {
+  return FIELD_TRANSLATIONS[field] || field;
+};
+
 const HistorySection: React.FC<HistorySectionProps> = ({
   propertyId,
   title = 'Historial',
@@ -106,7 +170,7 @@ const HistorySection: React.FC<HistorySectionProps> = ({
               {/* Header: timestamp and user */}
               <div className="flex justify-between items-start gap-2 mb-2">
                 <div>
-                  <p className="text-sm font-medium text-foreground">{entry.field}</p>
+                  <p className="text-sm font-medium text-foreground">{translateFieldName(entry.field)}</p>
                   <p className="text-xs text-muted-foreground">{formatDate(entry.timestamp)}</p>
                 </div>
                 <p className="text-xs text-muted-foreground whitespace-nowrap">Por: {entry.changedBy}</p>
