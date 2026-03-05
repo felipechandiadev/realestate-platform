@@ -176,6 +176,7 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
         rows={rows}
         totalRows={total}
         limit={limit}
+        onAddClick={() => {}}
       />
     </div>
   );

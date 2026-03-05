@@ -6,6 +6,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { GridRequestParams, PropertyGridItem, GridResponse } from '../types';
 import * as propertiesService from '../services';
+import { deleteProperty } from '../actions/properties.action';
 
 /**
  * Query key factory for properties feature
@@ -116,7 +117,7 @@ export function useDeleteProperty() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => propertiesService.deletePropertyService(id),
+    mutationFn: (id: string) => deleteProperty(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: propertyKeys.grid() });
     },

@@ -34,7 +34,8 @@ export function PropertiesDeleteButton({
         setOpen(false);
         onSuccess?.();
       },
-      onError: (error) => {
+      onError: (error: Error) => {
+        console.error('Delete error:', error);
         alert(`Error al eliminar: ${error.message}`);
       },
     });

@@ -1292,14 +1292,11 @@ export async function updatePropertyBasic(id: string, data: UpdatePropertyBasicD
 /**
  * Delete a property (soft delete)
  */
-export async function deleteProperty(id: string): Promise<{
-  success: boolean;
-  error?: string;
-}> {
+export async function deleteProperty(id: string): Promise<void> {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
+      throw new Error('No authenticated');
     }
 
     const response = await fetch(`${env.backendApiUrl}/properties/${id}`, {
@@ -1312,19 +1309,15 @@ export async function deleteProperty(id: string): Promise<{
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to delete property: ${response.status}` 
-      };
+      throw new Error(
+        errorData?.message || `Failed to delete property: ${response.status}`
+      );
     }
 
-    return { success: true };
+    // Return nothing on success
   } catch (error) {
     console.error('Error deleting property:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
+    throw error instanceof Error ? error : new Error('Unknown error occurred');
   }
 }
 
