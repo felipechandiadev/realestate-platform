@@ -5,7 +5,7 @@ import { TextField } from '@/shared/components/ui/TextField/TextField'
 import Select from '@/shared/components/ui/Select/Select'
 import { listPropertyTypes, getBasicPropertyInfo, updatePropertyBasic } from '@/features/backoffice/properties/actions/properties.action'
 import { listAdminsAgents } from '@/features/backoffice/users/actions/users.action'
-import { getStatusInSpanish } from '@/app/backOffice/properties/utils/statusTranslation'
+import { getStatusInSpanish } from '@/features/backoffice/properties/utils'
 import { useAlert } from '@/shared/hooks/useAlert'
 import { Button } from '@/shared/components/ui/Button/Button'
 

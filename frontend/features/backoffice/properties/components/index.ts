@@ -1,4 +1,11 @@
-export { PropertiesCreateDialog } from './PropertiesCreateDialog';
-export { PropertiesDeleteButton } from './PropertiesDeleteButton';
-export { default as SaleMoreButton } from './SaleMoreButton';
-export { PropertiesSalesGrid } from './PropertiesSalesGrid';
+// Dialogs
+export { PropertiesCreateDialog } from './dialogs/PropertiesCreateDialog';
+export { default as FullPropertyDialog } from './dialogs/fullProperty/FullPropertyDialog';
+
+// Shared components
+export { default as PropertiesDeleteButton } from './shared/PropertiesDeleteButton';
+export { default as PropertyCard } from './shared/PropertyCard';
+
+// Sales components
+export { default as SaleMoreButton } from './sales/SaleMoreButton';
+export { PropertiesSalesGrid } from './sales/PropertiesSalesGrid';

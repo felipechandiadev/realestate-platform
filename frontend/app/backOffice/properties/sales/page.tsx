@@ -1,5 +1,5 @@
 import { getSalePropertiesGrid } from '@/features/backoffice/properties/actions/properties.action';
-import { PropertiesSalesGrid } from '@/features/backoffice/properties/components/PropertiesSalesGrid';
+import { PropertiesSalesGrid } from '@/features/backoffice/properties/components/sales';
 
 interface PageProps {
   searchParams: Promise<{

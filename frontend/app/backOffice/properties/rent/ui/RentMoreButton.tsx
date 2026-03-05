@@ -1,7 +1,8 @@
+'use client';
+
 import React, { useState, useCallback } from 'react';
 import IconButton from '@/shared/components/ui/IconButton/IconButton';
-import Dialog from '@/shared/components/ui/Dialog/Dialog';
-import FullPropertyDialog from '../../ui/fullProperty/FullPropertyDialog';
+import FullPropertyDialog from '@/features/backoffice/properties/components/dialogs/fullProperty/FullPropertyDialog';
 import { useFullPropertyRevalidation } from '@/shared/hooks/useFullPropertyRevalidation';
 
 interface RentMoreButtonProps {

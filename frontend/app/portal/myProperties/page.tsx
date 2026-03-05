@@ -29,7 +29,7 @@ import Card from '@/shared/components/ui/Card/Card';
 import { Button } from '@/shared/components/ui/Button/Button';
 import Link from 'next/link';
 import { env } from '@/lib/env';
-import { getStatusInSpanish, getStatusChipClasses } from '@/app/backOffice/properties/utils/statusTranslation';
+import { getStatusInSpanish, getStatusChipClasses } from '@/features/backoffice/properties/utils';
 
 export default function MyPropertiesPage() {
   const { user, status } = useAuth();

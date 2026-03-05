@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useState, useCallback } from 'react';
 import IconButton from '@/shared/components/ui/IconButton/IconButton';
-import FullPropertyDialog from '@/app/backOffice/properties/ui/fullProperty/FullPropertyDialog';
+import FullPropertyDialog from '@/features/backoffice/properties/components/dialogs/fullProperty/FullPropertyDialog';
 import { useFullPropertyRevalidation } from '@/shared/hooks/useFullPropertyRevalidation';
 
 

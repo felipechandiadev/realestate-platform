@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { useEffect, useState } from 'react';
-import { useCreatePropertyForm } from '../../hooks/useCreatePropertyForm';
+import { useCreatePropertyForm } from '@/app/backOffice/properties/hooks/useCreatePropertyForm';
 import { StepperBaseForm } from '@/shared/components/ui/BaseForm';
 import {
   getBasicInfoFields,

@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import DataGrid, { type DataGridColumn } from '@/shared/components/ui/DataGrid/DataGrid';
 import { env } from '@/lib/env';
 import type { RentPropertyGridRow } from '@/features/backoffice/properties/actions/properties.action';
-import CreateProperty from '../../ui/createProperty/CreateProperty';
-import DeletePropertyButton from '../../ui/DeletePropertyButton';
-import { getStatusInSpanish, getStatusChipClasses } from '@/app/backOffice/properties/utils/statusTranslation';
+import { CreateProperty } from '@/features/backoffice/properties/components/dialogs/createProperty';
+import { PropertiesDeleteButton } from '@/features/backoffice/properties/components/shared';
+import { getStatusInSpanish, getStatusChipClasses } from '@/features/backoffice/properties/utils';
 
 type RentGridProps = {
   rows: RentPropertyGridRow[];

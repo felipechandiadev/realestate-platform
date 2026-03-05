@@ -2,15 +2,15 @@
 
 import React, { ReactNode, useState, useEffect } from 'react'
 import Dialog from '@/shared/components/ui/Dialog/Dialog'
-import BasicInfoSection from './components/BasicInfoSection'
-import CharacteristicsSection from './components/CharacteristicsSection'
-import LocationSection from './components/LocationSection'
-import MultimediaSection from './components/multimedia/MultimediaSection'
-import HistorySection from './components/HistorySection'
-import SEOSection from './components/SEOSection'
-import InternalNotesSection from './components/InternalNotesSection'
+import BasicInfoSection from './BasicInfoSection'
+import CharacteristicsSection from './CharacteristicsSection'
+import LocationSection from './LocationSection'
+import MultimediaSection from './multimedia/MultimediaSection'
+import HistorySection from './HistorySection'
+import SEOSection from './SEOSection'
+import InternalNotesSection from './InternalNotesSection'
 import { getPropertyHeaderInfo } from '@/features/backoffice/properties/actions/properties.action'
-import { getStatusInSpanish, getStatusChipClasses } from '@/app/backOffice/properties/utils/statusTranslation'
+import { getStatusInSpanish, getStatusChipClasses } from '@/features/backoffice/properties/utils'
 
 export interface FullPropertyDialogProps {
   open: boolean
