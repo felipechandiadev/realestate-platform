@@ -111,19 +111,15 @@ const PortalFooter: React.FC = () => {
 
                 return (
                   <div key={index} className="flex items-center gap-3 bg-white/5 rounded-lg px-4 py-3">
-                    {imageError ? (
-                      <span className="material-symbols-outlined text-background text-4xl">
-                        image_not_supported
-                      </span>
-                    ) : (
+                    {!imageError && partnership.logoUrl && (
                       <img
-                        src={partnership.logoUrl || "/globe.svg"}
+                        src={partnership.logoUrl}
                         alt={partnership.name}
-                        className="w-12 h-12 object-contain"
+                        className="w-12 h-12 object-contain flex-shrink-0"
                         onError={() => handleImageError(imageKey)}
                       />
                     )}
-                    <div>
+                    <div className="flex-1">
                       <div className="text-base font-semibold text-background">{partnership.name}</div>
                       <div className="text-xs text-background/80 font-light max-w-xs">
                         {partnership.description}
@@ -143,17 +139,15 @@ const PortalFooter: React.FC = () => {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="md:col-span-1 space-y-4 flex flex-col items-center text-center md:items-start md:text-left">
             <div className="flex items-center gap-3">
-              {failedImages.has('company-logo') ? (
-                <span className="material-symbols-outlined text-background text-4xl">image_not_supported</span>
-              ) : (
+              {!failedImages.has('company-logo') && identity?.urlLogo && (
                 <img
-                  src={identity?.urlLogo || "/PropLogo2.png"}
+                  src={identity.urlLogo}
                   alt="Logo Plataforma Inmobiliaria"
-                  className="w-10 h-10 object-contain"
+                  className="w-10 h-10 object-contain flex-shrink-0"
                   onError={() => handleImageError('company-logo')}
                 />
               )}
-              <div>
+              <div className="flex-1">
                 <h4 className="text-base font-semibold text-background">
                   {identity?.name || 'Plataforma Inmobiliaria'}
                 </h4>

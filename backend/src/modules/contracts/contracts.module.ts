@@ -26,12 +26,14 @@ import { GetPeopleByRoleUseCase } from './application/use-cases/get-people-by-ro
 import { ValidateRequiredRolesUseCase } from './application/use-cases/validate-required-roles.usecase';
 import { DocumentTypesModule } from '../document-types/document-types.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([ContractOrmEntity, Payment, Document, PersonOrmEntity, User, Multimedia, Property]),
     DocumentTypesModule,
     NotificationsModule,
+    AuditModule,
   ],
   controllers: [ContractsController],
   providers: [

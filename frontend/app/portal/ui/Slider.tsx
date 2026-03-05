@@ -126,10 +126,21 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
     return (
       <div 
         ref={sliderRef}
-        className="w-full flex items-center justify-center"
+        className="w-full relative overflow-hidden"
         style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
       >
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        {/* Fondo base */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-500" />
+        
+        {/* Efecto shimmer animado */}
+        <div 
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
+            backgroundSize: '200% 100%',
+            animation: 'shimmerSlide 2.5s ease-in-out infinite',
+          }}
+        />
       </div>
     );
   }
@@ -139,14 +150,9 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
     return (
       <div 
         ref={sliderRef}
-        className="w-full flex items-center justify-center bg-gray-100"
+        className="w-full bg-gradient-to-br from-gray-300 to-gray-500"
         style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
-      >
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Error al cargar slides</h2>
-          <p className="text-gray-500">{error}</p>
-        </div>
-      </div>
+      />
     );
   }
 
@@ -232,15 +238,11 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
             return (
               <div
                 key={slide.id}
-                className={`absolute inset-0 w-full h-full bg-gradient-to-br from-gray-300 to-gray-500 flex items-center justify-center transition-opacity ${
+                className={`absolute inset-0 w-full h-full bg-gradient-to-br from-gray-300 to-gray-500 transition-opacity ${
                   i === current ? "opacity-100 z-10" : "opacity-0 z-0"
                 }`}
                 style={{ transition: `opacity ${transitionTime}ms linear` }}
-              >
-                <span className="material-symbols-outlined text-white text-6xl">
-                  image
-                </span>
-              </div>
+              />
             );
           }
         })}
@@ -297,8 +299,7 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
 
         {/* Content overlay */}
         <div
-          className="absolute left-[10%] bottom-[10%] flex flex-col items-start text-left px-4 md:px-8"
-          style={{ maxWidth: "50%", zIndex: 20 }}
+          className="absolute left-[10%] bottom-[10%] flex flex-col items-start text-left px-4 md:px-8 max-w-[80%] sm:max-w-[60%] md:max-w-[50%] z-20"
         >
           <h2
             className="text-xl md:text-3xl lg:text-4xl font-bold text-white mb-2"

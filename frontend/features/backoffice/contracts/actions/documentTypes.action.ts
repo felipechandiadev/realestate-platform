@@ -29,15 +29,21 @@ export interface UpdateDocumentTypeDto {
 /**
  * Obtiene todos los tipos de documentos
  */
-export async function getDocumentTypes(): Promise<DocumentType[]> {
+export async function getDocumentTypes(params?: { search?: string }): Promise<{ success: boolean; data?: DocumentType[]; error?: string }> {
   const session = await getServerSession(authOptions)
   
   if (!session?.accessToken) {
-    throw new Error('No authenticated')
+    return { success: false, error: 'No autenticado' }
   }
 
   try {
-    const response = await fetch(`${env.backendApiUrl}/document-types`, {
+    const url = new URL(`${env.backendApiUrl}/document-types`)
+    
+    if (params?.search) {
+      url.searchParams.append('search', params.search)
+    }
+
+    const response = await fetch(url.toString(), {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,
@@ -47,13 +53,21 @@ export async function getDocumentTypes(): Promise<DocumentType[]> {
     })
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch document types: ${response.status}`)
+      const errorData = await response.json().catch(() => ({}))
+      return { 
+        success: false, 
+        error: errorData.message || `Error al obtener tipos de documento: ${response.status}` 
+      }
     }
 
-    return response.json()
+    const documentTypes = await response.json()
+    return { success: true, data: documentTypes }
   } catch (error) {
     console.error('Error fetching document types:', error)
-    throw error
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Error desconocido al obtener tipos de documento' 
+    }
   }
 }
 

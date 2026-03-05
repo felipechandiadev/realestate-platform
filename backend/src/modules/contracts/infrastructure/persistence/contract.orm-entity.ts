@@ -58,6 +58,9 @@ export class ContractOrmEntity {
   @Column({ type: 'text', nullable: true })
   description?: string | null;
 
+  @Column({ type: 'date', nullable: true })
+  endDate?: Date | null;
+
   @Column({ type: 'json', nullable: true })
   people?: any;
 

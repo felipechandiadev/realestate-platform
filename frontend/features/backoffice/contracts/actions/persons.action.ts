@@ -1,6 +1,7 @@
 'use server'
 
 import { getServerSession } from 'next-auth'
+import { revalidatePath } from 'next/cache'
 import { authOptions } from '@/lib/auth'
 import { env } from '@/lib/env'
 import { getUser, type BackendAdministrator } from '@/features/backoffice/users/actions/users.action'
@@ -197,6 +198,9 @@ export async function uploadDniDocument(
     if (!multimediaId) {
       return { success: false, error: 'No se pudo obtener el identificador del archivo subido' }
     }
+
+    // Revalidate the person detail page to reflect the changes
+    revalidatePath(`/backOffice/contracts/persons/${personId}`)
 
     return { success: true, multimediaId, url }
   } catch (error) {

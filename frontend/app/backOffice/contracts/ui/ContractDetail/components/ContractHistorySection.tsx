@@ -19,6 +19,16 @@ interface ContractHistorySectionProps {
 }
 
 const actionLabels: Record<string, string> = {
+  // Standard audit actions
+  CREATE: 'Creación',
+  READ: 'Consulta',
+  UPDATE: 'Actualización',
+  DELETE: 'Eliminación',
+  VIEW: 'Visualización',
+  EXPORT: 'Exportación',
+  IMPORT: 'Importación',
+  
+  // Legacy contract-specific actions
   CONTRACT_CREATED: 'Contrato creado',
   CONTRACT_UPDATED: 'Contrato actualizado',
   CONTRACT_CLOSED: 'Contrato cerrado',
@@ -72,6 +82,36 @@ const isIsoDateString = (value: string) => {
   return isoDateRegex.test(value);
 };
 
+const enumValueLabels: Record<string, string> = {
+  IN_PROCESS: 'En proceso',
+  CLOSED: 'Cerrado',
+  FAILED: 'Fallido',
+  PENDING: 'Pendiente',
+  PAID: 'Pagado',
+  CANCELLED: 'Cancelado',
+  COMPRAVENTA: 'Compraventa',
+  ARRIENDO: 'Arriendo',
+  CLP: 'Peso chileno (CLP)',
+  UF: 'UF',
+  SELLER: 'Vendedor',
+  BUYER: 'Comprador',
+  LANDLORD: 'Arrendador',
+  TENANT: 'Arrendatario',
+  NOTARY: 'Notario',
+  REGISTRAR: 'Conservador',
+  WITNESS: 'Testigo',
+  GUARANTOR: 'Aval',
+  REPRESENTATIVE: 'Representante',
+  PROMISSOR: 'Promitente',
+  THIRD_PARTY: 'Tercero',
+  AGENT: 'Agente',
+};
+
+const translateEnumValue = (value: string) => {
+  const normalized = value.trim().toUpperCase();
+  return enumValueLabels[normalized] || value;
+};
+
 const formatPrimitive = (value: string | number | boolean) => {
   if (typeof value === 'number') {
     return value.toLocaleString('es-CL');
@@ -83,6 +123,10 @@ const formatPrimitive = (value: string | number | boolean) => {
 
   if (typeof value === 'string' && isIsoDateString(value)) {
     return formatTimestamp(value);
+  }
+
+  if (typeof value === 'string') {
+    return translateEnumValue(value);
   }
 
   return value;

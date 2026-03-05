@@ -6,6 +6,8 @@ import { useAlert } from '@/shared/hooks/useAlert';
 import { useSession } from 'next-auth/react';
 import {
   updateContractStatus,
+  closeContract,
+  failContract,
   updatePaymentStatus,
   updateContractAgent,
   getContractById,
@@ -28,6 +30,8 @@ import {
   FINAL_CONTRACT_STATUSES,
 } from '@/shared/types/contracts';
 import { getDocumentTypes, type DocumentType } from '@/features/backoffice/contracts/actions/documentTypes.action';
+import { getContractAuditLogs, type AuditLogEntry } from '@/features/backoffice/contracts/actions/audit.action';
+import { transformAuditLogsToHistory } from '@/features/backoffice/contracts/utils/audit.utils';
 import ContractGeneralSection from './components/ContractGeneralSection';
 import ContractPropertySection from './components/ContractPropertySection';
 import ContractParticipantsSection from './components/ContractParticipantsSection';
@@ -517,6 +521,8 @@ export default function ContractDetailDialog({
   const [togglingRequiredDocumentId, setTogglingRequiredDocumentId] = useState<string | null>(null);
   const [showEditFinancialDialog, setShowEditFinancialDialog] = useState(false);
   const [updatingFinancialData, setUpdatingFinancialData] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
 
   const isContractFinal = useMemo(
     () => isFinalContractStatus(contract?.status),
@@ -566,6 +572,7 @@ export default function ContractDetailDialog({
       fetchAgents();
     } else {
       setContract(null);
+      setAuditLogs([]);
       setActiveSection('general');
       setShowAddPaymentDialog(false);
       setAddingPayment(false);
@@ -614,6 +621,34 @@ export default function ContractDetailDialog({
     }
   };
 
+  const fetchAuditLogs = useCallback(async () => {
+    if (!contractId) return;
+
+    setLoadingAuditLogs(true);
+    try {
+      const result = await getContractAuditLogs(contractId);
+      
+      if (result.success && result.data) {
+        setAuditLogs(result.data);
+      } else {
+        console.warn('No se pudieron cargar los audit logs:', result.error);
+        // No mostramos alert aquí para no ser intrusivos
+      }
+    } catch (error) {
+      console.error('Error loading audit logs:', error);
+    } finally {
+      setLoadingAuditLogs(false);
+    }
+  }, [contractId]);
+
+  useEffect(() => {
+    if (!open || !contractId || activeSection !== 'history') {
+      return;
+    }
+
+    void fetchAuditLogs();
+  }, [open, contractId, activeSection, fetchAuditLogs]);
+
   const fetchContractDetails = async () => {
     if (!contractId) return;
 
@@ -644,6 +679,9 @@ export default function ContractDetailDialog({
             fallbackDocuments,
           ),
         );
+
+        // Load audit logs in background (don't block on this)
+        void fetchAuditLogs();
       } else {
         showAlert({
           message: contractResult.error || 'Error al cargar contrato',
@@ -665,8 +703,16 @@ export default function ContractDetailDialog({
 
     setLoadingDocumentTypes(true);
     try {
-      const types = await getDocumentTypes();
-      setDocumentTypes(types);
+      const result = await getDocumentTypes();
+      if (result.success && result.data) {
+        setDocumentTypes(result.data);
+      } else {
+        showAlert({
+          message: result.error || 'No se pudieron cargar los tipos de documento',
+          type: 'error',
+          duration: 4000,
+        });
+      }
     } catch (error) {
       console.error('Error loading document types:', error);
       showAlert({
@@ -813,18 +859,39 @@ export default function ContractDetailDialog({
         await fetchContractDetails();
         onUpdate?.();
       } else {
+        const errorMessage = result.error || 'Error al registrar documento';
+        
+        // Provide more helpful message for common errors
+        if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
+          showAlert({
+            message: 'Tu sesión tiene datos inconsistentes. Por favor, cierra sesión y vuelve a iniciar sesión.',
+            type: 'error',
+            duration: 6000,
+          });
+        } else {
+          showAlert({
+            message: errorMessage,
+            type: 'error',
+            duration: 4000,
+          });
+        }
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error al registrar documento';
+      
+      if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
         showAlert({
-          message: result.error || 'Error al registrar documento',
+          message: 'Tu sesión tiene datos inconsistentes. Por favor, cierra sesión y vuelve a iniciar sesión.',
+          type: 'error',
+          duration: 6000,
+        });
+      } else {
+        showAlert({
+          message: errorMessage,
           type: 'error',
           duration: 4000,
         });
       }
-    } catch (error: any) {
-      showAlert({
-        message: error?.message || 'Error al registrar documento',
-        type: 'error',
-        duration: 4000,
-      });
     } finally {
       setCreatingContractDocument(false);
     }
@@ -885,18 +952,38 @@ export default function ContractDetailDialog({
         await fetchContractDetails();
         onUpdate?.();
       } else {
+        const errorMessage = result.error || 'Error al adjuntar documento';
+        
+        if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
+          showAlert({
+            message: 'Tu sesión tiene datos inconsistentes. Por favor, cierra sesión y vuelve a iniciar sesión.',
+            type: 'error',
+            duration: 6000,
+          });
+        } else {
+          showAlert({
+            message: errorMessage,
+            type: 'error',
+            duration: 4000,
+          });
+        }
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error al adjuntar documento';
+      
+      if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
         showAlert({
-          message: result.error || 'Error al adjuntar documento',
+          message: 'Tu sesión tiene datos inconsistentes. Por favor, cierra sesión y vuelve a iniciar sesión.',
+          type: 'error',
+          duration: 6000,
+        });
+      } else {
+        showAlert({
+          message: errorMessage,
           type: 'error',
           duration: 4000,
         });
       }
-    } catch (error: any) {
-      showAlert({
-        message: error?.message || 'Error al adjuntar documento',
-        type: 'error',
-        duration: 4000,
-      });
     } finally {
       setUploadingContractDocument(false);
     }
@@ -1078,18 +1165,38 @@ export default function ContractDetailDialog({
         await fetchContractDetails();
         onUpdate?.();
       } else {
+        const errorMessage = result.error || 'Error al adjuntar documento';
+        
+        if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
+          showAlert({
+            message: 'Tu sesión tiene datos inconsistentes. Por favor, cierra sesión y vuelve a iniciar sesión.',
+            type: 'error',
+            duration: 6000,
+          });
+        } else {
+          showAlert({
+            message: errorMessage,
+            type: 'error',
+            duration: 4000,
+          });
+        }
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error al adjuntar documento';
+      
+      if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
         showAlert({
-          message: result.error || 'Error al adjuntar documento',
+          message: 'Tu sesión tiene datos inconsistentes. Por favor, cierra sesión y vuelve a iniciar sesión.',
+          type: 'error',
+          duration: 6000,
+        });
+      } else {
+        showAlert({
+          message: errorMessage,
           type: 'error',
           duration: 4000,
         });
       }
-    } catch (error: any) {
-      showAlert({
-        message: error?.message || 'Error al adjuntar documento',
-        type: 'error',
-        duration: 4000,
-      });
     } finally {
       setUploadingPaymentDocument(false);
     }
@@ -1199,10 +1306,22 @@ export default function ContractDetailDialog({
 
     setUpdating(true);
     try {
-      const result = await updateContractStatus(contractId, newStatus as any);
+      // Determine which endpoint to use based on target status
+      let result;
+      const endDate = new Date().toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
+
+      if (nextStatusKey === 'CLOSED') {
+        result = await closeContract(contractId, endDate, contract?.documents ?? []);
+      } else if (nextStatusKey === 'FAILED') {
+        result = await failContract(contractId, endDate);
+      } else {
+        // Fallback to updateContractStatus for other status changes
+        result = await updateContractStatus(contractId, newStatus as any);
+      }
 
       if (result.success && result.contract) {
         setContract(mapContractData(result.contract, undefined, contract?.documents ?? null));
+        void fetchAuditLogs();
         showAlert({ message: 'Estado del contrato actualizado correctamente', type: 'success', duration: 3000 });
         onUpdate?.();
       } else {
@@ -1535,11 +1654,24 @@ export default function ContractDetailDialog({
           />
         );
       case 'history':
+        const transformedHistory = transformAuditLogsToHistory(auditLogs);
         return (
-          <ContractHistorySection
-            history={contract.changeHistory}
-            resolveActorName={resolveActorName}
-          />
+          <>
+            {loadingAuditLogs && (
+              <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined animate-spin">progress_activity</span>
+                  <span>Cargando historial...</span>
+                </div>
+              </div>
+            )}
+            {!loadingAuditLogs && (
+              <ContractHistorySection
+                history={transformedHistory}
+                resolveActorName={resolveActorName}
+              />
+            )}
+          </>
         );
       default:
         return null;

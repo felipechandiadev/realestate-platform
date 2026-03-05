@@ -63,15 +63,16 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
   const page = Number.parseInt(params.page ?? '1', 10) || 1;
   const limit = Number.parseInt(params.limit ?? '25', 10) || 25;
 
-  const [documentsResult, documentTypes] = await Promise.all([
+  const [documentsResult, typesResult] = await Promise.all([
     listDocuments({ search, page, limit }),
-    getDocumentTypes().catch(() => [] as DocumentType[]),
+    getDocumentTypes(),
   ]);
 
   const { rows, total } = documentsResult.success && documentsResult.data
     ? resolveDocumentsPayload(documentsResult.data)
     : { rows: [], total: 0 };
 
+  const documentTypes = typesResult.success && typesResult.data ? typesResult.data : [];
   const errorMessage = documentsResult.success ? undefined : documentsResult.error;
 
   return (

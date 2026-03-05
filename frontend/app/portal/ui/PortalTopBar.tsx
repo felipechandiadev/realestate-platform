@@ -96,7 +96,7 @@ function Sidebar({ open, onClose, identity, onLoginClick, onRegisterClick, isUse
             />
           ) : null}
           <span className="font-medium text-foreground text-sm">
-            {identity?.name || "Plataforma Inmobiliaria"}
+            {identity?.name || ""}
           </span>
         </div>
 
@@ -373,21 +373,27 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
             />
           )}
           <span className="text-base md:text-lg lg:text-2xl font-medium text-foreground whitespace-nowrap">
-            {(identity?.name || nombreEmpresa).toUpperCase()}
+            {(identity?.name || "").toUpperCase()}
           </span>
         </div>
 
         {/* Centro: contacto y teléfono */}
         <div className="hidden lg:flex flex-col items-center justify-center flex-1">
           <div className="flex items-center gap-6 justify-center">
-            <span className="flex items-center gap-1 text-xs text-foreground whitespace-nowrap">
+            <a 
+              href={`mailto:${identity?.mail || "contacto@empresa.cl"}`}
+              className="flex items-center gap-1 text-xs text-foreground whitespace-nowrap hover:text-primary transition-colors"
+            >
               <span className="material-symbols-outlined text-base">mail</span>
               {identity?.mail || "contacto@empresa.cl"}
-            </span>
-            <span className="flex items-center gap-1 text-xs text-foreground whitespace-nowrap">
+            </a>
+            <a 
+              href={`tel:${identity?.phone || "+56912345678"}`}
+              className="flex items-center gap-1 text-xs text-foreground whitespace-nowrap hover:text-primary transition-colors"
+            >
               <span className="material-symbols-outlined text-base">call</span>
               {identity?.phone || "+56 9 1234 5678"}
-            </span>
+            </a>
           </div>
         </div>
 

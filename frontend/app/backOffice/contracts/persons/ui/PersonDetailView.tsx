@@ -5,6 +5,7 @@ import { Person, verifyPerson, unverifyPerson, uploadDniDocument, getMultimediaU
 import { Button } from '@/shared/components/ui/Button/Button';
 import { useAlert } from '@/providers/AlertContext';
 import Dialog from '@/shared/components/ui/Dialog/Dialog';
+import DotProgress from '@/shared/components/ui/DotProgress/DotProgress';
 
 interface PersonDetailViewProps {
   person: Person;
@@ -131,8 +132,16 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
         if (result.url) {
           setFrontImageUrl(result.url);
         } else if (result.multimediaId) {
-          const url = await getMultimediaUrl(result.multimediaId);
-          setFrontImageUrl(url);
+          // Retry fetching URL up to 3 times with delay
+          let url: string | null = null;
+          for (let i = 0; i < 3; i++) {
+            url = await getMultimediaUrl(result.multimediaId);
+            if (url) break;
+            if (i < 2) await new Promise(resolve => setTimeout(resolve, 500));
+          }
+          if (url) {
+            setFrontImageUrl(url);
+          }
         }
         router.refresh();
       } else {
@@ -183,8 +192,16 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
         if (result.url) {
           setRearImageUrl(result.url);
         } else if (result.multimediaId) {
-          const url = await getMultimediaUrl(result.multimediaId);
-          setRearImageUrl(url);
+          // Retry fetching URL up to 3 times with delay
+          let url: string | null = null;
+          for (let i = 0; i < 3; i++) {
+            url = await getMultimediaUrl(result.multimediaId);
+            if (url) break;
+            if (i < 2) await new Promise(resolve => setTimeout(resolve, 500));
+          }
+          if (url) {
+            setRearImageUrl(url);
+          }
         }
         router.refresh();
       } else {
@@ -318,8 +335,9 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
             Los documentos de identificación (DNI frontal y trasero) permiten verificar la identidad de la persona antes de aprobar su verificación.
           </p>
 
-          {/* DNI Frontal */}
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-6">
+            {/* DNI Frontal */}
+            <div className="space-y-2">
             <h3 className="text-sm font-medium text-foreground">DNI Frontal</h3>
             {frontImageUrl ? (
               <div className="space-y-2">
@@ -340,12 +358,12 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
                   onClick={() => frontInputRef.current?.click()}
                   disabled={isUploadingFront}
                 >
-                  {isUploadingFront ? 'Subiendo...' : 'Reemplazar DNI Frontal'}
+                  {isUploadingFront ? <DotProgress /> : 'Reemplazar DNI Frontal'}
                 </Button>
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="w-full max-w-md aspect-video bg-muted rounded-lg flex items-center justify-center border border-dashed border-border">
+                <div className="w-full max-w-md aspect-video rounded-lg flex items-center justify-center border border-dashed border-border">
                   <span className="material-symbols-outlined text-muted-foreground text-4xl">badge</span>
                 </div>
                 <input
@@ -360,15 +378,15 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
                   onClick={() => frontInputRef.current?.click()}
                   disabled={isUploadingFront}
                 >
-                  {isUploadingFront ? 'Subiendo...' : 'Subir DNI Frontal'}
+                  {isUploadingFront ? <DotProgress /> : 'Subir DNI Frontal'}
                 </Button>
               </div>
             )}
-          </div>
+            </div>
 
-          {/* DNI Trasero */}
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-foreground">DNI Trasero</h3>
+            {/* DNI Trasero */}
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium text-foreground">DNI Trasero</h3>
             {rearImageUrl ? (
               <div className="space-y-2">
                 <img 
@@ -388,12 +406,12 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
                   onClick={() => rearInputRef.current?.click()}
                   disabled={isUploadingRear}
                 >
-                  {isUploadingRear ? 'Subiendo...' : 'Reemplazar DNI Trasero'}
+                  {isUploadingRear ? <DotProgress /> : 'Reemplazar DNI Trasero'}
                 </Button>
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="w-full max-w-md aspect-video bg-muted rounded-lg flex items-center justify-center border border-dashed border-border">
+                <div className="w-full max-w-md aspect-video rounded-lg flex items-center justify-center border border-dashed border-border">
                   <span className="material-symbols-outlined text-muted-foreground text-4xl">badge</span>
                 </div>
                 <input
@@ -408,10 +426,11 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
                   onClick={() => rearInputRef.current?.click()}
                   disabled={isUploadingRear}
                 >
-                  {isUploadingRear ? 'Subiendo...' : 'Subir DNI Trasero'}
+                  {isUploadingRear ? <DotProgress /> : 'Subir DNI Trasero'}
                 </Button>
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>

@@ -152,6 +152,29 @@ export class ContractsController {
   }
 
   /**
+   * Update contract agent
+   */
+  @Patch(':id/agent')
+  @ApiOperation({ summary: 'Update contract agent' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contract agent updated successfully',
+  })
+  @ApiParam({ name: 'id', type: String })
+  @ApiBody({ type: UpdateContractAgentDto })
+  updateAgent(
+    @Param('id') id: string,
+    @Body(ValidationPipe) updateContractAgentDto: UpdateContractAgentDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.contractsService.updateAgent(
+      id,
+      updateContractAgentDto,
+      this.resolveActorId(req),
+    );
+  }
+
+  /**
    * Delete contract (soft delete)
    */
   @Delete(':id')

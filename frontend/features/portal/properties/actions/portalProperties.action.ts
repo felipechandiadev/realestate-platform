@@ -116,8 +116,6 @@ export async function getPublishedPropertiesFiltered(filters: {
 
     const url = `${env.backendApiUrl}/properties/published/filtered?${params.toString()}`;
 
-    console.log('📡 Fetching from:', url);
-
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -127,40 +125,28 @@ export async function getPublishedPropertiesFiltered(filters: {
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => response.statusText);
-      const errorMsg = `Error fetching published properties: ${response.status} ${response.statusText} - ${errorText}`;
-      console.error('❌', errorMsg);
-      console.log('📍 URL intentado:', url);
       return null;
     }
 
     const rawData = await response.json();
-    
-    console.log('📦 Raw data from backend (first property mainImageUrl):', rawData.data?.[0]?.mainImageUrl);
-    
+
     // Helper: Asegurar URLs absolutas
     const ensureAbsoluteUrl = (url: string | null | undefined): string => {
       if (!url) return '';
-      
-      console.log('🔗 Converting URL:', url);
-      
+
       // Si ya es absoluta, devolver tal cual
       if (url.startsWith('http://') || url.startsWith('https://')) {
-        console.log('✅ Already absolute:', url);
         return url;
       }
-      
+
       // Si es relativa, prepend backend URL
       if (url.startsWith('/')) {
-        const absolute = `${env.backendApiUrl}${url}`;
-        console.log('✅ Made absolute:', absolute);
-        return absolute;
+        return `${env.backendApiUrl}${url}`;
       }
-      
-      console.log('⚠️ Unexpected URL format:', url);
+
       return url;
     };
-    
+
     // Mapear los datos del backend al formato esperado
     const mappedData: PropertyData[] = (rawData.data || []).map((prop: any) => ({
       id: prop.id,
@@ -200,14 +186,16 @@ export async function getPublishedPropertiesFiltered(filters: {
       } : undefined,
     }));
 
-    console.log('✅ Properties fetched:', mappedData.length, 'items');
-    
     return {
       data: mappedData,
       pagination: rawData.pagination || {},
     };
   } catch (error) {
-    console.error('Failed to fetch published properties:', error);
+    const message = error instanceof Error ? error.message : '';
+    if (message.toLowerCase().includes('fetch failed')) {
+      return null;
+    }
+    console.warn('[getPublishedPropertiesFiltered] Request failed');
     return null;
   }
 }

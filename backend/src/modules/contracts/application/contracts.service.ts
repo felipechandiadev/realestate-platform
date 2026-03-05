@@ -16,7 +16,7 @@ import { AddPersonUseCase } from './use-cases/add-person.usecase';
 import { GetPeopleByRoleUseCase } from './use-cases/get-people-by-role.usecase';
 import { ValidateRequiredRolesUseCase } from './use-cases/validate-required-roles.usecase';
 import { Payment } from '../domain/payment.entity';
-import { AddPaymentDto, AddPersonDto, CloseContractDto, CreateContractDto, UpdateContractDto, UploadContractDocumentDto, UploadPaymentDocumentDto } from '../dto/contract.dto';
+import { AddPaymentDto, AddPersonDto, CloseContractDto, CreateContractDto, UpdateContractAgentDto, UpdateContractDto, UploadContractDocumentDto, UploadPaymentDocumentDto } from '../dto/contract.dto';
 import { Person } from '../../person/domain/person.entity';
 import { PersonOrmEntity } from '../../person/infrastructure/persistence/person.orm-entity';
 import { User } from '../../users/domain/user.entity';
@@ -26,6 +26,8 @@ import { Document as DocumentEntity } from '../../document/domain/document.entit
 import { DocumentTypeOrmEntity } from '../../document-types/infrastructure/persistence/document-type.orm-entity';
 import { ContractRole } from '../domain/contract.entity';
 import { ContractPerson } from '../domain/contract.entity';
+import { AuditService } from '../../audit/application/audit.service';
+import { AuditAction, AuditEntityType, RequestSource } from '../../../shared/enums/audit.enums';
 
 @Injectable()
 export class ContractsService {
@@ -54,10 +56,33 @@ export class ContractsService {
     @InjectRepository(Property)
     private readonly propertyRepository: Repository<Property>,
     private readonly notificationsService: NotificationsService,
+    private readonly auditService: AuditService,
   ) {}
 
   async create(dto: CreateContractDto, actorId?: string): Promise<Contract> {
-    return this.createContract.execute(dto as any);
+    const contract = await this.createContract.execute(dto as any);
+    
+    // Create audit log
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.CREATE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: contract.id,
+      description: 'Contrato creado',
+      newValues: {
+        code: contract.code,
+        operation: contract.operation,
+        propertyId: contract.property?.id,
+        endDate: contract.endDate,
+        amount: contract.amount,
+        commissionPercent: contract.commissionPercent,
+        commissionAmount: contract.commissionAmount,
+        status: contract.status,
+      },
+      source: RequestSource.USER,
+    });
+    
+    return contract;
   }
 
   async findAll(query?: any): Promise<any> {
@@ -105,44 +130,187 @@ export class ContractsService {
   }
 
   async update(id: string, dto: UpdateContractDto, actorId?: string): Promise<Contract> {
+    // Get old contract state for audit
+    const oldContract = await this.contractRepository.findById(id);
+    if (!oldContract) {
+      throw new NotFoundException();
+    }
+    
     await this.updateContract.execute(id, dto);
     const updated = await this.contractRepository.findById(id);
     if (!updated) {
       throw new NotFoundException();
     }
+    
+    // Create audit log with old and new values
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: id,
+      description: 'Contrato actualizado',
+      oldValues: {
+        endDate: oldContract.endDate,
+        amount: oldContract.amount,
+        commissionPercent: oldContract.commissionPercent,
+        commissionAmount: oldContract.commissionAmount,
+        status: oldContract.status,
+        description: oldContract.description,
+      },
+      newValues: {
+        endDate: updated.endDate,
+        amount: updated.amount,
+        commissionPercent: updated.commissionPercent,
+        commissionAmount: updated.commissionAmount,
+        status: updated.status,
+        description: updated.description,
+      },
+      source: RequestSource.USER,
+    });
+    
+    return updated;
+  }
+
+  async updateAgent(id: string, dto: UpdateContractAgentDto, actorId?: string): Promise<Contract> {
+    const oldContract = await this.contractRepository.findById(id);
+    if (!oldContract) {
+      throw new NotFoundException();
+    }
+
+    await this.contractRepository.update(id, { userId: dto.userId } as any);
+
+    const updated = await this.contractRepository.findById(id);
+    if (!updated) {
+      throw new NotFoundException();
+    }
+
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: id,
+      description: 'Agente del contrato actualizado',
+      oldValues: { userId: oldContract.userId ?? null },
+      newValues: { userId: updated.userId ?? null },
+      source: RequestSource.USER,
+    });
+
     return updated;
   }
 
   async softDelete(id: string, actorId?: string): Promise<void> {
     await this.deleteContract.execute(id);
+    
+    // Create audit log
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.DELETE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: id,
+      description: 'Contrato eliminado (soft delete)',
+      source: RequestSource.USER,
+    });
   }
 
   async close(id: string, dto: CloseContractDto, actorId?: string): Promise<Contract> {
+    // Get old status for audit
+    const oldContract = await this.contractRepository.findById(id);
+    if (!oldContract) {
+      throw new NotFoundException();
+    }
+    const oldStatus = oldContract.status;
+    
     await this.closeContract.execute(id, dto);
     const updated = await this.contractRepository.findById(id);
     if (!updated) {
       throw new NotFoundException();
     }
+    
+    // Create audit log
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: id,
+      description: 'Contrato cerrado',
+      oldValues: { status: oldStatus },
+      newValues: { status: updated.status, endDate: updated.endDate },
+      source: RequestSource.USER,
+    });
+    
     return updated;
   }
 
   async fail(id: string, endDate: Date, actorId?: string): Promise<Contract> {
+    // Get old status for audit
+    const oldContract = await this.contractRepository.findById(id);
+    if (!oldContract) {
+      throw new NotFoundException();
+    }
+    const oldStatus = oldContract.status;
+    
     await this.failContract.execute(id, endDate);
     const updated = await this.contractRepository.findById(id);
     if (!updated) {
       throw new NotFoundException();
     }
+    
+    // Create audit log
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: id,
+      description: 'Contrato marcado como fallido',
+      oldValues: { status: oldStatus },
+      newValues: { status: updated.status, endDate: updated.endDate },
+      source: RequestSource.USER,
+    });
+    
     return updated;
   }
 
   // stubs for endpoints still in controller
   async addPayment(id: string, dto: AddPaymentDto, actorId?: string): Promise<any> {
-    return this.addPaymentUseCase.execute(id, dto);
+    const payment = await this.addPaymentUseCase.execute(id, dto);
+    
+    // Create audit log
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: id,
+      description: 'Pago agregado al contrato',
+      metadata: {
+        paymentId: payment?.id,
+        paymentAmount: dto.amount,
+        paymentType: dto.type,
+        paymentDate: dto.date,
+      },
+      source: RequestSource.USER,
+    });
+    
+    return payment;
   }
   async addPerson(id: string, dto: AddPersonDto, actorId?: string): Promise<any> {
     await this.addPersonUseCase.execute(id, dto);
     const contract = await this.contractRepository.findById(id);
     if (!contract) throw new NotFoundException();
+    
+    // Create audit log
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: id,
+      description: 'Participante agregado al contrato',
+      metadata: {
+        personId: dto.personId,
+        role: dto.role,
+      },
+      source: RequestSource.USER,
+    });
+    
     return contract;
   }
   async getPeopleByRole(id: string, role: ContractRole): Promise<any[]> {
@@ -200,6 +368,22 @@ export class ContractsService {
     const updatedContract = { ...(contract as any), documents: existing } as any;
 
     const multimedia = { id: saved.multimediaId || null, url: '/__test__/placeholder', filename: file?.originalname || '' };
+
+    // Create audit log
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: dto.contractId,
+      description: 'Documento cargado al contrato',
+      metadata: {
+        documentId: saved.id,
+        documentTitle: dto.title,
+        documentTypeId: dto.documentTypeId,
+        fileName: file?.originalname,
+      },
+      source: RequestSource.USER,
+    });
 
     return { contract: updatedContract, document: saved, multimedia };
   }

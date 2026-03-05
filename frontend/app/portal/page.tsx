@@ -50,28 +50,36 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   const page = params.page || '';
   const featuredPage = params.featured_page || '1';
 
-  // Fetch featured properties with pagination
-  const featuredResult = await getPublishedFeaturedProperties(
-    parseInt(featuredPage) || 1
-  );
+  const [featuredResultSettled, propertiesResultSettled, testimonialsSettled] = await Promise.allSettled([
+    getPublishedFeaturedProperties(parseInt(featuredPage) || 1),
+    getPublishedPropertiesFiltered({
+      currency: currency,
+      state: state,
+      city: city,
+      typeProperty: typeProperty,
+      operation: operation,
+      page: page ? parseInt(page) : 1,
+    }),
+    listPublicTestimonials(),
+  ]);
+
+  if (featuredResultSettled.status === 'rejected') {
+    console.warn('[PortalPage] Featured properties unavailable');
+  }
+  if (propertiesResultSettled.status === 'rejected') {
+    console.warn('[PortalPage] Filtered properties unavailable');
+  }
+  if (testimonialsSettled.status === 'rejected') {
+    console.warn('[PortalPage] Testimonials unavailable');
+  }
+
+  const featuredResult = featuredResultSettled.status === 'fulfilled' ? featuredResultSettled.value : null;
+  const result = propertiesResultSettled.status === 'fulfilled' ? propertiesResultSettled.value : null;
+  const testimonials = testimonialsSettled.status === 'fulfilled' ? testimonialsSettled.value : [];
 
   const featuredProperties = featuredResult?.data ?? [];
-
-  // Fetch regular properties (filtered)
-  const result = await getPublishedPropertiesFiltered({
-    currency: currency,
-    state: state,
-    city: city,
-    typeProperty: typeProperty,
-    operation: operation,
-    page: page ? parseInt(page) : 1,
-  });
-
   const properties = result?.data ?? [];
   const pagination = result?.pagination;
-
-  // Fetch public testimonials (server-side) and show max 4 on home
-  const testimonials = await listPublicTestimonials().catch(() => []);
 
   return (
     <>

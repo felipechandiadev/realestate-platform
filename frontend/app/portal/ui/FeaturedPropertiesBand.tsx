@@ -1,7 +1,10 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import FeaturedPropertyCard, { FeaturedProperty } from './FeaturedPropertyCard';
+
+const CARD_GAP_PX = 20;
+const MIN_DUPLICATES = 2;
 
 interface PropertyFromAPI {
   id: string;
@@ -46,10 +49,57 @@ export default function FeaturedPropertiesBand({ properties, scrollSpeed }: Feat
     () => properties.map(mapToFeaturedProperty),
     [properties]
   );
-  const duplicatesFactor = useMemo(() => {
+  const baseDuplicatesFactor = useMemo(() => {
     if (!featuredProperties.length) return 0;
-    return Math.max(2, Math.ceil(8 / featuredProperties.length));
+    // Si hay 8+ propiedades, duplicar solo 2 veces. Si hay menos, duplicar más para llenar la banda.
+    if (featuredProperties.length >= 8) return 2;
+    return Math.max(MIN_DUPLICATES, Math.ceil(8 / featuredProperties.length));
   }, [featuredProperties.length]);
+  const [duplicatesFactor, setDuplicatesFactor] = useState(baseDuplicatesFactor);
+
+  useEffect(() => {
+    setDuplicatesFactor(baseDuplicatesFactor);
+  }, [baseDuplicatesFactor]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !featuredProperties.length || !baseDuplicatesFactor) return;
+
+    let frameId: number | undefined;
+
+    const recalculateDuplicates = () => {
+      const firstCard = container.querySelector('[data-property-card]') as HTMLElement | null;
+      if (!firstCard) {
+        frameId = requestAnimationFrame(recalculateDuplicates);
+        return;
+      }
+
+      const cardWidth = firstCard.offsetWidth;
+      if (cardWidth <= 0) {
+        return;
+      }
+
+      const uniqueWidth = (cardWidth + CARD_GAP_PX) * featuredProperties.length;
+      if (uniqueWidth <= 0) {
+        return;
+      }
+
+      const requiredByViewport = Math.ceil(container.clientWidth / uniqueWidth) + 1;
+      const nextFactor = Math.max(baseDuplicatesFactor, requiredByViewport, MIN_DUPLICATES);
+
+      setDuplicatesFactor((previous) => (previous === nextFactor ? previous : nextFactor));
+    };
+
+    recalculateDuplicates();
+    window.addEventListener('resize', recalculateDuplicates);
+
+    return () => {
+      if (frameId) {
+        cancelAnimationFrame(frameId);
+      }
+      window.removeEventListener('resize', recalculateDuplicates);
+    };
+  }, [baseDuplicatesFactor, featuredProperties.length]);
 
   const loopedProperties = useMemo(() => {
     if (!featuredProperties.length) {
@@ -68,33 +118,51 @@ export default function FeaturedPropertiesBand({ properties, scrollSpeed }: Feat
     if (!container || !loopedProperties.length || !duplicatesFactor) return;
 
     let animationFrame: number;
-    const speed = scrollSpeed ?? 70.4;
+    const speed = scrollSpeed ?? 68;
     let lastTime: number | null = null;
     let paused = false;
     let pauseTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    const animate = (timestamp: number) => {
-      if (!container) return;
-      if (paused) {
-        animationFrame = requestAnimationFrame(animate);
+    // Esperar a que el DOM esté listo y las cards renderizadas
+    const startAnimation = () => {
+      const firstCard = container.querySelector('[data-property-card]') as HTMLElement;
+      if (!firstCard) {
+        // Si no hay cards aún, reintentar
+        requestAnimationFrame(startAnimation);
         return;
       }
-      const uniqueWidth = container.scrollWidth / duplicatesFactor;
-      if (uniqueWidth <= 0) {
+
+      // Calcular el ancho exacto de una sección (todas las propiedades originales una vez)
+      const cardWidth = firstCard.offsetWidth;
+      const uniqueWidth = (cardWidth + CARD_GAP_PX) * featuredProperties.length;
+
+      const animate = (timestamp: number) => {
+        if (!container) return;
+        
+        if (paused) {
+          animationFrame = requestAnimationFrame(animate);
+          return;
+        }
+
+        if (lastTime === null) {
+          lastTime = timestamp;
+        }
+
+        const delta = timestamp - lastTime;
+        lastTime = timestamp;
+        const advance = (speed * delta) / 1000;
+        
+        // Incrementar scroll
+        container.scrollLeft += advance;
+
+        // Loop infinito perfecto usando módulo
+        if (container.scrollLeft >= uniqueWidth) {
+          container.scrollLeft = container.scrollLeft % uniqueWidth;
+        }
+
         animationFrame = requestAnimationFrame(animate);
-        return;
-      }
-      if (lastTime === null) {
-        lastTime = timestamp;
-      }
-      const delta = timestamp - lastTime;
-      lastTime = timestamp;
-      const advance = (speed * delta) / 1000;
-      container.scrollLeft += advance;
-      if (container.scrollLeft >= uniqueWidth) {
-        container.scrollLeft -= uniqueWidth;
-        lastTime = timestamp;
-      }
+      };
+
       animationFrame = requestAnimationFrame(animate);
     };
 
@@ -104,7 +172,6 @@ export default function FeaturedPropertiesBand({ properties, scrollSpeed }: Feat
       if (pauseTimeout) clearTimeout(pauseTimeout);
       pauseTimeout = setTimeout(() => {
         paused = false;
-        lastTime = null;
       }, 2000);
     };
 
@@ -112,33 +179,39 @@ export default function FeaturedPropertiesBand({ properties, scrollSpeed }: Feat
     container.addEventListener('wheel', pauseAutoScroll, { passive: true });
     container.addEventListener('touchstart', pauseAutoScroll, { passive: true });
 
+    // Iniciar desde 0 y comenzar animación
+
     container.scrollLeft = 0;
-    animationFrame = requestAnimationFrame(animate);
+    startAnimation();
 
     return () => {
-      cancelAnimationFrame(animationFrame);
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
       container.removeEventListener('pointerdown', pauseAutoScroll);
       container.removeEventListener('wheel', pauseAutoScroll);
       container.removeEventListener('touchstart', pauseAutoScroll);
       if (pauseTimeout) clearTimeout(pauseTimeout);
     };
-  }, [duplicatesFactor, loopedProperties.length, scrollSpeed]);
+  }, [duplicatesFactor, featuredProperties.length, scrollSpeed]);
 
   if (!featuredProperties.length) return null;
 
   return (
-    <div className="relative mt-4">
-      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-card to-transparent" aria-hidden />
-      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-card to-transparent" aria-hidden />
+    <div className="relative mt-4 h-[360px] sm:h-[380px] lg:h-[400px]">
+      <div className="pointer-events-none absolute inset-y-0 left-0 w-16 md:w-24 lg:w-32 bg-gradient-to-r from-card to-transparent" aria-hidden />
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-16 md:w-24 lg:w-32 bg-gradient-to-l from-card to-transparent" aria-hidden />
       <div
         ref={containerRef}
-        className="relative flex items-stretch gap-5 overflow-x-auto px-2 pb-4 pt-2 scroll-smooth scrollbar-hide"
+        className="relative h-full flex items-stretch gap-5 overflow-x-auto px-2 pb-4 pt-2 scrollbar-hide"
         style={{ WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         role="list"
         aria-label="Propiedades destacadas"
       >
         {loopedProperties.map((property, index) => (
-          <FeaturedPropertyCard key={`${property.id}-${index}`} property={property} />
+          <div key={`${property.id}-${index}`} data-property-card className="h-full">
+            <FeaturedPropertyCard property={property} />
+          </div>
         ))}
       </div>
     </div>

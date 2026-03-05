@@ -2439,8 +2439,12 @@ export async function getPublishedFeaturedProperties(page = 1): Promise<{ succes
     const payload = await res.json();
     return { success: true, data: payload?.data ?? payload, pagination: payload?.pagination };
   } catch (error) {
-    console.error('[getPublishedFeaturedProperties] Error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    const message = error instanceof Error ? error.message : '';
+    if (message.toLowerCase().includes('fetch failed')) {
+      return { success: false, error: 'Backend unavailable' };
+    }
+    console.warn('[getPublishedFeaturedProperties] Request failed');
+    return { success: false, error: 'Unknown error' };
   }
 }
 

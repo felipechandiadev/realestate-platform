@@ -587,6 +587,69 @@ export async function deleteContract(id: string): Promise<void> {
   }
 }
 
+export async function closeContract(
+  id: string,
+  endDate: string,
+  documents: any[] = []
+): Promise<{ success: boolean; contract?: Contract; error?: string }> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.accessToken) {
+      return { success: false, error: 'No autorizado' };
+    }
+
+    const response = await fetch(`${env.backendApiUrl}/contracts/${id}/close`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ endDate, documents }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.message || 'Error al cerrar contrato' };
+    }
+
+    const contract = await response.json();
+    return { success: true, contract };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Error al cerrar contrato' };
+  }
+}
+
+export async function failContract(
+  id: string,
+  endDate: string
+): Promise<{ success: boolean; contract?: Contract; error?: string }> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.accessToken) {
+      return { success: false, error: 'No autorizado' };
+    }
+
+    const response = await fetch(`${env.backendApiUrl}/contracts/${id}/fail`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ endDate }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      return { success: false, error: error.message || 'Error al marcar contrato como fallido' };
+    }
+
+    const contract = await response.json();
+    return { success: true, contract };
+  } catch (error: any) {
+    return { success: false, error: error.message || 'Error al marcar contrato como fallido' };
+  }
+}
+
 export async function updateContractStatus(id: string, status: ContractStatus): Promise<{ success: boolean; contract?: Contract; error?: string }> {
   try {
     const session = await getServerSession(authOptions);
@@ -594,7 +657,7 @@ export async function updateContractStatus(id: string, status: ContractStatus): 
       return { success: false, error: 'No autorizado' };
     }
 
-    const response = await fetch(`${env.backendApiUrl}/contracts/${id}/status`, {
+    const response = await fetch(`${env.backendApiUrl}/contracts/${id}`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,
@@ -666,6 +729,7 @@ export async function uploadPaymentDocument(
     formData.append('title', data.title);
     formData.append('documentTypeId', data.documentTypeId);
     formData.append('paymentId', paymentId);
+    formData.append('contractId', contractId);
     formData.append('uploadedById', data.uploadedById);
     if (data.notes) {
       formData.append('notes', data.notes);
@@ -674,7 +738,8 @@ export async function uploadPaymentDocument(
       formData.append('personId', data.personId);
     }
 
-    const response = await fetch(`${env.backendApiUrl}/contracts/${contractId}/payments/${paymentId}/documents`, {
+    // Use the correct upload endpoint
+    const response = await fetch(`${env.backendApiUrl}/contracts/upload-document`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,
