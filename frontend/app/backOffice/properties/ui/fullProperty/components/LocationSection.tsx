@@ -173,7 +173,19 @@ const LocationSection: React.FC<LocationSectionProps> = ({
     try {
       setUpdating(true)
       
-      const response = await updatePropertyLocation(propertyId, formData)
+      // Convert IDs back to names before sending to backend
+      const regionName = regions.find(r => r.id.toString() === formData.state?.toString())?.label || formData.state
+      const communeName = communes.find(c => c.id.toString() === formData.city?.toString())?.label || formData.city
+      
+      const dataToSend = {
+        ...formData,
+        state: regionName,
+        city: communeName,
+      }
+      
+      console.log('📍 [LocationSection] Sending data to backend:', dataToSend)
+      
+      const response = await updatePropertyLocation(propertyId, dataToSend)
       
       if (response.success) {
         showAlert({
@@ -278,9 +290,17 @@ const LocationSection: React.FC<LocationSectionProps> = ({
         <div className="mt-6">
           <p className="text-sm font-semibold text-foreground mb-2">Ubicar en mapa</p>
           <LocationPicker
+            mode="update"
             onChange={handleLocationChange}
-            initialLat={formData.latitude || -33.45}  // Santiago por defecto si no hay coordenadas
-            initialLng={formData.longitude || -70.6667} // Santiago por defecto si no hay coordenadas
+            externalPosition={
+              formData.latitude && formData.longitude
+                ? { lat: formData.latitude, lng: formData.longitude }
+                : undefined
+            }
+            initialLat={-33.45}  // Santiago por defecto si no hay coordenadas
+            initialLng={-70.6667} // Santiago por defecto si no hay coordenadas
+            height={50}
+            draggable={true}
           />
         </div>
       </div>
