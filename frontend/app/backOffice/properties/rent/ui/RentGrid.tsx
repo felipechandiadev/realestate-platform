@@ -1,7 +1,6 @@
 'use client';
 import React from 'react';
 import RentMoreButton from './RentMoreButton';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DataGrid, { type DataGridColumn } from '@/shared/components/ui/DataGrid/DataGrid';
 import { env } from '@/lib/env';
@@ -9,7 +8,6 @@ import type { RentPropertyGridRow } from '@/features/backoffice/properties/actio
 import CreateProperty from '../../ui/createProperty/CreateProperty';
 import DeletePropertyButton from '../../ui/DeletePropertyButton';
 import { getStatusInSpanish, getStatusChipClasses } from '@/app/backOffice/properties/utils/statusTranslation';
-import { useAlert } from '@/shared/hooks/useAlert';
 
 type RentGridProps = {
   rows: RentPropertyGridRow[];
@@ -17,18 +15,16 @@ type RentGridProps = {
   title?: string;
 };
 
-function resolveUserDisplayName(user: any): string {
-  if (!user) return '';
-
+// Helper function to resolve user display name
+function resolveUserDisplayName(user?: any): string | null {
+  if (!user) return null;
   const firstName = typeof user.personalInfo?.firstName === 'string' ? user.personalInfo.firstName.trim() : '';
   const lastName = typeof user.personalInfo?.lastName === 'string' ? user.personalInfo.lastName.trim() : '';
   const fullName = `${firstName} ${lastName}`.trim();
-
   if (fullName) return fullName;
-  if (typeof user.username === 'string' && user.username.trim() !== '') return user.username;
-  if (typeof user.email === 'string' && user.email.trim() !== '') return user.email;
-
-  return '';
+  if (typeof user.username === 'string') return user.username;
+  if (typeof user.email === 'string') return user.email;
+  return null;
 }
 
 // Mapea los campos del backend a los esperados por el DataGrid
@@ -45,6 +41,7 @@ function mapRow(row: any) {
     city: row.p_city ?? row.city,
     state: row.p_state ?? row.state,
     price: row.p_price ?? row.price,
+    isFeatured: row.p_isFeatured ?? row.isFeatured ?? false,
     currencyPrice: row.p_currencyPrice ?? row.currencyPrice,
     createdAt: row.p_createdAt ?? row.createdAt,
     // Puedes agregar más campos si los necesitas en el grid
@@ -52,11 +49,10 @@ function mapRow(row: any) {
 }
 
 export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
-  const alert = useAlert();
   const router = useRouter();
 
   const columns: DataGridColumn[] = [
-    { field: 'code', headerName: 'Código', width: 120, sortable: true, filterable: true },
+    { field: 'code', headerName: 'Código', width: 140, sortable: true, filterable: true },
     { field: 'title', headerName: 'Título', flex: 1.6, minWidth: 220, sortable: true, filterable: true },
     { 
       field: 'status', 
@@ -105,6 +101,21 @@ export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
       }
     },
     { field: 'createdAt', headerName: 'Creado', type: 'date', renderType: 'dateString', width: 100, sortable: true, filterable: true },
+    { 
+      field: 'isFeatured',
+      headerName: 'Destacada',
+      width: 120,
+      type: 'boolean',
+      sortable: true,
+      filterable: true,
+      renderCell: ({ value }) => {
+        return value ? (
+          <span className="text-sm px-2 py-1 rounded bg-green-100 text-green-800">Sí</span>
+        ) : (
+          <span className="text-sm px-2 py-1 rounded bg-gray-100 text-gray-600">No</span>
+        );
+      }
+    },
     {
       field: 'actions',
       headerName: '',
@@ -123,8 +134,10 @@ export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
   const excelEndpoint = `${env.backendApiUrl}/properties/grid-rent/excel`;
   const excelFields = [
     'id',
+    'code',
     'title',
     'status',
+    'isFeatured',
     'operationType',
     'typeName',
     'creatorName',
@@ -141,11 +154,11 @@ export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
   return (
     <>
       <DataGrid
-        title={'Propiedades en Arriendo'}
+        title={''}
         columns={columns}
         rows={mappedRows}
         totalRows={totalRows ?? mappedRows.length}
-        height="80vh"
+        height="85vh"
         data-test-id="rent-properties-grid"
         excelUrl={excelEndpoint}
         limit={25}

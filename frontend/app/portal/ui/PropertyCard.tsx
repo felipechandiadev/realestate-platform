@@ -566,7 +566,7 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
         </div>
 
         <div
-          className="property-icons-container justify-center flex items-center gap-3 px-4 py-2 bg-gray-100 shrink-0"
+          className="property-icons-container justify-center flex items-center gap-3 px-4 py-1 md:py-2 bg-gray-100 shrink-0"
           data-test-id="property-card-icons"
         >
           {showBedrooms && (
@@ -611,17 +611,17 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
           )}
         </div>
 
-        <div className="px-6 pt-3 pb-3 text-center flex flex-col flex-1 justify-start gap-1.5">
+        <div className="px-4 md:px-6 pt-2 md:pt-3 pb-2 md:pb-3 text-center flex flex-col flex-1 justify-start gap-1">
           <div className="flex justify-center text-thin text-xs" data-test-id="property-card-type">
             <p>{propertyTypeName}</p>
           </div>
 
           {/* Property Title */}
-          <h2 className="text-lg font-bold text-gray-800 line-clamp-2 leading-tight">
+          <h2 className="text-sm md:text-lg font-bold text-gray-800 line-clamp-2 leading-tight">
             {property.title}
           </h2>
 
-          <h3 className="text-xl font-bold text-gray-800" data-test-id={isUF ? 'property-card-uf' : 'property-card-clp'}>
+          <h3 className="text-base md:text-xl font-bold text-gray-800" data-test-id={isUF ? 'property-card-uf' : 'property-card-clp'}>
             {formatPrice(property.price, property.currencyPrice)}
           </h3>
 
@@ -636,13 +636,13 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
       </div>
 
       {/* Row inferior con botón y corazón */}
-      <div className="flex justify-between items-center px-6 py-2 border-t border-gray-100 mt-auto min-h-[52px]">
+      <div className="flex justify-between items-center px-4 md:px-6 py-1 md:py-2 border-t border-gray-100 mt-auto min-h-[40px] md:min-h-[52px]">
         <Button
           onClick={(e: React.MouseEvent) => {
             e.stopPropagation();
             window.open(`/portal/properties/property/${property.id}`, '_blank');
           }}
-          className="px-3 py-1 text-sm font-medium"
+          className="px-2 md:px-3 py-1 text-xs md:text-sm font-medium"
           variant="primary"
         >
           Ver propiedad

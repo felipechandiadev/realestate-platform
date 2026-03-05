@@ -111,12 +111,12 @@ export const TextField: React.FC<TextFieldProps> = ({
     }
   }, [value, type]);
 
-  // Determinar si el campo está efectivamente deshabilitado
-  const isDisabled = disabled || readOnly;
+  // Determinar si el campo está efectivamente deshabilitado para edición
+  const isEditable = !disabled && !readOnly;
 
-  // Controlador de cambios que respeta el estado disabled
+  // Controlador de cambios que respeta el estado disabled/readonly
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    if (isDisabled) return;
+    if (!isEditable) return;
     // Si es teléfono, filtrar letras si no se permite
     if (type === 'tel' && !allowLetters) {
       let rawValue = e.target.value;
@@ -220,7 +220,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   };
 
   const handleDNIChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isDisabled) return; // No procesar si está disabled
+    if (!isEditable) return; // No procesar si no es editable
     
     const rawValue = e.target.value;
     const formattedValue = formatDNI(rawValue);
@@ -232,7 +232,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   };
 
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isDisabled) return;
+    if (!isEditable) return;
 
     const inputValue = e.target.value ?? '';
     const sanitizedInput = inputValue
@@ -350,9 +350,12 @@ export const TextField: React.FC<TextFieldProps> = ({
   ? "bg-foreground text-background"
   : "bg-background text-foreground";
 
-  // Estilos para estado disabled
-  const disabledStyles = isDisabled
+  // Estilos para estado disabled (fondo gris, opacidad reducida)
+  // Estilos para readonly: sin fondo gris, solo cursor diferente
+  const disabledStyles = disabled
     ? "opacity-50 cursor-not-allowed bg-muted"
+    : readOnly
+    ? "cursor-default"
     : "";
 
   const isTextArea = multiline || type === "textarea" || typeof rows === "number";
@@ -365,7 +368,7 @@ export const TextField: React.FC<TextFieldProps> = ({
       <div className={`relative ${className}`} data-test-id="text-field-root">
       {typeof startIcon === 'string' && startIcon.length > 0 && (
         <span
-          className={`input-icon material-symbols-outlined ${isDisabled ? 'text-muted-foreground opacity-50' : 'text-secondary'}`}
+          className={`input-icon material-symbols-outlined ${disabled ? 'text-muted-foreground opacity-50' : 'text-secondary'}`}
           style={{ fontSize: 20, width: 20, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
 
         >
@@ -374,7 +377,7 @@ export const TextField: React.FC<TextFieldProps> = ({
       )}
       {startIcon === undefined && startAdornment && (
         <span
-          className={`input-icon ${isDisabled ? 'text-muted-foreground opacity-50' : 'text-secondary'}`}
+          className={`input-icon ${disabled ? 'text-muted-foreground opacity-50' : 'text-secondary'}`}
           style={{ fontSize: 14, width: 'auto', minWidth: 16, height: 20, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', paddingRight: 4 }}
         >
           {startAdornment}
@@ -440,15 +443,15 @@ export const TextField: React.FC<TextFieldProps> = ({
           {type === "password" && passwordVisibilityToggle && (
             <button
               type="button"
-              disabled={isDisabled}
-              className={`password-toggle-button inline-flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:bg-primary/10 active:scale-95 ${focused ? "text-primary" : "text-secondary"} ${showPassword ? "bg-primary/10 text-primary" : "bg-transparent"} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              disabled={disabled}
+              className={`password-toggle-button inline-flex h-8 w-8 items-center justify-center rounded-full transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 hover:bg-primary/10 active:scale-95 ${focused ? "text-primary" : "text-secondary"} ${showPassword ? "bg-primary/10 text-primary" : "bg-transparent"} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               style={{ padding: 0 }}
               onMouseDown={(event) => {
-                if (isDisabled) return;
+                if (disabled) return;
                 event.preventDefault();
               }}
               onClick={() => {
-                if (isDisabled) return;
+                if (disabled) return;
                 setShowPassword((prev: boolean) => !prev);
                 inputRef.current?.focus();
               }}

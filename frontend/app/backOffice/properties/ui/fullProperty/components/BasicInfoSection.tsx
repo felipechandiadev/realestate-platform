@@ -302,7 +302,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
             value={creatorUserInfo}
             onChange={() => {}}
             readOnly
-            className="w-full bg-muted/50"
+            className="w-full"
           />
         </div>
       </div>
