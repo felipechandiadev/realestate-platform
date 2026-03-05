@@ -32,6 +32,7 @@ interface PropertiesSalesGridProps {
  */
 export function PropertiesSalesGrid({ properties, total, page, limit }: PropertiesSalesGridProps) {
   const router = useRouter();
+  const [dialogOpen, setDialogOpen] = React.useState(false);
 
   // Map rows for DataGrid
   const rows = useMemo(() => {
@@ -160,23 +161,23 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
 
   return (
     <div className="space-y-6">
-      {/* Create Button + Dialog */}
-      <div>
-        <PropertiesCreateDialog
-          operation="SALE"
-          onSuccess={() => {
-            router.refresh();
-          }}
-        />
-      </div>
-
       {/* DataGrid */}
       <DataGrid
         columns={columns}
         rows={rows}
         totalRows={total}
         limit={limit}
-        onAddClick={() => {}}
+        onAddClick={() => setDialogOpen(true)}
+      />
+
+      {/* Create Dialog - controlled from onAddClick */}
+      <PropertiesCreateDialog
+        operation="SALE"
+        isOpen={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onSuccess={() => {
+          router.refresh();
+        }}
       />
     </div>
   );

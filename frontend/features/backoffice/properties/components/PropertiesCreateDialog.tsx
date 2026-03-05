@@ -17,6 +17,8 @@ import type { CreatePropertyDto, Operation } from '@/features/backoffice/propert
 interface PropertiesCreateDialogProps {
   operation: Operation;
   onSuccess?: () => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 /**
@@ -25,8 +27,18 @@ interface PropertiesCreateDialogProps {
 export function PropertiesCreateDialog({
   operation,
   onSuccess,
+  isOpen: controlledOpen,
+  onOpenChange,
 }: PropertiesCreateDialogProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (controlledOpen !== undefined) {
+      onOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
   const [formData, setFormData] = useState<Partial<CreatePropertyDto>>({
     operation,
   });
@@ -71,13 +83,16 @@ export function PropertiesCreateDialog({
 
   return (
     <>
-      <Button
-        onClick={() => setOpen(true)}
-        variant="primary"
-        disabled={isPending}
-      >
-        + Nueva Propiedad
-      </Button>
+      {/* Only show button if not controlled from parent */}
+      {controlledOpen === undefined && (
+        <Button
+          onClick={() => setOpen(true)}
+          variant="primary"
+          disabled={isPending}
+        >
+          + Nueva Propiedad
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen} title="Crear Propiedad">
         <form onSubmit={handleSubmit} className="space-y-4">
