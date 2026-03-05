@@ -12,10 +12,8 @@ import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DataGrid, { type DataGridColumn } from '@/shared/components/ui/DataGrid/DataGrid';
 import type { SalePropertyGridRow } from '@/features/backoffice/properties/actions/properties.action';
-import {
-  PropertiesCreateDialog,
-  PropertiesDeleteButton,
-} from '@/features/backoffice/properties/components';
+import { PropertiesCreateDialog } from '@/features/backoffice/properties/components/dialogs';
+import { PropertiesDeleteButton } from '@/features/backoffice/properties/components/shared';
 import { getStatusInSpanish, getStatusChipClasses } from '@/features/backoffice/properties/utils';
 import SaleMoreButton from './SaleMoreButton';
 

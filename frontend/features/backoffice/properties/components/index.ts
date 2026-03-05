@@ -4,7 +4,6 @@ export { default as FullPropertyDialog } from './dialogs/fullProperty/FullProper
 
 // Shared components
 export { default as PropertiesDeleteButton } from './shared/PropertiesDeleteButton';
-export { default as PropertyCard } from './shared/PropertyCard';
 
 // Sales components
 export { default as SaleMoreButton } from './sales/SaleMoreButton';
