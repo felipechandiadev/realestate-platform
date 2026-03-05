@@ -130,13 +130,18 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
         style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
       >
         {/* Fondo base */}
-        <div className="absolute inset-0 bg-gradient-to-br from-gray-300 to-gray-500" />
+        <div 
+          className="absolute inset-0"
+          style={{ 
+            background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+          }} 
+        />
         
         {/* Efecto shimmer animado */}
         <div 
           className="absolute inset-0"
           style={{
-            background: 'linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
+            background: 'linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.05), transparent)',
             backgroundSize: '200% 100%',
             animation: 'shimmerSlide 2.5s ease-in-out infinite',
           }}
@@ -150,8 +155,10 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
     return (
       <div 
         ref={sliderRef}
-        className="w-full bg-gradient-to-br from-gray-300 to-gray-500"
-        style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
+        style={{ 
+          height: sliderHeight ? `${sliderHeight}px` : '80vh',
+          background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+        }}
       />
     );
   }
@@ -161,8 +168,11 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
     return (
       <div 
         ref={sliderRef}
-        className="w-full flex items-center justify-center bg-gray-100"
-        style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
+        className="w-full flex items-center justify-center"
+        style={{ 
+          height: sliderHeight ? `${sliderHeight}px` : '80vh',
+          background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+        }}
       >
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-700 mb-2">No hay slides disponibles</h2>
@@ -238,10 +248,13 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
             return (
               <div
                 key={slide.id}
-                className={`absolute inset-0 w-full h-full bg-gradient-to-br from-gray-300 to-gray-500 transition-opacity ${
+                className={`absolute inset-0 w-full h-full transition-opacity ${
                   i === current ? "opacity-100 z-10" : "opacity-0 z-0"
                 }`}
-                style={{ transition: `opacity ${transitionTime}ms linear` }}
+                style={{ 
+                  transition: `opacity ${transitionTime}ms linear`,
+                  background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+                }}
               />
             );
           }

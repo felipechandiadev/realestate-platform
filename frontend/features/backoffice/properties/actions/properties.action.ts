@@ -2376,6 +2376,106 @@ export async function getPropertyHistory(propertyId: string): Promise<{ success:
 }
 
 /**
+ * Resolve display names for history entries by user/person identifiers.
+ * Tries /users/:id first, then /people/:id as fallback.
+ */
+export async function resolveHistoryUserDisplayNames(
+  ids: string[],
+): Promise<{ success: boolean; data?: Record<string, string>; error?: string }> {
+  try {
+    const session = await getServerSession(authOptions);
+    const accessToken = session?.accessToken;
+
+    if (!accessToken) {
+      return { success: false, error: 'No authenticated' };
+    }
+
+    const uniqueIds = Array.from(
+      new Set(
+        ids
+          .filter((id): id is string => typeof id === 'string')
+          .map((id) => id.trim())
+          .filter((id) => id.length > 0 && id !== 'system'),
+      ),
+    );
+
+    if (uniqueIds.length === 0) {
+      return { success: true, data: {} };
+    }
+
+    const headers = {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/json',
+    };
+
+    const resolveUserName = (payload: any): string | null => {
+      const firstName = typeof payload?.personalInfo?.firstName === 'string' ? payload.personalInfo.firstName.trim() : '';
+      const lastName = typeof payload?.personalInfo?.lastName === 'string' ? payload.personalInfo.lastName.trim() : '';
+      const fullName = `${firstName} ${lastName}`.trim();
+      return fullName || payload?.name || payload?.username || payload?.email || null;
+    };
+
+    const resolvePersonName = (payload: any): string | null => {
+      const personName = typeof payload?.name === 'string' ? payload.name.trim() : '';
+      if (personName) return personName;
+      const userName = resolveUserName(payload?.user);
+      if (userName) return userName;
+      return typeof payload?.email === 'string' ? payload.email : null;
+    };
+
+    const entries = await Promise.all(
+      uniqueIds.map(async (id) => {
+        try {
+          const userRes = await fetch(`${env.backendApiUrl}/users/${id}`, {
+            method: 'GET',
+            headers,
+            cache: 'no-store',
+          });
+
+          if (userRes.ok) {
+            const userPayload = await userRes.json().catch(() => null);
+            const displayName = resolveUserName(userPayload);
+            if (displayName) {
+              return [id, displayName] as const;
+            }
+          }
+
+          const personRes = await fetch(`${env.backendApiUrl}/people/${id}`, {
+            method: 'GET',
+            headers,
+            cache: 'no-store',
+          });
+
+          if (personRes.ok) {
+            const personPayload = await personRes.json().catch(() => null);
+            const displayName = resolvePersonName(personPayload);
+            if (displayName) {
+              return [id, displayName] as const;
+            }
+          }
+        } catch {
+          // ignore and continue with next id
+        }
+
+        return [id, ''] as const;
+      }),
+    );
+
+    const data: Record<string, string> = {};
+    for (const [id, name] of entries) {
+      if (name) {
+        data[id] = name;
+      }
+    }
+
+    return { success: true, data };
+  } catch (error) {
+    console.error('[resolveHistoryUserDisplayNames] Error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
  * Toggle favorite for a property (uses backend endpoint)
  */
 export async function togglePropertyFavorite(propertyId: string): Promise<{ success: boolean; isFavorited?: boolean; error?: string }> {

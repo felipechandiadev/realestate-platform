@@ -95,7 +95,7 @@ function Sidebar({ open, onClose, identity, onLoginClick, onRegisterClick, isUse
               className="w-12 h-12 object-contain"
             />
           ) : null}
-          <span className="font-medium text-foreground text-sm">
+          <span className="font-medium text-foreground text-sm uppercase">
             {identity?.name || ""}
           </span>
         </div>

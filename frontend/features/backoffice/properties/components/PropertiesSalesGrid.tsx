@@ -17,7 +17,7 @@ import {
   PropertiesDeleteButton,
 } from '@/features/backoffice/properties/components';
 import { getStatusInSpanish, getStatusChipClasses } from '@/features/backoffice/properties/utils';
-import SaleMoreButton from '@/app/backOffice/properties/sales/ui/SaleMoreButton';
+import SaleMoreButton from './SaleMoreButton';
 
 interface PropertiesSalesGridProps {
   properties: SalePropertyGridRow[];
@@ -150,48 +150,13 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
       sortable: false,
       filterable: false,
       renderCell: ({ row }) => (
-        <div className="flex gap-2">
+        <div className="flex h-full items-center gap-2">
           <SaleMoreButton property={row} />
           <PropertiesDeleteButton propertyId={row.id} onSuccess={() => router.refresh()} />
         </div>
       ),
     },
   ];
-
-  // Handle page change
-  const handlePageChange = (newPage: number) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('page', String(newPage));
-    router.push(url.pathname + url.search);
-  };
-
-  // Handle page size change
-  const handlePageSizeChange = (newPageSize: number) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('limit', String(newPageSize));
-    url.searchParams.set('page', '1'); // Reset to first page
-    router.push(url.pathname + url.search);
-  };
-
-  // Handle sort change
-  const handleSortChange = (field: string, direction: 'asc' | 'desc') => {
-    const url = new URL(window.location.href);
-    url.searchParams.set('sortField', field);
-    url.searchParams.set('sort', direction);
-    router.push(url.pathname + url.search);
-  };
-
-  // Handle search
-  const handleSearch = (query: string) => {
-    const url = new URL(window.location.href);
-    if (query) {
-      url.searchParams.set('search', query);
-    } else {
-      url.searchParams.delete('search');
-    }
-    url.searchParams.set('page', '1'); // Reset to first page
-    router.push(url.pathname + url.search);
-  };
 
   return (
     <div className="space-y-6">
@@ -209,18 +174,8 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
       <DataGrid
         columns={columns}
         rows={rows}
-        pagination={{
-          page,
-          pageSize: limit,
-          rowCount: total,
-          onPaginationModelChange: ({ page: newPage, pageSize: newPageSize }) => {
-            if (newPage !== page) handlePageChange(newPage);
-            if (newPageSize !== limit) handlePageSizeChange(newPageSize);
-          },
-        }}
-        onSortChange={handleSortChange}
-        onSearch={handleSearch}
-        searchPlaceholder="Buscar propiedades..."
+        totalRows={total}
+        limit={limit}
       />
     </div>
   );

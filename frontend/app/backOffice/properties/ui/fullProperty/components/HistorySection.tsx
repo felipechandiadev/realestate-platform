@@ -1,7 +1,10 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { getPropertyHistory } from '@/features/backoffice/properties/actions/properties.action'
+import {
+  getPropertyHistory,
+  resolveHistoryUserDisplayNames,
+} from '@/features/backoffice/properties/actions/properties.action'
 
 interface HistorySectionProps {
   propertyId: string
@@ -11,6 +14,7 @@ interface HistorySectionProps {
 interface ChangeHistoryEntry {
   timestamp: string | Date
   changedBy: string
+  changedById?: string | null
   field: string
   previousValue: any
   newValue: any
@@ -80,6 +84,10 @@ const translateFieldName = (field: string): string => {
   return FIELD_TRANSLATIONS[field] || field;
 };
 
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const looksLikeUuid = (value: string): boolean => UUID_PATTERN.test(value);
+
 const HistorySection: React.FC<HistorySectionProps> = ({
   propertyId,
   title = 'Historial',
@@ -97,7 +105,40 @@ const HistorySection: React.FC<HistorySectionProps> = ({
       setLoading(true)
       const response = await getPropertyHistory(propertyId)
       if (response.success && response.data) {
-        setHistory(response.data)
+        const baseHistory = response.data as ChangeHistoryEntry[]
+
+        const unresolvedIds = Array.from(
+          new Set(
+            baseHistory
+              .map((entry) => {
+                if (entry.changedById && entry.changedById !== 'system') {
+                  return entry.changedById
+                }
+                if (typeof entry.changedBy === 'string' && looksLikeUuid(entry.changedBy)) {
+                  return entry.changedBy
+                }
+                return null
+              })
+              .filter((id): id is string => Boolean(id)),
+          ),
+        )
+
+        if (unresolvedIds.length > 0) {
+          const resolvedUsers = await resolveHistoryUserDisplayNames(unresolvedIds)
+
+          if (resolvedUsers.success && resolvedUsers.data) {
+            const enrichedHistory = baseHistory.map((entry) => {
+              const key = entry.changedById || (looksLikeUuid(entry.changedBy) ? entry.changedBy : undefined)
+              const resolvedName = key ? resolvedUsers.data?.[key] : undefined
+              return resolvedName ? { ...entry, changedBy: resolvedName } : entry
+            })
+            setHistory(enrichedHistory)
+          } else {
+            setHistory(baseHistory)
+          }
+        } else {
+          setHistory(baseHistory)
+        }
       } else {
         setError(response.error || 'Failed to load history')
       }

@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import IconButton from '@/shared/components/ui/IconButton/IconButton';
-import Dialog from '@/shared/components/ui/Dialog/Dialog';
-import FullPropertyDialog from '../../ui/fullProperty/FullPropertyDialog';
+import FullPropertyDialog from '@/app/backOffice/properties/ui/fullProperty/FullPropertyDialog';
 import { useFullPropertyRevalidation } from '@/shared/hooks/useFullPropertyRevalidation';
 
 
@@ -32,23 +31,23 @@ const SaleMoreButton: React.FC<SaleMoreButtonProps> = ({ property }) => {
   }, [property.id, revalidate]);
 
   return (
-    <div className="flex-shrink-0 w-fit">
-      <IconButton
-        icon="more_horiz"
-        variant="text"
-        size="xs"
-        ariaLabel="Ver más detalles"
-        onClick={handleOpen}
-        data-test-id="sale-more-btn"
-      />
-      <FullPropertyDialog 
-        open={isOpen} 
+    <>
+      <div className="flex h-full items-center justify-center flex-shrink-0">
+        <IconButton
+          icon="more_horiz"
+          variant="text"
+          size="xs"
+          ariaLabel="Ver más detalles"
+          onClick={handleOpen}
+          data-test-id="sale-more-btn"
+        />
+      </div>
+      <FullPropertyDialog
+        open={isOpen}
         onClose={handleClose}
         propertyId={property.id}
       />
-    
-     
-    </div>
+    </>
   );
 };
 

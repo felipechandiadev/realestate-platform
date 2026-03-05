@@ -467,27 +467,62 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     const prop = await this.propertyRepository.findOne({ where: { id: propertyId, deletedAt: IsNull() } });
     if (!prop) throw new NotFoundException(`Property with ID ${propertyId} not found`);
     const changeHistory = prop.changeHistory || [];
-    const enriched = await Promise.all(
-      changeHistory.map(async (entry: any) => {
-        let userName = entry.changedBy;
-        if (entry.changedBy) {
-          try {
-            const user = await this.userRepository.findOne({ where: { id: entry.changedBy } });
-            if (user) {
-              if (user.personalInfo?.firstName || user.personalInfo?.lastName) {
-                userName = `${user.personalInfo?.firstName || ''} ${user.personalInfo?.lastName || ''}`.trim();
-              } else if (user.email) {
-                userName = user.email;
-              } else {
-                userName = user.username;
-              }
-            }
-          } catch {}
-        }
-        return { ...entry, changedBy: userName };
-      }),
+
+    const changedByValues = Array.from(
+      new Set(
+        changeHistory
+          .map((entry: any) => (typeof entry?.changedBy === 'string' ? entry.changedBy.trim() : ''))
+          .filter((value) => value && value !== 'system'),
+      ),
     );
-    return enriched;
+
+    const userNameByIdentifier = new Map<string, string>();
+
+    if (changedByValues.length > 0) {
+      const users = await this.userRepository
+        .createQueryBuilder('u')
+        .withDeleted()
+        .where('u.id IN (:...ids)', { ids: changedByValues })
+        .orWhere('u.personId IN (:...ids)', { ids: changedByValues })
+        .getMany();
+
+      for (const user of users) {
+        const fullName = `${user.personalInfo?.firstName || ''} ${user.personalInfo?.lastName || ''}`.trim();
+        const displayName = fullName || user.username || user.email || 'Usuario sin nombre';
+
+        if (user.id) {
+          userNameByIdentifier.set(user.id, displayName);
+        }
+        if (user.personId) {
+          userNameByIdentifier.set(user.personId, displayName);
+        }
+      }
+    }
+
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    return changeHistory.map((entry: any) => {
+      const rawChangedBy = typeof entry?.changedBy === 'string' ? entry.changedBy.trim() : '';
+
+      if (!rawChangedBy) {
+        return { ...entry, changedById: null, changedBy: 'Sistema' };
+      }
+
+      if (rawChangedBy === 'system') {
+        return { ...entry, changedById: 'system', changedBy: 'Sistema' };
+      }
+
+      const mappedName = userNameByIdentifier.get(rawChangedBy);
+      if (mappedName) {
+        return { ...entry, changedById: rawChangedBy, changedBy: mappedName };
+      }
+
+      if (uuidPattern.test(rawChangedBy)) {
+        return { ...entry, changedById: rawChangedBy, changedBy: 'Usuario no disponible' };
+      }
+
+      return { ...entry, changedById: rawChangedBy, changedBy: rawChangedBy };
+    });
   }
 
   async gridByUser(userId: string, query: GridSaleQueryDto & { operationType?: PropertyOperationType }) {

@@ -11,6 +11,7 @@ import React, { useState } from 'react';
 import { Button } from '@/shared/components/ui/Button/Button';
 import Dialog from '@/shared/components/ui/Dialog/Dialog';
 import { useDeleteProperty } from '@/features/backoffice/properties/hooks';
+import IconButton from '@/shared/components/ui/IconButton/IconButton';
 
 interface PropertiesDeleteButtonProps {
   propertyId: string;
@@ -41,14 +42,13 @@ export function PropertiesDeleteButton({
 
   return (
     <>
-      <Button
+      <IconButton
+        icon="delete"
+        variant="basicSecondary"
         onClick={() => setOpen(true)}
-        variant="danger"
-        size="sm"
         disabled={isPending}
-      >
-        Eliminar
-      </Button>
+        aria-label="Eliminar propiedad"
+      />
 
       <Dialog open={open} onOpenChange={setOpen} title="Confirmar eliminación">
         <div className="space-y-4">
