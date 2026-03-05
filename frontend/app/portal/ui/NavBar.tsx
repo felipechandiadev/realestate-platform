@@ -31,11 +31,11 @@ export default function NavBar() {
 
   return (
     <nav className="w-full bg-background" aria-label="Main navigation">
-      <ul className="flex items-center justify-center gap-3 md:gap-6 px-2 md:px-4 py-2 md:py-3">
+      <ul className="flex items-center justify-center gap-2 md:gap-6 px-2 md:px-4 py-1.5 md:py-3">
         {/* --- Home Link --- */}
         <li>
-          <button onClick={() => router.push('/portal')} className="flex items-center gap-1 md:gap-2 text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
-            <span className="material-symbols-sharp text-2xl text-primary" aria-hidden>
+          <button onClick={() => router.push('/portal')} className="flex items-center gap-1 md:gap-2 text-xs md:text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
+            <span className="material-symbols-sharp text-xl md:text-2xl text-primary" aria-hidden>
               home
             </span>
           </button>
@@ -47,10 +47,10 @@ export default function NavBar() {
             onClick={() => toggleMenu('propiedades')}
             aria-haspopup="true"
             aria-expanded={openMenu === 'propiedades'}
-            className="flex items-center gap-1 md:gap-2 cursor-pointer py-2 px-1"
+            className="flex items-center gap-0.5 md:gap-2 cursor-pointer py-1 md:py-2 px-0.5 md:px-1"
           >
-            <span className="text-sm font-medium text-neutral-900 uppercase tracking-wide">Propiedades</span>
-            <span className="material-symbols-outlined text-base text-primary">arrow_drop_down</span>
+            <span className="text-xs md:text-sm font-medium text-neutral-900 uppercase tracking-wide">Propiedades</span>
+            <span className="material-symbols-outlined text-sm md:text-base text-primary">arrow_drop_down</span>
           </button>
           
           {openMenu === 'propiedades' && (
@@ -70,8 +70,8 @@ export default function NavBar() {
             aria-expanded={openMenu === 'nosotros'}
             className="flex items-center gap-1 md:gap-2 cursor-pointer py-2 px-1"
           >
-            <span className="text-sm font-medium text-neutral-900 uppercase tracking-wide">Nosotros</span>
-            <span className="material-symbols-outlined text-base text-primary">arrow_drop_down</span>
+            <span className="text-xs md:text-sm font-medium text-neutral-900 uppercase tracking-wide">Nosotros</span>
+            <span className="material-symbols-outlined text-sm md:text-base text-primary">arrow_drop_down</span>
           </button>
           
           {openMenu === 'nosotros' && (
@@ -97,33 +97,33 @@ export default function NavBar() {
 
         {/* --- Vende tu Propiedad --- */}
         <li>
-          <button onClick={() => handleNavigation('/portal/sell-property')} className="text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
+          <button onClick={() => handleNavigation('/portal/sell-property')} className="text-xs md:text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
             Vende tu Propiedad
           </button>
         </li>
 
         {/* --- Arrienda tu Propiedad --- */}
         <li>
-          <button onClick={() => handleNavigation('/portal/rent-property')} className="text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
+          <button onClick={() => handleNavigation('/portal/rent-property')} className="text-xs md:text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
             Arrienda tu Propiedad
           </button>
         </li>
 
         {/* --- Valoriza tu Propiedad --- */}
         <li className="hidden md:list-item">
-          <button onClick={() => handleNavigation('/portal/valuation')} className="text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
+          <button onClick={() => handleNavigation('/portal/valuation')} className="text-xs md:text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
             Valoriza tu Propiedad
           </button>
         </li>
 
         {/* --- Otros Links --- */}
         <li className="hidden sm:block">
-          <button onClick={() => handleNavigation('/portal/blog')} className="text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
+          <button onClick={() => handleNavigation('/portal/blog')} className="text-xs md:text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
             Blog
           </button>
         </li>
         <li className="hidden sm:list-item">
-          <button onClick={() => setShowContactDialog(true)} className="text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
+          <button onClick={() => setShowContactDialog(true)} className="text-xs md:text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
             Contacto
           </button>
         </li>

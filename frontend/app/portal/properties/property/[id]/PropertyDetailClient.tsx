@@ -375,7 +375,7 @@ export default function PropertyDetailClient({
                   {property.parkingSpaces != null && property.parkingSpaces > 0 && (
                     <div className="flex items-center space-x-1">
                       <span className="material-symbols-rounded text-primary" style={{ fontSize: '20px' }}>
-                        local_parking
+                        parking_sign
                       </span>
                       <span className="text-xs text-foreground">
                         {property.parkingSpaces}

@@ -289,39 +289,9 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
 
   return (
     <div className="w-full max-w-6xl mx-auto">
-      <div className={`p-4 bg-white rounded-lg transition-opacity duration-200 ${isLoading ? 'opacity-70' : 'opacity-100'}`}>
-          {/* Buttons row (icons on small screens) */}
-        <div className="flex items-center justify-between gap-4 mb-3">
-          <div>
-            <IconButton
-              icon="close"
-              variant="text"
-              size="md"
-              ariaLabel="Limpiar filtros"
-              onClick={handleClearFilters}
-              className="p-2"
-            />
-          </div>
-
-          {(!selectedPropertyFeatures || 
-            selectedPropertyFeatures.hasBedrooms || 
-            selectedPropertyFeatures.hasBathrooms || 
-            selectedPropertyFeatures.hasParkingSpaces) && (
-            <div>
-              <IconButton
-                icon="filter_alt"
-                variant="text"
-                size="md"
-                ariaLabel={isExpanded ? 'Cerrar filtros' : 'Más filtros'}
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="p-2"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Main filters grid (2 cols on small screens) */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 items-end flex-1">
+      <div className={`bg-white rounded-lg transition-opacity duration-200 mb-2 ${isLoading ? 'opacity-70' : 'opacity-100'}`}>
+        {/* Main filters + actions in one grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-1 gap-y-1 sm:gap-x-2 sm:gap-y-2 lg:gap-4 items-end mb-3 pt-4 pb-3">
           <div className="w-full">
             <Select
               placeholder="Venta/Arriendo"
@@ -366,20 +336,46 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
               onChange={(value) => handleFilterChange('currency', value)}
             />
           </div>
+
+          {/* Action buttons as grid item */}
+          <div className="flex items-center justify-center gap-2 h-full">
+            <IconButton
+              icon="close"
+              variant="text"
+              size="md"
+              ariaLabel="Limpiar filtros"
+              onClick={handleClearFilters}
+              className="p-2"
+            />
+
+            {(!selectedPropertyFeatures ||
+              selectedPropertyFeatures.hasBedrooms ||
+              selectedPropertyFeatures.hasBathrooms ||
+              selectedPropertyFeatures.hasParkingSpaces) && (
+              <IconButton
+                icon="filter_alt"
+                variant="text"
+                size="md"
+                ariaLabel={isExpanded ? 'Cerrar filtros' : 'Más filtros'}
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="p-2"
+              />
+            )}
+          </div>
         </div>
 
         {/* Expanded filters section - available for all property types */}
         {isExpanded && (
-          <div className="mt-2 pt-2 border-t border-border">
+          <div className="pb-2">
             {/* Filtros de características */}
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
               {/* Dormitorios - only show if property type has bedrooms or no type selected */}
               {(!selectedPropertyFeatures || selectedPropertyFeatures.hasBedrooms) && (
                 <div className="w-full">
-                  <div className="flex gap-1 mb-1">
+                  <div className="flex gap-0.5 mb-1">
                     <button
                       onClick={() => handleFilterChange('bedroomsOperator', 'lte')}
-                      className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                      className={`flex-1 px-0.5 py-0.5 text-[8px] lg:text-xs rounded transition-colors ${
                         filters.bedroomsOperator === 'lte'
                           ? 'bg-primary text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -389,7 +385,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
                     </button>
                     <button
                       onClick={() => handleFilterChange('bedroomsOperator', 'eq')}
-                      className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                      className={`flex-1 px-0.5 py-0.5 text-[8px] lg:text-xs rounded transition-colors ${
                         filters.bedroomsOperator === 'eq'
                           ? 'bg-primary text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -399,7 +395,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
                     </button>
                     <button
                       onClick={() => handleFilterChange('bedroomsOperator', 'gte')}
-                      className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                      className={`flex-1 px-0.5 py-0.5 text-[8px] lg:text-xs rounded transition-colors ${
                         filters.bedroomsOperator === 'gte'
                           ? 'bg-primary text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -422,10 +418,10 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
               {/* Baños - only show if property type has bathrooms or no type selected */}
               {(!selectedPropertyFeatures || selectedPropertyFeatures.hasBathrooms) && (
                 <div className="w-full">
-                  <div className="flex gap-1 mb-1">
+                  <div className="flex gap-0.5 mb-1">
                     <button
                       onClick={() => handleFilterChange('bathroomsOperator', 'lte')}
-                      className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                      className={`flex-1 px-0.5 py-0.5 text-[8px] lg:text-xs rounded transition-colors ${
                         filters.bathroomsOperator === 'lte'
                           ? 'bg-primary text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -435,7 +431,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
                     </button>
                     <button
                       onClick={() => handleFilterChange('bathroomsOperator', 'eq')}
-                      className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                      className={`flex-1 px-0.5 py-0.5 text-[8px] lg:text-xs rounded transition-colors ${
                         filters.bathroomsOperator === 'eq'
                           ? 'bg-primary text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -445,7 +441,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
                     </button>
                     <button
                       onClick={() => handleFilterChange('bathroomsOperator', 'gte')}
-                      className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                      className={`flex-1 px-0.5 py-0.5 text-[8px] lg:text-xs rounded transition-colors ${
                         filters.bathroomsOperator === 'gte'
                           ? 'bg-primary text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -468,10 +464,10 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
               {/* Estacionamientos - only show if property type has parking spaces or no type selected */}
               {(!selectedPropertyFeatures || selectedPropertyFeatures.hasParkingSpaces) && (
                 <div className="w-full">
-                  <div className="flex gap-1 mb-1">
+                  <div className="flex gap-0.5 mb-1">
                     <button
                       onClick={() => handleFilterChange('parkingSpacesOperator', 'lte')}
-                      className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                      className={`flex-1 px-0.5 py-0.5 text-[8px] lg:text-xs rounded transition-colors ${
                         filters.parkingSpacesOperator === 'lte'
                           ? 'bg-primary text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -481,7 +477,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
                     </button>
                     <button
                       onClick={() => handleFilterChange('parkingSpacesOperator', 'eq')}
-                      className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                      className={`flex-1 px-0.5 py-0.5 text-[8px] lg:text-xs rounded transition-colors ${
                         filters.parkingSpacesOperator === 'eq'
                           ? 'bg-primary text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -491,7 +487,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
                     </button>
                     <button
                       onClick={() => handleFilterChange('parkingSpacesOperator', 'gte')}
-                      className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                      className={`flex-1 px-0.5 py-0.5 text-[8px] lg:text-xs rounded transition-colors ${
                         filters.parkingSpacesOperator === 'gte'
                           ? 'bg-primary text-white'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'

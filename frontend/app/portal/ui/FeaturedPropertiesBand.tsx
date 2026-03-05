@@ -118,7 +118,7 @@ export default function FeaturedPropertiesBand({ properties, scrollSpeed }: Feat
     if (!container || !loopedProperties.length || !duplicatesFactor) return;
 
     let animationFrame: number;
-    const speed = scrollSpeed ?? 68;
+    const speed = scrollSpeed ?? 20;
     let lastTime: number | null = null;
     let paused = false;
     let pauseTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -135,11 +135,14 @@ export default function FeaturedPropertiesBand({ properties, scrollSpeed }: Feat
       // Calcular el ancho exacto de una sección (todas las propiedades originales una vez)
       const cardWidth = firstCard.offsetWidth;
       const uniqueWidth = (cardWidth + CARD_GAP_PX) * featuredProperties.length;
+      let preciseScrollLeft = container.scrollLeft;
 
       const animate = (timestamp: number) => {
         if (!container) return;
         
         if (paused) {
+          lastTime = timestamp;
+          preciseScrollLeft = container.scrollLeft;
           animationFrame = requestAnimationFrame(animate);
           return;
         }
@@ -152,13 +155,15 @@ export default function FeaturedPropertiesBand({ properties, scrollSpeed }: Feat
         lastTime = timestamp;
         const advance = (speed * delta) / 1000;
         
-        // Incrementar scroll
-        container.scrollLeft += advance;
+        // Incrementar scroll en subpíxel para evitar redondeo a entero en velocidades bajas
+        preciseScrollLeft += advance;
 
         // Loop infinito perfecto usando módulo
-        if (container.scrollLeft >= uniqueWidth) {
-          container.scrollLeft = container.scrollLeft % uniqueWidth;
+        if (preciseScrollLeft >= uniqueWidth) {
+          preciseScrollLeft = preciseScrollLeft % uniqueWidth;
         }
+
+        container.scrollLeft = preciseScrollLeft;
 
         animationFrame = requestAnimationFrame(animate);
       };
@@ -198,7 +203,7 @@ export default function FeaturedPropertiesBand({ properties, scrollSpeed }: Feat
   if (!featuredProperties.length) return null;
 
   return (
-    <div className="relative mt-4 h-[360px] sm:h-[380px] lg:h-[400px]">
+    <div className="relative mt-4 h-[335px] sm:h-[340px]">
       <div className="pointer-events-none absolute inset-y-0 left-0 w-16 md:w-24 lg:w-32 bg-gradient-to-r from-card to-transparent" aria-hidden />
       <div className="pointer-events-none absolute inset-y-0 right-0 w-16 md:w-24 lg:w-32 bg-gradient-to-l from-card to-transparent" aria-hidden />
       <div

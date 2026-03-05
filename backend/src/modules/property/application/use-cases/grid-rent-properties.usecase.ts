@@ -10,6 +10,30 @@ import { PropertyOperationType } from '../../../../shared/enums/property-operati
 export class GridRentPropertiesUseCase {
   constructor(private readonly propertyRepository: PropertyRepository) {}
 
+  private resolveUserDisplayName(user?: any): string | null {
+    if (!user) return null;
+
+    const firstName =
+      typeof user.personalInfo?.firstName === 'string'
+        ? user.personalInfo.firstName.trim()
+        : '';
+    const lastName =
+      typeof user.personalInfo?.lastName === 'string'
+        ? user.personalInfo.lastName.trim()
+        : '';
+    const fullName = `${firstName} ${lastName}`.trim();
+
+    if (fullName) return fullName;
+    if (typeof user.username === 'string' && user.username.trim() !== '') {
+      return user.username;
+    }
+    if (typeof user.email === 'string' && user.email.trim() !== '') {
+      return user.email;
+    }
+
+    return null;
+  }
+
   async execute(dto: FilterRentPropertiesDto): Promise<{
     data: Property[];
     total: number;
@@ -84,11 +108,27 @@ export class GridRentPropertiesUseCase {
     const total = await query.getCount();
     const data = await query
       .leftJoinAndSelect('property.multimedia', 'multimedia')
+      .leftJoinAndSelect('property.creatorUser', 'creatorUser')
+      .leftJoinAndSelect('property.assignedAgent', 'assignedAgent')
       .skip(skip)
       .take(limit)
       .getMany();
 
+    const enrichedData = data.map((property) => {
+      const row = property as Property & {
+        typeName?: string | null;
+        creatorName?: string | null;
+        assignedAgentName?: string | null;
+      };
+
+      row.typeName = property.propertyType?.name ?? null;
+      row.creatorName = this.resolveUserDisplayName((property as any).creatorUser);
+      row.assignedAgentName = this.resolveUserDisplayName((property as any).assignedAgent);
+
+      return row;
+    });
+
     const totalPages = Math.ceil(total / limit);
-    return { data, total, page, limit, totalPages };
+    return { data: enrichedData, total, page, limit, totalPages };
   }
 }

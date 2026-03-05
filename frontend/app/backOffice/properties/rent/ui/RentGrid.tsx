@@ -17,6 +17,20 @@ type RentGridProps = {
   title?: string;
 };
 
+function resolveUserDisplayName(user: any): string {
+  if (!user) return '';
+
+  const firstName = typeof user.personalInfo?.firstName === 'string' ? user.personalInfo.firstName.trim() : '';
+  const lastName = typeof user.personalInfo?.lastName === 'string' ? user.personalInfo.lastName.trim() : '';
+  const fullName = `${firstName} ${lastName}`.trim();
+
+  if (fullName) return fullName;
+  if (typeof user.username === 'string' && user.username.trim() !== '') return user.username;
+  if (typeof user.email === 'string' && user.email.trim() !== '') return user.email;
+
+  return '';
+}
+
 // Mapea los campos del backend a los esperados por el DataGrid
 function mapRow(row: any) {
   return {
@@ -25,9 +39,9 @@ function mapRow(row: any) {
     title: row.p_title ?? row.title,
     status: row.p_status ?? row.status,
     operationType: row.p_operationType ?? row.operationType,
-    typeName: row.typeName,
-    assignedAgentName: row.assignedAgentName,
-    creatorName: row.creatorName,
+    typeName: row.typeName ?? row.propertyType?.name ?? row.propertyTypeName ?? '',
+    assignedAgentName: row.assignedAgentName ?? resolveUserDisplayName(row.assignedAgent),
+    creatorName: row.creatorName ?? resolveUserDisplayName(row.creatorUser),
     city: row.p_city ?? row.city,
     state: row.p_state ?? row.state,
     price: row.p_price ?? row.price,

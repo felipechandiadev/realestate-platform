@@ -17,14 +17,18 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
     <CookieConsentProvider>
       <div className="min-h-screen flex flex-col relative">
         <CookieConsent />
-        <PortalTopBar
-        // onMenuClick={() => setSidebarOpen(true)} 
-
-        />
         
-        {/* NavBar */}
-        <div className="sticky top-16 bg-background shadow-[0_4px_8px_-4px_rgba(0,0,0,0.12)] z-40">
-          <NavBar />
+        {/* Header sticky (TopBar + NavBar) */}
+        <div className="sticky top-0 z-50">
+          <PortalTopBar
+          // onMenuClick={() => setSidebarOpen(true)} 
+
+          />
+          
+          {/* NavBar */}
+          <div className="bg-background shadow-[0_4px_8px_-4px_rgba(0,0,0,0.12)]">
+            <NavBar />
+          </div>
         </div>
       
         

@@ -351,7 +351,7 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
 
       {/* Main TopBar */}
       <div
-        className="flex items-center h-16 w-full bg-background sm:px-8 box-border sticky top-0 left-0 z-30"
+        className="flex items-center h-12 md:h-16 w-full bg-background sm:px-8 box-border"
         data-test-id="topBar"
       >
         {/* Izquierda: icono imagen y nombre empresa */}

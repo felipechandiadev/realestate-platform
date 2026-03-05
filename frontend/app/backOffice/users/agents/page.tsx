@@ -11,39 +11,46 @@
  * Funcionalidad:
  * - Server component: recibe searchParams (search)
  * - Fetcha listado de agentes desde listAgents action
- * - Renderiza AgentList con datos y búsqueda
- * - Validación de respuesta y manejo de errores
+ * - Renderiza AgentsContent con datos pre-cargados
+ * - Suspense boundary automático con loading.tsx
  * 
  * Audiencia: Administradores, Gerentes de ventas, Directores
  */
 
-import { listAgents } from '@/features/backoffice/users/actions/agents.action'
-import AgentList from './ui/AgentList'
-import type { AgentType, AgentStatus } from './ui/types'
+import { listAgents } from '@/features/backoffice/users/actions/agents.action';
+import { AgentsContent, type AgentType, type AgentStatus } from '@/features/backoffice/users/components/agents';
 
-type AgentsPageSearchParams = {
-  search?: string | string[]
+interface PageProps {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
-export default async function AgentsPage({
-  searchParams,
-}: {
-  searchParams?: Promise<AgentsPageSearchParams>
-}) {
-  const params = searchParams ? await searchParams : undefined
+export default async function AgentsPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const search = typeof params.search === 'string' ? params.search : undefined;
 
-  const search = typeof params?.search === 'string' ? params.search : Array.isArray(params?.search) ? (params?.search[0] || '') : ''
-  const response = await listAgents({ search })
+  const response = await listAgents({ search });
 
   if (!response.success || !response.data) {
-    return <div>Error al cargar la lista de agentes.</div>
+    return (
+      <div className="text-center py-12 text-muted">
+        <span className="material-symbols-outlined text-6xl mb-4 block">
+          error_outline
+        </span>
+        <p className="text-lg font-medium mb-2 text-foreground">
+          Error al cargar la lista de agentes
+        </p>
+        <p className="text-sm">
+          Por favor, intenta recargar la página.
+        </p>
+      </div>
+    );
   }
 
-  const agents = response.data.data.map((agent) => {
-    const validStatuses: AgentStatus[] = ['ACTIVE', 'INACTIVE', 'VACATION', 'LEAVE']
+  const agents: AgentType[] = response.data.data.map((agent) => {
+    const validStatuses: AgentStatus[] = ['ACTIVE', 'INACTIVE', 'VACATION', 'LEAVE'];
     const status: AgentStatus = validStatuses.includes(agent.status as AgentStatus)
       ? (agent.status as AgentStatus)
-      : 'INACTIVE'
+      : 'INACTIVE';
 
     return {
       id: agent.id,
@@ -62,12 +69,8 @@ export default async function AgentsPage({
       updatedAt: agent.updatedAt || new Date().toISOString(),
       deletedAt: agent.deletedAt || null,
       lastLogin: agent.lastLogin || new Date().toISOString(),
-    }
-  })
+    };
+  });
 
-  return (
-    <div className="p-4">
-      <AgentList initialAgents={agents} />
-    </div>
-  )
+  return <AgentsContent initialAgents={agents} initialSearch={search} />;
 }

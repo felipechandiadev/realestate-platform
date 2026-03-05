@@ -102,7 +102,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
       </section>
 
       <div className="relative w-full bg-card">
-        <FeaturedPropertiesBand properties={featuredProperties} />
+        <FeaturedPropertiesBand properties={featuredProperties} scrollSpeed={20} />
       </div>
 
       {/* Regular Portal Properties Section */}

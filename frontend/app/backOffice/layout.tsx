@@ -3,7 +3,7 @@
 import TopBar from '@/shared/components/ui/TopBar/TopBar';
 import React, { useEffect, useState } from 'react';
 import { useSession } from "next-auth/react";
-import {getIdentityLogoUrl} from '@/features/backoffice/cms/actions/identity.action';
+import { getIdentityLogoUrl, getIdentity } from '@/features/backoffice/cms/actions/identity.action';
 import MyAccountDialog from './users/ui/myAccount/MyAccountDialog';
 
 const menuItems = [
@@ -67,19 +67,36 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   // State to store the logo URL
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  
+  // State to store the company name
+  const [companyName, setCompanyName] = useState<string>("");
 
   // State for MyAccount dialog
   const [showMyAccountDialog, setShowMyAccountDialog] = useState(false);
 
-  // Fetch the logo URL on component mount
+  // Fetch the logo URL and company name on component mount
   useEffect(() => {
-    async function fetchLogo() {
-      const url = await getIdentityLogoUrl();
-      setLogoUrl(url);
-
-      console.log("Fetched logo URL:", url);
+    async function fetchIdentityData() {
+      try {
+        // Fetch logo URL
+        const url = await getIdentityLogoUrl();
+        setLogoUrl(url);
+        console.log("Fetched logo URL:", url);
+        
+        // Fetch company name
+        const identity = await getIdentity();
+        if (identity?.name) {
+          setCompanyName(identity.name);
+          console.log("Fetched company name:", identity.name);
+        } else {
+          setCompanyName("");
+        }
+      } catch (error) {
+        console.error("Error fetching identity data:", error);
+        setCompanyName("");
+      }
     }
-    fetchLogo();
+    fetchIdentityData();
   }, []);
 
   // Extrae el nombre de la persona desde la sesión NextAuth
@@ -90,6 +107,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div>
       <TopBar
+        title={companyName}
         menuItems={menuItems}
         userName={userName}
         logoSrc={logoUrl || undefined} // Convert null to undefined

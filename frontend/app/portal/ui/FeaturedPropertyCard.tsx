@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Button } from '@/shared/components/ui/Button/Button';
 
 export interface FeaturedProperty {
   id: string;
@@ -42,7 +41,7 @@ export default function FeaturedPropertyCard({ property }: FeaturedPropertyCardP
     <div className="snap-start w-56 sm:w-64 lg:w-72 flex-shrink-0 h-full">
       <article
         onClick={handleClick}
-        className="group flex h-full flex-col overflow-hidden rounded-[20px] border border-border/70 bg-card shadow-lg shadow-black/10 transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-xl cursor-pointer"
+        className="group flex h-full flex-col overflow-hidden rounded-[20px] border border-border/70 bg-card transition-transform duration-300 ease-out hover:-translate-y-1 cursor-pointer select-none"
       >
         <div className="relative aspect-video w-full overflow-hidden bg-muted">
           {property.mainImageUrl && !imageError ? (
@@ -59,7 +58,7 @@ export default function FeaturedPropertyCard({ property }: FeaturedPropertyCardP
 
           {property.isFeatured && (
             <div
-              className="absolute left-0 top-0 z-10 bg-success text-white font-bold text-[0.6rem] py-[0.2rem] px-6 shadow-md"
+              className="absolute left-0 top-0 z-10 bg-success text-white font-bold text-[0.5rem] py-[0.2rem] px-6 shadow-md"
               style={{
                 transformOrigin: '0% 0%',
                 transform: 'translate(-20%, 270%) rotate(-45deg)',
@@ -98,20 +97,20 @@ export default function FeaturedPropertyCard({ property }: FeaturedPropertyCardP
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 {property.bedrooms ? (
                   <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-base text-primary">bed</span>
+                    <span className="material-symbols-rounded text-primary" style={{ fontSize: '20px' }}>bed</span>
                     <span>{property.bedrooms}</span>
                   </div>
                 ) : null}
                 {property.bathrooms ? (
                   <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-base text-primary">bathtub</span>
+                    <span className="material-symbols-rounded text-primary" style={{ fontSize: '20px' }}>bathtub</span>
                     <span>{property.bathrooms}</span>
                   </div>
                 ) : null}
                 {property.builtSquareMeters ? (
                   <div className="flex items-center gap-1">
-                    <span className="material-symbols-outlined text-base text-primary">straighten</span>
-                    <span>{property.builtSquareMeters}m²</span>
+                    <span className="material-symbols-rounded text-primary" style={{ fontSize: '20px' }}>home</span>
+                    <span>{Math.round(property.builtSquareMeters)} m²</span>
                   </div>
                 ) : null}
               </div>
@@ -125,18 +124,6 @@ export default function FeaturedPropertyCard({ property }: FeaturedPropertyCardP
             </div>
           </div>
 
-        <div className="px-3 py-2 border-t border-border/50">
-          <Button
-            variant="primary"
-            className="w-full text-[10px] py-1"
-            onClick={(e) => {
-              e.stopPropagation();
-              window.open(`/portal/properties/property/${property.id}`, '_blank');
-            }}
-          >
-            Ver propiedad
-          </Button>
-        </div>
       </article>
     </div>
   );

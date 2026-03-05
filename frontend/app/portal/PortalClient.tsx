@@ -148,7 +148,7 @@ export default function PortalClient({ initialProperties, initialPagination }: P
   }, [currentFilters, loadProperties]);
 
   return (
-    <>
+    <div>
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-6 pb-6 text-center">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-primary mb-2 tracking-tight">
           {(identity?.name || 'Plataforma Inmobiliaria').toUpperCase()}
@@ -159,7 +159,7 @@ export default function PortalClient({ initialProperties, initialPagination }: P
       </div>
 
       {/* Sticky filter section - positioned below NavBar */}
-      <div className="sticky top-[112px] z-30 bg-background">
+      <div className="sticky top-20 md:top-28 z-30 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <PropertyFilter initialFilters={currentFilters} onFiltersChange={handleFiltersChange} isLoading={isLoading} />
         </div>
@@ -179,6 +179,6 @@ export default function PortalClient({ initialProperties, initialPagination }: P
           <p className="text-gray-500 text-lg">No se encontraron propiedades con los filtros seleccionados.</p>
         </div>
       )}
-    </>
+    </div>
   );
 }

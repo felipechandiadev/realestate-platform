@@ -151,7 +151,7 @@ export const NumberStepper: React.FC<NumberStepperProps> = ({
   `;
 
   const labelClasses = hideInput
-    ? 'text-sm font-medium text-gray-700 leading-tight'
+    ? 'text-[8px] lg:text-xs font-medium text-gray-700 leading-none'
     : `text-[10px] font-medium text-gray-700 leading-tight
     ${required ? "after:content-['*'] after:text-red-500 after:ml-1" : ""}`;
 
@@ -179,7 +179,7 @@ export const NumberStepper: React.FC<NumberStepperProps> = ({
     ) : null;
 
     const labelElement = label ? (
-      <label className={`${labelClasses} ${icon && iconPosition === 'beside' ? 'ml-1' : ''}`}>
+      <label className={`${labelClasses} ${icon && iconPosition === 'beside' ? 'ml-1' : ''} line-clamp-1 lg:line-clamp-none inline-block max-w-full`}>
         {label}
       </label>
     ) : null;
@@ -191,7 +191,7 @@ export const NumberStepper: React.FC<NumberStepperProps> = ({
 
     // Solo label (compatibilidad con versión anterior)
     if (label && !icon) {
-      return <div className="-mt-0.5 mb-0">{labelElement}</div>;
+      return <div className="-mt-0.5 mb-0 max-w-[80px] lg:max-w-none">{labelElement}</div>;
     }
 
     // Icono + label

@@ -88,11 +88,34 @@ export class GridSalePropertiesUseCase {
     const total = await query.getCount();
     const data = await query
       .leftJoinAndSelect('property.multimedia', 'multimedia')
+      .leftJoinAndSelect('property.creatorUser', 'creatorUser')
+      .leftJoinAndSelect('property.assignedAgent', 'assignedAgent')
       .skip(skip)
       .take(limit)
       .getMany();
 
     const totalPages = Math.ceil(total / limit);
-    return { data, total, page, limit, totalPages };
+    
+    // Enrich data with resolved display names
+    const enrichedData = data.map((property) => {
+      const row = property as any;
+      row.typeName = property.propertyType?.name ?? null;
+      row.creatorName = this.resolveUserDisplayName(property.creatorUser);
+      row.assignedAgentName = this.resolveUserDisplayName(property.assignedAgent);
+      return row;
+    });
+    
+    return { data: enrichedData, total, page, limit, totalPages };
+  }
+
+  private resolveUserDisplayName(user?: any): string | null {
+    if (!user) return null;
+    const firstName = typeof user.personalInfo?.firstName === 'string' ? user.personalInfo.firstName.trim() : '';
+    const lastName = typeof user.personalInfo?.lastName === 'string' ? user.personalInfo.lastName.trim() : '';
+    const fullName = `${firstName} ${lastName}`.trim();
+    if (fullName) return fullName;
+    if (typeof user.username === 'string') return user.username;
+    if (typeof user.email === 'string') return user.email;
+    return null;
   }
 }
