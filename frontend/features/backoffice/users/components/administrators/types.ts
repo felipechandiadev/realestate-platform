@@ -13,8 +13,11 @@ export interface AdministratorType  {
     personalInfo: {
         phone?: string;
         lastName?: string;
-        avatarUrl?: string | null;
         firstName?: string;
+        company?: string;
+        nationality?: string;
+        maritalStatus?: string;
+        avatarUrl?: string | null;
     };
     createdAt: string;
     updatedAt: string;

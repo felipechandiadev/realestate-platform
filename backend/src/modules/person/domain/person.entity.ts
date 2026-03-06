@@ -9,6 +9,12 @@ export class Person {
   phone?: string;
   email?: string;
   userId?: string;
+  // additional personal info
+  maritalStatus?: string;
+  gender?: string;
+  nationality?: string;
+  profession?: string;
+  company?: string;
   // fields for DNI cards (optional)
   dniCardFrontId?: string;
   dniCardRearId?: string;

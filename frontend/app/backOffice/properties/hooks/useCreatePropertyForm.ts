@@ -9,16 +9,23 @@ import { CreatePropertyFormData, PropertyTypeOption, LocationOption } from '../u
 
 interface UseCreatePropertyFormProps {
   onClose?: () => void;
+  operationType?: 'SALE' | 'RENT';
 }
 
-export const useCreatePropertyForm = (onCloseCallback?: () => void) => {
+export const useCreatePropertyForm = (
+  onCloseCallback?: () => void,
+  operationType: 'SALE' | 'RENT' = 'SALE',
+  onSuccessCallback?: () => void
+) => {
   const onClose = onCloseCallback || (() => {});
+  const onSuccess = onSuccessCallback || (() => {});
+  // Estado de datos del formulario
   // Estado de datos del formulario
   const [formData, setFormData] = useState<CreatePropertyFormData>({
     title: '',
     description: '',
     price: '',
-    operationType: 'SALE',
+    operationType: operationType,
     location: undefined,
     state: { id: '', label: '' },
     city: { id: '', label: '' },
@@ -272,10 +279,13 @@ export const useCreatePropertyForm = (onCloseCallback?: () => void) => {
       const result = await createProperty({ data: dataToSend, multimediaFiles: formData.multimedia });
 
       if (result.success) {
-        console.log('Property created successfully:', result.data);
-        onClose();
+        console.log('✅ Property created successfully:', result.data);
+        // Call success callback (includes router.refresh())
+        onSuccess();
+        // Don't close here - let the component handle it
       } else {
         setSubmitError(result.error || 'Error desconocido al crear la propiedad');
+        setIsSubmitting(false);
       }
     } catch (error) {
       console.error('Error submitting property:', error);
@@ -318,5 +328,6 @@ export const useCreatePropertyForm = (onCloseCallback?: () => void) => {
     selectedPropertyType,
     isSubmitting,
     submitError,
+    onSuccess,
   };
 };

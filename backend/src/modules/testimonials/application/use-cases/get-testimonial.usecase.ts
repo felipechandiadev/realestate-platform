@@ -8,7 +8,13 @@ export class GetTestimonialUseCase {
   constructor(private readonly repo: TestimonialRepository) {}
 
   async execute(id: string): Promise<Testimonial> {
-    const item = await this.repo.findOne({ where: { id, deletedAt: IsNull() } });
+    const item = await this.repo
+      .createQueryBuilder('testimonial')
+      .where('testimonial.id = :id', { id })
+      .andWhere('testimonial.deletedAt IS NULL')
+      .leftJoinAndSelect('testimonial.multimedia', 'multimedia')
+      .leftJoinAndSelect('multimedia.variants', 'variants')
+      .getOne();
     if (!item) throw new NotFoundException('Testimonio no encontrado.');
     return item;
   }

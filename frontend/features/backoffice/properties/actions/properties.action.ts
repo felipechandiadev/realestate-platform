@@ -3,7 +3,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { env } from '@/lib/env';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { refreshAccessToken, logoutAction } from '@/features/shared/auth/actions/auth.action';
 import { cookies } from 'next/headers';
@@ -1037,8 +1037,10 @@ export async function createProperty(data: CreatePropertyPayload): Promise<{
 
     const result = await response.json();
     
-    // Revalidate the sales properties path
-    revalidatePath('http://localhost:3001/backOffice/properties/sales');
+    // Revalidate both sales and rent property paths
+    revalidatePath('/backOffice/properties/sales');
+    revalidatePath('/backOffice/properties/rent');
+    revalidateTag('properties-grid');
     
     return { success: true, data: result };
   } catch (error) {
@@ -2530,7 +2532,28 @@ export async function getPublishedFeaturedProperties(page = 1): Promise<{ succes
     }
 
     const payload = await res.json();
-    return { success: true, data: payload?.data ?? payload, pagination: payload?.pagination };
+    const ensureAbsoluteUrl = (url?: string | null): string | null => {
+      if (!url) return null;
+      if (url.startsWith('http://') || url.startsWith('https://')) return url;
+      if (url.startsWith('/')) return `${env.backendApiUrl}${url}`;
+      return url;
+    };
+
+    const rawData = payload?.data ?? payload ?? [];
+    const normalizedData = (Array.isArray(rawData) ? rawData : []).map((property: any) => ({
+      ...property,
+      mainImageUrl: ensureAbsoluteUrl(property?.mainImageUrl),
+      multimedia: (property?.multimedia || []).map((m: any) => ({
+        ...m,
+        url: ensureAbsoluteUrl(m?.url),
+        variants: (m?.variants || []).map((v: any) => ({
+          ...v,
+          url: ensureAbsoluteUrl(v?.url),
+        })),
+      })),
+    }));
+
+    return { success: true, data: normalizedData, pagination: payload?.pagination };
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     if (message.toLowerCase().includes('fetch failed')) {

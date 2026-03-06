@@ -103,6 +103,15 @@ export type BackendAdministrator = {
 		lastName?: string | null;
 		phone?: string | null;
 		avatarUrl?: string | null;
+		address?: string | null;
+		city?: string | null;
+		state?: string | null;
+		country?: string | null;
+		profession?: string | null;
+		company?: string | null;
+		nationality?: string | null;
+		gender?: string | null;
+		maritalStatus?: string | null;
 	} | null;
 };
 
@@ -290,6 +299,15 @@ export interface UpdateUserDto {
 		lastName?: string;
 		phone?: string;
 		avatarUrl?: string;
+		address?: string;
+		city?: string;
+		state?: string;
+		country?: string;
+		profession?: string;
+		company?: string;
+		nationality?: string;
+		gender?: string;
+		maritalStatus?: string;
 	};
 }
 

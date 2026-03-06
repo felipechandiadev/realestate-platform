@@ -2,17 +2,38 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import Card from '@/shared/components/ui/Card/Card';
 import { Button } from '@/shared/components/ui/Button/Button';
+import LazyImage from '@/shared/components/ui/LazyImage';
+
+interface PropertyVariant {
+  id?: string;
+  variantType: string;
+  format: 'webp' | 'jpeg' | 'png';
+  width: number;
+  height: number;
+  size: number;
+  url: string;
+}
+
+interface PropertyMultimediaItem {
+  id: string;
+  url: string;
+  filename?: string;
+  type?: string;
+  format?: string;
+  variants?: PropertyVariant[];
+}
 
 interface PropertyForSale {
   id: string;
   title: string;
   description?: string;
   price: number;
+  mainImageUrl?: string;
   thumbnail?: string;
   images?: string[];
+  multimedia?: PropertyMultimediaItem[];
   location?: {
     address?: string;
     city?: string;
@@ -65,6 +86,25 @@ export default function PropertiesForSaleGrid({
 }: PropertiesForSaleGridProps) {
   const totalPages = Math.ceil(total / pageSize);
 
+  const buildImageMultimedia = (property: PropertyForSale) => {
+    const selectedMultimedia =
+      property.multimedia?.find((item) => item.type === 'PROPERTY_IMG') ||
+      property.multimedia?.find((item) => item.format === 'IMG') ||
+      property.multimedia?.[0];
+
+    return {
+      id: selectedMultimedia?.id || property.id,
+      url:
+        selectedMultimedia?.url ||
+        property.mainImageUrl ||
+        property.thumbnail ||
+        property.images?.[0] ||
+        '/placeholder-property.jpg',
+      filename: selectedMultimedia?.filename || 'property-image.jpg',
+      variants: selectedMultimedia?.variants || [],
+    };
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -103,12 +143,14 @@ export default function PropertiesForSaleGrid({
           >
             <Card className="h-full overflow-hidden">
               <div className="relative h-48 w-full">
-                <Image
-                  src={property.thumbnail || property.images?.[0] || '/placeholder-property.jpg'}
+                <LazyImage
+                  multimedia={buildImageMultimedia(property)}
+                  variantType="thumbnail-md"
                   alt={property.title}
-                  fill
-                  className="object-cover"
+                  className="w-full h-48 object-cover"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  containerClassName="relative w-full h-48"
+                  maintainAspectRatio={false}
                 />
                 <div className="absolute top-2 right-2 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
                   Venta

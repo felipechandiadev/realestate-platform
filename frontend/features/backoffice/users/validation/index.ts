@@ -83,6 +83,8 @@ export const UpdateUserSchema = z.object({
   avatar: z.string().url().optional(),
   bio: z.string().max(500).optional(),
   company: z.string().max(100).optional(),
+  nationality: z.string().max(50).optional(),
+  maritalStatus: z.string().max(50).optional(),
   location: z.string().max(100).optional(),
   licenseNumber: z.string().max(50).optional(),
 });

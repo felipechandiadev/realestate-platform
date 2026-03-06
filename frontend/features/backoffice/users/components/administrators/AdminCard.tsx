@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { AdministratorType, AdministratorStatus } from './types';
 import IconButton from '@/shared/components/ui/IconButton/IconButton';
+import LazyImage from '@/shared/components/ui/LazyImage';
 import UploadUserAvatarDialog from '@/app/backOffice/users/ui/UploadUserAvatarDialog';
 import { env } from '@/lib/env';
 
@@ -41,15 +42,20 @@ const AdminCard: React.FC<AdminCardProps> = ({ admin, onEdit, onDelete }) => {
             <div className="relative flex-shrink-0 mx-auto">
               <div className="h-24 w-24 rounded-full bg-neutral-100 border-4 border-secondary flex items-center justify-center overflow-hidden">
                 {admin.personalInfo?.avatarUrl ? (
-                  // eslint-disable-next-line @next/next/next/no-img-element
-                  <img 
-                    src={
-                      admin.personalInfo.avatarUrl.startsWith('http') 
+                  <LazyImage
+                    multimedia={{
+                      id: admin.id,
+                      url: admin.personalInfo.avatarUrl.startsWith('http') 
                         ? admin.personalInfo.avatarUrl 
-                        : `${env.backendApiUrl}${admin.personalInfo.avatarUrl}`
-                    } 
-                    alt={`Avatar ${fullName}`} 
-                    className="h-full w-full object-cover" 
+                        : `${env.backendApiUrl}${admin.personalInfo.avatarUrl}`,
+                      filename: 'avatar.jpg',
+                      variants: []
+                    }}
+                    variantType="avatar-md"
+                    alt={`Avatar ${fullName}`}
+                    sizes="96px"
+                    className="h-full w-full object-cover"
+                    maintainAspectRatio={true}
                   />
                 ) : (
                   <span className="material-symbols-outlined text-secondary" style={{ fontSize: '4rem' }}>person</span>

@@ -28,6 +28,21 @@ export class PersonOrmEntity {
   @Column({ type: 'varchar', nullable: true })
   email?: string;
 
+  @Column({ type: 'varchar', nullable: true })
+  maritalStatus?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  gender?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  nationality?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  profession?: string;
+
+  @Column({ type: 'varchar', nullable: true })
+  company?: string;
+
   @Column({ type: 'uuid', nullable: true })
   userId: string | null;
 

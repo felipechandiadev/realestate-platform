@@ -8,6 +8,8 @@ export class FindAllArticlesUseCase {
 
   async execute(search?: string, category?: string): Promise<Article[]> {
     const query = this.repo.createQueryBuilder('article')
+      .leftJoinAndSelect('article.multimedia', 'multimedia')
+      .leftJoinAndSelect('multimedia.variants', 'variants')
       .where('article.deletedAt IS NULL')
       .andWhere('article.isActive = :isActive', { isActive: true })
       .orderBy('article.createdAt', 'DESC');

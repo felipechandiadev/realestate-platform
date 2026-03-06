@@ -113,6 +113,7 @@ export class GetPublishedPropertiesFilteredUseCase {
       const total = await query.getCount();
       let data = await query
         .leftJoinAndSelect('property.multimedia', 'multimedia')
+        .leftJoinAndSelect('multimedia.variants', 'variants')
         .orderBy('property.createdAt', 'DESC')
         .skip(skip)
         .take(limit)

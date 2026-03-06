@@ -2,9 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import Card from '@/shared/components/ui/Card/Card';
 import { Button } from '@/shared/components/ui/Button/Button';
+import LazyImage from '@/shared/components/ui/LazyImage';
 import type { Property } from '@/features/portal/properties/types';
 
 interface PropertiesGridProps {
@@ -46,6 +46,34 @@ export default function PropertiesGrid({
 }: PropertiesGridProps) {
   const totalPages = Math.ceil(total / pageSize);
 
+  const buildImageMultimedia = (property: Property) => {
+    const mediaAwareProperty = property as Property & {
+      multimedia?: any;
+      mainImageUrl?: string;
+      thumbnail?: string;
+      images?: string[];
+    };
+
+    const rawMultimedia = mediaAwareProperty.multimedia;
+    const selectedMultimedia = Array.isArray(rawMultimedia)
+      ? rawMultimedia.find((item: any) => item?.type === 'PROPERTY_IMG') ||
+        rawMultimedia.find((item: any) => item?.format === 'IMG') ||
+        rawMultimedia[0]
+      : rawMultimedia;
+
+    return {
+      id: selectedMultimedia?.id || property.id,
+      url:
+        selectedMultimedia?.url ||
+        mediaAwareProperty.mainImageUrl ||
+        mediaAwareProperty.thumbnail ||
+        mediaAwareProperty.images?.[0] ||
+        '/placeholder-property.jpg',
+      filename: selectedMultimedia?.filename || 'property-image.jpg',
+      variants: selectedMultimedia?.variants || [],
+    };
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -83,13 +111,15 @@ export default function PropertiesGrid({
             className="block transition-transform hover:scale-105"
           >
             <Card className="h-full overflow-hidden">
-              <div className="relative h-48 w-full">
-                <Image
-                  src={property.thumbnail || property.images?.[0] || '/placeholder-property.jpg'}
+              <div className="relative w-full bg-neutral">
+                <LazyImage
+                  multimedia={buildImageMultimedia(property)}
+                  variantType="thumbnail-md"
                   alt={property.title}
-                  fill
-                  className="object-cover"
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="w-full h-48 object-cover"
+                  containerClassName="relative w-full"
+                  maintainAspectRatio={false}
                 />
               </div>
               <div className="p-4">

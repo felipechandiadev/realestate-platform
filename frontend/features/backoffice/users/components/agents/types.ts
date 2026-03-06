@@ -4,6 +4,9 @@ export interface PersonalInfo {
   firstName?: string | null
   lastName?: string | null
   phone?: string | null
+  company?: string | null
+  nationality?: string | null
+  maritalStatus?: string | null
   avatarUrl?: string | null
 }
 

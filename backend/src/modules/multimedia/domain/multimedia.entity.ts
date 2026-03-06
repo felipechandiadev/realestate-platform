@@ -7,8 +7,10 @@ import {
   DeleteDateColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Property } from '../../property/domain/property.entity';
+import { MultimediaVariant } from '../../media-optimization/domain/multimedia-variant.entity';
 
 export enum MultimediaFormat {
   IMG = 'IMG',
@@ -58,6 +60,26 @@ export class Multimedia {
 
   @Column('int')
   fileSize: number;
+
+  @Column({ type: 'int', nullable: true })
+  originalSize?: number;
+
+  @Column({ type: 'int', nullable: true })
+  compressedSize?: number;
+
+  @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
+  compressionRatio?: number;
+
+  @Column({ type: 'int', nullable: true })
+  width?: number;
+
+  @Column({ type: 'int', nullable: true })
+  height?: number;
+
+  @OneToMany(() => MultimediaVariant, (variant) => variant.multimedia, {
+    cascade: true,
+  })
+  variants?: MultimediaVariant[];
 
   @Column({ nullable: true })
   description?: string;

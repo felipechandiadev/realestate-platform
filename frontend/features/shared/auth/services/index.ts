@@ -13,8 +13,18 @@ const BASE_URL = "/auth";
 
 export const authService = {
   async login(credentials: LoginCredentials) {
-    const response = await apiClient.post<AuthSession>(`${BASE_URL}/login`, credentials);
-    return response.data;
+    try {
+      const response = await apiClient.post<AuthSession>(`${BASE_URL}/login`, credentials);
+      return response.data;
+    } catch (error: any) {
+      // Si el error es un string, intenta parsear JSON
+      let message = error?.message;
+      try {
+        const parsed = JSON.parse(message);
+        message = parsed?.message || message;
+      } catch {}
+      throw { message };
+    }
   },
 
   async register(data: RegisterInput) {

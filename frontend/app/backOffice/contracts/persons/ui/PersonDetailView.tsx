@@ -6,6 +6,7 @@ import { Button } from '@/shared/components/ui/Button/Button';
 import { useAlert } from '@/providers/AlertContext';
 import Dialog from '@/shared/components/ui/Dialog/Dialog';
 import DotProgress from '@/shared/components/ui/DotProgress/DotProgress';
+import EditPersonForm from './EditPersonForm';
 
 interface PersonDetailViewProps {
   person: Person;
@@ -225,7 +226,7 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
             {person.name || 'Sin nombre'}
@@ -245,36 +246,24 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
         </Button>
       </div>
 
-      {/* Información Personal */}
+      {/* Información Personal (editable) */}
       <div className="bg-card rounded-lg border border-border p-6">
         <h2 className="text-lg font-semibold text-foreground mb-4">Información Personal</h2>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-muted-foreground">DNI</p>
-            <p className="font-medium">{person.dni || 'No registrado'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Teléfono</p>
-            <p className="font-medium">{person.phone || 'No registrado'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Dirección</p>
-            <p className="font-medium">{person.address || 'No registrada'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Ciudad</p>
-            <p className="font-medium">{person.city || 'No registrada'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Estado/Provincia</p>
-            <p className="font-medium">{person.state || 'No registrado'}</p>
-          </div>
-          <div>
-            <p className="text-sm text-muted-foreground">Fecha de Registro</p>
-            <p className="font-medium">
-              {new Date(person.createdAt).toLocaleDateString('es-CL')}
-            </p>
-          </div>
+        <EditPersonForm
+          person={person}
+          onClose={() => {
+            // Reset form to current values
+            router.refresh();
+          }}
+          onSuccess={() => {
+            router.refresh();
+          }}
+        />
+        <div className="mt-6">
+          <p className="text-sm text-muted-foreground">Fecha de Registro</p>
+          <p className="font-medium">
+            {new Date(person.createdAt).toLocaleDateString('es-CL')}
+          </p>
         </div>
       </div>
 
@@ -492,6 +481,7 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
           </p>
         </Dialog>
       )}
+
     </div>
   );
 }

@@ -11,6 +11,7 @@ export class FindOnePropertyUseCase {
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.assignedAgent', 'agent')
       .leftJoinAndSelect('property.multimedia', 'multimedia')
+      .leftJoinAndSelect('multimedia.variants', 'variants')
       .leftJoinAndSelect('property.propertyType', 'propertyType')
       .where('property.id = :id', { id })
       .getOne();

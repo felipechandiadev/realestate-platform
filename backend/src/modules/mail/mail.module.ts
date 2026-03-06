@@ -27,36 +27,61 @@ if (isTest) {
   process.env.MAIL_USER = 'felipe.chandia.dev@gmail.com';
   process.env.MAIL_FROM = 'felipe.chandia.dev@gmail.com';
 }
-const mailerOptions: any = isTest
-  ? {
-      transport: { jsonTransport: true },
-      defaults: {
-        from: `"Real Estate Platform" <${process.env.MAIL_FROM || 'noreply@example.com'}>`,
-      },
-    }
-  : {
-      transport: {
-        host: process.env.MAIL_HOST || 'smtp.gmail.com',
-        port: +(process.env.MAIL_PORT || '587'),
-        secure: false,
-        auth: {
-          user: process.env.MAIL_USER,
-          pass: process.env.MAIL_PASS,
-        },
-      },
-      defaults: {
-        from: `"Real Estate Platform" <${process.env.MAIL_FROM || 'noreply@example.com'}>`,
-      },
-      template: {
-        dir: join(__dirname, '..', '..', '..', 'src', 'modules', 'mail', 'templates'),
-        // require the adapter only when not running tests
-        adapter: new (require('@nestjs-modules/mailer/dist/adapters/handlebars.adapter').HandlebarsAdapter)(),
-        options: { strict: true },
-      },
-    };
 
 @Module({
-  imports: [ConfigModule, MailerModule.forRoot(mailerOptions)],
+  imports: [ConfigModule, MailerModule.forRootAsync({
+    imports: [ConfigModule],
+    inject: [ConfigService],
+    useFactory: async (configService: ConfigService) => {
+      const isTest = process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID;
+
+      const mailHost = configService.get<string>('MAIL_HOST') || 'smtp.gmail.com';
+      const mailPort = Number(configService.get<string>('MAIL_PORT')) || 587;
+      const mailUser = configService.get<string>('MAIL_USER');
+      const mailPass = configService.get<string>('MAIL_PASS');
+      const mailFrom = configService.get<string>('MAIL_FROM') || 'noreply@example.com';
+
+      console.log('🔧 MAIL CONFIGURATION (from ConfigService):');
+      console.log('  MAIL_HOST:', mailHost);
+      console.log('  MAIL_PORT:', mailPort);
+      console.log('  MAIL_USER:', mailUser ? '***' + mailUser.slice(-10) : 'undefined');
+      console.log('  MAIL_PASS:', mailPass ? '***' + mailPass.slice(-4) : 'undefined');
+      console.log('  MAIL_FROM:', mailFrom);
+
+      if (!isTest && (!mailUser || !mailPass)) {
+        console.error('❌ ERROR: MAIL_USER or MAIL_PASS is not defined!');
+      }
+
+      const mailerOptions: any = isTest
+        ? {
+            transport: { jsonTransport: true },
+            defaults: {
+              from: `"EstateFlow" <${mailFrom}>`,
+            },
+          }
+        : {
+            transport: {
+              host: mailHost,
+              port: mailPort,
+              secure: false,
+              auth: {
+                user: mailUser,
+                pass: mailPass,
+              },
+            },
+            defaults: {
+              from: `"EstateFlow" <${mailFrom}>`,
+            },
+            template: {
+              dir: join(__dirname, '..', '..', '..', 'src', 'modules', 'mail', 'templates'),
+              adapter: new (require('@nestjs-modules/mailer/dist/adapters/handlebars.adapter').HandlebarsAdapter)(),
+              options: { strict: true },
+            },
+          };
+
+      return mailerOptions;
+    }
+  })],
   controllers: [MailController],
   providers: [
     MailService,
@@ -78,15 +103,4 @@ const mailerOptions: any = isTest
   ],
   exports: [MailService],
 })
-export class MailModule {
-  constructor(private configService: ConfigService) {
-    console.log('🔧 MAIL CONFIGURATION:');
-    console.log('MAIL_HOST:', this.configService.get<string>('MAIL_HOST'));
-    console.log('MAIL_PORT:', this.configService.get<string>('MAIL_PORT'));
-    const mailUser = this.configService.get<string>('MAIL_USER');
-    const mailPass = this.configService.get<string>('MAIL_PASS');
-    console.log('MAIL_USER:', mailUser ? '***' + mailUser.slice(-10) : 'undefined');
-    console.log('MAIL_PASS:', mailPass ? '***' + mailPass.slice(-4) : 'undefined');
-    console.log('MAIL_FROM:', this.configService.get<string>('MAIL_FROM'));
-  }
-}
+export class MailModule {}

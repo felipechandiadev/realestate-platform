@@ -15,8 +15,14 @@ export class LoginUseCase {
       throw new UnauthorizedException('Credenciales inválidas.');
     }
     const valid = await user.validatePassword(dto.password);
-    if (!valid || user.status !== UserStatus.ACTIVE) {
+    if (!valid) {
       throw new UnauthorizedException('Credenciales inválidas.');
+    }
+    if (user.status !== UserStatus.ACTIVE) {
+      throw new UnauthorizedException('Usuario inactivo.');
+    }
+    if (!user.emailVerified) {
+      throw new UnauthorizedException('EMAIL_NOT_VERIFIED');
     }
     return user;
   }

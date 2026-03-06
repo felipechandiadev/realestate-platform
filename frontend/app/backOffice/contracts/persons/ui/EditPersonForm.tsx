@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import UpdateBaseForm, { type BaseUpdateFormField } from '@/shared/components/ui/BaseForm/UpdateBaseForm';
 import type { Person } from '@/features/backoffice/contracts/actions/persons.action';
 import { updatePerson } from '@/features/backoffice/contracts/actions/persons.action';
+import { updateUser } from '@/features/backoffice/users/actions/users.action';
 import { useRouter } from 'next/navigation';
 import { useAlert } from '@/shared/hooks/useAlert';
 
@@ -21,6 +22,11 @@ interface EditPersonFormValues {
   address: string;
   city: string;
   state: string;
+  nationality: string;
+  gender: string;
+  maritalStatus: string;
+  profession: string;
+  company: string;
 }
 
 const formatDniForValidation = (dni: string): string => {
@@ -33,7 +39,8 @@ const isValidDni = (dni: string): boolean => {
 };
 
 const formatPhone = (phone: string): string => {
-  return phone.replace(/\s/g, '');
+  // Allow digits and leading '+' only; remove other formatting characters like spaces, dashes, parentheses.
+  return phone.replace(/[^\d+]/g, '');
 };
 
 export default function EditPersonForm({ person, onClose, onSuccess }: EditPersonFormProps) {
@@ -51,6 +58,11 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
     address: person.address ?? '',
     city: person.city ?? '',
     state: person.state ?? '',
+    nationality: person.nationality ?? '',
+    gender: person.gender ?? '',
+    maritalStatus: person.maritalStatus ?? '',
+    profession: person.profession ?? '',
+    company: person.company ?? '',
   }), [person]);
 
   const fields: BaseUpdateFormField[] = useMemo(() => ([
@@ -89,6 +101,42 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
     {
       name: 'state',
       label: 'Región/Estado',
+      type: 'text',
+    },
+    {
+      name: 'nationality',
+      label: 'Nacionalidad',
+      type: 'text',
+    },
+    {
+      name: 'gender',
+      label: 'Género',
+      type: 'select',
+      options: [
+        { value: 'MALE', label: 'Masculino' },
+        { value: 'FEMALE', label: 'Femenino' },
+        { value: 'OTHER', label: 'Otro' },
+      ],
+    },
+    {
+      name: 'maritalStatus',
+      label: 'Estado Civil',
+      type: 'select',
+      options: [
+        { value: 'SINGLE', label: 'Soltero(a)' },
+        { value: 'MARRIED', label: 'Casado(a)' },
+        { value: 'DIVORCED', label: 'Divorciado(a)' },
+        { value: 'WIDOWED', label: 'Viudo(a)' },
+      ],
+    },
+    {
+      name: 'profession',
+      label: 'Profesión',
+      type: 'text',
+    },
+    {
+      name: 'company',
+      label: 'Empresa',
       type: 'text',
     },
   ]), []);
@@ -136,6 +184,11 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
       address: typeof formValues.address === 'string' ? formValues.address : '',
       city: typeof formValues.city === 'string' ? formValues.city : '',
       state: typeof formValues.state === 'string' ? formValues.state : '',
+      nationality: typeof formValues.nationality === 'string' ? formValues.nationality : '',
+      gender: typeof formValues.gender === 'string' ? formValues.gender : '',
+      maritalStatus: typeof formValues.maritalStatus === 'string' ? formValues.maritalStatus : '',
+      profession: typeof formValues.profession === 'string' ? formValues.profession : '',
+      company: typeof formValues.company === 'string' ? formValues.company : '',
     };
 
     const validationErrors = validateForm(values);
@@ -162,9 +215,44 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
         address: values.address.trim() || undefined,
         city: values.city.trim() || undefined,
         state: values.state.trim() || undefined,
+        nationality: values.nationality.trim() || undefined,
+        gender: values.gender.trim() || undefined,
+        maritalStatus: values.maritalStatus.trim() || undefined,
+        profession: values.profession.trim() || undefined,
+        company: values.company.trim() || undefined,
       };
 
-      const updatedPerson = await updatePerson(person.id, payload);
+      let updatedPerson: Person;
+
+      if (person.isFromUser) {
+        // If this person is actually a user, update their personal profile instead.
+        // Split the full name into first and last name (basic heuristic).
+        const fullName = values.name.trim();
+        const [firstName, ...rest] = fullName.split(' ');
+        const lastName = rest.join(' ');
+
+        await updateUser(person.id, {
+          email: values.email.trim() || undefined,
+          personalInfo: {
+            firstName: firstName || undefined,
+            lastName: lastName || undefined,
+            phone: values.phone.trim() || undefined,
+            address: values.address.trim() || undefined,
+            city: values.city.trim() || undefined,
+            state: values.state.trim() || undefined,
+            profession: values.profession.trim() || undefined,
+            company: values.company.trim() || undefined,
+            nationality: values.nationality.trim() || undefined,
+            gender: values.gender.trim() || undefined,
+            maritalStatus: values.maritalStatus.trim() || undefined,
+          },
+        });
+
+        // Show the updated values locally (the API will already have the latest data)
+        updatedPerson = { ...person, ...payload } as Person;
+      } else {
+        updatedPerson = await updatePerson(person.id, payload);
+      }
 
       showAlert({
         message: `Datos de ${updatedPerson.name || 'la persona'} actualizados correctamente`,

@@ -12,6 +12,8 @@ export class FindPropertiesUseCase {
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.creatorUser', 'creatorUser')
       .leftJoinAndSelect('property.assignedAgent', 'assignedAgent')
+      .leftJoinAndSelect('property.multimedia', 'multimedia')
+      .leftJoinAndSelect('multimedia.variants', 'variants')
       .where({ deletedAt: IsNull() });
 
     if (filters.operationType) {

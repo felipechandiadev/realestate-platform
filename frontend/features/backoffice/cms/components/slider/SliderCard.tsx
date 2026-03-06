@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Slide } from '@/features/backoffice/cms/actions/slides.action'
 import IconButton from '@/shared/components/ui/IconButton/IconButton'
+import LazyImage from '@/shared/components/ui/LazyImage'
 import { env } from '@/lib/env'
 
 const normalizeMediaUrl = (u?: string | null): string | undefined => {
@@ -76,7 +77,30 @@ export default function SliderCard({
       </div>
 
       <div className="w-full overflow-hidden">
-        {slide.multimediaUrl && !mediaError ? (
+        {slide.multimedia ? (
+          <>
+            {isVideo(slide.multimedia.url) ? (
+              <video
+                src={normalizeMediaUrl(slide.multimedia.url)}
+                className="w-full aspect-video object-cover"
+                muted
+                autoPlay
+                loop
+                playsInline
+                onError={handleMediaError}
+              />
+            ) : (
+              <LazyImage
+                multimedia={slide.multimedia}
+                variantType="slide-desktop"
+                alt={slide.title}
+                sizes="100vw"
+                className="w-full aspect-video object-cover"
+                maintainAspectRatio={true}
+              />
+            )}
+          </>
+        ) : slide.multimediaUrl && !mediaError ? (
           <>
             {isVideo(slide.multimediaUrl) ? (
               <video
@@ -89,18 +113,25 @@ export default function SliderCard({
                 onError={handleMediaError}
               />
             ) : (
-              <img
-                src={normalizeMediaUrl(slide.multimediaUrl)}
+              <LazyImage
+                multimedia={{
+                  id: slide.id || 'slide-' + Date.now(),
+                  url: normalizeMediaUrl(slide.multimediaUrl) || '',
+                  filename: 'slide-image.jpg',
+                  variants: []
+                }}
+                variantType="slide-desktop"
                 alt={slide.title}
+                sizes="100vw"
                 className="w-full aspect-video object-cover"
-                onError={handleMediaError}
+                maintainAspectRatio={true}
               />
             )}
           </>
         ) : (
           <div className="w-full aspect-video bg-gray-100 flex items-center justify-center">
             <span className="material-symbols-outlined text-gray-400" style={{ fontSize: '40px' }}>
-              {slide.multimediaUrl && isVideo(slide.multimediaUrl) ? 'videocam' : 'image_not_supported'}
+              {(slide.multimedia?.url || slide.multimediaUrl) && isVideo(slide.multimedia?.url || slide.multimediaUrl) ? 'videocam' : 'image_not_supported'}
             </span>
           </div>
         )}

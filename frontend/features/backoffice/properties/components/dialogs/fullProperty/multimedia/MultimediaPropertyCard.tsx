@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react'
 import IconButton from '@/shared/components/ui/IconButton/IconButton'
+import LazyImage from '@/shared/components/ui/LazyImage'
 
 interface MultimediaPropertyCardProps {
   url: string
@@ -47,10 +48,18 @@ const MultimediaPropertyCard: React.FC<MultimediaPropertyCardProps> = ({
       {/* Media Container */}
       <div className="relative mb-0 overflow-hidden rounded-t-lg">
         {type === 'image' ? (
-          <img
-            src={url}
+          <LazyImage
+            multimedia={{
+              id: multimediaId,
+              url: url,
+              filename: 'property-multimedia.jpg',
+              variants: []
+            }}
+            variantType="full"
             alt="Property multimedia"
+            sizes="100vw"
             className="w-full aspect-video object-cover"
+            maintainAspectRatio={true}
           />
         ) : (
           <video

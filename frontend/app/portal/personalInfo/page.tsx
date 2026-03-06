@@ -120,8 +120,8 @@ export default function PersonalInfoPage() {
   // Define form field groups (User + Person data combined)
   const formFieldGroups: BaseUpdateFormFieldGroup[] = [
     {
-      title: 'Información Básica',
-      subtitle: 'Tu información de cuenta y perfil',
+      title: '',
+      subtitle: '',
       columns: 1,
       fields: [
         {
@@ -175,6 +175,7 @@ export default function PersonalInfoPage() {
       title: 'Información Personal Detallada',
       subtitle: 'Datos adicionales de identificación y ubicación',
       columns: 2,
+      className: 'pt-8',
       fields: [
         {
           name: 'dni',
@@ -264,20 +265,24 @@ export default function PersonalInfoPage() {
         {
           name: 'dniCardFront',
           label: 'Foto Frente del DNI',
+          labelClassName: 'mt-6',
           type: 'image',
           currentUrl: userProfile?.person?.dniCardFrontUrl,
           maxSize: 5,
           aspectRatio: '16:9',
+          variant: 'banner',
           buttonText: 'Subir Frente',
           startIcon: 'image',
         },
         {
           name: 'dniCardRear',
           label: 'Foto Reverso del DNI',
+          labelClassName: 'mt-6',
           type: 'image',
           currentUrl: userProfile?.person?.dniCardRearUrl,
           maxSize: 5,
           aspectRatio: '16:9',
+          variant: 'banner',
           buttonText: 'Subir Reverso',
           startIcon: 'image',
         },

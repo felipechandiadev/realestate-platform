@@ -8,7 +8,13 @@ export class GetArticleUseCase {
   constructor(private readonly repo: ArticleRepository) {}
 
   async execute(id: string): Promise<Article> {
-    const article = await this.repo.findOne({ where: { id, deletedAt: IsNull() } });
+    const article = await this.repo
+      .createQueryBuilder('article')
+      .where('article.id = :id', { id })
+      .andWhere('article.deletedAt IS NULL')
+      .leftJoinAndSelect('article.multimedia', 'multimedia')
+      .leftJoinAndSelect('multimedia.variants', 'variants')
+      .getOne();
     if (!article) throw new NotFoundException('Artículo no encontrado.');
     return article;
   }

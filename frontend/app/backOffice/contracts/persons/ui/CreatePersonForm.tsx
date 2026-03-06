@@ -68,8 +68,11 @@ export default function CreatePersonForm({ onClose, onSuccess }: CreatePersonFor
       validationErrors.push('Email inválido');
     }
 
-    if (formValues.phone && !/^\+?[0-9]{8,15}$/.test(formValues.phone.replace(/\s/g, ''))) {
-      validationErrors.push('Formato de teléfono inválido');
+    if (formValues.phone) {
+      const cleanedPhone = formValues.phone.replace(/[^\d+]/g, '');
+      if (cleanedPhone && !/^\+?[0-9]{8,15}$/.test(cleanedPhone)) {
+        validationErrors.push('Formato de teléfono inválido');
+      }
     }
 
     return validationErrors;
@@ -91,11 +94,12 @@ export default function CreatePersonForm({ onClose, onSuccess }: CreatePersonFor
     setErrors([]);
 
     try {
+      const cleanedPhone = values.phone.trim().replace(/[^\d+]/g, '');
       const result = await createPerson({
         name: values.name.trim(),
         dni: values.dni.trim(),
         email: values.email.trim() || undefined,
-        phone: values.phone.trim() || undefined,
+        phone: cleanedPhone || undefined,
         address: values.address.trim() || undefined,
         city: values.city.trim() || undefined,
         state: values.state.trim() || undefined,

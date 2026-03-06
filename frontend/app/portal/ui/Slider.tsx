@@ -155,11 +155,17 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
     return (
       <div 
         ref={sliderRef}
+        className="w-full flex items-center justify-center"
         style={{ 
           height: sliderHeight ? `${sliderHeight}px` : '80vh',
           background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
         }}
-      />
+      >
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-gray-700 mb-2">Error al cargar slides</h2>
+          <p className="text-gray-500">{error}</p>
+        </div>
+      </div>
     );
   }
 

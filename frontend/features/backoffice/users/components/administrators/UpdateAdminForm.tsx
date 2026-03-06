@@ -46,6 +46,9 @@ const UpdateAdminForm: React.FC<UpdateAdminFormProps> = ({
 			firstName: administrator.personalInfo?.firstName || '',
 			lastName: administrator.personalInfo?.lastName || '',
 			phone: administrator.personalInfo?.phone || '',
+			company: administrator.personalInfo?.company || '',
+			nationality: administrator.personalInfo?.nationality || '',
+			maritalStatus: administrator.personalInfo?.maritalStatus || '',
 			status: statusMap[administrator.status] || 1,
 			avatar: avatarUrl,
 			avatarFile: null,
@@ -98,6 +101,9 @@ const UpdateAdminForm: React.FC<UpdateAdminFormProps> = ({
 					firstName: values.firstName?.trim() || undefined,
 					lastName: values.lastName?.trim() || undefined,
 					phone: values.phone?.trim() || undefined,
+					company: values.company?.trim() || undefined,
+					nationality: values.nationality?.trim() || undefined,
+					maritalStatus: values.maritalStatus?.trim() || undefined,
 					avatarUrl: avatarUrl || undefined,
 				},
 			};
@@ -154,6 +160,27 @@ const UpdateAdminForm: React.FC<UpdateAdminFormProps> = ({
 			name: 'phone',
 			label: 'Teléfono',
 			type: 'text',
+		},
+		{
+			name: 'company',
+			label: 'Empresa',
+			type: 'text',
+		},
+		{
+			name: 'nationality',
+			label: 'Nacionalidad',
+			type: 'text',
+		},
+		{
+			name: 'maritalStatus',
+			label: 'Estado Civil',
+			type: 'select',
+			options: [
+				{ id: 'SINGLE', label: 'Soltero(a)' },
+				{ id: 'MARRIED', label: 'Casado(a)' },
+				{ id: 'DIVORCED', label: 'Divorciado(a)' },
+				{ id: 'WIDOWED', label: 'Viudo(a)' },
+			],
 		},
 		{
 			name: 'avatar',

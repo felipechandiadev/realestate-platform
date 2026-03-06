@@ -85,7 +85,30 @@ export const LoginForm: React.FC = () => {
 
         {error && (
           <Alert variant="error" data-test-id="login-error-alert">
-            {(error as any)?.message || 'Invalid email or password. Please try again.'}
+            {error === 'EMAIL_NOT_VERIFIED'
+              ? (
+                  <>
+                    Tu correo no está verificado. Revisa tu bandeja de entrada o solicita un nuevo correo de verificación.
+                    <div className="mt-2">
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleResendVerification}
+                        disabled={isResending}
+                        data-test-id="resend-verification-btn"
+                      >
+                        {isResending ? 'Enviando...' : 'Reenviar correo de verificación'}
+                      </Button>
+                      {resendSuccess && (
+                        <p className="text-green-600 text-xs mt-1">Correo de verificación enviado.</p>
+                      )}
+                      {resendError && (
+                        <p className="text-red-600 text-xs mt-1">Error al enviar el correo. Intenta nuevamente.</p>
+                      )}
+                    </div>
+                  </>
+                )
+              : (error as any)?.message || error || 'Invalid email or password. Please try again.'}
           </Alert>
         )}
 
@@ -156,6 +179,7 @@ export const LoginForm: React.FC = () => {
         <div className="text-center text-sm mt-4">
           <span className="text-secondary">Don&apos;t have an account? </span>
           <Link 
+          const { mutate: resendVerification, isPending: isResending, isSuccess: resendSuccess, isError: resendError } = useResendVerificationEmail();
             href="/auth/register" 
             className="text-primary hover:underline"
             data-test-id="login-register-link"

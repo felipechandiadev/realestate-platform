@@ -7,7 +7,7 @@ export enum RegionEnum {
   ATACAMA = 'Atacama',
   COQUIMBO = 'Coquimbo',
   VALPARAISO = 'Valparaíso',
-  METROPOLITANA = 'Metropolitana de Santiago',
+  METROPOLITANA = 'Metropolitana',
   OHIGGINS = "O'Higgins",
   MAULE = 'Maule',
   ÑUBLE = 'Ñuble',

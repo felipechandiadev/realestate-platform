@@ -64,6 +64,9 @@ export async function createAgent(data: {
   firstName: string
   lastName: string
   phone?: string
+  company?: string
+  nationality?: string
+  maritalStatus?: string
   avatarFile?: File
 }): Promise<{
   success: boolean
@@ -112,6 +115,9 @@ export async function createAgent(data: {
         firstName: data.firstName.trim(),
         lastName: data.lastName.trim(),
         phone: data.phone?.trim(),
+        company: data.company?.trim(),
+        nationality: data.nationality?.trim(),
+        maritalStatus: data.maritalStatus?.trim(),
         avatarUrl,
       },
     }
@@ -157,6 +163,9 @@ export async function updateAgent(
     lastName?: string
     phone?: string
     email?: string
+    company?: string
+    nationality?: string
+    maritalStatus?: string
     status?: string
     avatarFile?: File
   }
@@ -204,6 +213,9 @@ export async function updateAgent(
     if (data.firstName) updateData.personalInfo.firstName = data.firstName
     if (data.lastName) updateData.personalInfo.lastName = data.lastName
     if (data.phone) updateData.personalInfo.phone = data.phone
+    if (data.company) updateData.personalInfo.company = data.company
+    if (data.nationality) updateData.personalInfo.nationality = data.nationality
+    if (data.maritalStatus) updateData.personalInfo.maritalStatus = data.maritalStatus
     if (avatarUrl) updateData.personalInfo.avatarUrl = avatarUrl
     // Email puede ir fuera de personalInfo si el backend lo espera así
     if (data.email) updateData.email = data.email

@@ -56,6 +56,26 @@ export class CreatePersonDto {
   @IsUUID()
   @IsOptional()
   userId?: string;
+
+  @IsString()
+  @IsOptional()
+  maritalStatus?: string;
+
+  @IsString()
+  @IsOptional()
+  gender?: string;
+
+  @IsString()
+  @IsOptional()
+  nationality?: string;
+
+  @IsString()
+  @IsOptional()
+  profession?: string;
+
+  @IsString()
+  @IsOptional()
+  company?: string;
 }
 
 export class UpdatePersonDto extends CreatePersonDto {}

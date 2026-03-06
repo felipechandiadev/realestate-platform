@@ -18,6 +18,11 @@ export interface Person {
   country?: string
   birthDate?: string
   profilePicture?: string
+  maritalStatus?: string
+  gender?: string
+  nationality?: string
+  profession?: string
+  company?: string
   createdAt: string
   updatedAt: string
   deletedAt?: string
@@ -52,6 +57,11 @@ export interface CreatePersonDto {
   dniCardFrontId?: string
   dniCardRearId?: string
   userId?: string
+  maritalStatus?: string
+  gender?: string
+  nationality?: string
+  profession?: string
+  company?: string
 }
 
 export interface UpdatePersonDto {
@@ -66,6 +76,8 @@ export interface UpdatePersonDto {
   birthDate?: string
   profilePicture?: string
   // Nuevos campos para coincidir con el backend
+  nationality?: string
+  gender?: string
   maritalStatus?: string
   profession?: string
   company?: string
@@ -394,6 +406,15 @@ async function getUserAsPerson(id: string): Promise<Person | null> {
     name: fullName || user.username || user.email || 'Usuario del sistema',
     email: user.email,
     phone: user.personalInfo?.phone ?? undefined,
+    address: user.personalInfo?.address ?? undefined,
+    city: user.personalInfo?.city ?? undefined,
+    state: user.personalInfo?.state ?? undefined,
+    country: user.personalInfo?.country ?? undefined,
+    profession: user.personalInfo?.profession ?? undefined,
+    company: user.personalInfo?.company ?? undefined,
+    nationality: user.personalInfo?.nationality ?? undefined,
+    gender: user.personalInfo?.gender ?? undefined,
+    maritalStatus: user.personalInfo?.maritalStatus ?? undefined,
     createdAt: user.createdAt ?? nowIso,
     updatedAt: user.updatedAt ?? nowIso,
     verified: false,

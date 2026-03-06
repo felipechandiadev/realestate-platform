@@ -10,6 +10,7 @@ import { StaticFilesService } from './infrastructure/storage/static-files.servic
 import { CloudflareStorageService } from './infrastructure/storage/cloudflare-storage.service';
 import { AwsS3StorageService } from './infrastructure/storage/aws-s3-storage.service';
 import { UploadConfigService } from '../../config/upload.config';
+import { MultimediaVariant } from '../media-optimization/domain/multimedia-variant.entity';
 // repository and use cases
 import { TypeormMultimediaRepository } from './infrastructure/typeorm-multimedia.repository';
 import { MultimediaRepository } from './domain/multimedia.repository';
@@ -23,7 +24,7 @@ import { GetUrlUseCase } from './application/use-cases/get-url.usecase';
 import { SetSeoTitleUseCase } from './application/use-cases/set-seo-title.usecase';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Multimedia]), ConfigModule],
+  imports: [TypeOrmModule.forFeature([Multimedia, MultimediaVariant]), ConfigModule],
   controllers: [MultimediaController, MultimediaUploadController],
   providers: [
     MultimediaService,

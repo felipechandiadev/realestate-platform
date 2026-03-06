@@ -16,10 +16,56 @@ interface PropertyFromAPI {
   state?: string;
   city?: string;
   mainImageUrl?: string;
+  multimedia?: Array<{
+    id: string;
+    url: string;
+    type?: string;
+    format?: string;
+    variants?: Array<{
+      id?: string;
+      variantType: string;
+      format: 'webp' | 'jpeg' | 'png';
+      width: number;
+      height: number;
+      size: number;
+      url: string;
+    }>;
+  }>;
   bedrooms?: number;
   bathrooms?: number;
   builtSquareMeters?: number;
 }
+
+const normalizeVariantType = (value?: string) => (value || '').trim().toLowerCase().replace(/-/g, '_');
+
+const pickBestImageUrl = (property: PropertyFromAPI): string | null => {
+  const mediaItems = property.multimedia || [];
+  const imageMedia =
+    mediaItems.find((item) => item.type === 'PROPERTY_IMG') ||
+    mediaItems.find((item) => item.format === 'IMG') ||
+    mediaItems[0];
+
+  if (!imageMedia) {
+    return property.mainImageUrl ?? null;
+  }
+
+  const variants = imageMedia.variants || [];
+  const preferredTypes = ['thumbnail_md', 'thumbnail_lg', 'thumbnail_sm', 'full', 'og_image'];
+
+  for (const preferredType of preferredTypes) {
+    const webp = variants.find(
+      (variant) => normalizeVariantType(variant.variantType) === preferredType && variant.format === 'webp',
+    );
+    if (webp?.url) return webp.url;
+
+    const jpeg = variants.find(
+      (variant) => normalizeVariantType(variant.variantType) === preferredType && variant.format === 'jpeg',
+    );
+    if (jpeg?.url) return jpeg.url;
+  }
+
+  return imageMedia.url || property.mainImageUrl || null;
+};
 
 const mapToFeaturedProperty = (property: PropertyFromAPI): FeaturedProperty => ({
   id: property.id,
@@ -28,7 +74,7 @@ const mapToFeaturedProperty = (property: PropertyFromAPI): FeaturedProperty => (
   price: property.price,
   currencyPrice: property.currency,
   operationType: property.operationType === 'SALE' ? 'SALE' : 'RENT',
-  mainImageUrl: property.mainImageUrl ?? null,
+  mainImageUrl: pickBestImageUrl(property),
   city: property.city ?? null,
   state: property.state ?? null,
   bedrooms: property.bedrooms ?? null,

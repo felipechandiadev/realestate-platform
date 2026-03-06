@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { env } from '@/lib/env';
 import { AgentType } from './types'
 import IconButton from '@/shared/components/ui/IconButton/IconButton'
+import LazyImage from '@/shared/components/ui/LazyImage'
 import { useAlert } from '@/shared/hooks/useAlert'
 
 interface AgentCardProps {
@@ -59,10 +60,18 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onEdit, onDelete }) => {
           <div className="relative flex-shrink-0 mx-auto">
             <div className="h-24 w-24 rounded-full bg-neutral-100 border-4 border-secondary flex items-center justify-center overflow-hidden">
               {avatarUrl ? (
-                <img
-                  src={avatarUrl}
+                <LazyImage
+                  multimedia={{
+                    id: agent.id,
+                    url: avatarUrl,
+                    filename: 'avatar.jpg',
+                    variants: []
+                  }}
+                  variantType="avatar-md"
                   alt={`Avatar ${fullName}`}
+                  sizes="96px"
                   className="h-full w-full object-cover"
+                  maintainAspectRatio={true}
                 />
               ) : (
                 <span className="material-symbols-outlined text-secondary" style={{ fontSize: '4rem' }}>person</span>

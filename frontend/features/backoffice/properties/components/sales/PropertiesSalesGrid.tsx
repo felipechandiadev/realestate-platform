@@ -11,8 +11,9 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import DataGrid, { type DataGridColumn } from '@/shared/components/ui/DataGrid/DataGrid';
+import Dialog from '@/shared/components/ui/Dialog/Dialog';
 import type { SalePropertyGridRow } from '@/features/backoffice/properties/actions/properties.action';
-import { PropertiesCreateDialog } from '@/features/backoffice/properties/components/dialogs';
+import { CreateProperty } from '@/features/backoffice/properties/components/dialogs';
 import { PropertiesDeleteButton } from '@/features/backoffice/properties/components/shared';
 import { getStatusInSpanish, getStatusChipClasses } from '@/features/backoffice/properties/utils';
 import SaleMoreButton from './SaleMoreButton';
@@ -168,15 +169,18 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
         onAddClick={() => setDialogOpen(true)}
       />
 
-      {/* Create Dialog - controlled from onAddClick */}
-      <PropertiesCreateDialog
-        operation="SALE"
-        isOpen={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSuccess={() => {
-          router.refresh();
-        }}
-      />
+      {/* Create Dialog - Stepper for creating new properties */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen} title="Crear Propiedad">
+        <CreateProperty
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          onSuccess={() => {
+            console.log('🎉 Property created successfully, refreshing...');
+            router.refresh();
+          }}
+          operation="SALE"
+        />
+      </Dialog>
     </div>
   );
 }

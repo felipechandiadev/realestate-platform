@@ -38,14 +38,14 @@ describe('EmailService', () => {
       .mockResolvedValue({ messageId: 'test-id' });
 
     const result = await service.sendMail({
-      to: 'test@example.com',
+      to: 'felipe.chandia.cast@gmail.com',
       subject: 'Hello',
       html: '<p>Hi</p>',
     });
 
     expect(sendSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        to: 'test@example.com',
+        to: 'felipe.chandia.cast@gmail.com',
         subject: 'Hello',
         html: expect.stringContaining('<p>Hi</p>'),
       }),

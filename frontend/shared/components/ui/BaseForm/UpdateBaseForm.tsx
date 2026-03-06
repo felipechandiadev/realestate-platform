@@ -19,6 +19,8 @@ export interface BaseUpdateFormFieldGroup {
 	subtitle?: string;
 	columns?: number;
 	gap?: number;
+	/** Clases adicionales para el contenedor del grupo (p.ej. "pt-8") */
+	className?: string;
 	fields: BaseUpdateFormField[];
 }
 
@@ -53,6 +55,10 @@ const getStringValue = (value: unknown): string => {
 
 const getMediaUrl = (value: unknown): string | undefined => {
 	return typeof value === "string" ? value : undefined;
+};
+
+const isFieldGroupArray = (items: UpdateBaseFormFields): items is BaseUpdateFormFieldGroup[] => {
+	return Array.isArray(items) && items.length > 0 && Boolean((items[0] as BaseUpdateFormFieldGroup).fields);
 };
 
 export interface BaseUpdateFormField {
@@ -96,9 +102,7 @@ export interface BaseUpdateFormField {
 	aspectRatio?: '1:1' | '16:9' | '9:16';
 	buttonText?: string;
 	labelText?: string;
-	previewSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-	currencySymbol?: string;
-	allowDecimalComma?: boolean;
+	labelClassName?: string;
 }
 
 export interface UpdateBaseFormProps {
@@ -112,28 +116,14 @@ export interface UpdateBaseFormProps {
 	subtitle?: string;
 	submitLabel?: string;
 	submitVariant?: ButtonVariant;
-	["data-test-id"]?: string;
 	columns?: number;
 	cancelButton?: boolean;
 	cancelButtonText?: string;
 	onCancel?: () => void;
-	/**
-	 * Modo nested: Oculta títulos, reduce paddings, oculta actions.
-	 * Usar cuando el form está dentro de un Dialog que ya maneja estos elementos.
-	 * @default false
-	 */
 	nested?: boolean;
-	/**
-	 * ID del form para permitir submit desde botón externo (ej: en Dialog.actions).
-	 * Útil cuando nested=true y los botones están en el Dialog.
-	 * @example <form id="my-form" /> + <button form="my-form" type="submit" />
-	 */
 	formId?: string;
+	["data-test-id"]?: string;
 }
-
-const isFieldGroupArray = (items: UpdateBaseFormFields): items is BaseUpdateFormFieldGroup[] => {
-	return Array.isArray(items) && items.length > 0 && Boolean((items[0] as BaseUpdateFormFieldGroup).fields);
-};
 
 const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 	fields,
@@ -263,7 +253,7 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 		if (field.type === "image" || field.type === "video" || field.type === "avatar") {
 			return (
 				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-2">
+					<label className={`block text-sm font-medium text-gray-700 mb-2 ${field.labelClassName ?? ''}`}>
 						{field.label}
 					</label>
 					<MultimediaUpdater
@@ -356,7 +346,7 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 				const containerStyle = columnCount > 1 ? { gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`, gap: gapValue ?? "4px" } : { gap: gapValue ?? "4px" };
 
 				return (
-					<div key={group.id} className="form-group w-full">
+					<div key={group.id} className={`form-group w-full mb-10 ${group.className ?? ''}`}>
 						{group.title && <h4 className="text-base font-semibold text-gray-900">{group.title}</h4>}
 						{group.subtitle && <p className="text-sm text-gray-600">{group.subtitle}</p>}
 						<div className={`${containerClass}`} style={containerStyle as React.CSSProperties}>

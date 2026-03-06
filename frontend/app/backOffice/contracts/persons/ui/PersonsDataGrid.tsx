@@ -5,12 +5,10 @@ import DataGrid, { type DataGridColumn } from '@/shared/components/ui/DataGrid/D
 import type { Person } from '@/features/backoffice/contracts/actions/persons.action';
 import { useAlert } from '@/providers/AlertContext';
 import { deletePerson } from '@/features/backoffice/contracts/actions/persons.action';
-import IconButton from '@/shared/components/ui/IconButton/IconButton';
-import Dialog from '@/shared/components/ui/Dialog/Dialog';
 import { Button } from '@/shared/components/ui/Button/Button';
+import IconButton from '@/shared/components/ui/IconButton/IconButton';
 import CreatePersonForm from './CreatePersonForm';
 import PersonDocumentsList from './PersonDocumentsList';
-import EditPersonForm from './EditPersonForm';
 import DeleteBaseForm from '@/shared/components/ui/BaseForm/DeleteBaseForm';
 
 type PersonsDataGridProps = {
@@ -36,8 +34,6 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
   const [personToVerify, setPersonToVerify] = useState<Person | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [personToEdit, setPersonToEdit] = useState<Person | null>(null);
   const [deleteErrors, setDeleteErrors] = useState<string[]>([]);
 
   const formatDateTime = (value?: string) => {
@@ -109,9 +105,6 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
       sortable: true,
       filterable: true,
       renderCell: ({ row }) => {
-        if (row.isFromUser) {
-          return row.name || 'Sin nombre';
-        }
         return row.name || 'Sin nombre';
       },
     },
@@ -228,15 +221,6 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
               router.push(`/backOffice/contracts/persons/${row.id}`);
             }}
             title="Ver detalles"
-          />
-          <IconButton
-            icon="edit"
-            variant="text"
-            onClick={() => {
-              setPersonToEdit(row);
-              setShowEditDialog(true);
-            }}
-            title="Editar"
           />
           {!row.isFromUser && (
             <IconButton
@@ -386,29 +370,6 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
         >
           <CreatePersonForm
             onClose={() => setShowCreateDialog(false)}
-            onSuccess={() => {
-              router.refresh();
-            }}
-          />
-        </Dialog>
-      )}
-
-      {showEditDialog && personToEdit && (
-        <Dialog
-          open={showEditDialog}
-          onClose={() => {
-            setShowEditDialog(false);
-            setPersonToEdit(null);
-          }}
-          title=""
-          size="lg"
-        >
-          <EditPersonForm
-            person={personToEdit}
-            onClose={() => {
-              setShowEditDialog(false);
-              setPersonToEdit(null);
-            }}
             onSuccess={() => {
               router.refresh();
             }}

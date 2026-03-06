@@ -55,6 +55,13 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
         });
 
         if (!result || result.error) {
+          // Detecta error personalizado de backend
+          if (result?.error === "EMAIL_NOT_VERIFIED") {
+            return {
+              success: false,
+              error: "EMAIL_NOT_VERIFIED",
+            };
+          }
           const errorMessage =
             result?.error === "CredentialsSignin"
               ? "Credenciales inválidas"

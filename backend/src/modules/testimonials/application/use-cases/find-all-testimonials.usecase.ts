@@ -8,9 +8,12 @@ export class FindAllTestimonialsUseCase {
   constructor(private readonly repo: TestimonialRepository) {}
 
   async execute(): Promise<Testimonial[]> {
-    return this.repo.find({
-      where: { deletedAt: IsNull() },
-      order: { createdAt: 'DESC' },
-    });
+    return this.repo
+      .createQueryBuilder('testimonial')
+      .where('testimonial.deletedAt IS NULL')
+      .leftJoinAndSelect('testimonial.multimedia', 'multimedia')
+      .leftJoinAndSelect('multimedia.variants', 'variants')
+      .orderBy('testimonial.createdAt', 'DESC')
+      .getMany();
   }
 }

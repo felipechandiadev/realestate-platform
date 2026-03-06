@@ -26,72 +26,14 @@ export class ListPublishedPublicUseCase {
     const qb = this.propertyRepository
       .createQueryBuilder('p')
       .leftJoinAndSelect('p.propertyType', 'pt')
+      .leftJoinAndSelect('p.multimedia', 'multimedia')
+      .leftJoinAndSelect('multimedia.variants', 'variants')
       .where('p.deletedAt IS NULL')
       .andWhere('p.status = :status', { status: PropertyStatus.PUBLISHED })
       .orderBy('p.publishedAt', 'DESC')
       .addOrderBy('p.createdAt', 'DESC');
 
-    qb.select([
-      'p.id',
-      'p.title',
-      'p.description',
-      'p.status',
-      'p.operationType',
-      'p.price',
-      'p.currencyPrice',
-      'p.city',
-      'p.state',
-      'p.mainImageUrl',
-      'p.publishedAt',
-      'p.bedrooms',
-      'p.bathrooms',
-      'p.builtSquareMeters',
-      'p.landSquareMeters',
-      'p.parkingSpaces',
-      'p.isFeatured',
-      'p.favorites',
-      'pt.id',
-      'pt.name',
-      'pt.hasBedrooms',
-      'pt.hasBathrooms',
-      'pt.hasBuiltSquareMeters',
-      'pt.hasLandSquareMeters',
-      'pt.hasParkingSpaces',
-      'pt.hasFloors',
-      'pt.hasConstructionYear',
-    ]);
-
     const items = await qb.getMany();
-
-    const idsNeedingFallback = items
-      .filter(p => !p.mainImageUrl || p.mainImageUrl.trim() === '')
-      .map(p => p.id);
-
-    let multimediaMap: Record<string, any[]> = {};
-    if (idsNeedingFallback.length > 0) {
-      const multimedia = await this.multimediaRepository
-        .createQueryBuilder('m')
-        .where('m.propertyId IN (:...ids)', { ids: idsNeedingFallback })
-        .andWhere('m.type IN (:...types)', {
-          types: [MultimediaType.PROPERTY_IMG, MultimediaType.PROPERTY_VIDEO],
-        })
-        .orderBy('m.createdAt', 'ASC')
-        .getMany();
-
-      for (const m of multimedia) {
-        if (m.propertyId) {
-          if (!multimediaMap[m.propertyId]) {
-            multimediaMap[m.propertyId] = [];
-          }
-          multimediaMap[m.propertyId].push({
-            id: m.id,
-            url: m.url,
-            type: m.type,
-            format: m.format,
-          });
-        }
-      }
-    }
 
     const normalize = (u?: string | null) =>
       u && u.trim() !== '' ? u.replace('/../', '/') : null;
@@ -149,14 +91,22 @@ export class ListPublishedPublicUseCase {
         landSquareMeters: p.landSquareMeters ?? null,
         parkingSpaces: p.parkingSpaces ?? null,
         isFeatured: !!p.isFeatured,
-      };
-
-      if (!hasMainImage && multimediaMap[p.id]) {
-        result.multimedia = multimediaMap[p.id].map(m => ({
-          ...m,
+        multimedia: p.multimedia?.map(m => ({
+          id: m.id,
           url: toAbsoluteMediaUrl(m.url),
-        }));
-      }
+          type: m.type,
+          format: m.format,
+          variants: m.variants?.map(v => ({
+            id: v.id,
+            variantType: v.variantType,
+            format: v.format,
+            width: v.width,
+            height: v.height,
+            size: v.size,
+            url: toAbsoluteMediaUrl(v.url),
+          })) || [],
+        })) || [],
+      };
 
       return result;
     });

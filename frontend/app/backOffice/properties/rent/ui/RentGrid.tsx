@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import DataGrid, { type DataGridColumn } from '@/shared/components/ui/DataGrid/DataGrid';
 import { env } from '@/lib/env';
 import type { RentPropertyGridRow } from '@/features/backoffice/properties/actions/properties.action';
-import { CreateProperty } from '@/features/backoffice/properties/components/dialogs/createProperty';
+import { CreateProperty } from '@/features/backoffice/properties/components/dialogs';
 import { PropertiesDeleteButton } from '@/features/backoffice/properties/components/shared';
 import { getStatusInSpanish, getStatusChipClasses } from '@/features/backoffice/properties/utils';
 
@@ -124,7 +124,7 @@ export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
       filterable: false,
       actionComponent: ({ row }) => (
         <div className="flex items-center gap-1">
-          <DeletePropertyButton propertyId={row.id} propertyTitle={row.title} />
+          <PropertiesDeleteButton propertyId={row.id} onSuccess={() => { router.refresh(); }} />
           <RentMoreButton property={row} />
         </div>
       ),
@@ -163,7 +163,13 @@ export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
         excelUrl={excelEndpoint}
         limit={25}
         excelFields={excelFields}
-        createForm={<CreateProperty onClose={() => { router.refresh(); }} size='lg' />}
+        createForm={
+          <CreateProperty
+            onSuccess={() => router.refresh()}
+            size='lg'
+            operation="RENT"
+          />
+        }
       />
     </>
   );

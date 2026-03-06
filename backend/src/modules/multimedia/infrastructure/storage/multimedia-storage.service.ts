@@ -17,6 +17,8 @@ import { StaticFilesService } from './static-files.service';
 import { CloudflareStorageService } from './cloudflare-storage.service';
 import { AwsS3StorageService } from './aws-s3-storage.service';
 import { IStorageProvider } from './storage-provider.interface';
+import { ImageOptimizationService, EntityType } from '../../../media-optimization/application/services';
+import { MultimediaVariant } from '../../../media-optimization/domain/multimedia-variant.entity';
 
 @Injectable()
 export class MultimediaStorageService {
@@ -27,10 +29,13 @@ export class MultimediaStorageService {
   constructor(
     @InjectRepository(Multimedia)
     private readonly multimediaRepository: Repository<Multimedia>,
+    @InjectRepository(MultimediaVariant)
+    private readonly variantRepository: Repository<MultimediaVariant>,
     private readonly staticFilesService: StaticFilesService,
     private readonly cloudflareStorage: CloudflareStorageService,
     private readonly awsS3StorageService: AwsS3StorageService,
     private readonly configService: ConfigService,
+    private readonly imageOptimization: ImageOptimizationService,
   ) {
     // Seleccionar provider según configuración
     const provider = this.configService.get<string>('STORAGE_PROVIDER', 'local');
@@ -56,7 +61,25 @@ export class MultimediaStorageService {
     return this.providerName;
   }
 
-
+  /**
+   * Mapea MultimediaType a EntityType para image optimization
+   */
+  private mapToEntityType(type: MultimediaType): EntityType | null {
+    const mapping: Record<MultimediaType, EntityType | null> = {
+      [MultimediaType.AGENT_IMG]: 'avatar',
+      [MultimediaType.DNI_FRONT]: null,
+      [MultimediaType.DNI_REAR]: null,
+      [MultimediaType.SLIDE]: 'slider',
+      [MultimediaType.LOGO]: null,
+      [MultimediaType.STAFF]: 'avatar',
+      [MultimediaType.PARTNERSHIP]: null,
+      [MultimediaType.PROPERTY_IMG]: 'property',
+      [MultimediaType.PROPERTY_VIDEO]: null,
+      [MultimediaType.TESTIMONIAL_IMG]: 'testimonial',
+      [MultimediaType.DOCUMENT]: null,
+    };
+    return mapping[type] || null;
+  }
   private getUploadPath(type: MultimediaType): string {
     const paths = {
       [MultimediaType.AGENT_IMG]: 'users',
@@ -140,6 +163,9 @@ export class MultimediaStorageService {
     userId?: string,
   ): Promise<Multimedia> {
     const resolvedType = this.normalizeMultimediaType(metadata?.type, file?.mimetype || '');
+    const isImage = file.mimetype.startsWith('image/');
+    const entityType = this.mapToEntityType(resolvedType);
+    const shouldOptimize = isImage && entityType && this.providerName === 'r2';
 
     // Directorio relativo bajo la carpeta de uploads (ej: PROPERTY_IMG)
     const relativeDir = this.getUploadPath(resolvedType);
@@ -169,9 +195,76 @@ export class MultimediaStorageService {
         throw new Error('No file data available');
       }
 
-      this.logger.log(`[uploadFile] provider=${this.providerName} path=${relativePath} size=${fileBuffer.length}`);
+      this.logger.log(`[uploadFile] provider=${this.providerName} path=${relativePath} size=${fileBuffer.length} optimize=${shouldOptimize}`);
 
-      // Subir archivo usando el storage provider seleccionado
+      // FLUJO OPTIMIZADO: Si es imagen en R2 y tipo compatible
+      if (shouldOptimize) {
+        try {
+          // Crear archivo Multer-like para ImageOptimizationService
+          const multerFile: Partial<Express.Multer.File> = {
+            fieldname: file.fieldname,
+            originalname: file.originalname,
+            encoding: file.encoding,
+            mimetype: file.mimetype,
+            size: fileBuffer.length,
+            buffer: fileBuffer,
+            destination: '',
+            filename: uniqueFilename,
+          };
+
+          // Procesar imagen y generar variantes
+          const optimizationResult = await this.imageOptimization.processAndUpload(
+            multerFile as Express.Multer.File,
+            entityType!,
+            resolvedType + '_' + Date.now(), // Usar tipo + timestamp como ID temporal
+          );
+
+          // Crear registro Multimedia con metadata enriquecida
+          const multimedia = new Multimedia();
+          multimedia.type = resolvedType;
+          multimedia.seoTitle = metadata.seoTitle;
+          multimedia.description = metadata.description;
+          multimedia.url = optimizationResult.multimedia.url;
+          multimedia.userId = userId || undefined;
+          multimedia.format = MultimediaFormat.IMG;
+          multimedia.filename = uniqueFilename;
+          multimedia.fileSize = optimizationResult.multimedia.fileSize;
+          multimedia.originalSize = optimizationResult.multimedia.originalSize;
+          multimedia.compressedSize = optimizationResult.multimedia.compressedSize;
+          multimedia.compressionRatio = optimizationResult.multimedia.compressionRatio;
+          multimedia.width = optimizationResult.multimedia.width;
+          multimedia.height = optimizationResult.multimedia.height;
+
+          const saved = await this.multimediaRepository.save(multimedia);
+
+          // Guardar variantes generadas por el proceso de optimización
+          if (optimizationResult.variants && optimizationResult.variants.length > 0) {
+            const variantsToSave = optimizationResult.variants.map((variant) => ({
+              ...variant,
+              multimediaId: saved.id,
+            }));
+            await this.variantRepository.save(variantsToSave);
+
+            // Opcional: adjuntar las variantes al objeto devuelto
+            (saved as any).variants = variantsToSave;
+          }
+
+          this.logger.log(
+            `✅ Image optimized: ${uniqueFilename} | Compression: ${optimizationResult.compressionRatio.toFixed(1)}% | Variants: ${optimizationResult.variantsCreated}`,
+          );
+
+          return saved;
+
+          // FLUJO ESTÁNDAR: Otras imágenes o tipos no optimizables
+        } catch (optimizationError) {
+          this.logger.warn(
+            `⚠️ Image optimization failed, using standard upload: ${optimizationError?.message}`,
+          );
+          // Continuar con flujo estándar
+        }
+      }
+
+      // FLUJO ESTÁNDAR: Sin optimización
       const publicUrl = await this.storageProvider.uploadFile(
         fileBuffer,
         relativePath,
@@ -222,6 +315,7 @@ export class MultimediaStorageService {
   async deleteFile(id: string): Promise<void> {
     const multimedia = await this.multimediaRepository.findOne({
       where: { id },
+      relations: ['variants'],
     });
     
     if (!multimedia) {
@@ -229,6 +323,11 @@ export class MultimediaStorageService {
     }
 
     try {
+      // Eliminar variantes si las tiene
+      if (multimedia.variants && multimedia.variants.length > 0) {
+        await this.imageOptimization.deleteVariants(id);
+      }
+
       // Construir ruta relativa
       const relativePath = path.join(
         this.getUploadPath(multimedia.type),

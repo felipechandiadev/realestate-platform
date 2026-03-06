@@ -2,6 +2,7 @@
 
 import React from 'react';
 import IconButton from '@/shared/components/ui/IconButton/IconButton';
+import LazyImage from '@/shared/components/ui/LazyImage';
 import { env } from '@/lib/env';
 import type { Testimonial } from '@/features/backoffice/cms/actions/testimonials.action';
 
@@ -36,11 +37,28 @@ export function TestimonialCard({
     <div className="bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow flex flex-col h-full overflow-hidden">
       {/* Avatar */}
       <div className="flex items-center justify-center p-6 border-b border-border bg-gray-100">
-        {testimonial.imageUrl ? (
-          <img
-            src={normalizeMediaUrl(testimonial.imageUrl)}
+        {testimonial.multimedia ? (
+          <LazyImage
+            multimedia={testimonial.multimedia}
+            variantType="avatar-md"
             alt={testimonial.name}
+            sizes="128px"
             className="w-24 h-24 rounded-full object-cover"
+            maintainAspectRatio={true}
+          />
+        ) : testimonial.imageUrl ? (
+          <LazyImage
+            multimedia={{
+              id: testimonial.id || 'testimonial-' + Date.now(),
+              url: normalizeMediaUrl(testimonial.imageUrl) || '',
+              filename: 'avatar.jpg',
+              variants: []
+            }}
+            variantType="avatar-md"
+            alt={testimonial.name}
+            sizes="128px"
+            className="w-24 h-24 rounded-full object-cover"
+            maintainAspectRatio={true}
           />
         ) : (
           <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">

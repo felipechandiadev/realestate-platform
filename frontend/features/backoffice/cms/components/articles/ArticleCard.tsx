@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import IconButton from '@/shared/components/ui/IconButton/IconButton';
 import Switch from '@/shared/components/ui/Switch/Switch';
+import LazyImage from '@/shared/components/ui/LazyImage';
 import { env } from '@/lib/env';
 import { useAlert } from '@/providers/AlertContext';
 import {
@@ -61,11 +62,28 @@ const ArticleCard: React.FC<ArticleCardProps> = ({ article, onEdit, onDelete }) 
   return (
     <div className="bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow flex flex-col h-full overflow-hidden">
       <div className="w-full overflow-hidden">
-        {article.multimediaUrl ? (
-          <img
-            src={normalizeMediaUrl(article.multimediaUrl)}
+        {article.multimedia ? (
+          <LazyImage
+            multimedia={article.multimedia}
+            variantType="thumbnail-lg"
             alt={article.title}
+            sizes="100vw"
             className="w-full aspect-video object-cover"
+            maintainAspectRatio={true}
+          />
+        ) : article.multimediaUrl ? (
+          <LazyImage
+            multimedia={{
+              id: article.id,
+              url: normalizeMediaUrl(article.multimediaUrl) || '',
+              filename: 'article-image.jpg',
+              variants: []
+            }}
+            variantType="thumbnail-lg"
+            alt={article.title}
+            sizes="100vw"
+            className="w-full aspect-video object-cover"
+            maintainAspectRatio={true}
           />
         ) : (
           <div className="w-full aspect-video bg-gray-100 flex items-center justify-center">

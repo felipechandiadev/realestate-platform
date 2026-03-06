@@ -11,11 +11,22 @@ import { useAuth } from '@/app/providers';
 type Currency = 'CLP' | 'UF';
 type OperationType = 'SALE' | 'RENT';
 
+type MediaVariant = {
+  id?: string;
+  variantType: string;
+  format: 'webp' | 'jpeg' | 'png';
+  width: number;
+  height: number;
+  size: number;
+  url: string;
+};
+
 type MediaItem = {
   id?: string;
   url: string;
   type?: string;     // e.g. 'PROPERTY_IMG', 'VIDEO'
   format?: string;   // e.g. 'IMG'
+  variants?: MediaVariant[];
 };
 
 type PropertyTypeLite = {
@@ -101,6 +112,39 @@ function isVideoFile(url: string): boolean {
   return videoExtensions.some(ext => lowerUrl.includes(ext));
 }
 
+function normalizeVariantType(value?: string): string {
+  return (value || '').trim().toLowerCase().replace(/-/g, '_');
+}
+
+function pickBestImageVariantUrl(mediaItem: MediaItem): string | undefined {
+  if (!mediaItem.variants || mediaItem.variants.length === 0) return undefined;
+
+  const preferredTypes = ['thumbnail_md', 'thumbnail_lg', 'thumbnail_sm', 'full', 'og_image'];
+
+  const findVariant = (format: 'webp' | 'jpeg' | 'png') =>
+    preferredTypes
+      .map((type) => mediaItem.variants?.find((variant) => {
+        const matchesType = normalizeVariantType(variant.variantType) === type;
+        const matchesFormat = (variant.format || '').toLowerCase() === format;
+        return matchesType && matchesFormat && !!variant.url;
+      }))
+      .find(Boolean);
+
+  return (
+    findVariant('webp')?.url ||
+    findVariant('jpeg')?.url ||
+    findVariant('png')?.url ||
+    mediaItem.variants.find((variant) => !!variant.url)?.url
+  );
+}
+
+function resolveMediaUrl(mediaItem: MediaItem): string | undefined {
+  const baseUrl = mediaItem.url;
+  const isVideo = baseUrl ? isVideoFile(baseUrl) : false;
+  const finalUrl = isVideo ? baseUrl : pickBestImageVariantUrl(mediaItem) || baseUrl;
+  return normalizeMediaUrl(finalUrl);
+}
+
 function getOrderedMedia(property: PortalProperty): Array<{ type: 'image' | 'video'; url: string }> {
   const media: Array<{ type: 'image' | 'video'; url: string }> = [];
 
@@ -118,17 +162,7 @@ function getOrderedMedia(property: PortalProperty): Array<{ type: 'image' | 'vid
     })) || []
   });
 
-  // Si hay mainImageUrl, agregarla primero (imagen o video)
-  if (property.mainImageUrl) {
-    const mainUrl = normalizeMediaUrl(property.mainImageUrl);
-    if (mainUrl) {
-      const type = isVideoFile(mainUrl) ? 'video' : 'image';
-      media.push({ type, url: mainUrl });
-      console.log(`${logPrefix} Added mainImageUrl as ${type}:`, mainUrl);
-    }
-  }
-
-  // Agregar todo el multimedia (imágenes y videos)
+  // Agregar todo el multimedia (imágenes y videos) priorizando variantes optimizadas para imágenes
   if (property.multimedia && property.multimedia.length > 0) {
     console.log(`${logPrefix} Processing ${property.multimedia.length} multimedia items`);
 
@@ -142,7 +176,7 @@ function getOrderedMedia(property: PortalProperty): Array<{ type: 'image' | 'vid
         urlLength: mediaItem.url?.length || 0
       });
 
-      const url = normalizeMediaUrl(mediaItem.url);
+      const url = resolveMediaUrl(mediaItem);
       
       if (url) {
         const type = isVideoFile(url) ? 'video' : 'image';
@@ -162,6 +196,16 @@ function getOrderedMedia(property: PortalProperty): Array<{ type: 'image' | 'vid
     console.log(`${logPrefix} No multimedia array found`);
   }
 
+  // Fallback a mainImageUrl sólo si no hay multimedia utilizable
+  if (media.length === 0 && property.mainImageUrl) {
+    const mainUrl = normalizeMediaUrl(property.mainImageUrl);
+    if (mainUrl) {
+      const type = isVideoFile(mainUrl) ? 'video' : 'image';
+      media.push({ type, url: mainUrl });
+      console.log(`${logPrefix} Added fallback mainImageUrl as ${type}:`, mainUrl);
+    }
+  }
+
   console.log(`${logPrefix} Final result:`, {
     totalMultimedia: property.multimedia?.length || 0,
     mediaFound: media.length,
@@ -177,7 +221,7 @@ function getPrimaryMedia(property: PortalProperty): { type: 'image' | 'video'; u
     // Buscar imagen primero
     const firstImage = property.multimedia.find(m => m.type === 'PROPERTY_IMG' || m.format === 'IMG');
     if (firstImage) {
-      const url = normalizeMediaUrl(firstImage.url);
+      const url = resolveMediaUrl(firstImage);
       if (url && !isVideoFile(url)) {
         return { type: 'image', url };
       }
@@ -186,7 +230,7 @@ function getPrimaryMedia(property: PortalProperty): { type: 'image' | 'video'; u
     // Si no hay imagen, buscar video
     const firstVideo = property.multimedia.find(m => m.type === 'PROPERTY_VIDEO' || isVideoFile(m.url));
     if (firstVideo) {
-      const url = normalizeMediaUrl(firstVideo.url);
+      const url = resolveMediaUrl(firstVideo);
       if (url) {
         return { type: 'video', url };
       }

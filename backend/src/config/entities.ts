@@ -5,6 +5,7 @@ import { PasswordResetTokenOrmEntity } from '../modules/password-recovery/infras
 import { User } from '../modules/users/domain/user.entity';
 import { Document } from '../modules/document/domain/document.entity';
 import { Multimedia } from '../modules/multimedia/domain/multimedia.entity';
+import { MultimediaVariant } from '../modules/media-optimization/domain/multimedia-variant.entity';
 import { AuditLog } from '../modules/audit/domain/audit-log.entity';
 import { PersonOrmEntity } from '../modules/person/infrastructure/persistence/person.orm-entity';
 import { Article } from '../modules/articles/domain/article.entity';
@@ -25,6 +26,7 @@ export const entities = [
   User,
   Document,
   Multimedia,
+  MultimediaVariant,
   AuditLog,
   PersonOrmEntity,
   Article,

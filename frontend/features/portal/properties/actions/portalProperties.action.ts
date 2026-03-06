@@ -8,6 +8,15 @@ export interface MediaItem {
   url: string;
   type?: string;
   format?: string;
+  variants?: Array<{
+    id?: string;
+    variantType: string;
+    format: 'webp' | 'jpeg' | 'png';
+    width: number;
+    height: number;
+    size: number;
+    url: string;
+  }>;
 }
 
 export interface PropertyData {
@@ -170,6 +179,15 @@ export async function getPublishedPropertiesFiltered(filters: {
         url: ensureAbsoluteUrl(m.url),
         type: m.type,
         format: m.format,
+        variants: (m.variants || []).map((v: any) => ({
+          id: v.id,
+          variantType: v.variantType,
+          format: v.format,
+          width: v.width,
+          height: v.height,
+          size: v.size,
+          url: ensureAbsoluteUrl(v.url),
+        })),
       })),
       createdAt: prop.createdAt,
       isFeatured: prop.isFeatured || false,
