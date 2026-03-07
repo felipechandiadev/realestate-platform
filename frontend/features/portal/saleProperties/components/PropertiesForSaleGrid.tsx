@@ -157,24 +157,57 @@ export default function PropertiesForSaleGrid({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-8">
-          <Button
-            variant="outlined"
-            onClick={() => onPageChange?.(page - 1)}
-            disabled={page <= 1}
-          >
-            Anterior
-          </Button>
-          <span className="text-sm text-gray-600 px-4">
-            Página {page} de {totalPages}
-          </span>
-          <Button
-            variant="outlined"
-            onClick={() => onPageChange?.(page + 1)}
-            disabled={page >= totalPages}
-          >
-            Siguiente
-          </Button>
+        <div className="flex items-center justify-center space-x-2 mt-8 p-4">
+          {/* Botón Anterior */}
+          {page > 1 && (
+            <Button
+              variant="outlined"
+              onClick={() => onPageChange?.(page - 1)}
+              className="px-3 py-2 text-sm"
+            >
+              ← Anterior
+            </Button>
+          )}
+
+          {/* Números de página */}
+          {Array.from({ length: totalPages }, (_, i) => {
+            const pageNum = i + 1;
+            const maxVisible = 5;
+            let start = Math.max(1, page - Math.floor(maxVisible / 2));
+            let end = Math.min(totalPages, start + maxVisible - 1);
+
+            // Ajustar si estamos cerca del final
+            if (end - start + 1 < maxVisible) {
+              start = Math.max(1, end - maxVisible + 1);
+            }
+
+            return pageNum >= start && pageNum <= end ? pageNum : null;
+          })
+            .filter(Boolean)
+            .map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => onPageChange?.(pageNum as number)}
+                className={`px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+                  pageNum === page
+                    ? 'bg-primary text-background font-medium'
+                    : 'text-foreground hover:bg-accent hover:text-background'
+                }`}
+              >
+                {pageNum}
+              </button>
+            ))}
+
+          {/* Botón Siguiente */}
+          {page < totalPages && (
+            <Button
+              variant="outlined"
+              onClick={() => onPageChange?.(page + 1)}
+              className="px-3 py-2 text-sm"
+            >
+              Siguiente →
+            </Button>
+          )}
         </div>
       )}
     </div>
