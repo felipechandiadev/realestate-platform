@@ -22,7 +22,7 @@ export class GetPublishedPropertiesFilteredUseCase {
     hasPrevPage: boolean;
   }> {
     try {
-      const limit = filters.limit || 9;
+      const limit = parseInt(filters.limit) || 9;
       const page = Math.max(1, parseInt(filters?.page) || 1);
       const skip = (page - 1) * limit;
 

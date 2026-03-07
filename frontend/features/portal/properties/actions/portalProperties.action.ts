@@ -101,6 +101,7 @@ export async function getPublishedPropertiesFiltered(filters: {
     if (filters.city) params.append('city', filters.city);
     if (filters.typeProperty) params.append('typeProperty', filters.typeProperty);
     if (filters.page) params.append('page', filters.page.toString());
+    params.append('limit', '9'); // Items per page for portal
     if (filters.priceMin !== undefined && filters.priceMin > 0) {
       params.append('priceMin', filters.priceMin.toString());
     }
@@ -206,7 +207,14 @@ export async function getPublishedPropertiesFiltered(filters: {
 
     return {
       data: mappedData,
-      pagination: rawData.pagination || {},
+      pagination: {
+        total: rawData.total || 0,
+        page: rawData.page || 1,
+        limit: rawData.limit || 9,
+        totalPages: rawData.totalPages || 1,
+        hasNextPage: rawData.hasNextPage || false,
+        hasPrevPage: rawData.hasPrevPage || false,
+      },
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
