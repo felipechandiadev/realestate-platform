@@ -660,7 +660,8 @@ export default function SellPropertyPage() {
       type: 'location',
       props: {
         initialLat: -33.45,  // Santiago por defecto
-        initialLng: -70.6667
+        initialLng: -70.6667,
+        mode: 'edit'
       }
     }
   ];

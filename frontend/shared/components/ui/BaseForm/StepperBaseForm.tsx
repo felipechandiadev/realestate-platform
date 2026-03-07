@@ -143,11 +143,13 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 		onChangeCallback,
 		initialLat,
 		initialLng,
+		mode,
 	}: {
 		name: string;
 		onChangeCallback: (coords: { lat: number; lng: number } | null) => void;
 		initialLat?: number;
 		initialLng?: number;
+		mode?: 'viewer' | 'edit' | 'update';
 	}) {
 		return (
 			<div>
@@ -155,6 +157,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 					onChange={(coords) => onChangeCallback(coords)}
 					initialLat={initialLat}
 					initialLng={initialLng}
+					mode={mode}
 				/>
 			</div>
 		);
@@ -389,6 +392,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 				const locationProps = commonProps as {
 					initialLat?: number;
 					initialLng?: number;
+					mode?: 'viewer' | 'edit' | 'update';
 				};
 
 				const handleCoordsChange = getCoordHandler(field.name);
@@ -400,6 +404,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 						  onChangeCallback={handleCoordsChange}
 						  initialLat={locationProps.initialLat}
 						  initialLng={locationProps.initialLng}
+						  mode={locationProps.mode}
 						/>
 					</div>
 				);
