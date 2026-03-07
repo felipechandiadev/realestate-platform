@@ -327,11 +327,9 @@ export default function PropertyFilterRent({
 
   return (
     <div className={`bg-white p-6 rounded-lg ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base md:text-lg lg:text-2xl font-medium text-foreground">
-          Filtros
-        </h3>
-        <div className="flex gap-2">
+      <div className="flex items-center justify-end mb-4">
+   
+        <div className="flex items-center gap-2">
           <IconButton
             icon="filter_alt"
             variant="text"
@@ -398,7 +396,7 @@ export default function PropertyFilterRent({
       </div>
 
       {isCharacteristicsExpanded && (
-        <div className="mt-4 pt-4 border-t border-gray-200">
+        <div className="mt-4 pt-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Bedrooms */}
             <div>
