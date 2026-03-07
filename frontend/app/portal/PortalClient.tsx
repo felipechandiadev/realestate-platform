@@ -15,7 +15,23 @@ interface PortalClientProps {
 export default function PortalClient({ initialProperties, initialPagination }: PortalClientProps) {
   const searchParams = useSearchParams();
   const [properties, setProperties] = useState<PropertyData[]>(initialProperties);
-  const [pagination, setPagination] = useState<any>(initialPagination);
+  
+  // Asegurar que pagination siempre tenga un objeto válido
+  const defaultPagination = {
+    total: 0,
+    page: 1,
+    limit: 10,
+    totalPages: 1,
+    hasNextPage: false,
+    hasPrevPage: false,
+  };
+  
+  const [pagination, setPagination] = useState<any>(initialPagination || defaultPagination);
+
+  useEffect(() => {
+    console.log('📊 [PortalClient] initialPagination:', initialPagination);
+    console.log('📊 [PortalClient] pagination state:', pagination);
+  }, [initialPagination, pagination]);
   const [currentFilters, setCurrentFilters] = useState<{
     operation?: string;
     typeProperty?: string;

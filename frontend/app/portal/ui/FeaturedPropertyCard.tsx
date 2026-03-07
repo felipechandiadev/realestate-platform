@@ -91,11 +91,6 @@ export default function FeaturedPropertyCard({ property }: FeaturedPropertyCardP
               <h3 className="text-sm font-semibold text-foreground line-clamp-2">
                 {property.title}
               </h3>
-              {property.description ? (
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {property.description}
-                </p>
-              ) : null}
             </div>
 
             {/* Stats: dormitorios, baños, m² */}

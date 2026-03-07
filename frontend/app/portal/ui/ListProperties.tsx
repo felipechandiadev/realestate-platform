@@ -62,9 +62,15 @@ const PaginationControls: React.FC<{
   pagination: PaginationData;
   onPageChange?: (page: number) => void;
 }> = ({ pagination, onPageChange }) => {
-  const { page, totalPages, hasPrevPage, hasNextPage } = pagination;
+  // Asegurar valores por defecto si faltan
+  const {
+    page = 1,
+    totalPages = 1,
+    hasPrevPage = false,
+    hasNextPage = false
+  } = pagination || {};
 
-  // Generar números de página a mostrar (máximo 5, centrados en la página actual)
+  console.log('🔍 [PaginationControls] Debug:', { totalPages, page, hasPrevPage, hasNextPage });
   const getPageNumbers = () => {
     const pages: number[] = [];
     const maxVisible = 5;
@@ -89,10 +95,13 @@ const PaginationControls: React.FC<{
     }
   };
 
-  if (totalPages <= 1) return null;
+  console.log('🔍 [PaginationControls] Debug:', { totalPages, page, hasPrevPage, hasNextPage });
+
+  // Siempre renderizar, incluso con 1 página (para consistencia visual)
+  const pageNumbers = getPageNumbers();
 
   return (
-    <div className="flex items-center justify-center space-x-2 mt-8">
+    <div className="flex items-center justify-center space-x-2 mt-8 p-4 border-t border-gray-200">
       {/* Botón Anterior */}
       {hasPrevPage && (
         <Button

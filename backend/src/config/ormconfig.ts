@@ -36,5 +36,12 @@ export const ormConfig = (
 		migrations: migrationsGlob,
 		migrationsRun: false,
 		driver: mysql,
+		extra: {
+			connectionLimit: 30,
+			enableKeepAlive: true,
+			keepAliveInitialDelayMs: 0,
+			decimalNumbers: true,
+			supportBigNumbers: true,
+		},
 	};
 };

@@ -3,12 +3,23 @@ import "./globals.css";
 import ClientProviders from "./ClientProviders";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getIdentity } from "@/features/backoffice/cms/actions/identity.action";
 
 
-export const metadata: Metadata = {
-  title: "RealState Platform",
-
-};
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const identity = await getIdentity();
+    const title = identity?.name || "RealState Platform";
+    return {
+      title,
+    };
+  } catch (error) {
+    console.error("Error fetching identity for metadata:", error);
+    return {
+      title: "RealState Platform",
+    };
+  }
+}
 
 export default async function RootLayout({
   children,
