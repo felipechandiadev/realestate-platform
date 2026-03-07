@@ -84,7 +84,8 @@ export class NotificationsService {
     const interestHeader = `Interés en propiedad: ${propertyInfo}`;
     const userContact = `${interestedUserName || 'Usuario'} (${interestedUserEmail || 'Sin email'}, ${interestedUserPhone || 'Sin teléfono'})`;
     
-    const fullMessage = `${interestHeader}\n\nDe: ${userContact}\n\nMensaje: ${interestedUserMessage || 'Sin mensaje adicional.'}`;
+    // Incluir propertyId de forma específica para facilitar la extracción después
+    const fullMessage = `${interestHeader}\n\nDe: ${userContact}\n\nMensaje: ${interestedUserMessage || 'Sin mensaje adicional.'}\n\n[PROPERTY_ID: ${propertyId}]`;
 
     console.log('📝 Full message:', fullMessage);
 
@@ -854,7 +855,11 @@ export class NotificationsService {
             context.interestedUserName || 'Usuario',
             context.propertyTitle || 'Propiedad',
             context.message,
-            context.interestedUserPhone
+            context.interestedUserPhone,
+            context.propertyCode,
+            context.propertyPrice,
+            context.propertyLocation,
+            context.agentName,
           );
         }
         console.log(`✅ Confirmation sent to: ${context.interestedUserEmail}`);
@@ -972,19 +977,40 @@ export class NotificationsService {
 
     // Para notificaciones de interés, intentar obtener información de la propiedad
     if (typeForChecks === NotificationType.INTEREST) {
-      // Extraer propertyId del mensaje si está presente
-      const propertyMatch = notification.message?.match(/propiedad\s+([^\s.]+)/i);
-      if (propertyMatch) {
-        const propertyId = propertyMatch[1].trim();
+      // Extraer propertyId del mensaje - búscar el patrón [PROPERTY_ID: xxx]
+      const propertyIdMatch = notification.message?.match(/\[PROPERTY_ID:\s*([^\]]+)\]/);
+      let propertyId = propertyIdMatch ? propertyIdMatch[1].trim() : null;
+
+      if (propertyId) {
         try {
-          // Aquí podríamos hacer una consulta a la base de datos para obtener el título de la propiedad
-          // Por ahora, usamos el ID como título
+          console.log(`🔍 [buildMailContext] Looking for property with ID: ${propertyId}`);
+          // Obtener detalles completos de la propiedad
+          const property = await this.propertyRepository.findOne({ where: { id: propertyId } });
+          if (property) {
+            console.log(`✅ [buildMailContext] Property found:`, {
+              title: property.title,
+              code: property.code,
+              price: property.price,
+              city: property.city,
+              state: property.state,
+            });
+            context.propertyTitle = property.title;
+            context.propertyCode = property.code || propertyId.substring(0, 8);
+            context.propertyPrice = property.price;
+            context.propertyLocation = `${property.city}, ${property.state}`;
+            context.propertyId = propertyId;
+          } else {
+            console.warn(`❌ [buildMailContext] Property NOT found for ID: ${propertyId}`);
+            context.propertyTitle = `Propiedad ${propertyId}`;
+            context.propertyId = propertyId;
+          }
+        } catch (error) {
+          console.error(`❌ [buildMailContext] Error fetching property: ${error}`, error);
           context.propertyTitle = `Propiedad ${propertyId}`;
           context.propertyId = propertyId;
-        } catch (error) {
-          console.warn(`Could not get property info for ${propertyId}:`, error);
-          context.propertyTitle = `Propiedad ${propertyId}`;
         }
+      } else {
+        console.warn(`⚠️ [buildMailContext] No propertyId found in message`);
       }
 
       // Intentar obtener email del agente asignado si hay uno
@@ -996,6 +1022,7 @@ export class NotificationsService {
             if (user && user.role !== 'ADMIN') {
               context.agentEmail = user.email;
               context.agentName = user.name;
+              console.log(`✅ [buildMailContext] Agent found: ${context.agentName}`);
               break; // Tomar el primer agente encontrado
             }
           } catch (error) {

@@ -66,12 +66,55 @@ export class GridRentPropertiesUseCase {
     if (dto.priceMax !== undefined) {
       query.andWhere('property.price <= :priceMax', { priceMax: dto.priceMax });
     }
-    if (dto.bedrooms !== undefined) {
-      query.andWhere('property.bedrooms >= :bedrooms', { bedrooms: dto.bedrooms });
+
+    // Apply bedroom filter with operator
+    if (dto.bedrooms !== undefined && dto.bedrooms > 0) {
+      const operator = dto.bedroomsOperator || 'gte';
+      switch (operator) {
+        case 'lte':
+          query.andWhere('property.bedrooms <= :bedrooms', { bedrooms: dto.bedrooms });
+          break;
+        case 'eq':
+          query.andWhere('property.bedrooms = :bedrooms', { bedrooms: dto.bedrooms });
+          break;
+        case 'gte':
+        default:
+          query.andWhere('property.bedrooms >= :bedrooms', { bedrooms: dto.bedrooms });
+      }
     }
-    if (dto.bathrooms !== undefined) {
-      query.andWhere('property.bathrooms >= :bathrooms', { bathrooms: dto.bathrooms });
+
+    // Apply bathroom filter with operator
+    if (dto.bathrooms !== undefined && dto.bathrooms > 0) {
+      const operator = dto.bathroomsOperator || 'gte';
+      switch (operator) {
+        case 'lte':
+          query.andWhere('property.bathrooms <= :bathrooms', { bathrooms: dto.bathrooms });
+          break;
+        case 'eq':
+          query.andWhere('property.bathrooms = :bathrooms', { bathrooms: dto.bathrooms });
+          break;
+        case 'gte':
+        default:
+          query.andWhere('property.bathrooms >= :bathrooms', { bathrooms: dto.bathrooms });
+      }
     }
+
+    // Apply parking filter with operator
+    if (dto.parkingSpaces !== undefined && dto.parkingSpaces > 0) {
+      const operator = dto.parkingSpacesOperator || 'gte';
+      switch (operator) {
+        case 'lte':
+          query.andWhere('property.parkingSpaces <= :parkingSpaces', { parkingSpaces: dto.parkingSpaces });
+          break;
+        case 'eq':
+          query.andWhere('property.parkingSpaces = :parkingSpaces', { parkingSpaces: dto.parkingSpaces });
+          break;
+        case 'gte':
+        default:
+          query.andWhere('property.parkingSpaces >= :parkingSpaces', { parkingSpaces: dto.parkingSpaces });
+      }
+    }
+
     if (dto.typeProperty) {
       query.andWhere('pt.name = :typeProperty', { typeProperty: dto.typeProperty });
     }

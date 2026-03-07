@@ -45,6 +45,11 @@ interface PropertyForRent {
     parkingSpaces?: number;
     totalArea?: number;
   };
+  // Direct property fields (from backend entity)
+  bedrooms?: number;
+  bathrooms?: number;
+  parkingSpaces?: number;
+  builtSquareMeters?: number;
 }
 
 interface PropertiesForRentGridProps {
@@ -167,24 +172,24 @@ export default function PropertiesForRentGrid({
                   {property.location?.address || 'Ubicación no especificada'}
                 </p>
                 <div className="flex gap-4 text-sm text-gray-600">
-                  {property.features?.bedrooms && property.features.bedrooms > 0 && (
+                  {(property.bedrooms || property.features?.bedrooms) && (property.bedrooms || property.features?.bedrooms) > 0 && (
                     <span className="flex items-center gap-1">
-                      🛏️ {property.features.bedrooms}
+                      🛏️ {property.bedrooms || property.features?.bedrooms}
                     </span>
                   )}
-                  {property.features?.bathrooms && property.features.bathrooms > 0 && (
+                  {(property.bathrooms || property.features?.bathrooms) && (property.bathrooms || property.features?.bathrooms) > 0 && (
                     <span className="flex items-center gap-1">
-                      🚿 {property.features.bathrooms}
+                      🚿 {property.bathrooms || property.features?.bathrooms}
                     </span>
                   )}
-                  {property.features?.parkingSpaces && property.features.parkingSpaces > 0 && (
+                  {(property.parkingSpaces || property.features?.parkingSpaces) && (property.parkingSpaces || property.features?.parkingSpaces) > 0 && (
                     <span className="flex items-center gap-1">
-                      🚗 {property.features.parkingSpaces}
+                      🚗 {property.parkingSpaces || property.features?.parkingSpaces}
                     </span>
                   )}
-                  {property.features?.totalArea && property.features.totalArea > 0 && (
+                  {(property.builtSquareMeters || property.features?.totalArea) && (property.builtSquareMeters || property.features?.totalArea) > 0 && (
                     <span className="flex items-center gap-1">
-                      📐 {property.features.totalArea}m²
+                      📐 {property.builtSquareMeters || property.features?.totalArea}m²
                     </span>
                   )}
                 </div>

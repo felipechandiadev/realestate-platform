@@ -12,8 +12,6 @@ export class GetArticleUseCase {
       .createQueryBuilder('article')
       .where('article.id = :id', { id })
       .andWhere('article.deletedAt IS NULL')
-      .leftJoinAndSelect('article.multimedia', 'multimedia')
-      .leftJoinAndSelect('multimedia.variants', 'variants')
       .getOne();
     if (!article) throw new NotFoundException('Artículo no encontrado.');
     return article;

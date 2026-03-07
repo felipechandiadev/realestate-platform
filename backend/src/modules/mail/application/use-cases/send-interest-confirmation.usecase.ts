@@ -11,14 +11,22 @@ export class SendInterestConfirmationUseCase {
     propertyTitle: string,
     message?: string,
     contactPhone?: string,
+    propertyCode?: string,
+    propertyPrice?: number,
+    propertyLocation?: string,
+    agentName?: string,
   ): Promise<void> {
     await this.mailAdapter.sendMail({
       to: email,
-      subject: 'Hemos recibido tu interés en la propiedad',
+      subject: `Hemos recibido tu interés en ${propertyTitle}`,
       template: 'interest-confirmation',
       context: {
         name,
         propertyTitle,
+        propertyCode,
+        propertyPrice,
+        propertyLocation,
+        agentName,
         message,
         contactPhone,
         companyName: 'Real Estate Platform',

@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsEnum } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class FilterRentPropertiesDto {
@@ -22,9 +22,29 @@ export class FilterRentPropertiesDto {
   bedrooms?: number;
 
   @IsOptional()
+  @IsString()
+  @IsEnum(['lte', 'eq', 'gte'], { message: 'bedroomsOperator must be lte, eq, or gte' })
+  bedroomsOperator?: 'lte' | 'eq' | 'gte' = 'gte';
+
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   bathrooms?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsEnum(['lte', 'eq', 'gte'], { message: 'bathroomsOperator must be lte, eq, or gte' })
+  bathroomsOperator?: 'lte' | 'eq' | 'gte' = 'gte';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  parkingSpaces?: number;
+
+  @IsOptional()
+  @IsString()
+  @IsEnum(['lte', 'eq', 'gte'], { message: 'parkingSpacesOperator must be lte, eq, or gte' })
+  parkingSpacesOperator?: 'lte' | 'eq' | 'gte' = 'gte';
 
   @IsOptional()
   @IsString()

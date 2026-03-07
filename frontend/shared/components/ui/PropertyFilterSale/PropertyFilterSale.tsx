@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAlert } from '@/shared/hooks/useAlert';
 import Select from '@/shared/components/ui/Select/Select';
 import NumberStepper from '@/shared/components/ui/NumberStepper/NumberStepper';
-import { Button } from '@/shared/components/ui/Button/Button';
 import IconButton from '@/shared/components/ui/IconButton/IconButton';
 import { FilterSalePropertiesDto } from '@/features/portal/properties/actions/saleProperties.action';
 
@@ -311,6 +310,7 @@ export default function PropertyFilterSale({
   ];
 
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [isCharacteristicsExpanded, setIsCharacteristicsExpanded] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -328,19 +328,32 @@ export default function PropertyFilterSale({
   }, []);
 
   return (
-    <div className={`bg-white p-6 rounded-lg shadow-sm border border-gray-200 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base md:text-lg lg:text-2xl font-medium text-foreground whitespace-nowrap">
-          {companyName ? companyName.toUpperCase() : 'Filtros de Propiedades en Venta'}
-        </h3>
-        <IconButton
-          icon="close"
-          variant="text"
-          size="md"
-          ariaLabel="Limpiar filtros"
-          onClick={handleClearFilters}
-          className="p-2 text-gray-500"
-        />
+    <div className={`bg-white ${className}`}>
+      <div className="flex items-center justify-end mb-4">
+      
+        
+        <div className="flex items-center gap-2">
+          {/* Characteristics Filter Toggle Button */}
+          <IconButton
+            icon={isCharacteristicsExpanded ? 'expand_less' : 'expand_more'}
+            variant="outlined"
+            size="md"
+            ariaLabel={isCharacteristicsExpanded ? 'Ocultar características' : 'Mostrar características'}
+            onClick={() => setIsCharacteristicsExpanded(!isCharacteristicsExpanded)}
+            className="p-2"
+            title={isCharacteristicsExpanded ? 'Ocultar características' : 'Mostrar características'}
+          />
+          
+          {/* Clear Filters Button */}
+          <IconButton
+            icon="close"
+            variant="text"
+            size="md"
+            ariaLabel="Limpiar filtros"
+            onClick={handleClearFilters}
+            className="p-2 text-gray-500"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -402,121 +415,125 @@ export default function PropertyFilterSale({
       </div>
 
       {/* Bedrooms / Bathrooms / Parking controls (match portal behaviour) */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Bedrooms */}
-        <div>
-          <div className="flex gap-1 mb-1">
-            <button
-              onClick={() => handleFilterChange('bedroomsOperator', 'lte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bedroomsOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≤
-            </button>
-            <button
-              onClick={() => handleFilterChange('bedroomsOperator', 'eq')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bedroomsOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              =
-            </button>
-            <button
-              onClick={() => handleFilterChange('bedroomsOperator', 'gte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bedroomsOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≥
-            </button>
-          </div>
-          <NumberStepper
-            label={typeof filters.bedrooms === 'number' && filters.bedrooms > 0 ? `${filters.bedrooms} Dormitorios` : 'Dormitorios'}
-            value={filters.bedrooms || 0}
-            onChange={(value) => handleFilterChange('bedrooms', value)}
-            min={0}
-            max={10}
-            hideInput={true}
-          />
-        </div>
+      {isCharacteristicsExpanded && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Bedrooms */}
+            <div>
+              <div className="flex gap-1 mb-1">
+                <button
+                  onClick={() => handleFilterChange('bedroomsOperator', 'lte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bedroomsOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≤
+                </button>
+                <button
+                  onClick={() => handleFilterChange('bedroomsOperator', 'eq')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bedroomsOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  =
+                </button>
+                <button
+                  onClick={() => handleFilterChange('bedroomsOperator', 'gte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bedroomsOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≥
+                </button>
+              </div>
+              <NumberStepper
+                label={typeof filters.bedrooms === 'number' && filters.bedrooms > 0 ? `${filters.bedrooms} Dormitorios` : 'Dormitorios'}
+                value={filters.bedrooms || 0}
+                onChange={(value) => handleFilterChange('bedrooms', value)}
+                min={0}
+                max={10}
+                hideInput={true}
+              />
+            </div>
 
-        {/* Bathrooms */}
-        <div>
-          <div className="flex gap-1 mb-1">
-            <button
-              onClick={() => handleFilterChange('bathroomsOperator', 'lte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bathroomsOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≤
-            </button>
-            <button
-              onClick={() => handleFilterChange('bathroomsOperator', 'eq')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bathroomsOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              =
-            </button>
-            <button
-              onClick={() => handleFilterChange('bathroomsOperator', 'gte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bathroomsOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≥
-            </button>
-          </div>
-          <NumberStepper
-            label={typeof filters.bathrooms === 'number' && filters.bathrooms > 0 ? `${filters.bathrooms} Baños` : 'Baños'}
-            value={filters.bathrooms || 0}
-            onChange={(value) => handleFilterChange('bathrooms', value)}
-            min={0}
-            max={10}
-            hideInput={true}
-          />
-        </div>
+            {/* Bathrooms */}
+            <div>
+              <div className="flex gap-1 mb-1">
+                <button
+                  onClick={() => handleFilterChange('bathroomsOperator', 'lte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bathroomsOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≤
+                </button>
+                <button
+                  onClick={() => handleFilterChange('bathroomsOperator', 'eq')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bathroomsOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  =
+                </button>
+                <button
+                  onClick={() => handleFilterChange('bathroomsOperator', 'gte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bathroomsOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≥
+                </button>
+              </div>
+              <NumberStepper
+                label={typeof filters.bathrooms === 'number' && filters.bathrooms > 0 ? `${filters.bathrooms} Baños` : 'Baños'}
+                value={filters.bathrooms || 0}
+                onChange={(value) => handleFilterChange('bathrooms', value)}
+                min={0}
+                max={10}
+                hideInput={true}
+              />
+            </div>
 
-        {/* Parking */}
-        <div>
-          <div className="flex gap-1 mb-1">
-            <button
-              onClick={() => handleFilterChange('parkingSpacesOperator', 'lte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.parkingSpacesOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≤
-            </button>
-            <button
-              onClick={() => handleFilterChange('parkingSpacesOperator', 'eq')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.parkingSpacesOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              =
-            </button>
-            <button
-              onClick={() => handleFilterChange('parkingSpacesOperator', 'gte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.parkingSpacesOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≥
-            </button>
+            {/* Parking */}
+            <div>
+              <div className="flex gap-1 mb-1">
+                <button
+                  onClick={() => handleFilterChange('parkingSpacesOperator', 'lte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.parkingSpacesOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≤
+                </button>
+                <button
+                  onClick={() => handleFilterChange('parkingSpacesOperator', 'eq')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.parkingSpacesOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  =
+                </button>
+                <button
+                  onClick={() => handleFilterChange('parkingSpacesOperator', 'gte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.parkingSpacesOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≥
+                </button>
+              </div>
+              <NumberStepper
+                label={typeof filters.parkingSpaces === 'number' && filters.parkingSpaces > 0 ? `${filters.parkingSpaces} Estacionamientos` : 'Estacionamientos'}
+                value={filters.parkingSpaces || 0}
+                onChange={(value) => handleFilterChange('parkingSpaces', value)}
+                min={0}
+                max={10}
+                hideInput={true}
+              />
+            </div>
           </div>
-          <NumberStepper
-            label={typeof filters.parkingSpaces === 'number' && filters.parkingSpaces > 0 ? `${filters.parkingSpaces} Estacionamientos` : 'Estacionamientos'}
-            value={filters.parkingSpaces || 0}
-            onChange={(value) => handleFilterChange('parkingSpaces', value)}
-            min={0}
-            max={10}
-            hideInput={true}
-          />
         </div>
-      </div>
+      )}
     </div>
   );
 }

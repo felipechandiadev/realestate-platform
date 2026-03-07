@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAlert } from '@/shared/hooks/useAlert';
 import Select from '@/shared/components/ui/Select/Select';
 import NumberStepper from '@/shared/components/ui/NumberStepper/NumberStepper';
-import { Button } from '@/shared/components/ui/Button/Button';
+import IconButton from '@/shared/components/ui/IconButton/IconButton';
 import { FilterRentPropertiesDto } from '@/features/portal/properties/actions/rentProperties.action';
 
 interface PropertyFilterRentProps {
@@ -308,6 +308,7 @@ export default function PropertyFilterRent({
   };
 
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [isCharacteristicsExpanded, setIsCharacteristicsExpanded] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -325,18 +326,24 @@ export default function PropertyFilterRent({
   }, []);
 
   return (
-    <div className={`bg-white p-6 rounded-lg shadow-sm border border-gray-200 ${className}`}>
+    <div className={`bg-white p-6 rounded-lg ${className}`}>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base md:text-lg lg:text-2xl font-medium text-foreground whitespace-nowrap">
-          {companyName ? companyName.toUpperCase() : 'Filtros de Propiedades en Arriendo'}
+        <h3 className="text-base md:text-lg lg:text-2xl font-medium text-foreground">
+          Filtros
         </h3>
-        <Button
-          variant="text"
-          onClick={handleClearFilters}
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          Limpiar filtros
-        </Button>
+        <div className="flex gap-2">
+          <IconButton
+            icon={isCharacteristicsExpanded ? 'expand_less' : 'expand_more'}
+            variant="outlined"
+            onClick={() => setIsCharacteristicsExpanded(!isCharacteristicsExpanded)}
+          />
+          <IconButton
+            icon="close"
+            variant="text"
+            color="gray"
+            onClick={handleClearFilters}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -389,121 +396,125 @@ export default function PropertyFilterRent({
         />
       </div>
 
-      {/* Bedrooms / Bathrooms / Parking controls (match portal behaviour) */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Bedrooms */}
-        <div>
-          <div className="flex gap-1 mb-1">
-            <button
-              onClick={() => handleFilterChange('bedroomsOperator', 'lte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bedroomsOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≤
-            </button>
-            <button
-              onClick={() => handleFilterChange('bedroomsOperator', 'eq')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bedroomsOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              =
-            </button>
-            <button
-              onClick={() => handleFilterChange('bedroomsOperator', 'gte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bedroomsOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≥
-            </button>
-          </div>
-          <NumberStepper
-            label={getDynamicLabel(filters.bedroomsOperator as any, filters.bedrooms || 0, 'Dormitorios')}
-            value={filters.bedrooms || 0}
-            onChange={(value) => handleFilterChange('bedrooms', value)}
-            min={0}
-            max={10}
-            hideInput={true}
-          />
-        </div>
+      {isCharacteristicsExpanded && (
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Bedrooms */}
+            <div>
+              <div className="flex gap-1 mb-1">
+                <button
+                  onClick={() => handleFilterChange('bedroomsOperator', 'lte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bedroomsOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≤
+                </button>
+                <button
+                  onClick={() => handleFilterChange('bedroomsOperator', 'eq')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bedroomsOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  =
+                </button>
+                <button
+                  onClick={() => handleFilterChange('bedroomsOperator', 'gte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bedroomsOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≥
+                </button>
+              </div>
+              <NumberStepper
+                label={getDynamicLabel(filters.bedroomsOperator as any, filters.bedrooms || 0, 'Dormitorios')}
+                value={filters.bedrooms || 0}
+                onChange={(value) => handleFilterChange('bedrooms', value)}
+                min={0}
+                max={10}
+                hideInput={true}
+              />
+            </div>
 
-        {/* Bathrooms */}
-        <div>
-          <div className="flex gap-1 mb-1">
-            <button
-              onClick={() => handleFilterChange('bathroomsOperator', 'lte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bathroomsOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≤
-            </button>
-            <button
-              onClick={() => handleFilterChange('bathroomsOperator', 'eq')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bathroomsOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              =
-            </button>
-            <button
-              onClick={() => handleFilterChange('bathroomsOperator', 'gte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.bathroomsOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≥
-            </button>
-          </div>
-          <NumberStepper
-            label={getDynamicLabel(filters.bathroomsOperator as any, filters.bathrooms || 0, 'Baños')}
-            value={filters.bathrooms || 0}
-            onChange={(value) => handleFilterChange('bathrooms', value)}
-            min={0}
-            max={10}
-            hideInput={true}
-          />
-        </div>
+            {/* Bathrooms */}
+            <div>
+              <div className="flex gap-1 mb-1">
+                <button
+                  onClick={() => handleFilterChange('bathroomsOperator', 'lte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bathroomsOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≤
+                </button>
+                <button
+                  onClick={() => handleFilterChange('bathroomsOperator', 'eq')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bathroomsOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  =
+                </button>
+                <button
+                  onClick={() => handleFilterChange('bathroomsOperator', 'gte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.bathroomsOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≥
+                </button>
+              </div>
+              <NumberStepper
+                label={getDynamicLabel(filters.bathroomsOperator as any, filters.bathrooms || 0, 'Baños')}
+                value={filters.bathrooms || 0}
+                onChange={(value) => handleFilterChange('bathrooms', value)}
+                min={0}
+                max={10}
+                hideInput={true}
+              />
+            </div>
 
-        {/* Parking */}
-        <div>
-          <div className="flex gap-1 mb-1">
-            <button
-              onClick={() => handleFilterChange('parkingSpacesOperator', 'lte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.parkingSpacesOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≤
-            </button>
-            <button
-              onClick={() => handleFilterChange('parkingSpacesOperator', 'eq')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.parkingSpacesOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              =
-            </button>
-            <button
-              onClick={() => handleFilterChange('parkingSpacesOperator', 'gte')}
-              className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
-                filters.parkingSpacesOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
-            >
-              ≥
-            </button>
+            {/* Parking */}
+            <div>
+              <div className="flex gap-1 mb-1">
+                <button
+                  onClick={() => handleFilterChange('parkingSpacesOperator', 'lte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.parkingSpacesOperator === 'lte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≤
+                </button>
+                <button
+                  onClick={() => handleFilterChange('parkingSpacesOperator', 'eq')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.parkingSpacesOperator === 'eq' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  =
+                </button>
+                <button
+                  onClick={() => handleFilterChange('parkingSpacesOperator', 'gte')}
+                  className={`flex-1 px-2 py-0.5 text-xs rounded transition-colors ${
+                    filters.parkingSpacesOperator === 'gte' ? 'bg-primary text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  ≥
+                </button>
+              </div>
+              <NumberStepper
+                label={getDynamicLabel(filters.parkingSpacesOperator as any, filters.parkingSpaces || 0, 'Estacionamientos')}
+                value={filters.parkingSpaces || 0}
+                onChange={(value) => handleFilterChange('parkingSpaces', value)}
+                min={0}
+                max={10}
+                hideInput={true}
+              />
+            </div>
           </div>
-          <NumberStepper
-            label={getDynamicLabel(filters.parkingSpacesOperator as any, filters.parkingSpaces || 0, 'Estacionamientos')}
-            value={filters.parkingSpaces || 0}
-            onChange={(value) => handleFilterChange('parkingSpaces', value)}
-            min={0}
-            max={10}
-            hideInput={true}
-          />
         </div>
-      </div>    </div>
+      )}
+    </div>
   );
 }

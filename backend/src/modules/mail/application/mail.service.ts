@@ -42,9 +42,23 @@ export class MailService {
     name: string,
     propertyTitle: string,
     message?: string,
-    contactPhone?: string
+    contactPhone?: string,
+    propertyCode?: string,
+    propertyPrice?: number,
+    propertyLocation?: string,
+    agentName?: string,
   ): Promise<void> {
-    return this.sendInterestConfirmationUseCase.execute(email, name, propertyTitle, message, contactPhone);
+    return this.sendInterestConfirmationUseCase.execute(
+      email,
+      name,
+      propertyTitle,
+      message,
+      contactPhone,
+      propertyCode,
+      propertyPrice,
+      propertyLocation,
+      agentName,
+    );
   }
 
   /**
