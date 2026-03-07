@@ -485,10 +485,13 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
     // Fallback to original logic if no media available
     if (!mediaSrc) {
       return (
-        <div className="flex items-center justify-center w-full h-full bg-gray-200">
-          <span className="material-symbols-outlined text-gray-400" style={{ fontSize: '64px' }}>
-            image_not_supported
-          </span>
+        <div 
+          className="flex items-center justify-center w-full h-full" 
+          style={{ 
+            aspectRatio: '16/9',
+            background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+          }}
+        >
         </div>
       );
     }
@@ -570,7 +573,10 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
 
       <div className="flex-1 flex flex-col">
         <div
-          className="flex items-center justify-center w-full aspect-[16/9] bg-gray-200 text-gray-400 overflow-hidden relative"
+          className="flex items-center justify-center w-full aspect-[16/9] text-gray-400 overflow-hidden relative"
+          style={{
+            background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+          }}
           data-test-id="property-card-media"
         >
           {mediaEl}
@@ -703,12 +709,15 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
             <span
               className={`material-symbols-outlined transition-all ${
                 isFavorited
-                  ? 'text-accent fill-accent'
+                  ? 'text-accent'
                   : 'text-gray-400 hover:text-accent'
               }`}
-              style={{ fontSize: '24px' }}
+              style={{ 
+                fontSize: '24px',
+                fontVariationSettings: isFavorited ? "'FILL' 1" : "'FILL' 0"
+              }}
             >
-              {isFavorited ? 'favorite' : 'favorite_border'}
+              favorite
             </span>
           </button>
         ) : (

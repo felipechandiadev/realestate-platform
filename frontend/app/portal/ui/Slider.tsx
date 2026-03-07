@@ -122,73 +122,91 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
   }, [current, slides]);
 
   // Loading state
-  if (loading) {
+  // if (loading) {
+  //   return (
+  //     <div 
+  //       ref={sliderRef}
+  //       className="w-full relative overflow-hidden"
+  //       style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
+  //     >
+  //       {/* Fondo base */}
+  //       <div 
+  //         className="absolute inset-0"
+  //         style={{ 
+  //           background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+  //         }} 
+  //       />
+        
+  //       {/* Efecto shimmer animado */}
+  //       <div 
+  //         className="absolute inset-0"
+  //         style={{
+  //           background: 'linear-gradient(135deg, transparent, rgba(4, 201, 231, 0.6), transparent)',
+  //           backgroundSize: '200% 100%',
+  //           animation: 'shimmerSlide 2.5s ease-in-out infinite',
+  //         }}
+  //       />
+  //     </div>
+  //   );
+  // }
+
+  // Error state
+  // if (error) {
+  //   return (
+  //     <div 
+  //       ref={sliderRef}
+  //       className="w-full flex items-center justify-center"
+  //       style={{ 
+  //         height: sliderHeight ? `${sliderHeight}px` : '80vh',
+  //         background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+  //       }}
+  //     >
+  //       <div className="text-center">
+  //         <h2 className="text-xl font-semibold text-gray-700 mb-2">Error al cargar slides</h2>
+  //         <p className="text-gray-500">{error}</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  // No slides state
+  // if (slides.length === 0) {
+  //   return (
+  //     <div 
+  //       ref={sliderRef}
+  //       className="w-full flex items-center justify-center"
+  //       style={{ 
+  //         height: sliderHeight ? `${sliderHeight}px` : '80vh',
+  //         background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+  //       }}
+  //     >
+  //       <div className="text-center">
+  //         <h2 className="text-xl font-semibold text-gray-700 mb-2">No hay slides disponibles</h2>
+  //         <p className="text-gray-500">No se encontraron slides activos para mostrar</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+
+  const currentSlide = slides[current];
+
+  // Si no hay slide actual, retornar contenedor vacío
+  if (!currentSlide) {
     return (
       <div 
         ref={sliderRef}
         className="w-full relative overflow-hidden"
         style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
       >
-        {/* Fondo base */}
-        <div 
+        {/* <div 
           className="absolute inset-0"
           style={{ 
             background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
           }} 
-        />
-        
-        {/* Efecto shimmer animado */}
-        <div 
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.05), transparent)',
-            backgroundSize: '200% 100%',
-            animation: 'shimmerSlide 2.5s ease-in-out infinite',
-          }}
-        />
+        /> */}
       </div>
     );
   }
-
-  // Error state
-  if (error) {
-    return (
-      <div 
-        ref={sliderRef}
-        className="w-full flex items-center justify-center"
-        style={{ 
-          height: sliderHeight ? `${sliderHeight}px` : '80vh',
-          background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
-        }}
-      >
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">Error al cargar slides</h2>
-          <p className="text-gray-500">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // No slides state
-  if (slides.length === 0) {
-    return (
-      <div 
-        ref={sliderRef}
-        className="w-full flex items-center justify-center"
-        style={{ 
-          height: sliderHeight ? `${sliderHeight}px` : '80vh',
-          background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
-        }}
-      >
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-700 mb-2">No hay slides disponibles</h2>
-          <p className="text-gray-500">No se encontraron slides activos para mostrar</p>
-        </div>
-      </div>
-    );
-  }
-
-  const currentSlide = slides[current];
 
   return (
     <div 
@@ -197,7 +215,12 @@ export default function Slider({ transitionTime = 2000 }: SliderProps) {
       style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
     >
       {/* Media container */}
-      <div className="absolute inset-0 w-full h-full">
+      <div 
+        className="absolute inset-0 w-full h-full"
+        style={{
+          background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+        }}
+      >
         {slides.map((slide, i) => {
           if (slide.multimediaUrl && isVideo(slide.multimediaUrl)) {
             return (

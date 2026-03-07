@@ -41,9 +41,15 @@ export default function FeaturedPropertyCard({ property }: FeaturedPropertyCardP
     <div className="snap-start w-56 sm:w-64 lg:w-72 flex-shrink-0 h-full">
       <article
         onClick={handleClick}
-        className="group flex h-full flex-col overflow-hidden rounded-[20px] border border-border/70 bg-card transition-transform duration-300 ease-out hover:-translate-y-1 cursor-pointer select-none"
+        className="group flex h-full flex-col overflow-hidden rounded-[20px] border border-border/70 transition-transform duration-300 ease-out hover:-translate-y-1 cursor-pointer select-none"
+        style={{ backgroundColor: 'transparent' }}
       >
-        <div className="relative aspect-video w-full overflow-hidden bg-muted">
+        <div 
+          className="relative aspect-video w-full overflow-hidden"
+          style={{
+            background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
+          }}
+        >
           {property.mainImageUrl && !imageError ? (
             <img
               src={property.mainImageUrl}
@@ -53,7 +59,7 @@ export default function FeaturedPropertyCard({ property }: FeaturedPropertyCardP
               onError={() => setImageError(true)}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-gray-300 to-gray-500" />
+            <div className="w-full h-full" />
           )}
 
           {property.isFeatured && (
@@ -80,7 +86,7 @@ export default function FeaturedPropertyCard({ property }: FeaturedPropertyCardP
           </div>
         </div>
 
-          <div className="flex flex-1 flex-col gap-2 p-3 min-h-0">
+          <div className="flex flex-1 flex-col gap-2 p-3 min-h-0 bg-card">
             <div className="flex flex-col gap-1">
               <h3 className="text-sm font-semibold text-foreground line-clamp-2">
                 {property.title}
