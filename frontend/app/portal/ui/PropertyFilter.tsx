@@ -508,75 +508,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
               )}
             </div>
 
-            {/* Rango de Precio - Oculto temporalmente */}
-            {/* 
-            <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 pt-2">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs ${currency === 'CLP' ? 'font-semibold text-primary' : 'font-light text-muted-foreground'}`}>
-                    Pesos
-                  </span>
-                  <Switch
-                    checked={currency === 'UF'}
-                    onChange={(checked) => setCurrency(checked ? 'UF' : 'CLP')}
-                  />
-                  <span className={`text-xs ${currency === 'UF' ? 'font-semibold text-primary' : 'font-light text-muted-foreground'}`}>
-                    UF
-                  </span>
-                </div>
-              </div>
 
-              <div className="flex-1">
-                <RangeSlider
-                  min={currency === 'UF' ? Math.floor(priceRange.min / ufValue) : priceRange.min}
-                  max={currency === 'UF' ? Math.ceil(priceRange.max / ufValue) : priceRange.max}
-                  value={[
-                    currency === 'UF' 
-                      ? Math.floor((filters.priceMin || priceRange.min) / ufValue)
-                      : (filters.priceMin || priceRange.min),
-                    currency === 'UF'
-                      ? Math.ceil((filters.priceMax || priceRange.max) / ufValue)
-                      : (filters.priceMax || priceRange.max)
-                  ]}
-                  onChange={(values) => {
-                    const [minVal, maxVal] = values;
-                    setFilters(prev => ({
-                      ...prev,
-                      priceMin: currency === 'UF' ? Math.floor(minVal * ufValue) : minVal,
-                      priceMax: currency === 'UF' ? Math.ceil(maxVal * ufValue) : maxVal,
-                    }));
-                  }}
-                />
-              </div>
-
-              <div className="flex-shrink-0 text-right pt-2 min-w-[180px]">
-                <div className="text-xs text-gray-600">
-                  {currency === 'UF' ? (
-                    <>
-                      <span className="font-medium">UF </span>
-                      <span className="font-semibold">
-                        {Math.floor((filters.priceMin || priceRange.min) / ufValue).toLocaleString('es-CL', {minimumFractionDigits: 0, maximumFractionDigits: 1})}
-                      </span>
-                      <span> - </span>
-                      <span className="font-semibold">
-                        {Math.ceil((filters.priceMax || priceRange.max) / ufValue).toLocaleString('es-CL', {minimumFractionDigits: 0, maximumFractionDigits: 1})}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="font-semibold">
-                        ${(filters.priceMin || priceRange.min).toLocaleString('es-CL')}
-                      </span>
-                      <span> - </span>
-                      <span className="font-semibold">
-                        ${(filters.priceMax || priceRange.max).toLocaleString('es-CL')}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-            */}
           </div>
         )}
       </div>

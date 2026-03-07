@@ -12,7 +12,17 @@ export class GetPublishedPropertiesFilteredUseCase {
   async execute(
     filters: any,
     operationType?: PropertyOperationType,
-  ): Promise<{ data: Property[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    data: Property[];
+    pagination: {
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+      hasNextPage: boolean;
+      hasPrevPage: boolean;
+    };
+  }> {
     try {
       const limit = filters.limit || 9;
       const page = Math.max(1, parseInt(filters?.page) || 1);
@@ -166,7 +176,20 @@ export class GetPublishedPropertiesFilteredUseCase {
       }
 
       const totalPages = Math.ceil(total / limit);
-      return { data, total, page, limit, totalPages };
+      const hasNextPage = page < totalPages;
+      const hasPrevPage = page > 1;
+
+      return {
+        data,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages,
+          hasNextPage,
+          hasPrevPage,
+        },
+      };
     } catch (error) {
       console.error('❌ Error in getPublishedPropertiesFiltered:', error);
       throw error;
