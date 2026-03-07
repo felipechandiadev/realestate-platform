@@ -37,11 +37,26 @@ export default function CommunityUsersDataGrid({ rows, totalRows, title }: Commu
   };
 
   const columns: DataGridColumn[] = [
-    { field: 'username', headerName: 'Usuario', flex: 1.2, minWidth: 150, sortable: true, filterable: true },
+    { field: 'username', headerName: 'Usuario', flex: 1.2, minWidth: 150, sortable: true, filterable: true, hide: true },
     { field: 'email', headerName: 'Email', flex: 1.4, minWidth: 200, sortable: true, filterable: true },
     { field: 'firstName', headerName: 'Nombre', flex: 1, minWidth: 130, sortable: true, filterable: true },
     { field: 'lastName', headerName: 'Apellido', flex: 1, minWidth: 130, sortable: true, filterable: true },
-    { field: 'status', headerName: 'Estado', width: 120, sortable: true, filterable: true },
+    {
+      field: 'status',
+      headerName: 'Estado',
+      width: 120,
+      sortable: true,
+      filterable: true,
+      renderCell: (params: any) => (
+        <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+          params.row.status === 'ACTIVE'
+            ? 'bg-green-100 text-green-800'
+            : 'bg-red-100 text-red-800'
+        }`}>
+          {params.row.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
+        </span>
+      ),
+    },
     {
       field: 'createdAt',
       headerName: 'Registrado',
@@ -71,7 +86,7 @@ export default function CommunityUsersDataGrid({ rows, totalRows, title }: Commu
             className="text-primary hover:text-primary-dark"
             title="Ver detalles"
           >
-            <span className="material-symbols-outlined text-lg">visibility</span>
+            <span className="material-symbols-outlined text-lg">more_horiz</span>
           </button>
           <DeleteCommunityUserButton
             userId={row.id}
