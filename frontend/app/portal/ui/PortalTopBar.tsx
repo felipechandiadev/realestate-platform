@@ -373,7 +373,7 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
             />
           )}
           <span className="text-base md:text-lg lg:text-2xl font-medium text-foreground whitespace-nowrap">
-            {(identity?.name || "").toUpperCase()}
+            {identity?.name || ""}
           </span>
         </div>
 

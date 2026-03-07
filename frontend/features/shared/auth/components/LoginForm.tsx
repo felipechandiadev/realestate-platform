@@ -36,6 +36,9 @@ export const LoginForm: React.FC = () => {
   });
   
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  
+  // Detect EMAIL_NOT_VERIFIED error
+  const isEmailNotVerified = error && typeof error === 'string' && error === 'EMAIL_NOT_VERIFIED';
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -95,25 +98,38 @@ export const LoginForm: React.FC = () => {
 
         {error && (
           <Alert variant="error" data-test-id="login-error-alert">
-            {typeof error === 'string' && error === 'EMAIL_NOT_VERIFIED'
+            {isEmailNotVerified
               ? (
                   <>
                     Tu correo no está verificado. Revisa tu bandeja de entrada o solicita un nuevo correo de verificación.
-                    <div className="mt-2">
+                    <div className="mt-4 space-y-3">
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={handleResendVerification}
                         disabled={isResending}
+                        loading={isResending}
                         data-test-id="resend-verification-btn"
+                        className="w-full"
                       >
-                        {isResending ? 'Enviando...' : 'Reenviar correo de verificación'}
+                        {isResending ? (
+                          <span className="flex items-center justify-center gap-2">
+                            <span>Enviando</span>
+                            <span className="flex gap-1">
+                              <span className="w-1 h-1 bg-current rounded-full animate-pulse"></span>
+                              <span className="w-1 h-1 bg-current rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></span>
+                              <span className="w-1 h-1 bg-current rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></span>
+                            </span>
+                          </span>
+                        ) : (
+                          'Reenviar correo de verificación'
+                        )}
                       </Button>
                       {resendSuccess && (
-                        <p className="text-green-600 text-xs mt-1">Correo de verificación enviado.</p>
+                        <p className="text-green-600 text-xs text-center">✓ Correo de verificación enviado. Revisa tu bandeja de entrada.</p>
                       )}
                       {resendError && (
-                        <p className="text-red-600 text-xs mt-1">Error al enviar el correo. Intenta nuevamente.</p>
+                        <p className="text-red-600 text-xs text-center">✗ Error al enviar el correo. Intenta nuevamente.</p>
                       )}
                     </div>
                   </>
@@ -175,16 +191,18 @@ export const LoginForm: React.FC = () => {
           </Link>
         </div>
 
-        <Button
-          type="submit"
-          variant="primary"
-          className="w-full"
-          disabled={isPending}
-          loading={isPending}
-          data-test-id="login-submit-button"
-        >
-          {isPending ? 'Signing in...' : 'Sign In'}
-        </Button>
+        {!isEmailNotVerified && (
+          <Button
+            type="submit"
+            variant="primary"
+            className="w-full"
+            disabled={isPending}
+            loading={isPending}
+            data-test-id="login-submit-button"
+          >
+            {isPending ? 'Signing in...' : 'Sign In'}
+          </Button>
+        )}
 
         <div className="text-center text-sm mt-4">
           <span className="text-secondary">Don&apos;t have an account? </span>

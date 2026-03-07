@@ -20,6 +20,8 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResendButton, setShowResendButton] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null); // null = no verificado aún, true = verificado, false = no verificado
+  const [isLoadingResend, setIsLoadingResend] = useState(false); // Loading state para resend
   const router = useRouter();
   const { login } = useAuth();
   const { showAlert } = useAlert();
@@ -39,12 +41,16 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
         if (err === 'EMAIL_NOT_VERIFIED') {
           setError('Tu correo electrónico no ha sido verificado.');
           setShowResendButton(true);
+          setIsEmailVerified(false); // Email no verificado
         } else {
           setError(err || 'Credenciales inválidas');
+          setIsEmailVerified(null); // Reset el estado
         }
         setIsSubmitting(false);
         return;
       }
+
+      setIsEmailVerified(true); // Email verificado exitosamente
 
       const firstName = email.split('@')[0];
       showAlert({
@@ -72,30 +78,61 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
   const handleResendVerification = async () => {
     try {
       if (!email) {
-        alert('Por favor, ingresa tu correo electrónico antes de reenviar la verificación.');
+        showAlert({
+          message: 'Por favor, ingresa tu correo electrónico antes de reenviar la verificación.',
+          type: 'warning',
+          duration: 3000,
+        });
         return;
       }
-      await fetch('/api/auth/resend-verification', {
+
+      setIsLoadingResend(true);
+
+      const response = await fetch('/api/auth/resend-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email }),
+        body: JSON.stringify({ email }),
       });
-      alert('Correo de verificación reenviado. Revisa tu bandeja de entrada.');
+
+      if (!response.ok) {
+        throw new Error('Error al reenviar el correo');
+      }
+
+      showAlert({
+        message: 'Correo de verificación reenviado. Revisa tu bandeja de entrada.',
+        type: 'success',
+        duration: 4000,
+      });
+
+      // Cerrar el diálogo después de mostrar el mensaje de éxito
+    
+        if (onClose) {
+          onClose();
+        }
+ 
+
     } catch (error) {
       console.error('Error al reenviar el correo:', error);
-      alert('Hubo un problema al reenviar el correo. Intenta nuevamente.');
+      showAlert({
+        message: 'Hubo un problema al reenviar el correo. Intenta nuevamente.',
+        type: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setIsLoadingResend(false);
     }
   };
 
-  const shouldRenderLogo = logoSrc && logoSrc.trim() !== "";
-
   return (
     <div className="flex flex-col gap-4" data-test-id="portal-login-form">
-      {shouldRenderLogo && logoSrc ? (
+      {!logoSrc && (
         <div className="logo-container">
-          <img src={logoSrc} className="logo" />
+          <img src={logoSrc} className="logo" alt="Logo" />
         </div>
-      ) : null}
+      )}
+      {companyName && (
+        <h2 className="text-2xl font-bold text-center mt-4">{companyName}</h2>
+      )}
       <form onSubmit={handleSubmit}>
         <TextField
           label="Correo electrónico"
@@ -128,23 +165,42 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
           </Link>
         </div>
         {error && (
-          <div className="text-red-600 mt-2">
+          <div className="text-red-600 mt-2 flex flex-col items-center gap-2">
             <p>{error}</p>
             {showResendButton && (
-              <button onClick={handleResendVerification} className="underline text-blue-600">
-                Reenviar correo de verificación
-              </button>
+              <Button
+                variant="outlined"
+                onClick={handleResendVerification}
+                disabled={isLoadingResend}
+                className="mt-2"
+                data-test-id="portal-login-resend-verification-button"
+              >
+                {isLoadingResend ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span>Enviando</span>
+                    <span className="flex gap-1">
+                      <span className="w-1 h-1 bg-current rounded-full animate-pulse"></span>
+                      <span className="w-1 h-1 bg-current rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></span>
+                      <span className="w-1 h-1 bg-current rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></span>
+                    </span>
+                  </span>
+                ) : (
+                  'Reenviar correo de verificación'
+                )}
+              </Button>
             )}
           </div>
         )}
-        <Button
-          variant="primary"
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full mt-4"
-        >
-          {isSubmitting ? "Ingresando..." : "Ingresar"}
-        </Button>
+        {isEmailVerified !== false && (
+          <Button
+            variant="primary"
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full mt-4"
+          >
+            {isSubmitting ? "Ingresando..." : "Ingresar"}
+          </Button>
+        )}
 
         <div className="text-center text-sm text-muted-foreground">
           <span>¿No tienes cuenta? </span>

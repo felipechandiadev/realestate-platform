@@ -17,7 +17,7 @@ export class ResendVerificationEmailUseCase {
     error?: string;
   }> {
     try {
-      const { token } = await this.usersService.resendVerificationEmail(email);
+      const { token, user } = await this.usersService.resendVerificationEmail(email);
 
       let frontendUrl = this.configService.get<string>('FRONTEND_PUBLIC_URL');
       if (!frontendUrl) {
@@ -31,14 +31,17 @@ export class ResendVerificationEmailUseCase {
       const verificationLink = `${frontendUrl}/portal/verify-email?token=${token}`;
 
       try {
-        const user = await this.usersService.findOne(email);
+        // El usersService.resendVerificationEmail ya generó el token,
+        // ahora solo intentamos enviar el email. Si falla, lo capturamos
+        // pero seguimos adelante con la respuesta exitosa
         await this.mailService.sendEmailVerification(
           email,
-          user.personalInfo?.firstName || 'Usuario',
+          user?.personalInfo?.firstName || 'Usuario', // Usar nombre real del usuario
           verificationLink,
         );
       } catch (mailError) {
         console.error('Error sending verification email:', mailError);
+        // No lanzamos el error aquí para permitir que el flujo continúe
       }
 
       return {

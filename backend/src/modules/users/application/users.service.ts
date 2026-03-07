@@ -178,7 +178,7 @@ export class UsersService {
     return this.verifyUserEmailUseCase.execute(token);
   }
 
-  async resendVerificationEmail(email: string): Promise<{ token: string; expiresAt: Date }> {
+  async resendVerificationEmail(email: string): Promise<{ token: string; expiresAt: Date; user: User }> {
     return this.resendVerificationEmailUseCase.execute(email);
   }
 

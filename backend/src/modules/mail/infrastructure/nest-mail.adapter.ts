@@ -34,8 +34,8 @@ export class NestMailAdapter extends MailAdapter {
   async sendMail(options: MailOptions): Promise<void> {
     const companyName = await this.getCompanyName();
     const context = {
-      companyName,
       ...(options.context || {}),
+      companyName,  // ← El nombre de la BD sobrescribe cualquier otro
     };
 
     await this.mailerService.sendMail({

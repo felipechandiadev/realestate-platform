@@ -54,11 +54,15 @@ export const authOptions: NextAuthOptions = {
 
           const payload = (await response.json().catch(() => null)) as
             | BackendAuthResponse
-            | { message?: string }
+            | { message?: string; error?: string }
             | null;
 
           if (!response.ok || !payload || !('access_token' in payload)) {
-            return null;
+            // Capturar error específico del backend
+            if (response.status === 403 && (payload as any)?.error === 'EMAIL_NOT_VERIFIED') {
+              throw new Error('EMAIL_NOT_VERIFIED');
+            }
+            throw new Error((payload as any)?.message || 'Credenciales inválidas');
           }
 
           return {

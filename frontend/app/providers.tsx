@@ -48,28 +48,42 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
   const login = useCallback<AuthContextValue["login"]>(
     async (email, password) => {
       try {
+        // Usar el endpoint API personalizado para obtener el token
+        const apiResponse = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const apiPayload = await apiResponse.json();
+
+        // Si hay error específico del backend
+        if (!apiResponse.ok || !apiPayload.success) {
+          if (apiPayload.error === 'EMAIL_NOT_VERIFIED') {
+            return {
+              success: false,
+              error: 'EMAIL_NOT_VERIFIED',
+            };
+          }
+          return {
+            success: false,
+            error: apiPayload.error || 'Credenciales inválidas',
+          };
+        }
+
+        // Si el login fue exitoso, usar NextAuth para establecer la sesión
         const result = await signIn("credentials", {
           redirect: false,
           email,
           password,
         });
 
-        if (!result || result.error) {
-          // Detecta error personalizado de backend
-          if (result?.error === "EMAIL_NOT_VERIFIED") {
-            return {
-              success: false,
-              error: "EMAIL_NOT_VERIFIED",
-            };
-          }
-          const errorMessage =
-            result?.error === "CredentialsSignin"
-              ? "Credenciales inválidas"
-              : result?.error ?? "No fue posible iniciar sesión";
-
+        if (!result?.ok) {
           return {
             success: false,
-            error: errorMessage,
+            error: 'Error al establecer la sesión',
           };
         }
 
