@@ -50,6 +50,8 @@ interface PropertyForRent {
   bathrooms?: number;
   parkingSpaces?: number;
   builtSquareMeters?: number;
+  state?: string;
+  city?: string;
 }
 
 interface PropertiesForRentGridProps {

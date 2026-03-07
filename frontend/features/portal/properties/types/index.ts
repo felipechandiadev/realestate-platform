@@ -56,8 +56,15 @@ export interface PropertyFilter {
   type?: PropertyType;
   priceRange?: { min: number; max: number };
   bedrooms?: number;
+  bedroomsOperator?: 'lte' | 'eq' | 'gte';
   bathrooms?: number;
+  bathroomsOperator?: 'lte' | 'eq' | 'gte';
+  parkingSpaces?: number;
+  parkingSpacesOperator?: 'lte' | 'eq' | 'gte';
   city?: string;
+  state?: string;
+  typeProperty?: string;
+  currency?: string;
   radius?: number;
 }
 

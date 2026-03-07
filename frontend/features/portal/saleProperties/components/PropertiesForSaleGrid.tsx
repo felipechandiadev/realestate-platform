@@ -51,6 +51,8 @@ interface PropertyForSale {
   parkingSpaces?: number;
   builtSquareMeters?: number;
   landSquareMeters?: number;
+  state?: string;
+  city?: string;
   propertyType?: { id: string; name: string } | null;
   isFeatured?: boolean;
 }
@@ -104,8 +106,8 @@ export default function PropertiesForSaleGrid({
       price: property.price,
       currencyPrice: (property.currency as 'CLP' | 'UF') || 'CLP',
       operationType: 'SALE',
-      state: property.location?.state || null,
-      city: property.location?.city || null,
+      state: property.state || property.location?.state || null,
+      city: property.city || property.location?.city || null,
       mainImageUrl: property.mainImageUrl || null,
       multimedia: property.multimedia || [],
       bedrooms: property.bedrooms || property.features?.bedrooms || null,

@@ -4,12 +4,11 @@ import { useSearchParams } from 'next/navigation';
 import { useState, useEffect, useCallback } from 'react';
 import Select, { type Option as SelectOption } from '@/shared/components/ui/Select/Select';
 import NumberStepper from '@/shared/components/ui/NumberStepper/NumberStepper';
-import RangeSlider from '@/shared/components/ui/RangeSlider/RangeSlider';
 import Switch from '@/shared/components/ui/Switch/Switch';
 import { Button } from '@/shared/components/ui/Button/Button';
 import IconButton from '@/shared/components/ui/IconButton/IconButton';
 import { getRegions, getCommunesByRegion } from '@/features/shared/locations/actions/locations.action';
-import { getPublishedPropertiesFiltered, getPriceRange } from '@/features/portal/properties/actions/portalProperties.action';
+import { getPublishedPropertiesFiltered } from '@/features/portal/properties/actions/portalProperties.action';
 import { getLatestUfValue } from '@/features/shared/common/actions/uf.action';
 import { getPropertyTypesWithFeatures, type PropertyTypeWithFeatures } from '@/features/shared/propertyTypes/actions/propertyTypesFeatures.action';
 
@@ -29,8 +28,6 @@ interface PropertyFilterProps {
     builtSquareMetersMin?: number;
     landSquareMetersMin?: number;
     constructionYearMin?: number;
-    priceMin?: number;
-    priceMax?: number;
   };
   onFiltersChange?: (filters: {
     operation?: string;
@@ -47,8 +44,6 @@ interface PropertyFilterProps {
     builtSquareMetersMin?: number;
     landSquareMetersMin?: number;
     constructionYearMin?: number;
-    priceMin?: number;
-    priceMax?: number;
   }) => void;
   isLoading?: boolean;
 }
@@ -70,8 +65,6 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
     builtSquareMetersMin: initialFilters.builtSquareMetersMin || 0,
     landSquareMetersMin: initialFilters.landSquareMetersMin || 0,
     constructionYearMin: initialFilters.constructionYearMin || 0,
-    priceMin: initialFilters.priceMin || 0,
-    priceMax: initialFilters.priceMax || 0,
   });
   const [isExpanded, setIsExpanded] = useState(false);
   const [regions, setRegions] = useState<SelectOption[]>([]);
@@ -79,7 +72,6 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
   const [isLoadingRegions, setIsLoadingRegions] = useState(false);
   const [isLoadingCommunes, setIsLoadingCommunes] = useState(false);
   const [originalRegions, setOriginalRegions] = useState<{id: string, name: string}[]>([]);
-  const [priceRange, setPriceRange] = useState<{min: number; max: number}>({min: 0, max: 10000000});
   const [currency, setCurrency] = useState<'CLP' | 'UF'>('CLP');
   const [ufValue, setUfValue] = useState<number>(37000); // valor por defecto
   const [propertyTypesFeatures, setPropertyTypesFeatures] = useState<PropertyTypeWithFeatures[]>([]);
@@ -142,30 +134,8 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
       builtSquareMetersMin: initialFilters.builtSquareMetersMin || 0,
       landSquareMetersMin: initialFilters.landSquareMetersMin || 0,
       constructionYearMin: initialFilters.constructionYearMin || 0,
-      priceMin: initialFilters.priceMin || 0,
-      priceMax: initialFilters.priceMax || 0,
     });
   }, [initialFilters]);
-
-  // Fetch price range when operation changes
-  useEffect(() => {
-    const fetchPriceRange = async () => {
-      const operationType = filters.operation === 'sale' ? 'SALE' : filters.operation === 'rent' ? 'RENT' : undefined;
-      const range = await getPriceRange(operationType);
-      if (range) {
-        setPriceRange({min: range.minPrice, max: range.maxPrice});
-        // If no price filters set, initialize them to the full range
-        if (!filters.priceMin && !filters.priceMax) {
-          setFilters(prev => ({
-            ...prev,
-            priceMin: range.minPrice,
-            priceMax: range.maxPrice,
-          }));
-        }
-      }
-    };
-    fetchPriceRange();
-  }, [filters.operation]);
 
   useEffect(() => {
     const fetchRegions = async () => {
@@ -256,8 +226,6 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
       builtSquareMetersMin: 0,
       landSquareMetersMin: 0,
       constructionYearMin: 0,
-      priceMin: 0,
-      priceMax: 0,
     };
     
     setFilters(clearedFilters);

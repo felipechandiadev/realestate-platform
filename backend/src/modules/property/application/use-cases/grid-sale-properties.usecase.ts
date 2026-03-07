@@ -26,6 +26,10 @@ export class GridSalePropertiesUseCase {
     let query = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.propertyType', 'pt')
+      .leftJoinAndSelect('property.multimedia', 'multimedia')
+      .leftJoinAndSelect('multimedia.variants', 'variants')
+      .leftJoinAndSelect('property.creatorUser', 'creatorUser')
+      .leftJoinAndSelect('property.assignedAgent', 'assignedAgent')
       .where('property.status = :status', { status: PropertyStatus.PUBLISHED })
       .andWhere('property.operationType = :operationType', { operationType: PropertyOperationType.SALE })
       .andWhere('property.deletedAt IS NULL');
@@ -130,10 +134,6 @@ export class GridSalePropertiesUseCase {
 
     const total = await query.getCount();
     const data = await query
-      .leftJoinAndSelect('property.multimedia', 'multimedia')
-      .leftJoinAndSelect('multimedia.variants', 'variants')
-      .leftJoinAndSelect('property.creatorUser', 'creatorUser')
-      .leftJoinAndSelect('property.assignedAgent', 'assignedAgent')
       .skip(skip)
       .take(limit)
       .getMany();

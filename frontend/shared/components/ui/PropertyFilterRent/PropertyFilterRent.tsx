@@ -333,8 +333,9 @@ export default function PropertyFilterRent({
         </h3>
         <div className="flex gap-2">
           <IconButton
-            icon={isCharacteristicsExpanded ? 'expand_less' : 'expand_more'}
-            variant="outlined"
+            icon="filter_alt"
+            variant="text"
+            className={isCharacteristicsExpanded ? 'text-secondary' : 'text-gray-500'}
             onClick={() => setIsCharacteristicsExpanded(!isCharacteristicsExpanded)}
           />
           <IconButton

@@ -98,14 +98,22 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
     const loadData = async () => {
       try {
         const [propertiesData, personsData, documentTypesData, personsSearchData, agentsData] = await Promise.all([
-          getSalePropertiesGrid({ limit: 100 }),
+          getSalePropertiesGrid({ limit: 100, pagination: false }),
           listPersons({ limit: 100 }),
           getDocumentTypes(),
           searchPersons(),
           listAdminsAgents({ limit: 100 }),
         ]);
 
-        setProperties(Array.isArray(propertiesData) ? propertiesData : []);
+        // Handle properties response - can be array or paginated object
+        if (Array.isArray(propertiesData)) {
+          setProperties(propertiesData);
+        } else if (propertiesData && typeof propertiesData === 'object' && 'data' in propertiesData) {
+          setProperties(Array.isArray(propertiesData.data) ? propertiesData.data : []);
+        } else {
+          setProperties([]);
+        }
+
         setPersons(Array.isArray(personsData) ? personsData : []);
         setDocumentTypes(Array.isArray(documentTypesData) ? documentTypesData : []);
         setPersonsForSearch(Array.isArray(personsSearchData) ? personsSearchData : []);

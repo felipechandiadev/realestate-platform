@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import PropertiesFilter, { ListingMode } from './PropertiesFilter';
 import PropertiesGrid from './PropertiesGrid';
 import { useProperties } from '@/features/portal/properties/hooks';
@@ -27,21 +28,52 @@ export default function PropertiesContent({
   initialMode = 'sale',
   className = '',
 }: PropertiesContentProps) {
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<ListingMode>(initialMode);
-  const [saleFilters, setSaleFilters] = useState<FilterSalePropertiesDto>({
-    currency: 'CLP',
-    page: 1,
-    limit: 9,
+  
+  const [saleFilters, setSaleFilters] = useState<FilterSalePropertiesDto>(() => {
+    const defaults: FilterSalePropertiesDto = {
+      currency: 'CLP',
+      page: 1,
+      limit: 24,
+    };
+
+    return {
+      ...defaults,
+      bedrooms: searchParams.get('bedrooms') ? parseInt(searchParams.get('bedrooms')!) : undefined,
+      bedroomsOperator: (searchParams.get('bedroomsOperator') as 'lte' | 'eq' | 'gte') || undefined,
+      bathrooms: searchParams.get('bathrooms') ? parseInt(searchParams.get('bathrooms')!) : undefined,
+      bathroomsOperator: (searchParams.get('bathroomsOperator') as 'lte' | 'eq' | 'gte') || undefined,
+      parkingSpaces: searchParams.get('parkingSpaces') ? parseInt(searchParams.get('parkingSpaces')!) : undefined,
+      parkingSpacesOperator: (searchParams.get('parkingSpacesOperator') as 'lte' | 'eq' | 'gte') || undefined,
+      typeProperty: (searchParams.get('typeProperty') as string) || undefined,
+      state: (searchParams.get('state') as string) || undefined,
+      city: (searchParams.get('city') as string) || undefined,
+      currency: (searchParams.get('currency') as string) || 'CLP',
+      page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
+    };
   });
+
   const [rentFilters, setRentFilters] = useState<FilterRentPropertiesDto>({
     currency: 'CLP',
     page: 1,
-    limit: 9,
+    limit: 24,
   });
 
-  // Convert filters to API format
+  // Convert filters to API format - pass all current mode filters
+  const currentFilters = mode === 'sale' ? saleFilters : rentFilters;
   const apiFilters: PropertyFilter = {
     listingType: mode,
+    bedrooms: currentFilters.bedrooms,
+    bedroomsOperator: currentFilters.bedroomsOperator,
+    bathrooms: currentFilters.bathrooms,
+    bathroomsOperator: currentFilters.bathroomsOperator,
+    parkingSpaces: currentFilters.parkingSpaces,
+    parkingSpacesOperator: currentFilters.parkingSpacesOperator,
+    typeProperty: currentFilters.typeProperty,
+    city: currentFilters.city,
+    state: currentFilters.state,
+    currency: currentFilters.currency,
   };
 
   const {

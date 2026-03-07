@@ -148,12 +148,15 @@ export class GridRentPropertiesUseCase {
       query.orderBy('property.createdAt', 'DESC');
     }
 
-    const total = await query.getCount();
-    const data = await query
+    // Add multimedia and user joins before getting count
+    query
       .leftJoinAndSelect('property.multimedia', 'multimedia')
       .leftJoinAndSelect('multimedia.variants', 'variants')
       .leftJoinAndSelect('property.creatorUser', 'creatorUser')
-      .leftJoinAndSelect('property.assignedAgent', 'assignedAgent')
+      .leftJoinAndSelect('property.assignedAgent', 'assignedAgent');
+
+    const total = await query.getCount();
+    const data = await query
       .skip(skip)
       .take(limit)
       .getMany();

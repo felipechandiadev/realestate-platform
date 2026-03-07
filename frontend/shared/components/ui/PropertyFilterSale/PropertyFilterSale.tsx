@@ -335,12 +335,12 @@ export default function PropertyFilterSale({
         <div className="flex items-center gap-2">
           {/* Characteristics Filter Toggle Button */}
           <IconButton
-            icon={isCharacteristicsExpanded ? 'expand_less' : 'expand_more'}
-            variant="outlined"
+            icon="filter_alt"
+            variant="text"
             size="md"
             ariaLabel={isCharacteristicsExpanded ? 'Ocultar características' : 'Mostrar características'}
             onClick={() => setIsCharacteristicsExpanded(!isCharacteristicsExpanded)}
-            className="p-2"
+            className={`p-2 ${isCharacteristicsExpanded ? 'text-secondary' : 'text-gray-500'}`}
             title={isCharacteristicsExpanded ? 'Ocultar características' : 'Mostrar características'}
           />
           

@@ -14,14 +14,12 @@ export class GetPublishedPropertiesFilteredUseCase {
     operationType?: PropertyOperationType,
   ): Promise<{
     data: Property[];
-    pagination: {
-      total: number;
-      page: number;
-      limit: number;
-      totalPages: number;
-      hasNextPage: boolean;
-      hasPrevPage: boolean;
-    };
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
   }> {
     try {
       const limit = filters.limit || 9;
@@ -120,10 +118,13 @@ export class GetPublishedPropertiesFilteredUseCase {
         query.orderBy('property.createdAt', 'DESC');
       }
 
+      // Add multimedia joins before getting count and data
+      query
+        .leftJoinAndSelect('property.multimedia', 'multimedia')
+        .leftJoinAndSelect('multimedia.variants', 'variants');
+
       const total = await query.getCount();
       let data = await query
-        .leftJoinAndSelect('property.multimedia', 'multimedia')
-        .leftJoinAndSelect('multimedia.variants', 'variants')
         .orderBy('property.createdAt', 'DESC')
         .skip(skip)
         .take(limit)
@@ -181,14 +182,12 @@ export class GetPublishedPropertiesFilteredUseCase {
 
       return {
         data,
-        pagination: {
-          total,
-          page,
-          limit,
-          totalPages,
-          hasNextPage,
-          hasPrevPage,
-        },
+        total,
+        page,
+        limit,
+        totalPages,
+        hasNextPage,
+        hasPrevPage,
       };
     } catch (error) {
       console.error('❌ Error in getPublishedPropertiesFiltered:', error);
