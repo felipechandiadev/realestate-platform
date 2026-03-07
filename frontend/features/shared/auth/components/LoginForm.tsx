@@ -8,7 +8,7 @@ import { Button } from '@/shared/components/ui/Button/Button';
 import Switch from '@/shared/components/ui/Switch/Switch';
 import Alert from '@/shared/components/ui/Alert/Alert';
 import Card from '@/shared/components/ui/Card/Card';
-import { useLogin } from '@/features/shared/auth/hooks';
+import { useLogin, useResendVerificationEmail } from '@/features/shared/auth/hooks';
 import { LoginSchema, type LoginInput } from '@/features/shared/auth/validation';
 
 /**
@@ -22,6 +22,12 @@ import { LoginSchema, type LoginInput } from '@/features/shared/auth/validation'
 export const LoginForm: React.FC = () => {
   const router = useRouter();
   const { mutate: login, isPending, error } = useLogin();
+  const {
+    mutate: resendVerification,
+    isPending: isResending,
+    isSuccess: resendSuccess,
+    isError: resendError,
+  } = useResendVerificationEmail();
   
   const [formData, setFormData] = useState<LoginInput>({
     email: '',
@@ -47,6 +53,10 @@ export const LoginForm: React.FC = () => {
 
   const handleRememberMeChange = (checked: boolean) => {
     setFormData((prev) => ({ ...prev, rememberMe: checked }));
+  };
+
+  const handleResendVerification = () => {
+    resendVerification();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -85,7 +95,7 @@ export const LoginForm: React.FC = () => {
 
         {error && (
           <Alert variant="error" data-test-id="login-error-alert">
-            {error === 'EMAIL_NOT_VERIFIED'
+            {typeof error === 'string' && error === 'EMAIL_NOT_VERIFIED'
               ? (
                   <>
                     Tu correo no está verificado. Revisa tu bandeja de entrada o solicita un nuevo correo de verificación.
@@ -179,7 +189,6 @@ export const LoginForm: React.FC = () => {
         <div className="text-center text-sm mt-4">
           <span className="text-secondary">Don&apos;t have an account? </span>
           <Link 
-          const { mutate: resendVerification, isPending: isResending, isSuccess: resendSuccess, isError: resendError } = useResendVerificationEmail();
             href="/auth/register" 
             className="text-primary hover:underline"
             data-test-id="login-register-link"

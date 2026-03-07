@@ -5,7 +5,6 @@ import Link from "next/link";
 import { TextField } from "@/shared/components/ui/TextField/TextField";
 import { useAuth } from "@/app/providers";
 import { useAlert } from "@/shared/hooks/useAlert";
-import Logo from "@/shared/components/ui/Logo/Logo";
 import { Button } from "@/shared/components/ui/Button/Button";
 
 interface LoginFormProps {
@@ -20,6 +19,7 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showResendButton, setShowResendButton] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
   const { showAlert } = useAlert();
@@ -31,17 +31,21 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
 
     try {
       const result = await login(email, password);
+      console.log('Backend response:', result); // Log the backend response
 
-      // Support both our login return ({ success: true }) and NextAuth shape ({ ok: true })
       const ok = (result as any)?.success === true || (result as any)?.ok === true;
       if (!ok) {
-        const err = (result as any)?.error ?? "Credenciales inválidas";
-        setError(err);
+        const err = (result as any)?.error;
+        if (err === 'EMAIL_NOT_VERIFIED') {
+          setError('Tu correo electrónico no ha sido verificado.');
+          setShowResendButton(true);
+        } else {
+          setError(err || 'Credenciales inválidas');
+        }
         setIsSubmitting(false);
         return;
       }
 
-      // Mostrar alerta de bienvenida con nombre extraído del email
       const firstName = email.split('@')[0];
       showAlert({
         message: `¡Bienvenido ${firstName}! Login exitoso.`,
@@ -49,15 +53,12 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
         duration: 3000,
       });
 
-      // Cerrar el dialog inmediatamente - sin delay
       setTimeout(() => {
         if (onClose) {
           onClose();
         }
       }, 100);
 
-      // Refrescar la página para que el middleware pueda redirigir si es necesario
-      // (ADMIN/AGENT irán a backOffice, COMMUNITY permanecerán en portal)
       setTimeout(() => {
         router.refresh();
       }, 500);
@@ -68,21 +69,33 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
     }
   };
 
+  const handleResendVerification = async () => {
+    try {
+      if (!email) {
+        alert('Por favor, ingresa tu correo electrónico antes de reenviar la verificación.');
+        return;
+      }
+      await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email }),
+      });
+      alert('Correo de verificación reenviado. Revisa tu bandeja de entrada.');
+    } catch (error) {
+      console.error('Error al reenviar el correo:', error);
+      alert('Hubo un problema al reenviar el correo. Intenta nuevamente.');
+    }
+  };
+
+  const shouldRenderLogo = logoSrc && logoSrc.trim() !== "";
+
   return (
     <div className="flex flex-col gap-4" data-test-id="portal-login-form">
-      {logoSrc && (
-
-        <div>
-          <div className="flex justify-center mb-4">
-            <Logo src={logoSrc} className="w-48 h-20 md:w-64 md:h-24" aspect={{ w: 4, h: 1 }} />
-
-          </div>
-          <div className="text-center text-sm text-foreground text-xl">
-            {companyName || "nuestro portal"}
-          </div>
+      {shouldRenderLogo && logoSrc ? (
+        <div className="logo-container">
+          <img src={logoSrc} className="logo" />
         </div>
-
-      )}
+      ) : null}
       <form onSubmit={handleSubmit}>
         <TextField
           label="Correo electrónico"
@@ -115,9 +128,14 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
           </Link>
         </div>
         {error && (
-          <p className="text-sm text-red-600" role="alert">
-            {error}
-          </p>
+          <div className="text-red-600 mt-2">
+            <p>{error}</p>
+            {showResendButton && (
+              <button onClick={handleResendVerification} className="underline text-blue-600">
+                Reenviar correo de verificación
+              </button>
+            )}
+          </div>
         )}
         <Button
           variant="primary"
@@ -144,3 +162,4 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
     </div>
   );
 }
+

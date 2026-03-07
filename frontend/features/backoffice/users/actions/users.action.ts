@@ -68,6 +68,8 @@ export async function getCommunityUsersGrid(
   if (typeof params.page === 'number') url.searchParams.set('page', String(params.page));
   if (typeof params.limit === 'number') url.searchParams.set('limit', String(params.limit));
 
+  console.log('Fetching community users with params:', url.toString()); // Debugging log
+
   const response = await fetch(url.toString(), {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -76,16 +78,19 @@ export async function getCommunityUsersGrid(
     cache: 'no-store',
   });
 
+  const responseText = await response.text();
+  console.log('Backend response:', responseText); // Log backend response for debugging
+
   if (!response.ok) {
     let message = `Error ${response.status} al obtener usuarios de la comunidad`;
     try {
-      const payload = await response.json();
+      const payload = JSON.parse(responseText);
       if (payload?.message) message = payload.message;
     } catch {}
     throw new Error(message);
   }
 
-  const result = await response.json();
+  const result = JSON.parse(responseText);
   return result as CommunityUsersGridResponse;
 }
 

@@ -29,6 +29,8 @@ function parseFiltersFromUrl(filtersParam: string): Record<string, string> {
 }
 
 export const ColHeader: React.FC<ColHeaderProps> = ({ column, computedStyle, filterMode = false }) => {
+  console.log('ColHeader props:', { column, computedStyle }); // Log props for debugging
+
   const { headerName, headerAlign, align, width, flex, minWidth, maxWidth, field, filterable = true } = column;
   const searchParams = useSearchParams();
   const router = useRouter();
