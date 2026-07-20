@@ -1,0 +1,30 @@
+{
+  "name": "realestate-platform",
+  "private": true,
+  "description": "Real Estate Platform monorepo \u2014 portal, backoffice, shared UI",
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "packages/*",
+    "portal",
+    "backoffice"
+  ],
+  "scripts": {
+    "ui:typecheck": "npm run typecheck -w @realestate/ui",
+    "dev:portal": "npm run dev -w portal",
+    "dev:backoffice": "npm run dev -w backoffice",
+    "dev:apps": "concurrently -n portal,bo -c blue,magenta \"npm run dev -w portal\" \"npm run dev -w backoffice\"",
+    "core:dev": "npm run start:dev --prefix core",
+    "core:build": "npm run build --prefix core",
+    "install:apps": "npm install",
+    "install:core": "npm install --prefix core",
+    "env:dev": "bash envs/sync-dev-envs.sh --force",
+    "dev": "bash scripts/dev-all.sh",
+    "dev:core": "npm run start:dev --prefix core"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

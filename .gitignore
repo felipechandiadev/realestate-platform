@@ -33,8 +33,11 @@ pnpm-lock.yaml
 .pnp.*
 
 # ==========================================
-# BACKEND (NestJS)
+# CORE / BACKEND (NestJS)
 # ==========================================
+core/dist/
+core/build/
+core/.env.local
 backend/dist/
 backend/build/
 backend/.env.local
@@ -51,8 +54,18 @@ backend/out/
 backend/tsconfig.build.json.tsbuildinfo
 
 # ==========================================
-# FRONTEND (Next.js)
+# FRONTEND APPS (Next.js)
 # ==========================================
+portal/.next/
+portal/out/
+portal/.env.local
+portal/node_modules/
+backoffice/.next/
+backoffice/out/
+backoffice/.env.local
+backoffice/node_modules/
+legacy/**/node_modules/
+legacy/**/.next/
 frontend/.next/
 frontend/out/
 frontend/.env.local

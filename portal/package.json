@@ -1,0 +1,50 @@
+{
+  "name": "portal",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 8001",
+    "build": "next build",
+    "start": "next start -p 8001",
+    "lint": "eslint",
+    "test": "jest --passWithNoTests"
+  },
+  "dependencies": {
+    "@realestate/ui": "*",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@fortawesome/fontawesome-svg-core": "^7.1.0",
+    "@fortawesome/free-brands-svg-icons": "^7.1.0",
+    "@fortawesome/react-fontawesome": "^3.1.0",
+    "@tanstack/react-query": "^5.90.21",
+    "@types/moment": "^2.11.29",
+    "assert": "^2.1.0",
+    "buffer": "^6.0.3",
+    "crypto-browserify": "^3.12.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.561.0",
+    "moment": "^2.30.1",
+    "next": "^16.1.6",
+    "next-auth": "^4.24.11",
+    "process": "^0.11.10",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "react-leaflet": "^5.0.0",
+    "stream-browserify": "^3.0.0",
+    "util": "^0.12.5",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.5",
+    "tailwindcss": "3.4.17",
+    "typescript": "^5"
+  }
+}

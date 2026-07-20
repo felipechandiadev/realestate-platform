@@ -1,0 +1,245 @@
+{
+  "generatedAt": "2025-12-26T15:03:10.544Z",
+  "routes": [
+    {
+      "name": "actions",
+      "path": "/actions",
+      "children": []
+    },
+    {
+      "name": "api",
+      "path": "/api",
+      "children": []
+    },
+    {
+      "name": "backOffice",
+      "path": "/",
+      "children": [
+        {
+          "name": "cms",
+          "path": "//cms",
+          "children": [
+            {
+              "name": "aboutUs",
+              "path": "//cms/aboutUs",
+              "children": []
+            },
+            {
+              "name": "articles",
+              "path": "//cms/articles",
+              "children": []
+            },
+            {
+              "name": "identity",
+              "path": "//cms/identity",
+              "children": []
+            },
+            {
+              "name": "ourTeam",
+              "path": "//cms/ourTeam",
+              "children": []
+            },
+            {
+              "name": "slider",
+              "path": "//cms/slider",
+              "children": []
+            },
+            {
+              "name": "testimonials",
+              "path": "//cms/testimonials",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "notifications",
+          "path": "//notifications",
+          "children": []
+        },
+        {
+          "name": "properties",
+          "path": "//properties",
+          "children": [
+            {
+              "name": "propertyTypes",
+              "path": "//properties/propertyTypes",
+              "children": []
+            },
+            {
+              "name": "rent",
+              "path": "//properties/rent",
+              "children": []
+            },
+            {
+              "name": "sales",
+              "path": "//properties/sales",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "users",
+          "path": "//users",
+          "children": [
+            {
+              "name": "administrators",
+              "path": "//users/administrators",
+              "children": []
+            },
+            {
+              "name": "agents",
+              "path": "//users/agents",
+              "children": []
+            },
+            {
+              "name": "community",
+              "path": "//users/community",
+              "children": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "contexts",
+      "path": "/contexts",
+      "children": []
+    },
+    {
+      "name": "hooks",
+      "path": "/hooks",
+      "children": []
+    },
+    {
+      "name": "notification-example",
+      "path": "/notification-example",
+      "children": []
+    },
+    {
+      "name": "portal",
+      "path": "/",
+      "children": [
+        {
+          "name": "aboutUs",
+          "path": "/aboutUs",
+          "children": []
+        },
+        {
+          "name": "blog",
+          "path": "/blog",
+          "children": [
+            {
+              "name": "article",
+              "path": "/blog/article",
+              "children": [
+                {
+                  "name": "[id]",
+                  "path": "/blog/article/[id]",
+                  "children": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "forgot-password",
+          "path": "/forgot-password",
+          "children": []
+        },
+        {
+          "name": "ourTeam",
+          "path": "/ourTeam",
+          "children": []
+        },
+        {
+          "name": "personalInfo",
+          "path": "/personalInfo",
+          "children": []
+        },
+        {
+          "name": "properties",
+          "path": "/properties",
+          "children": [
+            {
+              "name": "property",
+              "path": "/properties/property",
+              "children": [
+                {
+                  "name": "[id]",
+                  "path": "/properties/property/[id]",
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": "rent",
+              "path": "/properties/rent",
+              "children": []
+            },
+            {
+              "name": "sale",
+              "path": "/properties/sale",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "publish",
+          "path": "/publish",
+          "children": []
+        },
+        {
+          "name": "rent-property",
+          "path": "/rent-property",
+          "children": []
+        },
+        {
+          "name": "reset-password",
+          "path": "/reset-password",
+          "children": []
+        },
+        {
+          "name": "sell-property",
+          "path": "/sell-property",
+          "children": []
+        },
+        {
+          "name": "services",
+          "path": "/services",
+          "children": [
+            {
+              "name": "management",
+              "path": "/services/management",
+              "children": []
+            }
+          ]
+        },
+        {
+          "name": "testimonials",
+          "path": "/testimonials",
+          "children": []
+        },
+        {
+          "name": "valuation",
+          "path": "/valuation",
+          "children": []
+        },
+        {
+          "name": "verify-email",
+          "path": "/verify-email",
+          "children": []
+        }
+      ]
+    },
+    {
+      "name": "test-colors",
+      "path": "/test-colors",
+      "children": []
+    },
+    {
+      "name": "types",
+      "path": "/types",
+      "children": []
+    }
+  ]
+}
