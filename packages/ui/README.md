@@ -30,7 +30,7 @@ content: [
 ],
 ```
 
-3. Marca: overrides en `:root` de la app (`--color-*` hex y `--color-*-rgb` para opacidad Tailwind). Incluir `--color-muted-foreground` / `--color-muted-foreground-rgb`.
+3. Marca / paleta Kai: overrides en `:root` de la app (`--color-*` hex y `--color-*-rgb` para opacidad Tailwind). Incluir al menos primary, secondary, accent, active, surface, muted, muted-foreground, success/info/warning/error, hover, y tokens de shell/sidebar (`--color-shell-chrome`, `--color-sidebar-bg`, `--sidebar-backdrop-blur`).
 
 4. Uso de componentes: basta con importar desde el package; no hace falta importar CSS de cada componente a mano.
 

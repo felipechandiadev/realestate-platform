@@ -62,6 +62,16 @@ export interface PropertyFormData {
   internalNotes?: string;
 }
 
+const PROPERTY_STATUS_OPTIONS: ExtendedOption[] = [
+  { id: 'PUBLISHED', label: 'Publicada' },
+  { id: 'REQUEST', label: 'Solicitud' },
+  { id: 'PRE-APPROVED', label: 'Pre-aprobada' },
+  { id: 'INACTIVE', label: 'Inactiva' },
+  { id: 'SOLD', label: 'Vendida' },
+  { id: 'RENTED', label: 'Arrendada' },
+  { id: 'CONTRACT-IN-PROGRESS', label: 'Contrato en progreso' },
+];
+
 // Función para obtener campos de información básica
 export const getBasicInfoFields = (
   propertyTypes: PropertyTypeOption[],
@@ -85,14 +95,24 @@ export const getBasicInfoFields = (
     rows: 3,
     width: '100%',
   }],
-  [{
-    name: 'propertyTypeId',
-    label: 'Tipo de Propiedad',
-    type: 'select',
-    required: true,
-    options: mapPropertyTypeOptions(propertyTypes),
-    width: '100%',
-  }],
+  [
+    {
+      name: 'propertyTypeId',
+      label: 'Tipo de Propiedad',
+      type: 'select',
+      required: true,
+      options: mapPropertyTypeOptions(propertyTypes),
+      width: '50%',
+    },
+    {
+      name: 'status',
+      label: 'Estado',
+      type: 'select',
+      required: true,
+      options: mapExtendedOptions(PROPERTY_STATUS_OPTIONS),
+      width: '50%',
+    },
+  ],
   [
     {
       name: 'price',

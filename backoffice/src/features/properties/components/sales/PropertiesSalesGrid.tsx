@@ -92,9 +92,18 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
     {
       field: 'status',
       headerName: 'Estado',
-      width: 140,
+      width: 160,
       sortable: true,
       filterable: true,
+      filterOptions: [
+        { id: 'PUBLISHED', label: 'Publicada' },
+        { id: 'REQUEST', label: 'Solicitud' },
+        { id: 'PRE-APPROVED', label: 'Pre-aprobada' },
+        { id: 'INACTIVE', label: 'Inactiva' },
+        { id: 'SOLD', label: 'Vendida' },
+        { id: 'RENTED', label: 'Arrendada' },
+        { id: 'CONTRACT-IN-PROGRESS', label: 'Contrato en progreso' },
+      ],
       renderCell: ({ value }) => (
         <span className={`px-2 py-1 rounded-md text-xs font-semibold ${getStatusChipClasses(value)}`}>
           {getStatusInSpanish(value)}

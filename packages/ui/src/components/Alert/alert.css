@@ -1,5 +1,6 @@
 /**
- * Alert. Colores y fondos: --color-* (tema en :root).
+ * Alert (inline form feedback only). For floating snackbars use Toast.
+ * Colores y fondos: --color-* (tema en :root).
  */
 .fs-alert {
   position: relative;

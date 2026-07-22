@@ -17,6 +17,8 @@ export interface SalePropertiesGridParams {
   search?: string;
   filtration?: boolean;
   filters?: string; // e.g. "city-Las Condes,typeName-Departamento"
+  /** `ALL` = todos los estados (backoffice). Omitido = PUBLISHED en backend. */
+  status?: string;
   pagination?: boolean;
   page?: number;
   limit?: number;
@@ -74,6 +76,9 @@ export async function getSalePropertiesGrid(
   if (params.sortField) url.searchParams.set('sortField', params.sortField);
   if (typeof params.search === 'string') url.searchParams.set('search', params.search);
   if (typeof params.filters === 'string') url.searchParams.set('filters', params.filters);
+  if (typeof params.status === 'string' && params.status.trim() !== '') {
+    url.searchParams.set('status', params.status.trim());
+  }
   setBoolParam('filtration', params.filtration);
   setBoolParam('pagination', params.pagination);
   if (typeof params.page === 'number') url.searchParams.set('page', String(params.page));

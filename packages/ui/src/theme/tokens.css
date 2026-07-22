@@ -1,10 +1,10 @@
 /**
- * Contrato de tokens visuales para @kai/ui.
- * Cada PWA define estos valores en :root (globals.css).
+ * Contrato de tokens visuales para @realestate/ui (alineado a @kai/ui).
+ * Cada app puede sobrescribir estos valores en :root (globals.css).
  * Los componentes usan var(--color-*) y CSS colocalizado.
  */
 :root {
-  /* Tipografía — familias (cada PWA puede sobrescribir con next/font) */
+  /* Tipografía — familias (cada app puede sobrescribir con next/font) */
   --font-sans-fallback:
     ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     "Noto Sans", sans-serif;
@@ -31,7 +31,7 @@
   --letter-spacing-normal: 0em;
   --letter-spacing-wide: 0.05em;
 
-  /* Colores base */
+  /* Colores base (paleta Kai) */
   --color-primary: #1e73ae;
   --color-background: #ffffff;
   --color-surface: #fcfffe;

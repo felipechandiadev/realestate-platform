@@ -1,6 +1,8 @@
 // Primitives
 export { default as Alert } from "./components/Alert";
 export type { AlertVariant } from "./components/Alert/Alert";
+export { Toast, ToastViewport } from "./components/Toast";
+export type { ToastProps, ToastVariant, ToastViewportProps } from "./components/Toast";
 export { Button, ButtonPill, ButtonGroup, ButtonGroupItem, ButtonGroupToggle } from "./components/Button";
 export type {
   ButtonGroupProps,

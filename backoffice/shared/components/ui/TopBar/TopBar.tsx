@@ -199,15 +199,20 @@ const TopBar: React.FC<TopBarProps> = ({
             </div>
           </header>
           {showSidebar && (
-            <>
+            <div
+              className="fixed inset-0 z-[60] flex"
+              data-test-id="sidebar-shell"
+              role="presentation"
+            >
+              <SideBar menuItems={menuItems} onClose={close} logoUrl={logoSrc} companyName={title} />
               <div
-                className="fixed inset-0 z-[60] bg-black/10"
+                className="min-h-0 min-w-0 flex-1 cursor-default"
+                style={{ backgroundColor: 'var(--color-sidebar-overlay)' }}
                 onClick={close}
                 aria-label="Cerrar menú lateral"
                 data-test-id="sidebar-overlay"
               />
-              <SideBar menuItems={menuItems} onClose={close} logoUrl={logoSrc} companyName={title} />
-            </>
+            </div>
           )}
           {/* Children se renderizan fuera de TopBar, en el layout */}
         </div>

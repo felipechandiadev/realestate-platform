@@ -38,7 +38,7 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
   isPinned = false,
   sortingEnabled = true,
 }) => {
-  const { headerName, width, flex, minWidth, maxWidth, field, filterable = true } = column;
+  const { headerName, width, flex, minWidth, maxWidth, field, filterable = true, filterOptions } = column;
   const headerAlignClasses = getColumnAlignClassNames(resolveColumnAlign(column, 'header'));
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -81,53 +81,57 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
   }, []);
 
   // Handle filter change with debounce
+  const applyFilterValue = useCallback((value: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const currentFilters = parseFiltersFromUrl(params.get('filters') || '');
+
+    if (value.trim() === '') {
+      delete currentFilters[field];
+    } else {
+      currentFilters[field] = value;
+    }
+
+    const newFiltersString = Object.entries(currentFilters)
+      .filter(([_, filterValue]) => filterValue.trim() !== '')
+      .map(([column, filterValue]) => `${column}-${encodeURIComponent(filterValue)}`)
+      .join(',');
+
+    if (newFiltersString) {
+      params.set('filters', newFiltersString);
+      params.set('filtration', 'true');
+    } else {
+      params.delete('filters');
+      params.set('filtration', 'true');
+    }
+
+    params.set('page', '1');
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [searchParams, router, field]);
+
   const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value;
     setLocalFilterValue(value);
     isTypingRef.current = true;
 
-    // Clear previous timer
     if (debounceTimer.current) {
       clearTimeout(debounceTimer.current);
     }
 
-    // Set new timer for 300ms debounce
     debounceTimer.current = setTimeout(() => {
       isTypingRef.current = false;
-      
-      const params = new URLSearchParams(searchParams.toString());
-      // Update filters parameter
-      const currentFilters = parseFiltersFromUrl(params.get('filters') || '');
-
-      if (value.trim() === '') {
-        // Remove this column's filter if input is empty
-        delete currentFilters[field];
-      } else {
-        // Set/update this column's filter
-        currentFilters[field] = value;
-      }
-
-      // Build new filters string
-      const newFiltersString = Object.entries(currentFilters)
-        .filter(([_, filterValue]) => filterValue.trim() !== '')
-        .map(([column, filterValue]) => `${column}-${encodeURIComponent(filterValue)}`)
-        .join(',');
-
-      if (newFiltersString) {
-        params.set('filters', newFiltersString);
-        params.set('filtration', 'true');
-      } else {
-        params.delete('filters');
-        // NO eliminar filtration aquí: solo la Toolbar puede quitar filtration
-        params.set('filtration', 'true');
-      }
-
-      // Reset to page 1 when filtering
-      params.set('page', '1');
-      router.replace(`?${params.toString()}`, { scroll: false });
+      applyFilterValue(value);
     }, 300);
-  }, [searchParams, router, field]);
+  }, [applyFilterValue]);
 
+  const handleFilterSelectChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    setLocalFilterValue(value);
+    isTypingRef.current = false;
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+    }
+    applyFilterValue(value);
+  }, [applyFilterValue]);
   // Handle sort click - toggle between asc/desc if this column is active, or activate this column
   const handleSortClick = () => {
     if (!column.sortable) return;
@@ -206,23 +210,42 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
     >
       {filterMode && filterable ? (
         <div className="relative flex h-full min-w-0 w-full flex-1 items-center justify-start overflow-hidden">
-          {localFilterValue && (
-            <label
-              className="absolute left-0 text-[10px] text-foreground bg-white px-0 pointer-events-none z-10 transition-all duration-200 text-left"
-              style={{lineHeight:1, top: '2px'}}>
-              {headerName}
-            </label>
+          {filterOptions && filterOptions.length > 0 ? (
+            <select
+              value={localFilterValue}
+              onChange={handleFilterSelectChange}
+              aria-label={headerName}
+              className="block h-[28px] w-full min-w-0 max-w-full truncate border-0 bg-transparent p-0 text-xs outline-none"
+              data-test-id={`data-grid-filter-select-${field}`}
+            >
+              <option value="">Todos</option>
+              {filterOptions.map((opt) => (
+                <option key={String(opt.id)} value={String(opt.id)}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <>
+              {localFilterValue && (
+                <label
+                  className="absolute left-0 text-[10px] text-foreground bg-white px-0 pointer-events-none z-10 transition-all duration-200 text-left"
+                  style={{lineHeight:1, top: '2px'}}>
+                  {headerName}
+                </label>
+              )}
+              <input
+                type="text"
+                size={1}
+                value={localFilterValue}
+                onChange={handleFilterChange}
+                placeholder={headerName}
+                className={`block w-full min-w-0 max-w-full text-xs h-[28px] bg-transparent outline-none p-0 border-0 ${localFilterValue ? 'text-secondary pt-3' : ''} text-left`}
+                aria-label={headerName}
+                style={{ width: '100%', minWidth: 0, maxWidth: '100%', border: 'none' }}
+              />
+            </>
           )}
-          <input
-            type="text"
-            size={1}
-            value={localFilterValue}
-            onChange={handleFilterChange}
-            placeholder={headerName}
-            className={`block w-full min-w-0 max-w-full text-xs h-[28px] bg-transparent outline-none p-0 border-0 ${localFilterValue ? 'text-secondary pt-3' : ''} text-left`}
-            aria-label={headerName}
-            style={{ width: '100%', minWidth: 0, maxWidth: '100%', border: 'none' }}
-          />
         </div>
       ) : (
         <>

@@ -32,6 +32,8 @@ export default async function Page({ searchParams }: PageProps) {
       sortField,
       sort,
       filters,
+      // Backoffice: listar todos los estados; el filtro de columna `status` los acota
+      status: 'ALL',
       filtration: !!search || !!filters,
       pagination: true,
     });

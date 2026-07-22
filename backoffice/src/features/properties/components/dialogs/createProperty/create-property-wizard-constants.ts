@@ -4,7 +4,7 @@ export const CREATE_PROPERTY_WIZARD_STEPS: StepperStepItem[] = [
   {
     id: 'basic',
     title: 'Información Básica',
-    description: 'Título, descripción, tipo y precio de la propiedad',
+    description: 'Título, descripción, tipo, estado y precio de la propiedad',
   },
   {
     id: 'details',

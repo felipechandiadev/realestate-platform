@@ -172,8 +172,13 @@ const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose,
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-[70] w-64 h-full bg-white/60 backdrop-blur backdrop-saturate-150 text-black flex flex-col items-center py-6 shadow-xl border border-white/20 ${className ? className : ''}`}
-      style={style}
+      className={`flex h-full min-h-0 w-64 shrink-0 flex-col items-center py-6 shadow-xl border-r border-border text-foreground ${className ? className : ''}`}
+      style={{
+        backgroundColor: 'var(--color-sidebar-bg)',
+        WebkitBackdropFilter: 'blur(var(--sidebar-backdrop-blur))',
+        backdropFilter: 'blur(var(--sidebar-backdrop-blur))',
+        ...style,
+      }}
       data-test-id="side-bar-root"
     >
       <div className="mb-6 text-center">

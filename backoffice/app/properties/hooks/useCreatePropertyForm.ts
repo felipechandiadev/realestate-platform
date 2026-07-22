@@ -41,7 +41,7 @@ export const useCreatePropertyForm = (
     constructionYear: 2025,
     seoTitle: '',
     seoDescription: '',
-    status: 'REQUEST',
+    status: 'PUBLISHED',
     propertyTypeId: '',
     internalNotes: '',
   });

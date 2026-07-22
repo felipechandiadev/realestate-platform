@@ -4,15 +4,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AlertCircle, FileText } from 'lucide-react';
 import { useAlert } from '@/providers/AlertContext';
-import { TextField } from '@realestate/ui';
-import { IconButton } from "@realestate/ui";
-import { Dialog } from "@realestate/ui";
+import { Button, Dialog, IconButton, TextField } from '@realestate/ui';
 import { getDocumentTypes, type DocumentType } from '@/features/contracts/actions/documentTypes.action';
 import DocumentTypeCard from '@/app/contracts/documentTypes/ui/DocumentTypeCard';
 import CreateDocumentTypeForm from '@/app/contracts/documentTypes/ui/CreateDocumentTypeForm';
 import UpdateDocumentTypeForm from '@/app/contracts/documentTypes/ui/UpdateDocumentTypeForm';
 import DeleteBaseForm from '@/shared/components/ui/BaseForm/DeleteBaseForm';
 import { deleteDocumentType } from '@/features/contracts/actions/documentTypes.action';
+
+const CREATE_DOCUMENT_TYPE_FORM_ID = 'create-document-type-form';
 
 interface DocumentTypesContentProps {
   initialDocumentTypes: DocumentType[];
@@ -240,9 +240,31 @@ export function DocumentTypesContent({
         open={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
         title="Crear Tipo de Documento"
-        size="lg"
+        size="sm"
+        actions={
+          <>
+            <Button
+              variant="outlinedSecondary"
+              type="button"
+              onClick={() => setIsCreateDialogOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              type="submit"
+              form={CREATE_DOCUMENT_TYPE_FORM_ID}
+            >
+              Crear
+            </Button>
+          </>
+        }
       >
-        <CreateDocumentTypeForm onSuccess={handleCreateSuccess} />
+        <CreateDocumentTypeForm
+          nested
+          formId={CREATE_DOCUMENT_TYPE_FORM_ID}
+          onSuccess={handleCreateSuccess}
+        />
       </Dialog>
 
       {isEditDialogOpen && selectedDocumentType && (

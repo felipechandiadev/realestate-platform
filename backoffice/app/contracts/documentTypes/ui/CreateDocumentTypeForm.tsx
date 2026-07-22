@@ -7,6 +7,8 @@ import { createDocumentType } from '@/features/contracts/actions/documentTypes.a
 
 interface CreateDocumentTypeFormProps {
   onSuccess?: () => void
+  nested?: boolean
+  formId?: string
 }
 
 const fields: BaseFormField[] = [
@@ -26,7 +28,11 @@ const fields: BaseFormField[] = [
   },
 ]
 
-export default function CreateDocumentTypeForm({ onSuccess }: CreateDocumentTypeFormProps) {
+export default function CreateDocumentTypeForm({
+  onSuccess,
+  nested = false,
+  formId,
+}: CreateDocumentTypeFormProps) {
   const { showAlert } = useAlert()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({
@@ -94,7 +100,8 @@ export default function CreateDocumentTypeForm({ onSuccess }: CreateDocumentType
       isSubmitting={isSubmitting}
       submitLabel="Crear Tipo de Documento"
       errors={errors}
-      validate={validate}
+      nested={nested}
+      formId={formId}
     />
   )
 }

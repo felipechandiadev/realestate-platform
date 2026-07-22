@@ -42,6 +42,8 @@ export interface DataGridColumn {
   sortable?: boolean;
   editable?: boolean;
   filterable?: boolean; // Nueva propiedad para controlar si la columna es filtrable
+  /** Opciones para filtro tipo select (en modo filtrado). Si no hay, se usa input texto. */
+  filterOptions?: Array<{ id: string; label: string }>;
   // Use serializable render hints instead of passing functions from server
   renderCell?: (params: any) => React.ReactNode;
   renderType?: 'currency' | 'badge' | 'dateString';
