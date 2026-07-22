@@ -10,6 +10,7 @@ import {
   uploadPropertyMultimedia,
 } from '@/features/properties/actions/properties.action'
 import { useAlert } from '@/shared/hooks/useAlert'
+import { LucideIcon } from '../LucideIcon'
 
 interface MultimediaSectionProps {
   propertyId: string
@@ -175,7 +176,9 @@ const MultimediaSection: React.FC<MultimediaSectionProps> = ({
   if (loading) {
     return (
       <section className="flex items-center justify-center py-8">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <div className="flex justify-center">
+          <LucideIcon name="progress_activity" size={20} spin />
+        </div>
       </section>
     )
   }

@@ -140,7 +140,7 @@ export function SliderDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title={slide ? 'Editar Slide' : 'Crear Slide'}
       description={
         slide

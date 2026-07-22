@@ -143,12 +143,13 @@ export function TestimonialsGrid({ onEdit, onRefresh }: TestimonialsGridProps) {
           columns={columns}
           rows={gridItems}
           loading={isLoading}
+          fillViewport
         />
       </div>
 
       <Dialog
         open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
         title="Eliminar Testimonio"
         description="¿Está seguro de que desea eliminar este testimonio?"
         actions={[

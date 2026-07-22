@@ -15,6 +15,7 @@ const LocationPicker = dynamic(() => import("@realestate/ui/components/LocationP
 import { getPropertyLocation, updatePropertyLocation } from '@/features/properties/actions/properties.action'
 import { getRegions, getCommunesByRegion } from '@/features/shared/locations/actions/locations.action'
 import { useAlert } from '@/shared/hooks/useAlert'
+import { LucideIcon } from './LucideIcon'
 
 interface LocationSectionProps {
   propertyId: string
@@ -215,7 +216,9 @@ const LocationSection: React.FC<LocationSectionProps> = ({
   if (loading) {
     return (
       <section className="flex items-center justify-center py-8">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <div className="flex justify-center">
+          <LucideIcon name="progress_activity" size={20} spin />
+        </div>
       </section>
     )
   }

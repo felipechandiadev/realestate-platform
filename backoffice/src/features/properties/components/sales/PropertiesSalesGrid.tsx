@@ -11,14 +11,12 @@
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  BasicPageLayout,
   CollectionGrid,
   DataGrid,
-  Dialog,
   type DataGridColumn,
 } from '@realestate/ui';
 import type { SalePropertyGridRow } from '@/features/properties/actions/properties.action';
-import { CreateProperty } from '@/features/properties/components/dialogs';
+import { CreatePropertyDialog } from '@/features/properties/components/dialogs';
 import { PropertiesDeleteButton } from '@/features/properties/components/shared';
 import {
   formatPropertyPrice,
@@ -26,7 +24,7 @@ import {
   getStatusInSpanish,
 } from '@/features/properties/utils';
 import { SalePropertyCard } from './SalePropertyCard';
-import { SalesViewModeToggle, useSalesViewMode } from './SalesViewModeToggle';
+import { useSalesViewMode } from './SalesViewModeToggle';
 import SaleMoreButton from './SaleMoreButton';
 
 interface PropertiesSalesGridProps {
@@ -164,25 +162,19 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
     },
   ];
 
-  const createDialog = (
-    <Dialog open={dialogOpen} onOpenChange={setDialogOpen} title="Crear Propiedad">
-      <CreateProperty
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSuccess={() => {
-          router.refresh();
-        }}
-        operation="SALE"
-      />
-    </Dialog>
-  );
+  const createDialog = dialogOpen ? (
+    <CreatePropertyDialog
+      open={dialogOpen}
+      onClose={() => setDialogOpen(false)}
+      onSuccess={() => {
+        router.refresh();
+      }}
+      operation="SALE"
+    />
+  ) : null;
 
   return (
-    <BasicPageLayout
-      title="Propiedades en venta"
-      headerEnd={<SalesViewModeToggle value={view} onChange={setView} />}
-      contentClassName="flex min-h-0 flex-1 flex-col"
-    >
+    <>
       {view === 'cards' ? (
         <CollectionGrid
           totalRows={total}
@@ -213,6 +205,6 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
       )}
 
       {createDialog}
-    </BasicPageLayout>
+    </>
   );
 }

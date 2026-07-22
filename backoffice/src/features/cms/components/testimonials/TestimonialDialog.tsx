@@ -133,7 +133,7 @@ export function TestimonialDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title={testimonial ? 'Editar Testimonio' : 'Crear Testimonio'}
       description={
         testimonial

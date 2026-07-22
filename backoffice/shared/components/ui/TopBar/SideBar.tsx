@@ -172,7 +172,7 @@ const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose,
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-50 w-64 h-full bg-white/60 backdrop-blur backdrop-saturate-150 text-black flex flex-col items-center py-6 shadow-xl border border-white/20 ${className ? className : ''}`}
+      className={`fixed top-0 left-0 z-[70] w-64 h-full bg-white/60 backdrop-blur backdrop-saturate-150 text-black flex flex-col items-center py-6 shadow-xl border border-white/20 ${className ? className : ''}`}
       style={style}
       data-test-id="side-bar-root"
     >

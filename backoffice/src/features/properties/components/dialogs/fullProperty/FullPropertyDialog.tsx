@@ -9,6 +9,7 @@ import MultimediaSection from './multimedia/MultimediaSection'
 import HistorySection from './HistorySection'
 import SEOSection from './SEOSection'
 import InternalNotesSection from './InternalNotesSection'
+import { LucideIcon } from './LucideIcon'
 import { getPropertyHeaderInfo } from '@/features/properties/actions/properties.action'
 import { getStatusInSpanish, getStatusChipClasses } from '@/features/properties/utils'
 
@@ -140,7 +141,9 @@ export default function FullPropertyDialog({
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Propiedad</p>
               {loadingHeader ? (
                 <div className="flex items-center gap-2">
-                  <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+                  <div className="flex justify-center">
+                    <LucideIcon name="progress_activity" size={20} spin />
+                  </div>
                   <span className="text-sm text-muted-foreground">Cargando...</span>
                 </div>
               ) : (
@@ -187,7 +190,7 @@ export default function FullPropertyDialog({
                     }`}
                     title={section.title}
                   >
-                    <span className="material-symbols-outlined text-base flex-shrink-0">{section.icon}</span>
+                    <LucideIcon name={section.icon} size={16} className="flex-shrink-0" />
                     <span className="hidden sm:inline">{section.title}</span>
                   </button>
                 ))}

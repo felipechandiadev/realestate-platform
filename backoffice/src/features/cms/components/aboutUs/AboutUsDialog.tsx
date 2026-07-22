@@ -104,7 +104,7 @@ export function AboutUsDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title="Editar Acerca de Nosotros"
       description="Actualiza la información de la empresa"
     >

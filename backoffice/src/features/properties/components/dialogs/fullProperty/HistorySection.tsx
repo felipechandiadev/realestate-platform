@@ -5,6 +5,7 @@ import {
   getPropertyHistory,
   resolveHistoryUserDisplayNames,
 } from '@/features/properties/actions/properties.action'
+import { LucideIcon } from './LucideIcon'
 
 interface HistorySectionProps {
   propertyId: string
@@ -176,7 +177,9 @@ const HistorySection: React.FC<HistorySectionProps> = ({
   if (loading) {
     return (
       <section className="flex items-center justify-center py-8">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <div className="flex justify-center">
+          <LucideIcon name="progress_activity" size={20} spin />
+        </div>
       </section>
     )
   }

@@ -154,7 +154,7 @@ export function OurTeamMemberDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title={teamMember ? 'Editar Miembro del Equipo' : 'Agregar Miembro del Equipo'}
       description={
         teamMember

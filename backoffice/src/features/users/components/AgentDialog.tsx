@@ -153,7 +153,7 @@ export function AgentDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title={isEditMode ? 'Editar Agente' : 'Crear Agente'}
       description={
         isEditMode

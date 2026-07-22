@@ -244,7 +244,7 @@ export default function NotificationsGrid({ rows, totalRows, title, userId }: No
         columns={columns}
         rows={rows}
         totalRows={totalRows ?? rows.length}
-        height="70vh"
+        fillViewport
         data-test-id="notifications-grid"
         onExportExcel={handleExportExcel}
       />

@@ -190,7 +190,7 @@ export default function DocumentsDataGrid(props: DocumentsDataGridProps) {
         columns={columns}
         rows={rows}
         totalRows={totalRows ?? rows.length}
-        height="80vh"
+        fillViewport
         onExportExcel={handleExportExcel}
       />
     </div>

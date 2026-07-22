@@ -1,11 +1,11 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import RentMoreButton from './RentMoreButton';
 import { useRouter } from 'next/navigation';
 import { DataGrid, type DataGridColumn } from "@realestate/ui";
 import { env } from '@/lib/env';
 import type { RentPropertyGridRow } from '@/features/properties/actions/properties.action';
-import { CreateProperty } from '@/features/properties/components/dialogs';
+import { CreatePropertyDialog } from '@/features/properties/components/dialogs';
 import { PropertiesDeleteButton } from '@/features/properties/components/shared';
 import { getStatusInSpanish, getStatusChipClasses } from '@/features/properties/utils';
 
@@ -50,6 +50,7 @@ function mapRow(row: any) {
 
 export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
   const router = useRouter();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const columns: DataGridColumn[] = [
     { field: 'code', headerName: 'Código', width: 140, sortable: true, filterable: true },
@@ -158,19 +159,21 @@ export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
         columns={columns}
         rows={mappedRows}
         totalRows={totalRows ?? mappedRows.length}
-        height="85vh"
+        fillViewport
         data-test-id="rent-properties-grid"
         excelUrl={excelEndpoint}
         limit={25}
         excelFields={excelFields}
-        createForm={
-          <CreateProperty
-            onSuccess={() => router.refresh()}
-            size='lg'
-            operation="RENT"
-          />
-        }
+        onAddClick={() => setDialogOpen(true)}
       />
+      {dialogOpen ? (
+        <CreatePropertyDialog
+          open={dialogOpen}
+          onClose={() => setDialogOpen(false)}
+          onSuccess={() => router.refresh()}
+          operation="RENT"
+        />
+      ) : null}
     </>
   );
 }

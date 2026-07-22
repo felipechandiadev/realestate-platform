@@ -191,6 +191,7 @@ export function AgentsGrid({ onEdit, onRefresh }: AgentsGridProps) {
           loading={isLoading}
           limit={limit}
           totalRows={totalRecords}
+          fillViewport
           pagination={{
             page,
             pageSize: limit,
@@ -203,7 +204,7 @@ export function AgentsGrid({ onEdit, onRefresh }: AgentsGridProps) {
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
         title="Confirmar Eliminación"
         description="¿Está seguro que desea eliminar este agente? Esta acción no se puede deshacer."
       >

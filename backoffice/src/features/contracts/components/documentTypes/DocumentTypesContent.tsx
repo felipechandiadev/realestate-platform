@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { AlertCircle, FileText } from 'lucide-react';
 import { useAlert } from '@/providers/AlertContext';
 import { TextField } from '@realestate/ui';
 import { IconButton } from "@realestate/ui";
@@ -203,9 +204,7 @@ export function DocumentTypesContent({
       {/* Content States */}
       {hasError && !isLoading && (
         <div className="text-center py-16 text-red-500">
-          <span className="material-symbols-outlined text-5xl block mb-4" style={{ fontSize: '64px' }}>
-            error
-          </span>
+          <AlertCircle className="mx-auto mb-4 h-16 w-16" aria-hidden />
           <p className="text-lg font-medium">Error al cargar tipos de documentos</p>
           <p className="text-sm text-muted-foreground mt-2">Por favor, intenta recargar la página</p>
         </div>
@@ -218,9 +217,7 @@ export function DocumentTypesContent({
         </div>
       ) : filteredDocumentTypes.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
-          <span className="material-symbols-outlined text-5xl block mb-4" style={{ fontSize: '64px' }}>
-            description
-          </span>
+          <FileText className="mx-auto mb-4 h-16 w-16" aria-hidden />
           <p className="text-lg font-medium">No hay tipos de documentos disponibles</p>
           <p className="text-sm">Crea tu primer tipo de documento para empezar</p>
         </div>

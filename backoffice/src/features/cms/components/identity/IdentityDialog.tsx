@@ -127,7 +127,7 @@ export function IdentityDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title="Editar Identidad del Sitio"
       description="Configura el nombre y logo de tu empresa"
     >

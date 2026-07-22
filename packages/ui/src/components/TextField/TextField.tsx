@@ -1,7 +1,8 @@
 "use client";
-import React, { useState, useRef, useEffect, useLayoutEffect, useId } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect, useId, useMemo } from "react";
 import { Eye, EyeOff } from 'lucide-react';
 import { useCoarsePointer } from "../../hooks/useCoarsePointer";
+import { resolveLucideIconComponent } from "../IconButton/resolveLucideIcon";
 import {
   resolveTouchInputMode,
   shouldUseTextInputForNumericType,
@@ -39,10 +40,14 @@ interface TextFieldProps {
   startSymbol?: string;
   /** Contenido React al inicio (p. ej. icono SVG/Lucide); mismo hueco y padding que `startSymbol`. */
   startAdornment?: React.ReactNode;
+  /** @deprecated Usa `startAdornment`. Nombre Material/Lucide (p. ej. `search`). */
+  startIcon?: string;
   /** Igual que `startSymbol` pero al final del campo. */
   endSymbol?: string;
   /** Contenido React al final (p. ej. iconos); el input gana `padding-right` automático según el ancho medido. */
   endAdornment?: React.ReactNode;
+  /** @deprecated Usa `endAdornment`. Nombre Material/Lucide al final del campo. */
+  endIcon?: string;
   /** Solo `labelLayout="inline"`: contenido a la izquierda del label (p. ej. switch). */
   inlineLeadingAdornment?: React.ReactNode;
   className?: string;
@@ -101,8 +106,10 @@ export const TextField: React.FC<TextFieldProps> = ({
   placeholder,
   startSymbol,
   startAdornment,
+  startIcon,
   endSymbol,
   endAdornment,
+  endIcon,
   inlineLeadingAdornment,
   className = "",
   variante = "normal",
@@ -168,6 +175,33 @@ export const TextField: React.FC<TextFieldProps> = ({
     disabled || (readOnly && variante !== "autocomplete" && !isInlineLabel);
   /** Inline + readOnly: sin `disabled` nativo para no alterar colores del navegador. */
   const inputNativeDisabled = disabled && !(isInlineLabel && readOnly);
+
+  const startIconNode = useMemo(() => {
+    if (!startIcon?.trim()) return null;
+    const Icon = resolveLucideIconComponent(startIcon);
+    return (
+      <Icon
+        size={isCompact ? 16 : 20}
+        className={showDisabledChrome ? "text-muted-foreground opacity-50" : "text-secondary"}
+        aria-hidden
+      />
+    );
+  }, [startIcon, isCompact, showDisabledChrome]);
+
+  const endIconNode = useMemo(() => {
+    if (!endIcon?.trim()) return null;
+    const Icon = resolveLucideIconComponent(endIcon);
+    return (
+      <Icon
+        size={isCompact ? 16 : 20}
+        className={showDisabledChrome ? "text-muted-foreground opacity-50" : "text-secondary"}
+        aria-hidden
+      />
+    );
+  }, [endIcon, isCompact, showDisabledChrome]);
+
+  const effectiveStartAdornment = startAdornment ?? startIconNode;
+  const effectiveEndAdornment = endAdornment ?? endIconNode;
 
   // Controlador de cambios que respeta el estado disabled
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -381,7 +415,7 @@ export const TextField: React.FC<TextFieldProps> = ({
 
   /** Debe declararse antes de `getDisplayValue` (moneda / tel usan el símbolo en slot, no duplicado en el texto). */
   const hasStartSymbol = typeof startSymbol === "string" && startSymbol.length > 0;
-  const hasStartLeading = hasStartSymbol || Boolean(startAdornment);
+  const hasStartLeading = hasStartSymbol || Boolean(effectiveStartAdornment);
   /** Alineado con `.fs-text-field__icon { left }` y espacio antes del texto editable. */
   const START_LEADING_INSET = "0.75rem";
   const START_LEADING_GAP = "0.5rem";
@@ -414,9 +448,9 @@ export const TextField: React.FC<TextFieldProps> = ({
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(apply) : null;
     ro?.observe(el);
     return () => ro?.disconnect();
-  }, [hasStartLeading, startSymbol, startAdornment]);
+  }, [hasStartLeading, startSymbol, effectiveStartAdornment]);
 
-  const hasEndAdornment = Boolean(endAdornment);
+  const hasEndAdornment = Boolean(effectiveEndAdornment);
   const hasEndSymbol = typeof endSymbol === "string" && endSymbol.length > 0;
   const hasPasswordToggle = type === "password" && passwordVisibilityToggle;
 
@@ -622,7 +656,7 @@ export const TextField: React.FC<TextFieldProps> = ({
           {startSymbol}
         </span>
       )}
-      {!hasStartSymbol && startAdornment && (
+      {!hasStartSymbol && effectiveStartAdornment && (
         <span
           ref={startLeadingRef}
           className={`fs-text-field__icon ${showDisabledChrome ? "text-muted-foreground opacity-50" : "text-secondary"}`}
@@ -634,7 +668,7 @@ export const TextField: React.FC<TextFieldProps> = ({
             minWidth: isCompact ? 16 : 20,
           }}
         >
-          {startAdornment}
+          {effectiveStartAdornment}
         </span>
       )}
       {isTextArea ? (
@@ -759,7 +793,7 @@ export const TextField: React.FC<TextFieldProps> = ({
               ref={endAdornmentRef}
               className={`fs-text-field__end-adornment ${showDisabledChrome ? "opacity-50" : ""}`}
             >
-              {endAdornment}
+              {effectiveEndAdornment}
             </span>
           ) : null}
         </div>

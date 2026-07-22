@@ -1,7 +1,7 @@
 'use client'
 import React, { useState, useContext, useMemo, useCallback, useEffect } from 'react';
 import Image from 'next/image';
-import { Bell, Menu } from 'lucide-react';
+import { IconButton } from '@realestate/ui';
 import SideBar, { SideBarMenuItem } from './SideBar';
 import { SidebarMenuStateProvider } from './SidebarMenuStateContext';
 import { useSession } from 'next-auth/react';
@@ -132,8 +132,17 @@ const TopBar: React.FC<TopBarProps> = ({
     <SidebarMenuStateProvider value={sidebarMenuStateValue}>
       <SideBarContext.Provider value={{ open, close, isOpen: showSidebar }}>
         <div data-test-id="top-bar-root">
-          <header className={`fixed top-0 z-30 w-full flex items-center justify-between px-10 py-2 pb-3 bg-background border-b-[2px] border-primary ${className}`}>
+          <header className={`fixed top-0 z-50 w-full flex items-center justify-between px-10 py-2 pb-3 bg-background border-b border-border ${className}`}>
             <div className="flex items-center gap-3">
+              <IconButton
+                icon="Menu"
+                variant="action"
+                size="md"
+                strokeWidth={2.5}
+                onClick={open}
+                ariaLabel="Abrir menú"
+                data-test-id="top-bar-menu-button"
+              />
               {logoSrc && (
                 <>
                   {!logoLoaded && !logoError && (
@@ -153,52 +162,46 @@ const TopBar: React.FC<TopBarProps> = ({
                   )}
                 </>
               )}
-              <span className="text-lg font-bold text-foreground" data-test-id="top-bar-title">{title}</span>
+              <span className="text-lg font-bold leading-tight tracking-tight text-foreground" data-test-id="top-bar-title">
+                {title}
+              </span>
             </div>
 
-            {/* Right side elements */}
-            <div className="flex items-center gap-2">
-              {/* Notification Alert Icon */}
-              {showNotifications && (
-                <button
-                  type="button"
-                  onClick={() => router.push('/notifications')}
-                  className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors text-foreground hover:text-primary focus:outline-none"
-                  aria-label="Ver notificaciones"
-                >
-                  <Bell size={24} className="text-foreground" />
-                  {unreadCount > 0 && (
-                    <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-1 ring-background">
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </span>
-                  )}
-                </button>
-              )}
-
-              {/* User name */}
+            <div className="flex min-w-0 max-w-full items-center justify-end gap-2">
               {userName && (
-                <span className="text-sm font-weight-300 text-foreground" data-test-id="top-bar-user-name">
+                <span
+                  className="min-w-0 max-w-[min(10rem,36vw)] truncate text-right text-sm font-medium text-foreground sm:max-w-[12rem] md:max-w-xs"
+                  data-test-id="top-bar-user-name"
+                  title={userName}
+                >
                   {userName}
                 </span>
               )}
 
-              {/* Menu button */}
-              <button
-                type="button"
-                onClick={open}
-                className="flex h-10 w-10 items-center justify-center rounded-full transition-colors text-foreground hover:text-secondary focus:outline-none"
-                data-test-id="top-bar-menu-button"
-                aria-label="Abrir menú"
-              >
-                <Menu size={24} className="text-foreground" aria-hidden />
-              </button>
+              {showNotifications && (
+                <div className="relative shrink-0">
+                  <IconButton
+                    icon="Bell"
+                    variant="action"
+                    size="md"
+                    strokeWidth={2.5}
+                    onClick={() => router.push('/notifications')}
+                    ariaLabel="Ver notificaciones"
+                    data-test-id="top-bar-notifications-button"
+                  />
+                  {unreadCount > 0 && (
+                    <span className="pointer-events-none absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white ring-1 ring-background">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </header>
-          {/* Renderizar SideBar como modal, solo si showSidebar está activo */}
           {showSidebar && (
             <>
               <div
-                className="fixed inset-0 z-40 bg-black/10"
+                className="fixed inset-0 z-[60] bg-black/10"
                 onClick={close}
                 aria-label="Cerrar menú lateral"
                 data-test-id="sidebar-overlay"

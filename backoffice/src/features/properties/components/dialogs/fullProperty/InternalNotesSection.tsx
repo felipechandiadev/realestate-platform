@@ -5,6 +5,7 @@ import { TextField } from '@realestate/ui'
 import { Button } from '@realestate/ui'
 import { useAlert } from '@/shared/hooks/useAlert'
 import { getProperty, updateProperty } from '@/features/properties/actions/properties.action'
+import { LucideIcon } from './LucideIcon'
 
 interface InternalNotesSectionProps {
   propertyId: string
@@ -77,7 +78,9 @@ export default function InternalNotesSection({ propertyId }: InternalNotesSectio
   if (loading) {
     return (
       <div className="flex h-40 items-center justify-center">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <div className="flex justify-center">
+          <LucideIcon name="progress_activity" size={20} spin />
+        </div>
       </div>
     )
   }

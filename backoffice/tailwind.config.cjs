@@ -5,8 +5,10 @@ module.exports = {
     './components/**/*.{js,ts,jsx,tsx,css}',
     './shared/**/*.{js,ts,jsx,tsx,css}',
     './features/**/*.{js,ts,jsx,tsx,css}',
+    './src/**/*.{js,ts,jsx,tsx,css}',
     './lib/**/*.{js,ts,jsx,tsx}',
     './app/globals.css',
+    '../packages/ui/src/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
@@ -18,6 +20,7 @@ module.exports = {
         accent: 'rgb(var(--color-accent-rgb) / <alpha-value>)',
         secondary: 'rgb(var(--color-secondary-rgb) / <alpha-value>)',
         muted: 'rgb(var(--color-muted-rgb) / <alpha-value>)',
+        'muted-foreground': 'rgb(var(--color-muted-foreground-rgb) / <alpha-value>)',
         success: 'rgb(var(--color-success-rgb) / <alpha-value>)',
         info: 'rgb(var(--color-info-rgb) / <alpha-value>)',
         warning: 'rgb(var(--color-warning-rgb) / <alpha-value>)',

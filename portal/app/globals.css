@@ -1,5 +1,6 @@
 @import 'leaflet/dist/leaflet.css';
 @import '../../packages/ui/src/theme/tokens.css';
+@import '../../packages/ui/src/theme/components.css';
 
 @tailwind base;
 @tailwind components;
@@ -130,6 +131,7 @@
   --color-accent-rgb: 37 99 168;         /* #2563a8 */
   --color-secondary-rgb: 4 201 231;      /* #04C9E7 */
   --color-muted-rgb: 107 114 128;        /* #6b7280 */
+  --color-muted-foreground-rgb: 122 130 128; /* #7a8280 */
   --color-success-rgb: 76 175 80;        /* #4CAF50 */
   --color-info-rgb: 33 150 243;          /* #2196F3 */
   --color-warning-rgb: 255 193 7;        /* #FFC107 */
@@ -144,6 +146,7 @@
   --color-accent: #2563a8;
   --color-secondary: #04C9E7;
   --color-muted: #6b7280;
+  --color-muted-foreground: #7a8280;
   --color-success: #4CAF50;
   --color-info: #2196F3;
   --color-warning: #FFC107;
@@ -485,7 +488,7 @@ body {
   }
 
   .text-muted-foreground {
-    color: var(--color-muted);
+    color: var(--color-muted-foreground);
   }
 
   .text-background {

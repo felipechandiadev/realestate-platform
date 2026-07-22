@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { FileText } from 'lucide-react';
 import type { DocumentType } from '@/features/contracts/actions/documentTypes.action';
 import { toggleDocumentTypeAvailability } from '@/features/contracts/actions/documentTypes.action';
 import { IconButton } from "@realestate/ui";
@@ -60,12 +61,12 @@ export default function DocumentTypeCard({
 
   return (
     <div
-      className={`bg-card rounded-lg p-6 border border-border shadow-sm hover:shadow-md transition-all flex flex-col h-full`}
+      className={`rounded-lg border border-border p-6 shadow-sm transition-all flex flex-col h-full bg-white/30 backdrop-blur-[8px] hover:shadow-md`}
     >
       {/* Header with Icon and Title */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-start gap-3 flex-1">
-          <span className="material-symbols-outlined text-4xl text-primary">description</span>
+          <FileText className="h-9 w-9 shrink-0 text-primary" aria-hidden />
           <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-foreground break-words">{documentType.name}</h3>
             {/* Status Badge */}

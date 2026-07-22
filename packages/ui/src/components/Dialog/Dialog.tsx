@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { Button } from '../Button/Button';
+import IconButton from '../IconButton/IconButton';
 import './dialog.css';
 
 interface DialogProps {
@@ -55,7 +55,7 @@ interface DialogProps {
   showCloseButton?: boolean;
   /** Sin fondo propio en la franja del título (misma superficie visual que el papel del diálogo). */
   headerTransparent?: boolean;
-  // Text for the close button (default: "cerrar")
+  // Aria-label for the close button (default: "Cerrar"); icon is shown, text is for a11y only
   closeButtonText?: string;
   // Callback when close button is clicked (in addition to onClose)
   onCloseButtonClick?: () => void;
@@ -139,7 +139,7 @@ const Dialog: React.FC<DialogProps> = ({
   actionsJustify = 'between',
   showCloseButton = false,
   headerTransparent = false,
-  closeButtonText = 'cerrar',
+  closeButtonText = 'Cerrar',
   onCloseButtonClick,
   'data-test-id': dataTestId,
 }) => {
@@ -297,14 +297,15 @@ const Dialog: React.FC<DialogProps> = ({
             </h2>
             {showCloseButton && (
               <div className="flex justify-end w-auto">
-                <Button
+                <IconButton
+                  icon="X"
                   variant="outlined"
                   size="sm"
                   onClick={handleCloseButtonClick}
                   className="ml-2"
-                >
-                  {closeButtonText}
-                </Button>
+                  ariaLabel={closeButtonText}
+                  data-test-id="dialog-close-button"
+                />
               </div>
             )}
           </div>

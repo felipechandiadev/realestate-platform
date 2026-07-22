@@ -51,7 +51,7 @@ export function PropertiesDeleteButton({
         aria-label="Eliminar propiedad"
       />
 
-      <Dialog open={open} onOpenChange={setOpen} title="Confirmar eliminación">
+      <Dialog open={open} onClose={() => setOpen(false)} title="Confirmar eliminación">
         <div className="space-y-4">
           <p className="text-gray-700">
             ¿Está seguro que desea eliminar esta propiedad? Esta acción no se puede deshacer.

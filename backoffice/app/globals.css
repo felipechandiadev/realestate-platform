@@ -1,5 +1,6 @@
 @import 'leaflet/dist/leaflet.css';
 @import '../../packages/ui/src/theme/tokens.css';
+@import '../../packages/ui/src/theme/components.css';
 
 @tailwind base;
 @tailwind components;
@@ -130,6 +131,7 @@
   --color-accent-rgb: 37 99 168;         /* #2563a8 */
   --color-secondary-rgb: 4 201 231;      /* #04C9E7 */
   --color-muted-rgb: 107 114 128;        /* #6b7280 */
+  --color-muted-foreground-rgb: 122 130 128; /* #7a8280 */
   --color-success-rgb: 76 175 80;        /* #4CAF50 */
   --color-info-rgb: 33 150 243;          /* #2196F3 */
   --color-warning-rgb: 255 193 7;        /* #FFC107 */
@@ -144,15 +146,31 @@
   --color-accent: #2563a8;
   --color-secondary: #04C9E7;
   --color-muted: #6b7280;
+  --color-muted-foreground: #7a8280;
   --color-success: #4CAF50;
   --color-info: #2196F3;
   --color-warning: #FFC107;
   --color-error: #F44336;
   --color-neutral: #F3F4F6;
+  --color-accent-soft: color-mix(in srgb, var(--color-secondary) 38%, var(--color-background));
+  --color-shell-chrome: var(--color-neutral);
+  --app-topbar-height: 3.75rem;
 }
 
 body {
+  margin: 0;
   background-color: var(--color-background);
+}
+
+.backoffice-app-shell {
+  position: relative;
+  min-height: 100dvh;
+  background-color: color-mix(
+    in srgb,
+    var(--color-shell-chrome) 30%,
+    var(--color-background)
+  );
+  color: var(--color-foreground);
 }
 
 /* Material Symbols Classes */
@@ -485,7 +503,7 @@ body {
   }
 
   .text-muted-foreground {
-    color: var(--color-muted);
+    color: var(--color-muted-foreground);
   }
 
   .text-background {

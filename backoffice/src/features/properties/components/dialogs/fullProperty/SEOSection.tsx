@@ -6,6 +6,7 @@ import { Button } from '@realestate/ui'
 import { Switch } from "@realestate/ui"
 import { useAlert } from '@/shared/hooks/useAlert'
 import { useRouter } from 'next/navigation'
+import { LucideIcon } from './LucideIcon'
 import {
   getPropertySEO,
   updatePropertySEO,
@@ -125,7 +126,9 @@ const SEOSection: React.FC<SEOSectionProps> = ({
   if (loading) {
     return (
       <section className="flex items-center justify-center py-8">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <div className="flex justify-center">
+          <LucideIcon name="progress_activity" size={20} spin />
+        </div>
       </section>
     )
   }

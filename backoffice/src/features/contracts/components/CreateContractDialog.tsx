@@ -103,7 +103,7 @@ export function CreateContractDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title="Crear Nuevo Contrato"
       description="Complete los datos del nuevo contrato"
     >

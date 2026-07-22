@@ -195,6 +195,7 @@ export function AdministratorsGrid({ onEdit, onRefresh }: AdministratorsGridProp
           loading={isLoading}
           limit={limit}
           totalRows={totalRecords}
+          fillViewport
           pagination={{
             page,
             pageSize: limit,
@@ -207,7 +208,7 @@ export function AdministratorsGrid({ onEdit, onRefresh }: AdministratorsGridProp
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
         title="Confirmar Eliminación"
         description="¿Está seguro que desea eliminar este usuario? Esta acción no se puede deshacer."
       >

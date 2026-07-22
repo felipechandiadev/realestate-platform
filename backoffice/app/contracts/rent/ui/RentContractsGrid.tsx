@@ -248,7 +248,7 @@ export default function RentContractsGrid({ rows, totalRows, title }: RentContra
         columns={columns}
         rows={rows}
         totalRows={totalRows ?? rows.length}
-        height="75vh"
+        fillViewport
         createForm={<CreateRentContractForm onClose={() => setShowCreateDialog(false)} />}
         createFormTitle="Crear Nuevo Contrato de Arriendo"
         onExportExcel={handleExportExcel}

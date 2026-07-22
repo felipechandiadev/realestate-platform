@@ -36,6 +36,19 @@ export type CommunityUsersGridResponse =
   | CommunityUserGridRow[]
   | { data: CommunityUserGridRow[]; total: number; page: number; limit: number; totalPages: number };
 
+async function fetchCommunityUsersGrid(
+  url: URL,
+  accessToken: string,
+): Promise<Response> {
+  return fetch(url.toString(), {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+  });
+}
+
 /**
  * Get community users grid with pagination, search, and filtering
  * Follows the same pattern as getSalePropertiesGrid
@@ -70,14 +83,7 @@ export async function getCommunityUsersGrid(
 
   console.log('Fetching community users with params:', url.toString()); // Debugging log
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
-    },
-    cache: 'no-store',
-  });
-
+  const response = await fetchCommunityUsersGrid(url, accessToken);
   const responseText = await response.text();
   console.log('Backend response:', responseText); // Log backend response for debugging
 

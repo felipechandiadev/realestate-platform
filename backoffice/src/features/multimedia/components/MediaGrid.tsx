@@ -176,6 +176,7 @@ export function MediaGrid({ onRefresh }: MediaGridProps) {
           loading={isLoading}
           limit={limit}
           totalRows={totalRecords}
+          fillViewport
           pagination={{
             page,
             pageSize: limit,
@@ -188,7 +189,7 @@ export function MediaGrid({ onRefresh }: MediaGridProps) {
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
         title="Confirmar Eliminación"
         description="¿Está seguro que desea eliminar este archivo? Esta acción no se puede deshacer."
       >

@@ -146,7 +146,7 @@ export function ArticleDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title={article ? 'Editar Artículo' : 'Crear Artículo'}
       description={
         article

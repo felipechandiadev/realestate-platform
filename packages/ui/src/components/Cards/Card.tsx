@@ -2,6 +2,7 @@ import React from "react";
 import * as Lucide from "lucide-react";
 import { Button, type ButtonVariant } from "../Button/Button";
 import IconButton from "../IconButton/IconButton";
+import type { IconName } from "../IconButton/resolveLucideIcon";
 import "./cards.css";
 
 export type LucideIconName = keyof typeof Lucide;
@@ -18,7 +19,7 @@ export type CardTextAction = {
 
 export type CardIconAction = {
   id?: string;
-  icon: LucideIconName;
+  icon: IconName;
   ariaLabel: string;
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   disabled?: boolean;

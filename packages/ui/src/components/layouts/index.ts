@@ -1,4 +1,5 @@
 export { BasicPageLayout, type BasicPageLayoutProps } from "./BasicPageLayout";
+export { PageLayoutHeader, type PageLayoutHeaderProps } from "./PageLayoutHeader";
 export { TabPageLayout, type TabPageLayoutProps } from "./TabPageLayout";
 export {
   adminFillViewportBelowTopBarClassName,

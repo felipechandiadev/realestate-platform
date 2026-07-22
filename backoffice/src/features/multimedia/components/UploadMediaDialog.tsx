@@ -147,7 +147,7 @@ export function UploadMediaDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title="Subir Archivos Multimedia"
       description="Seleccione imágenes o videos para subir (máx. 100MB por archivo)"
     >

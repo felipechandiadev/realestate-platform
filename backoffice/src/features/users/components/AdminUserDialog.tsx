@@ -143,7 +143,7 @@ export function AdminUserDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title={isEditMode ? 'Editar Administrador' : 'Crear Administrador'}
       description={
         isEditMode

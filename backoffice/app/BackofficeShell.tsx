@@ -78,7 +78,7 @@ export default function BackofficeShell({ children }: { children: React.ReactNod
   const userName = session?.user?.name || 'Invitado';
 
   return (
-    <div>
+    <div className="flex min-h-dvh flex-1 flex-col">
       <TopBar
         title={companyName}
         menuItems={menuItems}
@@ -86,7 +86,7 @@ export default function BackofficeShell({ children }: { children: React.ReactNod
         logoSrc={logoUrl || undefined}
         showNotifications={true}
       />
-      <div className="min-h-screen bg-background p-6">
+      <div className="min-h-screen flex-1 p-6">
         <MyAccountDialog
           open={showMyAccountDialog}
           onClose={() => setShowMyAccountDialog(false)}

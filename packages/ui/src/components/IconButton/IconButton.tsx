@@ -1,10 +1,14 @@
 "use client";
 import React from 'react';
-import * as Icons from 'lucide-react';
 import './icon-button.css';
+import {
+  resolveLucideIconComponent,
+  resolveLucideIconName,
+  shouldWarnMissingIcon,
+  type IconName,
+} from './resolveLucideIcon';
 
 type IconButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
-type LucideIconName = keyof typeof Icons;
 
 export type IconButtonVariant =
 	| 'action'
@@ -25,7 +29,8 @@ type IconButtonVariantLegacy =
 	| 'ghost';
 
 interface IconButtonProps {
-	icon: LucideIconName;
+	/** Nombre Lucide (`Trash2`) o Material/legacy (`delete`, `more_horiz`). */
+	icon: IconName;
 	variant?: IconButtonVariant | IconButtonVariantLegacy;
 	size?: IconButtonSize;
 	/** Grosor del trazo del icono Lucide (por defecto 2.25, para igualar la intensidad de los iconos sueltos de la app). Valores mayores = icono más “fuerte”. */
@@ -101,25 +106,11 @@ const IconButton: React.FC<IconButtonProps> = ({
 	const effectiveDisabled = disabled || isLoading;
 	const variantClass = resolveVariantClass(variant);
 
-	const IconComponent = Icons[icon] as React.ComponentType<any>;
+	const resolvedIconName = resolveLucideIconName(icon);
+	const IconComponent = resolveLucideIconComponent(icon);
 
-	if (!IconComponent) {
-		console.warn(`Icon "${icon}" not found in lucide-react`);
-		return (
-			<button
-				type="button"
-				className={`${variantClass} inline-flex items-center justify-center ${sizeClass} ${
-					effectiveDisabled ? 'opacity-50' : ''
-				} ${className}`}
-				data-test-id="icon-button-root"
-				onClick={onClick}
-				aria-label={ariaLabel}
-				disabled={effectiveDisabled}
-				{...props}
-			>
-				<span className="text-lg">?</span>
-			</button>
-		);
+	if (shouldWarnMissingIcon(icon, resolvedIconName)) {
+		console.warn(`Icon "${icon}" not found in lucide-react or ICON_MAP`);
 	}
 
 	return (

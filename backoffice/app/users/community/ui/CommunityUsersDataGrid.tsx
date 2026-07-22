@@ -111,7 +111,7 @@ export default function CommunityUsersDataGrid({ rows, totalRows, title }: Commu
         columns={columns}
         rows={mappedRows}
         totalRows={totalRows ?? mappedRows.length}
-        height="70vh"
+        fillViewport
         data-test-id="community-users-grid"
         limit={25}
       />

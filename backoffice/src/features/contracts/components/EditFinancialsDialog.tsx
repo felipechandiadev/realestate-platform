@@ -108,7 +108,7 @@ export function EditFinancialsDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title="Editar Montos"
       description="Actualizar información financiera del contrato"
     >

@@ -94,7 +94,7 @@ export function PropertiesCreateDialog({
         </Button>
       )}
 
-      <Dialog open={open} onOpenChange={setOpen} title="Crear Propiedad">
+      <Dialog open={open} onClose={() => setOpen(false)} title="Crear Propiedad">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700">

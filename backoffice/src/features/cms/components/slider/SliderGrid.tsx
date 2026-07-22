@@ -146,12 +146,13 @@ export function SliderGrid({ onEdit, onRefresh }: SliderGridProps) {
           columns={columns}
           rows={gridItems}
           loading={isLoading}
+          fillViewport
         />
       </div>
 
       <Dialog
         open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
         title="Eliminar Slide"
         description="¿Está seguro de que desea eliminar este slide del carousel?"
         actions={[

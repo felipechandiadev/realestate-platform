@@ -150,13 +150,14 @@ export function ArticlesGrid({ onEdit, onRefresh }: ArticlesGridProps) {
           columns={columns}
           rows={articles}
           loading={isLoading}
+          fillViewport
           pagination={{ page, limit: limit, rowCount: totalRecords }}
         />
       </div>
 
       <Dialog
         open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
         title="Eliminar Artículo"
         description="¿Está seguro de que desea eliminar este artículo?"
         actions={[

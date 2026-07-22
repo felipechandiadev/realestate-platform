@@ -112,7 +112,7 @@ export function UploadDocumentDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title="Subir Documentos"
       description="Adjuntar documentos al contrato"
     >

@@ -110,7 +110,7 @@ export function EditContractDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={onOpenChange}
+      onClose={() => onOpenChange(false)}
       title="Editar Contrato"
       description={`Editando contrato de ${contract.partyName}`}
     >

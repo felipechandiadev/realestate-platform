@@ -323,7 +323,7 @@ export default function SalesContractsGrid({ rows, totalRows, title }: SalesCont
         columns={columns}
         rows={rows}
         totalRows={totalRows ?? rows.length}
-        height="80vh"
+        fillViewport
         createForm={<CreateSaleContractForm onClose={() => {}} onSuccess={handleContractUpdate} />}
         createFormTitle="Crear Nuevo Contrato Compraventa"
         onExportExcel={handleExportExcel}

@@ -14,6 +14,13 @@ export type { BadgeVariant } from "./components/Badge/Badge";
 export { default as Switch } from "./components/Switch";
 export type { SwitchOptionLabels, SwitchDensity } from "./components/Switch";
 export { default as IconButton } from "./components/IconButton";
+export {
+  ICON_MAP,
+  resolveLucideIconComponent,
+  resolveLucideIconName,
+  type IconName,
+  type LucideIconName as IconButtonLucideIconName,
+} from "./components/IconButton";
 export { default as DotProgress } from "./components/DotProgress";
 
 // Inputs

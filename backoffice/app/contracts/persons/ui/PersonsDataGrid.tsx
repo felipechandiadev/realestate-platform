@@ -243,7 +243,7 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
         columns={columns}
         rows={rows}
         totalRows={totalRows ?? rows.length}
-        height="80vh"
+        fillViewport
         data-test-id="persons-grid"
         limit={25}
         title={''}

@@ -1,12 +1,9 @@
-"use client";
 import React from "react";
 
+import { PageLayoutHeader } from "./PageLayoutHeader";
 import {
   layoutPageContentClassName,
-  layoutPageHeaderClassName,
   layoutPageRootClassName,
-  layoutPageSubtitleClassName,
-  layoutPageTitleClassName,
 } from "./layoutPageTokens";
 
 export type BasicPageLayoutProps = {
@@ -15,8 +12,12 @@ export type BasicPageLayoutProps = {
   /** Texto o nodo bajo el título. */
   subtitle?: React.ReactNode;
   /**
-   * Acciones o controles alineados a la derecha del encabezado (p. ej. selector de vista).
-   * Misma fila que el bloque de títulos en `md+`.
+   * Botones, toggles u otros controles en la misma fila que el título (`md+`),
+   * alineados a la derecha — mismo layout visual que `tabs` en {@link TabPageLayout}.
+   */
+  headerActions?: React.ReactNode;
+  /**
+   * @deprecated Usa `headerActions`.
    */
   headerEnd?: React.ReactNode;
   /** Contenido principal de la página. */
@@ -29,20 +30,14 @@ export type BasicPageLayoutProps = {
   "data-test-id"?: string;
 };
 
-function hasHeadingChunk(node: React.ReactNode): boolean {
-  if (node == null || node === false) return false;
-  if (typeof node === "string") return node.trim().length > 0;
-  if (typeof node === "number") return true;
-  return true;
-}
-
 /**
- * Layout mínimo de página: encabezado opcional (título + subtítulo) y área de contenido.
+ * Layout mínimo de página: encabezado opcional (título + subtítulo + acciones) y área de contenido.
  * Sin `"use client"` — usable en Server y Client Components.
  */
 export function BasicPageLayout({
   title,
   subtitle,
+  headerActions,
   headerEnd,
   children,
   className = "",
@@ -50,63 +45,24 @@ export function BasicPageLayout({
   headerClassName = "",
   "data-test-id": dataTestId,
 }: BasicPageLayoutProps) {
-  const showTitle = hasHeadingChunk(title);
-  const showSubtitle = hasHeadingChunk(subtitle);
-  const showHeading = showTitle || showSubtitle;
-  const showHeaderEnd = hasHeadingChunk(headerEnd);
-
-  const titlesBlock =
-    showHeading ? (
-      <div className="min-w-0" data-test-id="basic-page-layout-titles">
-        {showTitle ? (
-          <h1 className={layoutPageTitleClassName}>{title}</h1>
-        ) : null}
-        {showSubtitle ? (
-          <p
-            className={layoutPageSubtitleClassName}
-            data-test-id="basic-page-layout-subtitle"
-          >
-            {subtitle}
-          </p>
-        ) : null}
-      </div>
-    ) : null;
+  const actions = headerActions ?? headerEnd;
 
   return (
     <div
       className={`${layoutPageRootClassName} ${className}`.trim()}
       data-test-id={dataTestId ?? "basic-page-layout"}
     >
-      {showHeading || showHeaderEnd ? (
-        <header
-          className={`${layoutPageHeaderClassName} ${headerClassName}`.trim()}
-          data-test-id="basic-page-layout-header"
-        >
-          {showHeading && showHeaderEnd ? (
-            <div
-              className="grid w-full min-w-0 grid-cols-1 items-center gap-3 md:grid-cols-[minmax(0,1fr)_auto] md:gap-4"
-              data-test-id="basic-page-layout-header-row"
-            >
-              {titlesBlock}
-              <div
-                className="flex min-w-0 justify-start md:justify-end md:justify-self-end"
-                data-test-id="basic-page-layout-header-end"
-              >
-                {headerEnd}
-              </div>
-            </div>
-          ) : showHeading ? (
-            titlesBlock
-          ) : (
-            <div
-              className="flex min-w-0 w-full justify-end"
-              data-test-id="basic-page-layout-header-end"
-            >
-              {headerEnd}
-            </div>
-          )}
-        </header>
-      ) : null}
+      <PageLayoutHeader
+        title={title}
+        subtitle={subtitle}
+        headerActions={actions}
+        headerClassName={headerClassName}
+        titlesTestId="basic-page-layout-titles"
+        subtitleTestId="basic-page-layout-subtitle"
+        headerTestId="basic-page-layout-header"
+        headerRowTestId="basic-page-layout-header-row"
+        headerActionsTestId="basic-page-layout-header-actions"
+      />
 
       <section
         className={`${layoutPageContentClassName} ${contentClassName}`.trim()}

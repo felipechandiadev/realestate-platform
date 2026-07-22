@@ -1,4 +1,4 @@
-import { BaseFormFieldStepper as BaseFormField, BaseFormOption } from '@/shared/components/ui/BaseForm';
+import type { BaseFormField, BaseFormOption } from '@/shared/components/ui/BaseForm/StepperBaseForm';
 import { PropertyTypeOption, LocationOption } from './types';
 import type { PropertyType } from '@/features/shared/propertyTypes/actions/propertyTypes.action';
 
@@ -265,8 +265,10 @@ export const getLocationFields = (
       required: true,
       width: '100%',
       props: {
+        mode: 'edit',
         initialLat: initialCoords?.initialLat,
         initialLng: initialCoords?.initialLng,
+        height: 40,
       },
     }],
   ];
@@ -284,7 +286,7 @@ export const getMultimediaFields = (): BaseFormField[][] => [
       accept: 'image/*,video/*',
       maxFiles: 20,
       maxSize: 10, // 10MB por archivo
-      previewSize: 'compact',
+      previewSize: 'sm',
       
     },
     width: '100%',

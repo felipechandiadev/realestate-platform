@@ -224,13 +224,14 @@ export function ContractsGrid({ onEdit, onRefresh }: ContractsGridProps) {
           columns={columns}
           rows={gridItems}
           loading={isLoading}
+          fillViewport
         />
       </div>
 
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={openDeleteDialog}
-        onOpenChange={setOpenDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
         title="Eliminar Contrato"
         description="¿Está seguro de que desea eliminar este contrato? Esta acción no se puede deshacer."
         actions={[
