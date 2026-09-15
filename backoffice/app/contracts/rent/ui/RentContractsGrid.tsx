@@ -1,12 +1,10 @@
 'use client';
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { DataGrid, type DataGridColumn } from "@realestate/ui";
 import type { ContractGridRow } from '@/features/contracts/actions/contracts.action';
 import { useAlert } from '@/shared/hooks/useAlert';
-import { IconButton } from "@realestate/ui";
-import ContractDetailDialog from '../../ui/ContractDetail/ContractDetailDialog';
 import CreateRentContractForm from './CreateRentContractForm';
+import ContractMoreButton from '../../ui/ContractDetail/ContractMoreButton';
 
 type RentContractsGridProps = {
   rows: ContractGridRow[];
@@ -16,10 +14,7 @@ type RentContractsGridProps = {
 
 export default function RentContractsGrid({ rows, totalRows, title }: RentContractsGridProps) {
   const alert = useAlert();
-  const router = useRouter();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
 
   const normalizeStatusKey = (status: string | null | undefined) =>
     typeof status === 'string' ? status.trim().toUpperCase() : '';
@@ -83,15 +78,6 @@ export default function RentContractsGrid({ rows, totalRows, title }: RentContra
     const minutes = pad(date.getMinutes());
 
     return `${day}-${month}-${year} ${hours}:${minutes}`;
-  };
-
-  const handleViewDetails = (contractId: string) => {
-    setSelectedContractId(contractId);
-    setShowDetailDialog(true);
-  };
-
-  const handleContractUpdate = () => {
-    router.refresh();
   };
 
   const columns: DataGridColumn[] = [
@@ -221,14 +207,7 @@ export default function RentContractsGrid({ rows, totalRows, title }: RentContra
       sortable: false,
       filterable: false,
       actionComponent: ({ row }) => (
-        <div>
-          <IconButton
-            icon="more_horiz"
-            variant="text"
-            onClick={() => handleViewDetails(row.id)}
-            title="Ver detalles"
-          />
-        </div>
+        <ContractMoreButton contractId={row.id} detailBasePath="/contracts/rent" />
       ),
     },
   ];
@@ -242,35 +221,15 @@ export default function RentContractsGrid({ rows, totalRows, title }: RentContra
   };
 
   return (
-    <>
-      <DataGrid
-        title={title || 'Contratos de Arriendo'}
-        columns={columns}
-        rows={rows}
-        totalRows={totalRows ?? rows.length}
-        fillViewport
-        createForm={<CreateRentContractForm onClose={() => setShowCreateDialog(false)} />}
-        createFormTitle="Crear Nuevo Contrato de Arriendo"
-        onExportExcel={handleExportExcel}
-      />
-
-      <ContractDetailDialog
-        open={showDetailDialog}
-        onClose={() => {
-          setShowDetailDialog(false);
-          setSelectedContractId(null);
-        }}
-        contractId={selectedContractId}
-        onUpdate={handleContractUpdate}
-        onEdit={(id) => {
-          setShowDetailDialog(false);
-          alert.showAlert({
-            message: `Editar contrato ${id}`,
-            type: 'info',
-            duration: 3000,
-          });
-        }}
-      />
-    </>
+    <DataGrid
+      title={title || 'Contratos de Arriendo'}
+      columns={columns}
+      rows={rows}
+      totalRows={totalRows ?? rows.length}
+      fillViewport
+      createForm={<CreateRentContractForm onClose={() => setShowCreateDialog(false)} />}
+      createFormTitle="Crear Nuevo Contrato de Arriendo"
+      onExportExcel={handleExportExcel}
+    />
   );
 }

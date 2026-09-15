@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { deleteArticle, type Article } from '@/features/cms/actions/articles.action';
@@ -22,8 +22,14 @@ const DeleteArticleDialog: React.FC<DeleteArticleDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const alert = useAlert();
 
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
+
   const handleConfirmDelete = async () => {
-    if (!article) return;
+    if (!article || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -32,12 +38,12 @@ const DeleteArticleDialog: React.FC<DeleteArticleDialogProps> = ({
         alert.success('Artículo eliminado exitosamente');
         onClose();
         onSuccess();
-      } else {
-        alert.error(result.error || 'Error al eliminar artículo');
+        return;
       }
+      alert.error(result.error || 'Error al eliminar artículo');
+      setIsSubmitting(false);
     } catch (err) {
       alert.error('Error interno del servidor');
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -45,9 +51,11 @@ const DeleteArticleDialog: React.FC<DeleteArticleDialogProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={isSubmitting ? () => {} : onClose}
       title="Eliminar Artículo"
       maxWidth="sm"
+      disableBackdropClick={isSubmitting}
+      persistent={isSubmitting}
     >
       <div className="space-y-4">
         <p className="text-foreground">

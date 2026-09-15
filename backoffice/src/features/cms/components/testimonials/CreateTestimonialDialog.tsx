@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { TextField } from '@realestate/ui';
@@ -30,6 +30,12 @@ export function CreateTestimonialDialog({
   });
   const [imageFile, setImageFile] = useState<File[]>([]);
 
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -46,6 +52,7 @@ export function CreateTestimonialDialog({
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (!formData.name.trim() || !formData.content.trim()) {
       alert.error('Nombre y contenido del testimonio son obligatorios');
       return;
@@ -69,12 +76,12 @@ export function CreateTestimonialDialog({
         alert.success('Testimonio creado exitosamente');
         handleClose();
         onSuccess();
-      } else {
-        alert.error(result.error || 'Error al crear testimonio');
+        return;
       }
+      alert.error(result.error || 'Error al crear testimonio');
+      setIsSubmitting(false);
     } catch (err) {
       alert.error('Error interno del servidor');
-    } finally {
       setIsSubmitting(false);
     }
   };

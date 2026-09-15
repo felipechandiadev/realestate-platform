@@ -53,7 +53,13 @@ export function DeleteDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     void onConfirm();
+  };
+
+  const handleClose = () => {
+    if (isSubmitting) return;
+    onClose();
   };
 
   const alertArea =
@@ -70,7 +76,7 @@ export function DeleteDialog({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       title={title}
       size={dialogSize === "custom" ? "custom" : dialogSize}
       maxWidth={dialogSize === "custom" ? maxWidth : undefined}
@@ -78,6 +84,8 @@ export function DeleteDialog({
       actionsJustify="between"
       data-test-id={dataTestId}
       showCloseButton={false}
+      disableBackdropClick={isSubmitting}
+      persistent={isSubmitting}
       alertArea={alertArea}
       actions={
         <>
@@ -85,7 +93,7 @@ export function DeleteDialog({
             type="button"
             variant="outlined"
             size="md"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={isSubmitting}
             data-test-id={`${dataTestId}-cancel`}
           >
@@ -96,6 +104,7 @@ export function DeleteDialog({
             form={formElementId}
             variant="primary"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             className="!bg-red-600 hover:!bg-red-700 !text-white !font-semibold"
             data-test-id={`${dataTestId}-confirm`}
           >

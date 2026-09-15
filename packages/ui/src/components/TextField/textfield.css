@@ -67,7 +67,7 @@
   min-width: 180px;
   border-radius: 0.375rem;
   border: 1px solid var(--color-border, #a5c2c2);
-  background-color: var(--color-background, #fff);
+  background-color: var(--tf-surface, var(--color-background, #fff));
   color: var(--color-foreground, #131615);
   font-size: 0.875rem;
   line-height: 1.25rem;
@@ -77,7 +77,26 @@
   /* padding-left: clases pl-* en el componente */
   transition:
     border-color 0.2s ease,
+    background-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+/**
+ * Fondo sólido del TextField default (gana a utilidades Tailwind tipo `bg-transparent`).
+ * Select/AutoComplete usan input borderless transparente sobre `.fs-text-field__combo-shell`
+ * con el mismo `--tf-surface`.
+ */
+.fs-text-field__control .fs-text-field__input:not(.fs-text-field__input--borderless) {
+  background-color: var(--tf-surface, var(--color-background, #fff));
+}
+
+.fs-text-field__control--muted .fs-text-field__input:not(.fs-text-field__input--borderless) {
+  background-color: var(--tf-surface);
+}
+
+/* Comboboxes: el shell aporta el fondo; el input interno debe ser transparente. */
+.fs-text-field__combo-shell .fs-text-field__input.fs-text-field__input--borderless {
+  background-color: transparent;
 }
 
 /** Altura fija md (~36px) para shells de Select/AutoComplete. */
@@ -255,9 +274,10 @@
   height: 2rem;
   border-radius: 0.375rem;
   border: 1px solid var(--color-border, #a5c2c2);
-  background-color: var(--color-background, #fff);
+  background-color: var(--tf-surface, var(--color-background, #fff));
   transition:
     border-color 0.2s ease,
+    background-color 0.2s ease,
     box-shadow 0.2s ease;
 }
 

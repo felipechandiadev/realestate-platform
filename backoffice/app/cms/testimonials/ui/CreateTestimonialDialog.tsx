@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { TextField } from '@realestate/ui';
@@ -26,6 +26,12 @@ const CreateTestimonialDialog: React.FC<CreateTestimonialDialogProps> = ({
   });
   const [newImageFile, setNewImageFile] = useState<File[]>([]);
 
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -46,6 +52,7 @@ const CreateTestimonialDialog: React.FC<CreateTestimonialDialogProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (!formData.name.trim() || !formData.content.trim()) {
       alert('Nombre y contenido son obligatorios');
       return;
@@ -69,12 +76,12 @@ const CreateTestimonialDialog: React.FC<CreateTestimonialDialogProps> = ({
         alert('Testimonio creado exitosamente');
         handleClose();
         onSuccess();
-      } else {
-        alert(result.error || 'Error al crear testimonio');
+        return;
       }
+      alert(result.error || 'Error al crear testimonio');
+      setIsSubmitting(false);
     } catch (err) {
       alert('Error interno del servidor');
-    } finally {
       setIsSubmitting(false);
     }
   };

@@ -36,6 +36,27 @@ const statusOptions = [
   { id: 'CONTRACT-IN-PROGRESS', label: 'Contrato en progreso' },
 ]
 
+function formatPropertyBasicError(error?: string | string[] | null): string {
+  const raw = Array.isArray(error) ? error.join('. ') : error || ''
+  const text = raw.trim()
+  if (!text) return 'Error al actualizar información básica'
+
+  const lower = text.toLowerCase()
+  if (
+    lower.includes('assignedagentid must be a uuid') ||
+    (lower.includes('agent') && lower.includes('uuid'))
+  ) {
+    return 'Debes asignar un agente válido antes de guardar.'
+  }
+  if (lower.includes('must be a valid enum') && lower.includes('status')) {
+    return 'El estado de la propiedad no es válido.'
+  }
+  if (lower.includes('property not found')) {
+    return 'Propiedad no encontrada.'
+  }
+  return text
+}
+
 const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
   propertyId,
   title = 'Información básica',
@@ -141,7 +162,10 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         description: formData.description,
         status: formData.status,
         currencyPrice: formData.currencyPrice,
-        assignedAgentId: formData.assignedAgentId,
+      }
+
+      if (formData.assignedAgentId) {
+        updateData.assignedAgentId = formData.assignedAgentId
       }
       
       // Only include price if it has a value
@@ -177,9 +201,9 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         onUpdateSuccess?.()
       } else {
         showAlert({
-          message: result.error || 'Error al actualizar información básica',
+          message: formatPropertyBasicError(result.error),
           type: 'error',
-          duration: 3000,
+          duration: 5000,
         })
       }
     } catch (err) {

@@ -25,6 +25,8 @@ export default function DeleteSlideForm({
   const [errors, setErrors] = useState<string[]>([])
 
   const handleSubmit = async () => {
+    if (isSubmitting) return
+
     setIsSubmitting(true)
     onLoadingChange?.(true)
     setErrors([])
@@ -34,12 +36,15 @@ export default function DeleteSlideForm({
 
       if (result.success) {
         onSuccess?.()
-      } else {
-        setErrors([result.error || 'Error al eliminar el slide'])
+        // Keep submitting true until dialog closes / remounts.
+        return
       }
+
+      setErrors([result.error || 'Error al eliminar el slide'])
+      setIsSubmitting(false)
+      onLoadingChange?.(false)
     } catch (error) {
       setErrors(['Error interno del servidor'])
-    } finally {
       setIsSubmitting(false)
       onLoadingChange?.(false)
     }

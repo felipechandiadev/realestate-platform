@@ -1,11 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { AdministratorType, AdministratorStatus } from './types';
-import { IconButton } from "@realestate/ui";
-import LazyImage from '@/shared/components/ui/LazyImage';
-import UploadUserAvatarDialog from '@/app/users/ui/UploadUserAvatarDialog';
-import { env } from '@/lib/env';
+import { IconButton } from '@realestate/ui';
+import { UserAvatarField } from '@/shared/components/ui/Multimedia/UserAvatarField';
 
 export interface AdminCardProps {
   admin: AdministratorType;
@@ -21,136 +19,76 @@ const STATUS_STYLES: Record<AdministratorStatus, { className: string; label: str
 };
 
 const AdminCard: React.FC<AdminCardProps> = ({ admin, onEdit, onDelete }) => {
-  const [showAvatarDialog, setShowAvatarDialog] = useState(false);
-  const fullName = `${admin.personalInfo?.firstName ?? ''} ${admin.personalInfo?.lastName ?? ''}`.trim() || admin.username || admin.email;
+  const fullName =
+    `${admin.personalInfo?.firstName ?? ''} ${admin.personalInfo?.lastName ?? ''}`.trim() ||
+    admin.username ||
+    admin.email;
 
-  // Normalizar el estado: convertir a mayúsculas y asegurar que sea válido
   const normalizedStatus = (admin.status ?? '').toString().trim().toUpperCase() as AdministratorStatus;
-  const status = STATUS_STYLES[normalizedStatus] || STATUS_STYLES['INACTIVE'] || {
+  const status = STATUS_STYLES[normalizedStatus] || STATUS_STYLES.INACTIVE || {
     className: 'bg-neutral-500 text-white',
     label: normalizedStatus || 'DESCONOCIDO',
   };
-  
-  console.log('[AdminCard] Status debug:', { adminStatus: admin.status, normalizedStatus, statusLabel: status.label });
 
   return (
-    <>
-  <article className="border border-neutral-200 bg-white rounded-lg shadow-sm p-4 flex flex-col justify-between min-w-[260px]">
-  <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 md:gap-4 items-stretch">
-          {/* Columna del Avatar */}
-          <div className="flex justify-center items-center h-full md:h-full md:justify-center md:items-center">
-            <div className="relative flex-shrink-0 mx-auto">
-              <div className="h-24 w-24 rounded-full bg-neutral-100 border-4 border-secondary flex items-center justify-center overflow-hidden">
-                {admin.personalInfo?.avatarUrl ? (
-                  <LazyImage
-                    multimedia={{
-                      id: admin.id,
-                      url: admin.personalInfo.avatarUrl.startsWith('http') 
-                        ? admin.personalInfo.avatarUrl 
-                        : `${env.backendApiUrl}${admin.personalInfo.avatarUrl}`,
-                      filename: 'avatar.jpg',
-                      variants: []
-                    }}
-                    variantType="avatar-md"
-                    alt={`Avatar ${fullName}`}
-                    sizes="96px"
-                    className="h-full w-full object-cover"
-                    maintainAspectRatio={true}
-                  />
-                ) : (
-                  <IconButton
-                    icon="person"
-                    variant="text"
-                    size="xl"
-                    className="text-secondary"
-                  />
-                )}
-              </div>
-              {!admin.personalInfo?.avatarUrl && (
-                <IconButton
-                  icon="add"
-                  variant="primary"
-                  size="sm"
-                  className="absolute bottom-0 right-2 z-10"
-                  aria-label="Agregar avatar"
-                  title="Agregar avatar"
-                  onClick={() => setShowAvatarDialog(true)}
-                />
-              )}
-            </div>
+    <article className="border border-neutral-200 bg-white rounded-lg shadow-sm p-4 flex flex-col justify-between min-w-[260px] overflow-visible">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-6 md:gap-4 items-stretch">
+        <div className="flex justify-center items-center overflow-visible px-2 pb-2 pt-1">
+          <UserAvatarField
+            userId={admin.id}
+            currentAvatarUrl={admin.personalInfo?.avatarUrl}
+            size="sm"
+            data-test-id={`admin-avatar-${admin.id}`}
+          />
+        </div>
+
+        <div className="flex flex-col gap-4 sm:gap-2 w-full overflow-hidden">
+          <div className="flex w-full justify-end mb-2">
+            <span className={`text-[8px] font-light uppercase px-2 py-0.5 rounded-full ${status.className}`}>
+              {status.label}
+            </span>
           </div>
 
-          {/* Columna de Información */}
-          <div className="flex flex-col gap-4 sm:gap-2 w-full overflow-hidden">
-            {/* Status badge */}
-            <div className="flex w-full justify-end mb-2">
-              <span className={`text-[8px] font-light uppercase px-2 py-0.5 rounded-full ${status.className}`}>
-                {status.label}
-              </span>
-            </div>
+          <h3 className="text-lg font-semibold text-foreground truncate break-all">{fullName}</h3>
+          <p className="text-xs font-light text-neutral-600 truncate break-all">@{admin.username}</p>
 
-            {/* Nombre */}
-            <h3 className="text-lg font-semibold text-foreground truncate break-all">{fullName}</h3>
+          <div className="flex items-center gap-2">
+            <IconButton icon="email" variant="text" size="sm" className="text-neutral-500" />
+            <p className="text-xs font-light text-neutral-500 truncate break-all">{admin.email}</p>
+          </div>
 
-            {/* Nombre de usuario */}
-            <p className="text-xs font-light text-neutral-600 truncate break-all">@{admin.username}</p>
-
-            {/* Correo con icono */}
+          {admin.personalInfo?.phone ? (
             <div className="flex items-center gap-2">
-              <IconButton
-                icon="email"
-                variant="text"
-                size="sm"
-                className="text-neutral-500"
-              />
-              <p className="text-xs font-light text-neutral-500 truncate break-all">{admin.email}</p>
+              <IconButton icon="phone" variant="text" size="sm" className="text-neutral-500" />
+              <p className="text-xs font-light text-neutral-500 truncate break-all">
+                {admin.personalInfo.phone}
+              </p>
             </div>
-
-            {/* Teléfono con icono */}
-            {admin.personalInfo?.phone && (
-              <div className="flex items-center gap-2">
-                <IconButton
-                  icon="phone"
-                  variant="text"
-                  size="sm"
-                  className="text-neutral-500"
-                />
-                <p className="text-xs font-light text-neutral-500 truncate break-all">{admin.personalInfo.phone}</p>
-              </div>
-            )}
-          </div>
+          ) : null}
         </div>
+      </div>
 
-  <div className="flex justify-end gap-2 mt-4 ">
-          <IconButton
-            icon="edit"
-            variant="text"
-            size="md"
-            aria-label={`Editar ${fullName}`}
-            title="Editar"
-            onClick={() => onEdit?.(admin)}
-            className='text-secondary'
-          />
-
-          <IconButton
-            icon="delete"
-            variant="text"
-            size="md"
-            aria-label={`Eliminar ${fullName}`}
-            title="Eliminar"
-            onClick={() => onDelete?.(admin)}
-               className='text-secondary'
-          />
-        </div>
-      </article>
-
-      <UploadUserAvatarDialog
-        open={showAvatarDialog}
-        onClose={() => setShowAvatarDialog(false)}
-        userId={admin.id}
-        currentAvatarUrl={admin.personalInfo?.avatarUrl || undefined}
-      />
-    </>
+      <div className="flex justify-end gap-2 mt-4">
+        <IconButton
+          icon="edit"
+          variant="text"
+          size="md"
+          aria-label={`Editar ${fullName}`}
+          title="Editar"
+          onClick={() => onEdit?.(admin)}
+          className="text-secondary"
+        />
+        <IconButton
+          icon="delete"
+          variant="text"
+          size="md"
+          aria-label={`Eliminar ${fullName}`}
+          title="Eliminar"
+          onClick={() => onDelete?.(admin)}
+          className="text-secondary"
+        />
+      </div>
+    </article>
   );
 };
 

@@ -1,41 +1,84 @@
 "use client";
 import React, { useRef, useState } from 'react';
-import { User, Image, Video } from 'lucide-react';
-import { Button } from "@realestate/ui";
-import { IconButton } from "@realestate/ui";
-// TODO: Create shared/hooks/useAlert hook
-// import { useAlert } from '@/shared/hooks/useAlert';
+import { Image, Video } from 'lucide-react';
+import { Button, IconButton } from '@realestate/ui';
+import { MultimediaSingleSlot } from '../Multimedia/MultimediaSingleSlot';
+import type { MultimediaAvatarActionPlacement, MultimediaAvatarSize } from '../Multimedia/MultimediaSingleSlot';
 
 interface MultimediaUploaderProps {
-  uploadPath: string; // Ruta donde se guardará el archivo (en el backend)
+  uploadPath: string;
   onChange?: (files: File[]) => void;
   label?: string;
   accept?: string;
   maxFiles?: number;
-  maxSize?: number; // Tamaño máximo en MB
+  maxSize?: number;
   aspectRatio?: 'square' | 'video' | '16:9' | 'auto';
   buttonType?: 'icon' | 'normal';
-  variant?: 'default' | 'avatar' | 'banner'; // Added banner variant
-  previewSize?: 'xs' | 'sm' | 'normal' | 'lg' | 'xl'; // Opciones de tamaño de miniatura
+  variant?: 'default' | 'avatar' | 'banner';
+  previewSize?: 'xs' | 'sm' | 'normal' | 'lg' | 'xl';
+  avatarSize?: MultimediaAvatarSize;
+  actionPlacement?: MultimediaAvatarActionPlacement;
 }
 
-export const MultimediaUploader: React.FC<MultimediaUploaderProps> = ({
+export const MultimediaUploader: React.FC<MultimediaUploaderProps> = (props) => {
+  if (props.variant === 'avatar') {
+    return <MultimediaUploaderAvatar {...props} />;
+  }
+  return <MultimediaUploaderDefault {...props} />;
+};
+
+function MultimediaUploaderAvatar({
+  onChange,
+  maxSize = 9,
+  avatarSize = 'md',
+  actionPlacement = 'below',
+}: MultimediaUploaderProps) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  return (
+    <MultimediaSingleSlot
+      variant="avatar"
+      currentUrl={previewUrl}
+      acceptedTypes={['image/*']}
+      maxSizeMb={maxSize}
+      avatarSize={avatarSize}
+      actionPlacement={actionPlacement}
+      allowDragDrop
+      onFileChange={(file) => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        if (!file) {
+          setPreviewUrl(null);
+          onChange?.([]);
+          return;
+        }
+        setPreviewUrl(URL.createObjectURL(file));
+        onChange?.([file]);
+      }}
+    />
+  );
+}
+
+function MultimediaUploaderDefault({
   uploadPath,
   onChange,
   label = '',
   accept = 'image/*,video/*',
   maxFiles = 5,
-  maxSize = 9, // 9MB por defecto (margen con el límite de 10MB de Next.js)
+  maxSize = 9,
   aspectRatio = '16:9',
   buttonType = 'icon',
-  variant = 'default', // Valor por defecto ('avatar' o 'banner' para usos especiales)
-  previewSize = 'normal', // xs | sm | normal | lg | xl
-}) => {
+  variant = 'default',
+  previewSize = 'normal',
+}: MultimediaUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  // TODO: Implement useAlert hook
-  // const { error } = useAlert();
 
   // Función para validar tamaño de archivo según tipo
   const validateFileSize = (file: File): string | null => {
@@ -190,32 +233,7 @@ export const MultimediaUploader: React.FC<MultimediaUploaderProps> = ({
         style={{ display: 'none' }}
         onChange={handleFileChange}
       />
-      {variant === 'avatar' ? (
-        // Renderizado para variante avatar
-        <div className="flex flex-col items-center gap-4">
-          <div
-            className="relative w-24 h-24 mx-auto rounded-full border-4 border-secondary bg-neutral-100 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
-            onClick={() => inputRef.current?.click()}
-          >
-            {previewUrls.length > 0 ? (
-              <img
-                src={previewUrls[0]}
-                alt="Avatar preview"
-                className="w-full h-full object-cover rounded-full"
-              />
-            ) : (
-              <User size={64} className="text-secondary" />
-            )}
-          </div>
-
-          <IconButton
-            icon="add"
-            variant="containedSecondary"
-            onClick={() => inputRef.current?.click()}
-            ariaLabel="Seleccionar avatar"
-          />
-        </div>
-      ) : variant === 'banner' ? (
+      {variant === 'banner' ? (
         // Renderizado para variante banner (16:9 rectangle)
         <div className="flex flex-col items-center gap-4">
           <div

@@ -128,7 +128,6 @@ const UpdateAdminForm: React.FC<UpdateAdminFormProps> = ({
 			onSubmitSuccess();
 		} catch (err) {
 			onError('Error inesperado al actualizar el administrador');
-		} finally {
 			setLoading(false);
 		}
 	};

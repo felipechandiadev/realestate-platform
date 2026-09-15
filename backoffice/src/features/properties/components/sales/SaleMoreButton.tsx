@@ -1,55 +1,37 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { IconButton } from "@realestate/ui";
-import FullPropertyDialog from '@/features/properties/components/dialogs/fullProperty/FullPropertyDialog';
-import { useFullPropertyRevalidation } from '@/shared/hooks/useFullPropertyRevalidation';
-
+import React, { useCallback } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { IconButton } from '@realestate/ui';
 
 interface SaleMoreButtonProps {
-  property: any;
+  property: { id: string };
 }
 
 const SaleMoreButton: React.FC<SaleMoreButtonProps> = ({ property }) => {
-  const [openDialogs, setOpenDialogs] = useState<Record<string, boolean>>({});
-  const { revalidate } = useFullPropertyRevalidation();
-
-  const isOpen = openDialogs[property.id] || false;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const handleOpen = useCallback(() => {
-    setOpenDialogs(prev => ({
-      ...prev,
-      [property.id]: true
-    }));
-  }, [property.id]);
-
-  const handleClose = useCallback(async () => {
-    setOpenDialogs(prev => ({
-      ...prev,
-      [property.id]: false
-    }));
-    // Revalidate the current route to refresh the sales grid
-    await revalidate();
-  }, [property.id, revalidate]);
+    const search = searchParams.toString();
+    const returnTo = `${pathname}${search ? `?${search}` : ''}`;
+    const qs = new URLSearchParams();
+    qs.set('returnTo', returnTo);
+    router.push(`/properties/sales/${encodeURIComponent(property.id)}?${qs.toString()}`);
+  }, [pathname, property.id, router, searchParams]);
 
   return (
-    <>
-      <div className="flex h-full items-center justify-center flex-shrink-0">
-        <IconButton
-          icon="more_horiz"
-          variant="text"
-          size="xs"
-          ariaLabel="Ver más detalles"
-          onClick={handleOpen}
-          data-test-id="sale-more-btn"
-        />
-      </div>
-      <FullPropertyDialog
-        open={isOpen}
-        onClose={handleClose}
-        propertyId={property.id}
+    <div className="flex h-full flex-shrink-0 items-center justify-center">
+      <IconButton
+        icon="more_horiz"
+        variant="text"
+        size="xs"
+        ariaLabel="Ver más detalles"
+        onClick={handleOpen}
+        data-test-id="sale-more-btn"
       />
-    </>
+    </div>
   );
 };
 

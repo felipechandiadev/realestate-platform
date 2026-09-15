@@ -44,6 +44,12 @@ const UpdateTestimonialDialog: React.FC<UpdateTestimonialDialogProps> = ({
   const [currentImage, setCurrentImage] = useState<string>('');
 
   useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
+
+  useEffect(() => {
     if (testimonial && open) {
       setFormData({
         name: testimonial.name || '',
@@ -77,6 +83,7 @@ const UpdateTestimonialDialog: React.FC<UpdateTestimonialDialogProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (!testimonial || !formData.name.trim() || !formData.content.trim()) {
       error('Nombre y contenido son obligatorios');
       return;
@@ -100,12 +107,12 @@ const UpdateTestimonialDialog: React.FC<UpdateTestimonialDialogProps> = ({
         success('Testimonio actualizado exitosamente');
         handleClose();
         onSuccess();
-      } else {
-        error(result.error || 'Error al actualizar testimonio');
+        return;
       }
+      error(result.error || 'Error al actualizar testimonio');
+      setIsSubmitting(false);
     } catch (err) {
       error('Error interno del servidor');
-    } finally {
       setIsSubmitting(false);
     }
   };

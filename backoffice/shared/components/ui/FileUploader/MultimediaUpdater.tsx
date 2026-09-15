@@ -1,17 +1,69 @@
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
-import { User, ImageOff, Image } from 'lucide-react';
-import { IconButton } from "@realestate/ui";
-import { Alert } from "@realestate/ui";
+import { ImageOff, Image } from 'lucide-react';
+import { IconButton, Alert } from '@realestate/ui';
 import { MultimediaUpdaterProps } from './types';
+import { MultimediaSingleSlot } from '../Multimedia/MultimediaSingleSlot';
 
 const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
   currentUrl,
   currentType,
   onFileChange,
-  buttonText = 'Actualizar multimedia',
+  acceptedTypes = ['image/*', 'video/*'],
+  maxSize = 5,
+  aspectRatio = '1:1',
+  variant = 'default',
+  avatarSize = 'md',
+  actionPlacement = 'below',
+  allowDragDrop = false,
+  className = '',
+  previewSize = 'md',
+  disabled = false,
   labelText = '',
+}) => {
+  if (variant === 'avatar') {
+    return (
+      <div className={className.trim() || undefined}>
+        <MultimediaSingleSlot
+          variant="avatar"
+          currentUrl={currentUrl}
+          currentType={currentType === 'video' ? 'video' : 'image'}
+          acceptedTypes={acceptedTypes}
+          maxSizeMb={maxSize}
+          avatarSize={avatarSize}
+          actionPlacement={actionPlacement}
+          allowDragDrop={allowDragDrop}
+          disabled={disabled}
+          onFileChange={onFileChange}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <MultimediaUpdaterLegacy
+      currentUrl={currentUrl}
+      currentType={currentType}
+      onFileChange={onFileChange}
+      acceptedTypes={acceptedTypes}
+      maxSize={maxSize}
+      aspectRatio={aspectRatio}
+      variant={variant}
+      allowDragDrop={allowDragDrop}
+      className={className}
+      previewSize={previewSize}
+      disabled={disabled}
+      labelText={labelText}
+    />
+  );
+};
+
+/** Banner / default paths (unchanged behavior). */
+function MultimediaUpdaterLegacy({
+  currentUrl,
+  currentType,
+  onFileChange,
   acceptedTypes = ['image/*', 'video/*'],
   maxSize = 5,
   aspectRatio = '1:1',
@@ -19,7 +71,9 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
   allowDragDrop = false,
   className = '',
   previewSize = 'md',
-}) => {
+  disabled = false,
+  labelText = '',
+}: MultimediaUpdaterProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentUrl || null);
   const [error, setError] = useState<string | null>(null);
@@ -27,27 +81,12 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
   const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sincronizar previewUrl cuando currentUrl cambia (después de guardar)
   React.useEffect(() => {
     if (!selectedFile && currentUrl) {
       setPreviewUrl(currentUrl);
       setImageError(false);
     }
   }, [currentUrl, selectedFile]);
-
-  const aspectRatioClass: string = ({
-    '1:1': 'aspect-square',
-    '16:9': 'aspect-video',
-    '9:16': 'aspect-[9/16]',
-  } as const)[aspectRatio || '1:1'] || 'aspect-square';
-
-  const previewSizeClass: string = ({
-    'xs': 'max-w-20 max-h-20',
-    'sm': 'max-w-32 max-h-32',
-    'md': 'max-w-48 max-h-48',
-    'lg': 'max-w-64 max-h-64',
-    'xl': 'max-w-96 max-h-96',
-  } as const)[previewSize || 'md'] || 'max-w-48 max-h-48';
 
   const getPreviewSizeClasses = () => {
     switch (previewSize) {
@@ -80,26 +119,21 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
     return true;
   };
 
-  const handleFileSelect = useCallback((file: File) => {
-    if (validateFile(file)) {
-      setSelectedFile(file);
-      const newPreviewUrl = URL.createObjectURL(file);
-      setPreviewUrl(newPreviewUrl);
-      setImageError(false);
-      onFileChange?.(file);
-    }
-  }, [onFileChange, acceptedTypes, maxSize]);
+  const handleFileSelect = useCallback(
+    (file: File) => {
+      if (validateFile(file)) {
+        setSelectedFile(file);
+        setPreviewUrl(URL.createObjectURL(file));
+        setImageError(false);
+        onFileChange?.(file);
+      }
+    },
+    [onFileChange, acceptedTypes, maxSize],
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) handleFileSelect(file);
-  };
-
-  const handleReset = () => {
-    setSelectedFile(null);
-    setPreviewUrl(currentUrl || null);
-    onFileChange?.(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -109,9 +143,7 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
     }
   };
 
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
+  const handleDragLeave = () => setIsDragOver(false);
 
   const handleDrop = (e: React.DragEvent) => {
     if (allowDragDrop) {
@@ -124,23 +156,16 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
 
   const renderPreview = () => {
     if (!previewUrl) {
-      if (variant === 'avatar') {
-        return <User className="text-secondary" size={64} />;
-      }
-      return <div className="flex items-center justify-center h-full text-gray-400">Sin multimedia</div>;
+      return <div className="flex h-full items-center justify-center text-gray-400">Sin multimedia</div>;
     }
-
-    // Mostrar ícono de error si la imagen no cargó
     if (imageError) {
       return (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex h-full items-center justify-center">
           <ImageOff className="text-gray-400" size={48} />
         </div>
       );
     }
-
-    const commonClasses = `w-full h-full object-cover ${variant === 'avatar' ? 'rounded-full' : 'rounded-lg'}`;
-
+    const commonClasses = 'h-full w-full rounded-lg object-cover';
     if (currentType === 'video' || selectedFile?.type.startsWith('video/')) {
       return (
         <video className={commonClasses} controls>
@@ -148,11 +173,11 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
         </video>
       );
     }
-
     return (
-      <img 
-        src={previewUrl} 
-        alt="Preview" 
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={previewUrl}
+        alt="Preview"
         className={commonClasses}
         onError={() => setImageError(true)}
         onLoad={() => setImageError(false)}
@@ -161,38 +186,11 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
   };
 
   return (
-    <div className={`space-y-4 mt-2 ${className}`}>
-      {variant === 'avatar' ? (
+    <div className={`mt-2 space-y-4 ${className} ${disabled ? 'pointer-events-none opacity-60' : ''}`.trim()}>
+      {variant === 'banner' ? (
         <div className="flex flex-col items-center gap-4">
           <div
-            className="relative w-24 h-24 mx-auto rounded-full border-4 border-secondary bg-neutral-100 flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors"
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            {previewUrl ? (
-              renderPreview()
-            ) : (
-              <User className="text-secondary" size={64} />
-            )}
-            {allowDragDrop && isDragOver && (
-              <div className="absolute inset-0 bg-blue-500 bg-opacity-50 flex items-center justify-center text-white font-semibold rounded-full">
-                Arrastra aquí
-              </div>
-            )}
-          </div>
-          <IconButton
-            icon={previewUrl ? 'refresh' : 'add'}
-            variant="containedSecondary"
-            onClick={() => fileInputRef.current?.click()}
-            ariaLabel="Seleccionar avatar"
-          />
-        </div>
-      ) : variant === 'banner' ? (
-        <div className="flex flex-col items-center gap-4">
-          <div
-            className="relative w-full max-w-[480px] aspect-video flex items-center justify-center cursor-pointer hover:border-blue-500 transition-colors rounded-lg"
+            className={`relative flex aspect-video w-full max-w-[480px] cursor-pointer items-center justify-center rounded-lg transition-colors hover:border-blue-500 ${aspectRatio === '1:1' ? 'aspect-square' : ''}`}
             onClick={() => fileInputRef.current?.click()}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -215,7 +213,7 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
               </div>
             )}
             {allowDragDrop && isDragOver && (
-              <div className="absolute inset-0 bg-blue-500 bg-opacity-50 flex items-center justify-center text-white font-semibold rounded-lg">
+              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-blue-500 bg-opacity-50 font-semibold text-white">
                 Arrastra aquí
               </div>
             )}
@@ -233,9 +231,7 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
         <>
           <div className="flex flex-col items-start gap-0.5">
             {labelText && !previewUrl && (
-              <span className="text-xs font-normal text-foreground leading-none">
-                {labelText}
-              </span>
+              <span className="text-xs font-normal leading-none text-foreground">{labelText}</span>
             )}
             <IconButton
               icon="add"
@@ -244,26 +240,22 @@ const MultimediaUpdater: React.FC<MultimediaUpdaterProps> = ({
               ariaLabel="Subir multimedia"
             />
           </div>
-          {previewUrl && (
-            <div className={`${previewContainerClass} relative`}>{renderPreview()}</div>
-          )}
+          {previewUrl && <div className={`${previewContainerClass} relative`}>{renderPreview()}</div>}
         </>
       )}
 
-      {/* Error Alert */}
       {error && <Alert variant="error">{error}</Alert>}
 
-      {/* Hidden File Input */}
       <input
-        id="multimedia-input"
         ref={fileInputRef}
         type="file"
         accept={acceptedTypes.join(',')}
         onChange={handleInputChange}
         className="hidden"
+        disabled={disabled}
       />
     </div>
   );
-};
+}
 
 export default MultimediaUpdater;

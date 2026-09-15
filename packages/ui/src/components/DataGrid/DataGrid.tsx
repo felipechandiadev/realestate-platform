@@ -397,7 +397,8 @@ const DataGrid: React.FC<DataGridProps> = ({
           {visibleColumns.map((column, i) => {
             const style = computedStyles[i];
             const isPinnedActionsColumn =
-              pinActionsColumn && column.field === actionsColumnField;
+              (pinActionsColumn && column.field === actionsColumnField) ||
+              Boolean(column.sticky);
 
             return (
               <ColHeader

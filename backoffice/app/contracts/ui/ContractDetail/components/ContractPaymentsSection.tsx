@@ -1,6 +1,21 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import {
+  Plus,
+  CreditCard,
+  Clock,
+  ClipboardCheck,
+  CheckCircle,
+  XCircle,
+  Calendar,
+  CalendarCheck,
+  X,
+  FileText,
+  Eye,
+  Paperclip,
+  type LucideIcon,
+} from 'lucide-react';
 
 import { env } from '@/lib/env';
 import { Button } from '@realestate/ui';
@@ -22,11 +37,11 @@ interface ContractPaymentsSectionProps {
   getPaymentStatusColor: (status: string) => string;
 }
 
-const statusIcons: Record<string, string> = {
-  PENDING: 'schedule',
-  PENDING_VERIFICATION: 'fact_check',
-  PAID: 'check_circle',
-  CANCELLED: 'cancel',
+const statusIcons: Record<string, LucideIcon> = {
+  PENDING: Clock,
+  PENDING_VERIFICATION: ClipboardCheck,
+  PAID: CheckCircle,
+  CANCELLED: XCircle,
 };
 
 const documentStatusLabels: Record<string, string> = {
@@ -224,14 +239,14 @@ export default function ContractPaymentsSection({
           }}
           disabled={updating || !canAddPayment}
         >
-          <span className="material-symbols-outlined text-sm mr-2">add</span>
+          <Plus className="mr-2 size-4" aria-hidden />
           Agregar Pago
         </Button>
       </div>
 
       {(!payments || payments.length === 0) && (
         <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
-          <span className="material-symbols-outlined text-4xl mb-2 block">payment</span>
+          <CreditCard className="mx-auto mb-2 size-10" aria-hidden />
           <p>No hay pagos programados</p>
           {canAddPayment && (
             <p className="text-xs mt-2">Usa el botón "Agregar Pago" para programar un nuevo cobro.</p>
@@ -248,6 +263,7 @@ export default function ContractPaymentsSection({
             const isCancelled = payment?.status === 'CANCELLED';
             const hasRevenueInfo = typeof payment?.isAgencyRevenue === 'boolean';
             const isAgencyRevenue = payment?.isAgencyRevenue === true;
+            const StatusIcon = statusIcons[payment.status] ?? ClipboardCheck;
 
             return (
               <div
@@ -257,7 +273,9 @@ export default function ContractPaymentsSection({
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="flex-1 space-y-3">
                     <div className="flex items-start gap-3">
-                      <span className="material-symbols-outlined text-base text-primary bg-primary/10 rounded-full p-2">payments</span>
+                      <span className="inline-flex rounded-full bg-primary/10 p-2 text-primary">
+                        <CreditCard className="size-4" aria-hidden />
+                      </span>
                       <div className="space-y-1">
                         <h4 className="text-base font-semibold text-foreground">
                           {getPaymentTypeLabel(payment.type)}
@@ -271,9 +289,7 @@ export default function ContractPaymentsSection({
                         <div
                           className={`flex items-center gap-x-2 gap-y-1 px-3 py-1.5 flex-wrap rounded-lg border text-xs font-semibold w-fit ${getPaymentStatusColor(payment.status)}`}
                         >
-                          <span className="material-symbols-outlined text-sm">
-                            {statusIcons[payment.status] || 'info'}
-                          </span>
+                          <StatusIcon className="size-3.5 shrink-0" aria-hidden />
                           {getPaymentStatusLabel(payment.status)}
                         </div>
                       </div>
@@ -281,7 +297,7 @@ export default function ContractPaymentsSection({
                       <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
                         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Fecha de pago</span>
                         <div className="flex items-center gap-x-2 gap-y-1 flex-wrap text-sm text-foreground">
-                          <span className="material-symbols-outlined text-sm text-muted-foreground">event</span>
+                          <Calendar className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                           <span className="font-medium">{formatDisplayDate(payment.date)}</span>
                         </div>
                       </div>
@@ -289,7 +305,7 @@ export default function ContractPaymentsSection({
                       <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
                         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Fecha de recepción</span>
                         <div className="flex items-center gap-x-2 gap-y-1 flex-wrap text-sm text-foreground">
-                          <span className="material-symbols-outlined text-sm text-muted-foreground">event_available</span>
+                          <CalendarCheck className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                           <span className="font-medium">{resolvedPaidAt ? formatDisplayDate(resolvedPaidAt) : 'Aún sin registro'}</span>
                         </div>
                       </div>
@@ -299,14 +315,11 @@ export default function ContractPaymentsSection({
                         <div className="flex items-center gap-2 text-sm text-foreground">
                           {hasRevenueInfo ? (
                             <div className="flex items-center gap-2">
-                              <span
-                                className={`material-symbols-outlined text-base ${
-                                  isAgencyRevenue ? 'text-green-600' : 'text-red-500'
-                                }`}
-                                aria-label={isAgencyRevenue ? 'Pago para la empresa' : 'Pago externo'}
-                              >
-                                {isAgencyRevenue ? 'check_circle' : 'close'}
-                              </span>
+                              {isAgencyRevenue ? (
+                                <CheckCircle className="size-4 text-green-600" aria-label="Pago para la empresa" />
+                              ) : (
+                                <X className="size-4 text-red-500" aria-label="Pago externo" />
+                              )}
                               <span className="text-xs font-medium">
                                 {isAgencyRevenue ? 'Empresa' : 'Externo'}
                               </span>
@@ -337,7 +350,7 @@ export default function ContractPaymentsSection({
 
                   <div className="pt-2 border-t border-border">
                     <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-                      <span className="material-symbols-outlined text-base">description</span>
+                      <FileText className="size-4 shrink-0" aria-hidden />
                       Comprobante adjunto
                       {Array.isArray(payment.documents) && payment.documents.length > 0 && (
                         <span className="text-xs font-semibold text-foreground">
@@ -363,7 +376,7 @@ export default function ContractPaymentsSection({
                               key={document.id || document.documentId || documentIndex}
                               className="flex items-start gap-3 rounded-md border border-border px-3 py-2"
                             >
-                              <span className="material-symbols-outlined text-base text-primary mt-0.5">description</span>
+                              <FileText className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
                               <div className="flex-1 space-y-1">
                                 <span className="text-sm font-medium text-foreground">
                                   {getDocumentLabel(document, documentIndex)}
@@ -393,7 +406,7 @@ export default function ContractPaymentsSection({
                                 }}
                                 disabled={!documentUrl}
                               >
-                                <span className="material-symbols-outlined text-sm mr-1">visibility</span>
+                                <Eye className="mr-1 size-3.5" aria-hidden />
                                 Ver
                               </Button>
                             </div>
@@ -415,7 +428,7 @@ export default function ContractPaymentsSection({
                           disabled={updating}
                           className="text-green-600 hover:bg-green-50"
                         >
-                          <span className="material-symbols-outlined text-sm mr-1">check_circle</span>
+                          <CheckCircle className="mr-1 size-3.5" aria-hidden />
                           Marcar Pagado
                         </Button>
                       )}
@@ -427,7 +440,7 @@ export default function ContractPaymentsSection({
                           disabled={updating}
                           className="text-red-600 hover:bg-red-50"
                         >
-                          <span className="material-symbols-outlined text-sm mr-1">cancel</span>
+                          <XCircle className="mr-1 size-3.5" aria-hidden />
                           Cancelar
                         </Button>
                       )}
@@ -441,7 +454,7 @@ export default function ContractPaymentsSection({
                         disabled={updating || !payment.id}
                         className="text-blue-600 hover:bg-blue-50"
                       >
-                        <span className="material-symbols-outlined text-sm mr-1">attach_file</span>
+                        <Paperclip className="mr-1 size-3.5" aria-hidden />
                         Adjuntar Comprobante
                       </Button>
                     </div>

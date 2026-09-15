@@ -71,7 +71,7 @@ export default function ContractGeneralSection({
               id: agent.id,
               label: agent.displayName || `${agent.firstName ?? ''} ${agent.lastName ?? ''}`.trim(),
             }))}
-            value={contract.user?.id || null}
+            value={contract.user?.id || contract.userId || null}
             onChange={(id) => id && onAgentChange(id as string)}
             placeholder="Seleccionar agente..."
             disabled={updating || loadingAgents}

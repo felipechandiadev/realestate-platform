@@ -62,8 +62,8 @@ export function DocumentTypesContent({
         search: search || undefined,
       });
 
-      if (Array.isArray(result)) {
-        setDocumentTypes(result);
+      if (result.success && Array.isArray(result.data)) {
+        setDocumentTypes(result.data);
       }
     } catch (error) {
       console.error('Error recargando tipos de documentos:', error);
@@ -106,6 +106,7 @@ export function DocumentTypesContent({
     }
     setSelectedDocumentType(documentType);
     setDeleteErrors([]);
+    setIsDeleting(false);
     setIsDeleteDialogOpen(true);
   };
 
@@ -136,7 +137,7 @@ export function DocumentTypesContent({
   };
 
   const handleDeleteConfirm = async () => {
-    if (!selectedDocumentType) return;
+    if (!selectedDocumentType || isDeleting) return;
 
     setIsDeleting(true);
     setDeleteErrors([]);
@@ -148,15 +149,16 @@ export function DocumentTypesContent({
         const errorMessage = result.error || 'Error al eliminar tipo de documento';
         alert.error(errorMessage);
         setDeleteErrors([errorMessage]);
+        setIsDeleting(false);
         return;
       }
 
       await handleDeleteSuccess();
+      // Keep isDeleting true until dialog unmounts / reopens.
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Error al eliminar tipo de documento';
       alert.error(message);
       setDeleteErrors([message]);
-    } finally {
       setIsDeleting(false);
     }
   };

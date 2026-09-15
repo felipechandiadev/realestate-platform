@@ -55,7 +55,7 @@ const UpdateAgentForm: React.FC<UpdateAgentFormProps> = ({
   }
 
   const handleSubmit = async (values: Record<string, any>) => {
-    if (!agent) return
+    if (!agent || loading) return
 
     setLoading(true)
     try {
@@ -111,10 +111,10 @@ const UpdateAgentForm: React.FC<UpdateAgentFormProps> = ({
       }
 
       onSubmitSuccess()
+      return
     } catch (err) {
       console.error('Error in UpdateAgentForm:', err)
       onError('Error inesperado al actualizar el agente')
-    } finally {
       setLoading(false)
     }
   }

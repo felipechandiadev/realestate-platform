@@ -101,6 +101,8 @@ export interface BaseUpdateFormField {
 	maxSize?: number;
 	aspectRatio?: '1:1' | '16:9' | '9:16';
 	buttonText?: string;
+	avatarSize?: 'sm' | 'md' | 'lg';
+	actionPlacement?: 'below' | 'edge';
 	labelText?: string;
 	labelClassName?: string;
 }
@@ -259,13 +261,16 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 					<MultimediaUpdater
 						currentUrl={field.currentUrl ?? getMediaUrl(fieldValue)}
 						currentType={field.currentType || (field.type === 'video' ? 'video' : 'image')}
-					variant={field.variant || (field.type === 'avatar' ? 'avatar' : 'default')}
+						variant={field.variant || (field.type === 'avatar' ? 'avatar' : 'default')}
+						avatarSize={field.avatarSize || (field.type === 'avatar' ? 'md' : undefined)}
+						actionPlacement={field.actionPlacement || (field.type === 'avatar' ? 'edge' : undefined)}
 						acceptedTypes={field.acceptedTypes || (field.type === 'video' ? ['video/*'] : ['image/*'])}
 						maxSize={field.maxSize || (field.type === 'avatar' ? 2 : 5)}
 						aspectRatio={field.aspectRatio || (field.type === 'avatar' ? '1:1' : '16:9')}
 						buttonText={field.buttonText || (field.type === 'avatar' ? 'Cambiar avatar' : field.type === 'video' ? 'Actualizar video' : 'Actualizar imagen')}
 						labelText={field.labelText ?? field.label}
 						previewSize={field.previewSize || 'md'}
+						allowDragDrop={field.type === 'avatar'}
 						onFileChange={(file) => {
 							handleChange(`${field.name}File`, file ?? null);
 							if (file) {

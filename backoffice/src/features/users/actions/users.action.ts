@@ -765,7 +765,14 @@ export async function updateUserAvatar(id: string, formData: FormData): Promise<
 
 		const result = await response.json();
 		revalidatePath('/users/administrators', 'page');
-		return { success: true, data: result };
+		revalidatePath('/users/agents', 'page');
+		const avatarUrl =
+			typeof result?.avatarUrl === 'string'
+				? result.avatarUrl
+				: typeof result?.data?.avatarUrl === 'string'
+					? result.data.avatarUrl
+					: undefined;
+		return { success: true, data: avatarUrl ? { avatarUrl } : undefined };
 	} catch (error) {
 		console.error('Error updating avatar:', error);
 		return { 

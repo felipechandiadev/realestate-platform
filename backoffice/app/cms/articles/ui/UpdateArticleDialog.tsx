@@ -21,6 +21,12 @@ const UpdateArticleDialog: React.FC<UpdateArticleDialogProps> = ({
   const { showAlert } = useAlert();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
+
   const categoryOptions = Object.values(ArticleCategory).map((category) => ({
     id: category as any,
     label: category,
@@ -83,7 +89,7 @@ const UpdateArticleDialog: React.FC<UpdateArticleDialogProps> = ({
   };
 
   const handleSubmit = async (values: Record<string, unknown>) => {
-    if (!article) return;
+    if (!article || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -108,20 +114,20 @@ const UpdateArticleDialog: React.FC<UpdateArticleDialogProps> = ({
         });
         onClose();
         onSuccess();
-      } else {
-        showAlert({
-          message: result.error || 'Error al actualizar artículo',
-          type: 'error',
-          duration: 3000,
-        });
+        return;
       }
+      showAlert({
+        message: result.error || 'Error al actualizar artículo',
+        type: 'error',
+        duration: 3000,
+      });
+      setIsSubmitting(false);
     } catch (err) {
       showAlert({
         message: 'Error interno del servidor',
         type: 'error',
         duration: 3000,
       });
-    } finally {
       setIsSubmitting(false);
     }
   };

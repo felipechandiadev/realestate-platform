@@ -18,6 +18,8 @@ export default function DeletePropertyTypeForm({ propertyType, onSuccess, onCanc
   const [errors, setErrors] = useState<string[]>([]);
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     setIsSubmitting(true);
     setErrors([]);
 
@@ -26,15 +28,14 @@ export default function DeletePropertyTypeForm({ propertyType, onSuccess, onCanc
 
       alert.success(`Tipo de propiedad "${propertyType.name}" eliminado exitosamente`);
 
-      // Call success callback
       if (onSuccess) {
         onSuccess();
       }
+      // Keep submitting true until dialog closes / remounts.
     } catch (error) {
       console.error('Error deleting property type:', error);
       alert.error('Error al eliminar el tipo de propiedad. Por favor, inténtalo de nuevo.');
       setErrors(['Error al eliminar el tipo de propiedad']);
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -52,6 +53,9 @@ export default function DeletePropertyTypeForm({ propertyType, onSuccess, onCanc
         submitLabel="Eliminar Tipo de Propiedad"
         errors={errors}
         data-test-id="delete-property-type-form"
+        cancelButton={Boolean(onCancel)}
+        cancelButtonText="Cancelar"
+        onCancel={onCancel}
       />
     </div>
   );

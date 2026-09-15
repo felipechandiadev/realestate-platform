@@ -38,18 +38,22 @@ const CharacteristicsSection: React.FC<CharacteristicsSectionProps> = ({
         setLoading(true)
         const response = await getPropertyCharacteristics(propertyId)
         if (response.success && response.data) {
-          const chars = response.data.characteristics || []
+          const payload = response.data
+          const chars: Characteristic[] = Array.isArray(payload?.characteristics)
+            ? payload.characteristics
+            : Array.isArray(payload)
+              ? payload
+              : []
           setCharacteristics(chars)
-          setPropertyType(response.data.propertyType || '')
-          
-          // Initialize formData with characteristic values
+          setPropertyType(payload?.propertyType || '')
+
           const initialData: { [key: string]: string } = {}
           chars.forEach((char: Characteristic) => {
             initialData[char.name] = char.value?.toString() || ''
           })
           setFormData(initialData)
         } else {
-          setError(response.error || 'Failed to load characteristics')
+          setError(response.error || 'No se pudieron cargar las características')
         }
       } catch (err) {
         console.error('Error loading characteristics:', err)

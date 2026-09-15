@@ -32,16 +32,25 @@ export default function DeleteButton({
   const [isDeleting, setIsDeleting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const openDialog = () => {
+    setError(null)
+    setIsDeleting(false)
+    setOpen(true)
+  }
+
   const handleDelete = async () => {
+    if (isDeleting) return
+
+    setIsDeleting(true)
+    setError(null)
+
     try {
-      setIsDeleting(true)
-      setError(null)
       await onDelete()
       setOpen(false)
+      // Keep isDeleting true until reopen so the button stays disabled during close animation.
     } catch (err) {
       console.error('Error deleting:', err)
       setError('Ocurrió un error al eliminar. Inténtalo de nuevo.')
-    } finally {
       setIsDeleting(false)
     }
   }
@@ -50,7 +59,7 @@ export default function DeleteButton({
     <>
       <Button
         variant={buttonVariant}
-        onClick={() => setOpen(true)}
+        onClick={openDialog}
         className={className}
         disabled={disabled}
       >
@@ -73,7 +82,7 @@ export default function DeleteButton({
           onSubmit={handleDelete}
           isSubmitting={isDeleting}
           cancelButton={true}
-          onCancel={() => setOpen(false)}
+          onCancel={() => !isDeleting && setOpen(false)}
           errors={error ? [error] : []}
           title="" // Hide title in form since it's in the dialog
         />

@@ -1,5 +1,8 @@
 import { getSalePropertiesGrid } from '@/features/properties/actions/properties.action';
-import { PropertiesSalesGrid } from '@/features/properties/components/sales';
+import {
+  PropertiesSalesGrid,
+  PropertiesSalesPageLayout,
+} from '@/features/properties/components/sales';
 
 interface PageProps {
   searchParams: Promise<{
@@ -14,8 +17,7 @@ interface PageProps {
 
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
-  
-  // Parse URL parameters
+
   const page = parseInt(params.page || '1', 10);
   const limit = parseInt(params.limit || '25', 10);
   const search = params.search || '';
@@ -24,7 +26,6 @@ export default async function Page({ searchParams }: PageProps) {
   const filters = params.filters || '';
 
   try {
-    // Fetch data using Server Action
     const result = await getSalePropertiesGrid({
       page,
       limit,
@@ -32,30 +33,34 @@ export default async function Page({ searchParams }: PageProps) {
       sortField,
       sort,
       filters,
-      // Backoffice: listar todos los estados; el filtro de columna `status` los acota
       status: 'ALL',
       filtration: !!search || !!filters,
       pagination: true,
     });
 
-    // Normalize response (can be array or object with data property)
     const properties = Array.isArray(result) ? result : result.data || [];
     const total = Array.isArray(result) ? result.length : result.total || 0;
 
     return (
-      <PropertiesSalesGrid
-        properties={properties}
-        total={total}
-        page={page}
-        limit={limit}
-      />
+      <PropertiesSalesPageLayout>
+        <PropertiesSalesGrid
+          properties={properties}
+          total={total}
+          page={page}
+          limit={limit}
+        />
+      </PropertiesSalesPageLayout>
     );
   } catch (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4">
-          <h2 className="text-red-800 font-semibold mb-2">Error al cargar propiedades</h2>
-          <p className="text-red-600">{error instanceof Error ? error.message : 'Error desconocido'}</p>
+      <PropertiesSalesPageLayout>
+        <div className="rounded-md border border-red-200 bg-red-50 p-4">
+          <h2 className="mb-2 font-semibold text-red-800">Error al cargar propiedades</h2>
+          <p className="text-red-600">
+            {error instanceof Error ? error.message : 'Error desconocido'}
+          </p>
         </div>
+      </PropertiesSalesPageLayout>
     );
   }
 }

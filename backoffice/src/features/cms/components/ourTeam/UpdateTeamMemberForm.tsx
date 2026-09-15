@@ -76,6 +76,8 @@ export default function UpdateTeamMemberForm({
   };
 
   const handleSubmit = async (values: any) => {
+    if (isSubmitting) return;
+
     const validationErrors = validateForm(values);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
@@ -142,15 +144,19 @@ export default function UpdateTeamMemberForm({
           duration: 3000,
         });
         onSuccess?.();
-      } else {
-        const errorMsg = result.error || 'Error al actualizar el miembro del equipo';
-        setErrors([errorMsg]);
-        showAlert({
-          message: errorMsg,
-          type: 'error',
-          duration: 5000,
-        });
+        // Keep submitting true until dialog closes / remounts.
+        return;
       }
+
+      const errorMsg = result.error || 'Error al actualizar el miembro del equipo';
+      setErrors([errorMsg]);
+      showAlert({
+        message: errorMsg,
+        type: 'error',
+        duration: 5000,
+      });
+      setIsSubmitting(false);
+      onLoadingChange?.(false);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error interno del servidor';
       setErrors([errorMsg]);
@@ -159,7 +165,6 @@ export default function UpdateTeamMemberForm({
         type: 'error',
         duration: 5000,
       });
-    } finally {
       setIsSubmitting(false);
       onLoadingChange?.(false);
     }

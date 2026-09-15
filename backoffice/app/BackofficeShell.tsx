@@ -86,12 +86,12 @@ export default function BackofficeShell({ children }: { children: React.ReactNod
         logoSrc={logoUrl || undefined}
         showNotifications={true}
       />
-      <div className="min-h-screen flex-1 p-6">
+      <div className="min-h-screen flex-1 p-2 sm:p-6">
         <MyAccountDialog
           open={showMyAccountDialog}
           onClose={() => setShowMyAccountDialog(false)}
         />
-        <main className="w-full max-w-[98%] mx-auto px-4 pt-16">{children}</main>
+        <main className="mx-auto w-full max-w-[98%] px-2 pt-14 sm:px-4 sm:pt-16">{children}</main>
       </div>
     </div>
   );

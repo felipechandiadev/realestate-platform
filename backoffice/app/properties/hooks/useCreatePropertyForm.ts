@@ -280,17 +280,17 @@ export const useCreatePropertyForm = (
 
       if (result.success) {
         console.log('✅ Property created successfully:', result.data);
-        // Call success callback (includes router.refresh())
+        // Call success callback (includes router.refresh() / dialog close).
+        // Keep isSubmitting true until dialog remounts / reopens.
         onSuccess();
-        // Don't close here - let the component handle it
-      } else {
-        setSubmitError(result.error || 'Error desconocido al crear la propiedad');
-        setIsSubmitting(false);
+        return;
       }
+
+      setSubmitError(result.error || 'Error desconocido al crear la propiedad');
+      setIsSubmitting(false);
     } catch (error) {
       console.error('Error submitting property:', error);
       setSubmitError('Error inesperado al crear la propiedad');
-    } finally {
       setIsSubmitting(false);
     }
   };

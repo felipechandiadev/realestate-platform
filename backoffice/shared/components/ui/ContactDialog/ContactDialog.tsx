@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Send, Hourglass } from 'lucide-react'
 import { Dialog } from "@realestate/ui"
 import { TextField } from '@realestate/ui'
@@ -21,8 +21,15 @@ const ContactDialog: React.FC<ContactDialogProps> = ({ open, onClose }) => {
   const [mensaje, setMensaje] = useState('')
   const [loading, setLoading] = useState(false)
 
+  useEffect(() => {
+    if (open) {
+      setLoading(false)
+    }
+  }, [open])
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (loading) return
 
     // Validación local
     if (!nombre.trim() || !email.trim() || !telefono.trim() || !mensaje.trim()) {
@@ -63,13 +70,13 @@ const ContactDialog: React.FC<ContactDialogProps> = ({ open, onClose }) => {
       setTimeout(() => {
         onClose()
       }, 500)
+      return
     } catch (error) {
       showAlert({ 
         message: 'Error al enviar el mensaje. Por favor intenta nuevamente.', 
         type: 'error', 
         duration: 5000 
       })
-    } finally {
       setLoading(false)
     }
   }

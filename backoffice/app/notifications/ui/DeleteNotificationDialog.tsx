@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Dialog } from "@realestate/ui";
-import { DeleteBaseForm } from '@/shared/components/ui/BaseForm';
+import React, { useEffect, useState } from 'react';
+import { DeleteDialog } from '@realestate/ui';
 import { deleteNotification } from '@/features/notifications/actions/notifications.action';
 import { useAlert } from '@/providers/AlertContext';
 
@@ -11,7 +10,7 @@ interface DeleteNotificationDialogProps {
   onClose: () => void;
   notificationId: string | null;
   notificationMessage?: string;
-  onSave: () => void; // Callback to refresh list
+  onSave: () => void;
 }
 
 const DeleteNotificationDialog: React.FC<DeleteNotificationDialogProps> = ({
@@ -25,8 +24,17 @@ const DeleteNotificationDialog: React.FC<DeleteNotificationDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
   const { showAlert } = useAlert();
 
-  const handleSubmit = async () => {
-    if (!notificationId) return;
+  // Reset solo al abrir de nuevo. En éxito el loading queda activo durante
+  // la animación de cierre del Dialog (~200ms) para no reactivar el botón.
+  useEffect(() => {
+    if (open) {
+      setError(null);
+      setLoading(false);
+    }
+  }, [open]);
+
+  const handleConfirm = async () => {
+    if (!notificationId || loading) return;
 
     setLoading(true);
     setError(null);
@@ -37,29 +45,30 @@ const DeleteNotificationDialog: React.FC<DeleteNotificationDialogProps> = ({
         showAlert({
           message: 'Notificación eliminada exitosamente',
           type: 'success',
-          duration: 3000
+          duration: 3000,
         });
         onSave();
         onClose();
-      } else {
-        const errorMsg = result.error || 'Error al eliminar la notificación';
-        setError(errorMsg);
-        showAlert({
-          message: errorMsg,
-          type: 'error',
-          duration: 5000
-        });
+        return;
       }
-    } catch (err) {
-      const errorMsg = 'Error inesperado al eliminar la notificación';
+
+      const errorMsg = result.error || 'Error al eliminar la notificación';
       setError(errorMsg);
+      setLoading(false);
       showAlert({
         message: errorMsg,
         type: 'error',
-        duration: 5000
+        duration: 5000,
       });
-    } finally {
+    } catch {
+      const errorMsg = 'Error inesperado al eliminar la notificación';
+      setError(errorMsg);
       setLoading(false);
+      showAlert({
+        message: errorMsg,
+        type: 'error',
+        duration: 5000,
+      });
     }
   };
 
@@ -70,31 +79,19 @@ const DeleteNotificationDialog: React.FC<DeleteNotificationDialogProps> = ({
     : 'esta notificación';
 
   return (
-    <Dialog
+    <DeleteDialog
       open={open}
       onClose={onClose}
       title="Eliminar Notificación"
-      maxWidth="sm"
-    >
-      <div>
-        {error && (
-          <div className="mb-4 text-red-600">
-            {error}
-          </div>
-        )}
-        <DeleteBaseForm
-          message={`¿Estás seguro de que quieres eliminar la notificación "${truncatedMessage}"?`}
-          subtitle="Esta acción no se puede deshacer."
-          title=""
-          isSubmitting={loading}
-          submitLabel="Eliminar"
-          onSubmit={handleSubmit}
-          cancelButton={true}
-          cancelButtonText="Cancelar"
-          onCancel={onClose}
-        />
-      </div>
-    </Dialog>
+      subtitle="Esta acción no se puede deshacer."
+      message={`¿Estás seguro de que quieres eliminar la notificación "${truncatedMessage}"?`}
+      confirmLabel="Eliminar"
+      cancelLabel="Cancelar"
+      isSubmitting={loading}
+      errors={error ? [error] : []}
+      onConfirm={handleConfirm}
+      data-test-id="delete-notification-dialog"
+    />
   );
 };
 

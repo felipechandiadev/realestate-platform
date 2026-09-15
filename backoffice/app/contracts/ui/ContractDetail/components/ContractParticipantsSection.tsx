@@ -1,3 +1,5 @@
+import { Users } from 'lucide-react';
+
 interface ContractParticipantsSectionProps {
   participants: any[] | undefined;
   getRoleLabel: (role: string) => string;
@@ -7,7 +9,7 @@ export default function ContractParticipantsSection({ participants, getRoleLabel
   if (!participants || participants.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground max-w-4xl">
-        <span className="material-symbols-outlined text-4xl mb-2 block">groups</span>
+        <Users className="mx-auto mb-2 size-10" aria-hidden />
         <p>No hay participantes registrados</p>
       </div>
     );

@@ -53,6 +53,8 @@ export interface BaseFormField {
 	maxSize?: number;
 	uploadPath?: string;
 	buttonText?: string;
+	avatarSize?: 'sm' | 'md' | 'lg';
+	actionPlacement?: 'below' | 'edge';
 }
 
 export interface BaseFormFieldGroup {
@@ -187,6 +189,8 @@ const CreateBaseForm: React.FC<CreateBaseFormProps> = ({
 					</label>
 					<MultimediaUploader
 						variant={field.variant || (field.type === 'avatar' ? 'avatar' : 'default')}
+						avatarSize={field.avatarSize || (field.type === 'avatar' ? 'md' : undefined)}
+						actionPlacement={field.actionPlacement || (field.type === 'avatar' ? 'edge' : undefined)}
 						onChange={(files) => {
 							if (files.length > 0) {
 								onChange(field.name, files[0]);

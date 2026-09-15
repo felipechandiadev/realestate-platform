@@ -37,6 +37,13 @@
   pointer-events: none;
 }
 
+@media (max-width: 639px) {
+  .fs-toast-viewport {
+    top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+    right: 0.75rem;
+  }
+}
+
 .fs-toast-viewport > * {
   pointer-events: auto;
 }
@@ -66,7 +73,7 @@
   left: 0;
   top: 0;
   bottom: 0;
-  width: 4px;
+  width: 6px;
   border-radius: 0.75rem 0 0 0.75rem;
   background-color: currentColor;
   opacity: 1;

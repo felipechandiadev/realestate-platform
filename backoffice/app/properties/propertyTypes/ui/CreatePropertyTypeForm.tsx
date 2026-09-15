@@ -100,6 +100,8 @@ export default function CreatePropertyTypeForm({ onSuccess, onCancel }: CreatePr
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     // Basic validation
     if (!formData.name.trim()) {
       setErrors(['El nombre es obligatorio']);
@@ -129,14 +131,15 @@ export default function CreatePropertyTypeForm({ onSuccess, onCancel }: CreatePr
       // Call success callback or refresh page
       if (onSuccess) {
         onSuccess();
-      } else {
-        router.refresh();
+        return;
       }
+
+      router.refresh();
+      setIsSubmitting(false);
     } catch (error) {
       console.error('Error creating property type:', error);
       alert.error('Error al crear el tipo de propiedad. Por favor, inténtalo de nuevo.');
       setErrors(['Error al crear el tipo de propiedad']);
-    } finally {
       setIsSubmitting(false);
     }
   };

@@ -40,6 +40,9 @@ export interface SalePropertyGridRow {
   price?: number;
   currencyPrice?: 'CLP' | 'UF';
   mainImageUrl?: string | null;
+  /** URLs de imágenes para carrusel en vista cards (main primero). */
+  imageUrls?: string[];
+  multimedia?: Array<{ url?: string | null; format?: string | null }>;
   createdAt?: string;
   updatedAt?: string;
   // allow additional fields without strict typing
@@ -1280,9 +1283,13 @@ export async function updatePropertyBasic(id: string, data: UpdatePropertyBasicD
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
+      const rawMessage = errorData?.message;
+      const message = Array.isArray(rawMessage)
+        ? rawMessage.join('. ')
+        : rawMessage || `Error al actualizar la información básica (${response.status})`;
       return {
         success: false,
-        error: errorData?.message || `Failed to update property basic info: ${response.status}`,
+        error: message,
       };
     }
 

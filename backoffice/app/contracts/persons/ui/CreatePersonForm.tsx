@@ -79,6 +79,8 @@ export default function CreatePersonForm({ onClose, onSuccess }: CreatePersonFor
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     const validationErrors = validateForm(values);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
@@ -127,6 +129,7 @@ export default function CreatePersonForm({ onClose, onSuccess }: CreatePersonFor
       if (onSuccess) {
         onSuccess();
       }
+      return;
     } catch (error) {
       showAlert({
         message: `Error al crear persona: ${error instanceof Error ? error.message : 'Error desconocido'}`,

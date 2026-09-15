@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@realestate/ui';
 import { Dialog } from "@realestate/ui";
+import { Plus, FileText } from 'lucide-react';
 import DeleteBaseForm from '@/shared/components/ui/BaseForm/DeleteBaseForm';
 import ContractDocumentCard, {
   getDocumentTypeName,
@@ -71,6 +72,7 @@ export default function ContractDocumentsSection({
       return;
     }
 
+    setIsDeleteDialogSubmitting(false);
     setDocumentPendingDeletion(document);
   };
 
@@ -87,22 +89,21 @@ export default function ContractDocumentsSection({
       setDocumentPendingDeletion(null);
       return;
     }
+    if (isDeleteDialogBusy) return;
 
-    let shouldCloseDialog = true;
+    setIsDeleteDialogSubmitting(true);
     try {
-      setIsDeleteDialogSubmitting(true);
       const result = await Promise.resolve(onDeleteDocument(documentPendingDeletion));
 
       if (result && typeof result === 'object' && 'success' in result && result.success === false) {
-        shouldCloseDialog = false;
+        setIsDeleteDialogSubmitting(false);
+        return;
       }
+
+      setDocumentPendingDeletion(null);
+      // Keep submitting true until dialog remounts / reopens.
     } catch (error) {
-      shouldCloseDialog = false;
-    } finally {
       setIsDeleteDialogSubmitting(false);
-      if (shouldCloseDialog) {
-        setDocumentPendingDeletion(null);
-      }
     }
   };
 
@@ -122,7 +123,7 @@ export default function ContractDocumentsSection({
             onClick={onAddDocument}
             disabled={addDocumentDisabled}
           >
-            <span className="material-symbols-outlined text-sm">add</span>
+            <Plus className="mr-1 size-4" aria-hidden />
             Registrar documento
           </Button>
         )}
@@ -130,7 +131,7 @@ export default function ContractDocumentsSection({
 
       {!hasDocuments ? (
         <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
-          <span className="material-symbols-outlined text-4xl mb-2 block">description</span>
+          <FileText className="mx-auto mb-2 size-10" aria-hidden />
           <p>No hay documentos registrados</p>
           {onAddDocument && (
             <p className="text-xs mt-2">Usa el botón "Registrar documento" para crear un nuevo requisito.</p>

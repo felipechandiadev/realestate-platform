@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { Select } from "@realestate/ui";
@@ -35,8 +35,15 @@ export default function UploadDNIDialog({
   const [dniSide, setDniSide] = useState<DNISide | null>(null);
   const [file, setFile] = useState<File | null>(null);
 
+  useEffect(() => {
+    if (open) {
+      setLoading(false);
+    }
+  }, [open]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
 
     if (!dniSide) {
       alert.showAlert({
@@ -91,10 +98,11 @@ export default function UploadDNIDialog({
         });
         onSuccess();
         onClose();
-      } else {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || 'Error al subir DNI');
+        return;
       }
+
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Error al subir DNI');
     } catch (error) {
       console.error('Error submitting DNI:', error);
       alert.showAlert({
@@ -102,7 +110,6 @@ export default function UploadDNIDialog({
         type: 'error',
         duration: 5000,
       });
-    } finally {
       setLoading(false);
     }
   };

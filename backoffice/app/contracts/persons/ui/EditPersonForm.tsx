@@ -191,6 +191,8 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
       company: typeof formValues.company === 'string' ? formValues.company : '',
     };
 
+    if (isSubmitting) return;
+
     const validationErrors = validateForm(values);
 
     if (validationErrors.length > 0) {
@@ -263,6 +265,7 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
       router.refresh();
       onSuccess?.(updatedPerson);
       onClose();
+      return;
     } catch (error) {
       showAlert({
         message: `Error al actualizar persona: ${error instanceof Error ? error.message : 'Error desconocido'}`,
@@ -270,7 +273,6 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
         duration: 5000,
       });
       setErrors(['No fue posible guardar los cambios en este momento. Intenta nuevamente.']);
-    } finally {
       setIsSubmitting(false);
     }
   };

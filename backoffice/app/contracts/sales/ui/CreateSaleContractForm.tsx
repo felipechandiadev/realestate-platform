@@ -115,7 +115,11 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
         }
 
         setPersons(Array.isArray(personsData) ? personsData : []);
-        setDocumentTypes(Array.isArray(documentTypesData) ? documentTypesData : []);
+        setDocumentTypes(
+          documentTypesData.success && Array.isArray(documentTypesData.data)
+            ? documentTypesData.data
+            : [],
+        );
         setPersonsForSearch(Array.isArray(personsSearchData) ? personsSearchData : []);
         
         // Format agents for Select component
@@ -263,6 +267,7 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
 
     if (!propertyId || !assignedAgentId || !amount || contractPersons.some(p => !p.personId)) {
       alert.showAlert({
@@ -334,20 +339,21 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
         onSuccess?.();
         onClose();
         router.refresh();
-      } else {
-        alert.showAlert({
-          message: `Error al crear contrato: ${result.error || 'Error desconocido'}`,
-          type: 'error',
-          duration: 5000,
-        });
+        return;
       }
+
+      alert.showAlert({
+        message: `Error al crear contrato: ${result.error || 'Error desconocido'}`,
+        type: 'error',
+        duration: 5000,
+      });
+      setLoading(false);
     } catch (error) {
       alert.showAlert({
         message: `Error inesperado al crear contrato: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         type: 'error',
         duration: 5000,
       });
-    } finally {
       setLoading(false);
     }
   };

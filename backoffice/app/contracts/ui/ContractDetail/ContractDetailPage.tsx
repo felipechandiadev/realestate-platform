@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Dialog } from "@realestate/ui";
+import { useRouter, useSearchParams } from 'next/navigation';
+import { IconButton, LoadingState } from '@realestate/ui';
 import { useAlert } from '@/shared/hooks/useAlert';
 import { useSession } from 'next-auth/react';
 import {
@@ -45,34 +46,23 @@ import ContractUploadPaymentDocumentDialog from './components/ContractUploadPaym
 import ContractAddDocumentDialog from './components/ContractAddDocumentDialog';
 import ContractUploadContractDocumentDialog from './components/ContractUploadContractDocumentDialog';
 import ContractEditFinancialDialog from './components/ContractEditFinancialDialog';
+import { ContractDetailSectionNav } from './ContractDetailSectionNav';
+import {
+  CONTRACT_DETAIL_TABS,
+  type ContractDetailSectionId,
+  contractDetailSectionFromHash,
+} from './contract-detail-section.types';
 
-interface ContractDetailDialogProps {
-  open: boolean;
-  onClose: () => void;
-  contractId: string | null;
-  onEdit?: (contractId: string) => void;
-  onDelete?: (contractId: string) => void;
-  onUpdate?: () => void;
-}
+export type ContractDetailHeader = {
+  code?: string | null;
+  status?: string | null;
+};
 
-type SectionType =
-  | 'general'
-  | 'property'
-  | 'participants'
-  | 'financial'
-  | 'payments'
-  | 'documents'
-  | 'history';
-
-const sections: Array<{ id: SectionType; label: string; icon: string }> = [
-  { id: 'general', label: 'General', icon: 'info' },
-  { id: 'property', label: 'Propiedad', icon: 'home' },
-  { id: 'participants', label: 'Participantes', icon: 'groups' },
-  { id: 'financial', label: 'Financiero', icon: 'attach_money' },
-  { id: 'payments', label: 'Pagos', icon: 'payment' },
-  { id: 'documents', label: 'Documentos', icon: 'description' },
-  { id: 'history', label: 'Historial', icon: 'history' },
-];
+type ContractDetailPageProps = {
+  contractId: string;
+  listBasePath: '/contracts/sales' | '/contracts/rent';
+  initialHeader?: ContractDetailHeader;
+};
 
 const FINAL_STATUS_SET = new Set<ContractStatus>(FINAL_CONTRACT_STATUSES);
 
@@ -489,17 +479,19 @@ const sanitizePaymentsForPersist = (payments: any[] | undefined) => {
   return payments.map(({ __clientId, ...rest }) => rest);
 };
 
-export default function ContractDetailDialog({
-  open,
-  onClose,
+export default function ContractDetailPage({
   contractId,
-  onEdit,
-  onDelete,
-  onUpdate,
-}: ContractDetailDialogProps) {
-  const [activeSection, setActiveSection] = useState<SectionType>('general');
+  listBasePath,
+  initialHeader,
+}: ContractDetailPageProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeSection, setActiveSection] = useState<ContractDetailSectionId>('general');
+  const [header, setHeader] = useState<ContractDetailHeader>(
+    initialHeader ?? { code: null, status: null },
+  );
   const [contract, setContract] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [agents, setAgents] = useState<any[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(false);
@@ -524,6 +516,44 @@ export default function ContractDetailDialog({
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [loadingAuditLogs, setLoadingAuditLogs] = useState(false);
 
+  const notifyUpdate = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
+  useEffect(() => {
+    if (initialHeader) {
+      setHeader(initialHeader);
+    }
+  }, [initialHeader]);
+
+  useEffect(() => {
+    const fromHash = contractDetailSectionFromHash(window.location.hash);
+    if (fromHash) {
+      setActiveSection(fromHash);
+    }
+  }, []);
+
+  const selectSection = useCallback((id: ContractDetailSectionId) => {
+    setActiveSection(id);
+    const nextHash = `#${id}`;
+    if (window.location.hash !== nextHash) {
+      window.history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${window.location.search}${nextHash}`,
+      );
+    }
+  }, []);
+
+  const goBack = useCallback(() => {
+    const returnTo = searchParams.get('returnTo')?.trim();
+    if (returnTo && returnTo.startsWith(listBasePath)) {
+      router.push(returnTo);
+      return;
+    }
+    router.push(listBasePath);
+  }, [listBasePath, router, searchParams]);
+
   const isContractFinal = useMemo(
     () => isFinalContractStatus(contract?.status),
     [contract?.status],
@@ -543,22 +573,46 @@ export default function ContractDetailDialog({
     contractData: any,
     documentEntities?: any[] | null,
     fallbackDocuments?: any[] | null,
+    agentsList: typeof agents = agents,
   ) => {
     if (!contractData) {
       return null;
     }
 
-    const userDisplayName = contractData.user
-      ? `${contractData.user.personalInfo?.firstName || contractData.user.firstName || ''} ${contractData.user.personalInfo?.lastName || contractData.user.lastName || ''}`.trim() +
-        ` (${contractData.user.role === 'ADMINISTRATOR' ? 'Admin' : 'Agente'})`
-      : '';
+    const resolvedUserId =
+      (typeof contractData.user?.id === 'string' && contractData.user.id) ||
+      (typeof contractData.userId === 'string' && contractData.userId) ||
+      null;
+
+    const agentMatch = resolvedUserId
+      ? agentsList.find((agent) => agent.id === resolvedUserId)
+      : undefined;
+
+    const resolvedUser = contractData.user
+      ? contractData.user
+      : agentMatch
+        ? {
+            id: agentMatch.id,
+            firstName: agentMatch.firstName,
+            lastName: agentMatch.lastName,
+            email: agentMatch.email,
+            role: agentMatch.role,
+          }
+        : null;
+
+    const userDisplayName = resolvedUser
+      ? `${resolvedUser.personalInfo?.firstName || resolvedUser.firstName || agentMatch?.firstName || ''} ${resolvedUser.personalInfo?.lastName || resolvedUser.lastName || agentMatch?.lastName || ''}`.trim() +
+        ` (${(resolvedUser.role || agentMatch?.role) === 'ADMINISTRATOR' || (resolvedUser.role || agentMatch?.role) === 'ADMIN' ? 'Admin' : 'Agente'})`
+      : agentMatch?.displayName || '';
 
     return {
       ...contractData,
-      user: contractData.user
+      userId: resolvedUserId,
+      user: resolvedUser
         ? {
-            ...contractData.user,
-            displayName: userDisplayName,
+            ...resolvedUser,
+            id: resolvedUserId,
+            displayName: userDisplayName || agentMatch?.displayName || resolvedUserId,
           }
         : null,
       payments: normalizeContractPayments(contractData.payments),
@@ -567,30 +621,28 @@ export default function ContractDetailDialog({
   };
 
   useEffect(() => {
-    if (open && contractId) {
+    if (contractId) {
       fetchContractDetails();
       fetchAgents();
-    } else {
-      setContract(null);
-      setAuditLogs([]);
-      setActiveSection('general');
-      setShowAddPaymentDialog(false);
-      setAddingPayment(false);
-      setShowUploadDocumentDialog(false);
-      setSelectedPaymentForUpload(null);
-      setUploadingPaymentDocument(false);
-      setShowAddContractDocumentDialog(false);
-      setCreatingContractDocument(false);
-      setShowUploadContractDocumentDialog(false);
-      setSelectedContractDocumentForUpload(null);
-      setUploadingContractDocument(false);
-      setDeletingContractDocumentId(null);
-      setTogglingRequiredDocumentId(null);
-      setShowEditFinancialDialog(false);
-      setUpdatingFinancialData(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, contractId]);
+  }, [contractId]);
+
+  // API returns userId without nested user; hydrate Select label once agents load.
+  useEffect(() => {
+    if (!contract?.userId || contract.user?.id || agents.length === 0) {
+      return;
+    }
+
+    setContract((prev: any) => {
+      if (!prev?.userId || prev.user?.id) {
+        return prev;
+      }
+
+      return mapContractData(prev, undefined, prev.documents ?? null, agents);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agents, contract?.userId, contract?.user?.id]);
 
   const fetchAgents = async () => {
     setLoadingAgents(true);
@@ -642,12 +694,12 @@ export default function ContractDetailDialog({
   }, [contractId]);
 
   useEffect(() => {
-    if (!open || !contractId || activeSection !== 'history') {
+    if (!contractId || activeSection !== 'history') {
       return;
     }
 
     void fetchAuditLogs();
-  }, [open, contractId, activeSection, fetchAuditLogs]);
+  }, [contractId, activeSection, fetchAuditLogs]);
 
   const fetchContractDetails = async () => {
     if (!contractId) return;
@@ -679,6 +731,10 @@ export default function ContractDetailDialog({
             fallbackDocuments,
           ),
         );
+        setHeader({
+          code: contractResult.contract.code ?? null,
+          status: contractResult.contract.status ?? null,
+        });
 
         // Load audit logs in background (don't block on this)
         void fetchAuditLogs();
@@ -704,7 +760,7 @@ export default function ContractDetailDialog({
     setLoadingDocumentTypes(true);
     try {
       const result = await getDocumentTypes();
-      if (result.success && result.data) {
+      if (result.success && Array.isArray(result.data)) {
         setDocumentTypes(result.data);
       } else {
         showAlert({
@@ -743,6 +799,7 @@ export default function ContractDetailDialog({
     }
 
     setSelectedPaymentForUpload(payment);
+    setUploadingPaymentDocument(false);
     setShowUploadDocumentDialog(true);
     void ensureDocumentTypes();
   }, [ensureDocumentTypes, showAlert]);
@@ -757,6 +814,7 @@ export default function ContractDetailDialog({
     }
 
     setSelectedContractDocumentForUpload(document);
+    setUploadingContractDocument(false);
     setShowUploadContractDocumentDialog(true);
     void ensureDocumentTypes();
   }, [contract?.payments, ensureDocumentTypes, handleAttachDocument]);
@@ -772,6 +830,7 @@ export default function ContractDetailDialog({
     }
 
     void ensureDocumentTypes();
+    setCreatingContractDocument(false);
     setShowAddContractDocumentDialog(true);
   }, [ensureDocumentTypes, isContractFinal, showAlert]);
 
@@ -857,25 +916,27 @@ export default function ContractDetailDialog({
         });
         setShowAddContractDocumentDialog(false);
         await fetchContractDetails();
-        onUpdate?.();
-      } else {
-        const errorMessage = result.error || 'Error al registrar documento';
-        
-        // Provide more helpful message for common errors
-        if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
-          showAlert({
-            message: 'Tu sesión tiene datos inconsistentes. Por favor, cierra sesión y vuelve a iniciar sesión.',
-            type: 'error',
-            duration: 6000,
-          });
-        } else {
-          showAlert({
-            message: errorMessage,
-            type: 'error',
-            duration: 4000,
-          });
-        }
+        notifyUpdate();
+        return;
       }
+
+      const errorMessage = result.error || 'Error al registrar documento';
+        
+      // Provide more helpful message for common errors
+      if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
+        showAlert({
+          message: 'Tu sesión tiene datos inconsistentes. Por favor, cierra sesión y vuelve a iniciar sesión.',
+          type: 'error',
+          duration: 6000,
+        });
+      } else {
+        showAlert({
+          message: errorMessage,
+          type: 'error',
+          duration: 4000,
+        });
+      }
+      setCreatingContractDocument(false);
     } catch (error: any) {
       const errorMessage = error?.message || 'Error al registrar documento';
       
@@ -892,7 +953,6 @@ export default function ContractDetailDialog({
           duration: 4000,
         });
       }
-    } finally {
       setCreatingContractDocument(false);
     }
   };
@@ -950,8 +1010,11 @@ export default function ContractDetailDialog({
         setSelectedContractDocumentForUpload(null);
 
         await fetchContractDetails();
-        onUpdate?.();
-      } else {
+        notifyUpdate();
+        return;
+      }
+
+      {
         const errorMessage = result.error || 'Error al adjuntar documento';
         
         if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
@@ -968,6 +1031,7 @@ export default function ContractDetailDialog({
           });
         }
       }
+      setUploadingContractDocument(false);
     } catch (error: any) {
       const errorMessage = error?.message || 'Error al adjuntar documento';
       
@@ -984,7 +1048,6 @@ export default function ContractDetailDialog({
           duration: 4000,
         });
       }
-    } finally {
       setUploadingContractDocument(false);
     }
   };
@@ -1042,7 +1105,7 @@ export default function ContractDetailDialog({
         });
 
         await fetchContractDetails();
-        onUpdate?.();
+        notifyUpdate();
         return { success: true };
       }
 
@@ -1101,7 +1164,7 @@ export default function ContractDetailDialog({
       });
 
       await fetchContractDetails();
-      onUpdate?.();
+      notifyUpdate();
     } catch (error: any) {
       showAlert({
         message: error?.message || 'Error inesperado al actualizar requisito',
@@ -1163,8 +1226,11 @@ export default function ContractDetailDialog({
         setShowUploadDocumentDialog(false);
         setSelectedPaymentForUpload(null);
         await fetchContractDetails();
-        onUpdate?.();
-      } else {
+        notifyUpdate();
+        return;
+      }
+
+      {
         const errorMessage = result.error || 'Error al adjuntar documento';
         
         if (errorMessage.toLowerCase().includes('usuario no encontrado')) {
@@ -1181,6 +1247,7 @@ export default function ContractDetailDialog({
           });
         }
       }
+      setUploadingPaymentDocument(false);
     } catch (error: any) {
       const errorMessage = error?.message || 'Error al adjuntar documento';
       
@@ -1197,7 +1264,6 @@ export default function ContractDetailDialog({
           duration: 4000,
         });
       }
-    } finally {
       setUploadingPaymentDocument(false);
     }
   };
@@ -1323,7 +1389,7 @@ export default function ContractDetailDialog({
         setContract(mapContractData(result.contract, undefined, contract?.documents ?? null));
         void fetchAuditLogs();
         showAlert({ message: 'Estado del contrato actualizado correctamente', type: 'success', duration: 3000 });
-        onUpdate?.();
+        notifyUpdate();
       } else {
         showAlert({ message: result.error || 'Error al actualizar estado', type: 'error', duration: 3000 });
       }
@@ -1342,12 +1408,35 @@ export default function ContractDetailDialog({
       const result = await updateContractAgent(contractId, newUserId);
 
       if (result.success) {
+        const agentMatch = agents.find((agent) => agent.id === newUserId);
+        setContract((prev: any) => {
+          if (!prev) {
+            return prev;
+          }
+
+          return mapContractData(
+            {
+              ...(result.contract ?? prev),
+              userId: newUserId,
+              user: agentMatch
+                ? {
+                    id: agentMatch.id,
+                    firstName: agentMatch.firstName,
+                    lastName: agentMatch.lastName,
+                    email: agentMatch.email,
+                    role: agentMatch.role,
+                  }
+                : prev.user,
+            },
+            undefined,
+            prev.documents ?? null,
+            agents,
+          );
+        });
+
         showAlert({ message: 'Agente asignado actualizado correctamente', type: 'success', duration: 3000 });
         await fetchContractDetails();
-
-        if (onUpdate) {
-          onUpdate();
-        }
+        notifyUpdate();
       } else {
         showAlert({ message: result.error || 'Error al actualizar agente', type: 'error', duration: 3000 });
       }
@@ -1409,9 +1498,7 @@ export default function ContractDetailDialog({
         showAlert({ message: 'Estado del pago actualizado correctamente', type: 'success', duration: 3000 });
       }
 
-      if (onUpdate) {
-        onUpdate();
-      }
+      notifyUpdate();
     } catch (error: any) {
       showAlert({ message: error.message || 'Error al actualizar estado del pago', type: 'error', duration: 3000 });
     } finally {
@@ -1428,6 +1515,7 @@ export default function ContractDetailDialog({
       });
       return;
     }
+    setAddingPayment(false);
     setShowAddPaymentDialog(true);
   };
 
@@ -1463,13 +1551,14 @@ export default function ContractDetailDialog({
         showAlert({ message: 'Pago agregado correctamente', type: 'success', duration: 3000 });
         setShowAddPaymentDialog(false);
         await fetchContractDetails();
-        onUpdate?.();
-      } else {
-        showAlert({ message: result.error || 'Error al agregar pago', type: 'error', duration: 3000 });
+        notifyUpdate();
+        return;
       }
+
+      showAlert({ message: result.error || 'Error al agregar pago', type: 'error', duration: 3000 });
+      setAddingPayment(false);
     } catch (error: any) {
       showAlert({ message: error.message || 'Error al agregar pago', type: 'error', duration: 3000 });
-    } finally {
       setAddingPayment(false);
     }
   };
@@ -1483,6 +1572,7 @@ export default function ContractDetailDialog({
       });
       return;
     }
+    setUpdatingFinancialData(false);
     setShowEditFinancialDialog(true);
   };
 
@@ -1577,14 +1667,13 @@ export default function ContractDetailDialog({
 
       setShowEditFinancialDialog(false);
       await fetchContractDetails();
-      onUpdate?.();
+      notifyUpdate();
     } catch (error: any) {
       showAlert({
         message: error?.message || 'Error al actualizar los montos del contrato',
         type: 'error',
         duration: 4000,
       });
-    } finally {
       setUpdatingFinancialData(false);
     }
   };
@@ -1657,15 +1746,9 @@ export default function ContractDetailDialog({
         const transformedHistory = transformAuditLogsToHistory(auditLogs);
         return (
           <>
-            {loadingAuditLogs && (
-              <div className="flex items-center justify-center py-12 text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined animate-spin">progress_activity</span>
-                  <span>Cargando historial...</span>
-                </div>
-              </div>
-            )}
-            {!loadingAuditLogs && (
+            {loadingAuditLogs ? (
+              <LoadingState label="Cargando historial" />
+            ) : (
               <ContractHistorySection
                 history={transformedHistory}
                 resolveActorName={resolveActorName}
@@ -1678,79 +1761,76 @@ export default function ContractDetailDialog({
     }
   };
 
+  const displayCode =
+    (contract?.code as string | undefined)?.trim() ||
+    header.code?.trim() ||
+    'Sin código';
+  const displayStatus =
+    (contract?.status as string | undefined) ?? header.status ?? undefined;
+
   return (
     <>
-      <Dialog open={open} onClose={onClose} title="Detalles del Contrato" size="xl" showCloseButton>
-        <div>
-          <header className="w-full px-6 py-5 border-b">
-            <div className="flex flex-col gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Contrato</p>
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
-                    <span className="text-sm text-muted-foreground">Cargando...</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-xl font-semibold text-foreground">{contract?.code || 'Sin código'}</h3>
-                  </div>
-                )}
-              </div>
+      <div
+        className="mx-auto w-full max-w-4xl space-y-3 px-0 py-2 sm:space-y-6 sm:px-6 sm:py-6"
+        data-test-id="contract-detail-root"
+      >
+        <header className="border-b border-border pb-2 sm:pb-4" data-test-id="contract-detail-header">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-x-3 sm:gap-y-2">
+            <IconButton
+              icon="ArrowLeft"
+              variant="action"
+              size="sm"
+              onClick={goBack}
+              ariaLabel="Volver al listado de contratos"
+              data-test-id="contract-detail-back"
+            />
+            <h1
+              className="min-w-0 text-xl font-bold tracking-tight text-foreground sm:text-3xl"
+              title={displayCode}
+            >
+              {loading && !displayCode ? 'Cargando…' : displayCode}
+            </h1>
+            {displayStatus ? (
+              <span
+                className={`rounded-md px-2 py-1 text-xs font-semibold ${getStatusColor(displayStatus)}`}
+              >
+                {getStatusLabel(displayStatus)}
+              </span>
+            ) : null}
+          </div>
+          <p
+            className="mt-1.5 hidden font-mono text-xs text-muted-foreground sm:mt-3 sm:block"
+            data-test-id="contract-detail-id"
+          >
+            ID: {contractId}
+          </p>
+        </header>
 
-              <div className="flex items-center gap-4">
-                {contractId && (
-                  <p className="text-xs font-mono text-muted-foreground">ID: {contractId}</p>
-                )}
-                {contract?.status && (
-                  <span className={`rounded-lg px-4 py-2 text-sm font-medium ${getStatusColor(contract.status)}`}>
-                    {getStatusLabel(contract.status)}
-                  </span>
-                )}
-              </div>
+        <ContractDetailSectionNav
+          tabs={CONTRACT_DETAIL_TABS}
+          activeId={activeSection}
+          onSelect={selectSection}
+        />
+
+        <div
+          id={`contract-section-panel-${activeSection}`}
+          role="tabpanel"
+          aria-labelledby={`contract-section-tab-${activeSection}`}
+          className="min-h-[16rem]"
+          data-test-id="contract-detail-section-panel"
+          data-active-section={activeSection}
+        >
+          {loading && !contract ? (
+            <LoadingState className="flex h-64 items-center justify-center" />
+          ) : contract ? (
+            renderActiveSection()
+          ) : (
+            <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
+              <p>No se encontró información del contrato.</p>
             </div>
-          </header>
-
-          <section className="grid gap-6 py-6 grid-cols-[auto_1fr]">
-            <aside className="flex min-h-[200px] flex-col gap-4 py-4">
-              <nav className="space-y-2">
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold uppercase tracking-wide transition-colors flex items-center gap-3 ${
-                      activeSection === section.id
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:bg-muted/50'
-                    }`}
-                    title={section.label}
-                  >
-                    <span className="material-symbols-outlined text-base flex-shrink-0">{section.icon}</span>
-                    <span className="hidden sm:inline">{section.label}</span>
-                  </button>
-                ))}
-              </nav>
-            </aside>
-
-            <main className="py-4">
-              {loading ? (
-                <div className="flex justify-center items-center h-96">
-                  <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
-                </div>
-              ) : contract ? (
-                <div className="w-full">
-                  {renderActiveSection()}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-96 text-muted-foreground">
-                  <span className="material-symbols-outlined text-4xl mb-2">description</span>
-                  <p>No se encontró información del contrato.</p>
-                </div>
-              )}
-            </main>
-          </section>
+          )}
         </div>
-      </Dialog>
+      </div>
 
       <ContractEditFinancialDialog
         open={showEditFinancialDialog && !isContractFinal}

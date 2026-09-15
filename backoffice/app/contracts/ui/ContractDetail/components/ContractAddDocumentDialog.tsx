@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
+import { Plus, Loader2 } from 'lucide-react';
 import { Select } from "@realestate/ui";
 import { AutoComplete, type AutoCompleteOption as Option } from "@realestate/ui";
 import { TextField } from '@realestate/ui';
@@ -222,7 +223,7 @@ export default function ContractAddDocumentDialog({
 
         {loadingDocumentTypes && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+            <Loader2 className="size-4 animate-spin" aria-hidden />
             <span>Cargando tipos de documento...</span>
           </div>
         )}
@@ -244,12 +245,12 @@ export default function ContractAddDocumentDialog({
           >
             {submitting ? (
               <span className="flex items-center gap-2">
-                <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
                 Guardando...
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">add</span>
+                <Plus className="size-4" aria-hidden />
                 Registrar
               </span>
             )}

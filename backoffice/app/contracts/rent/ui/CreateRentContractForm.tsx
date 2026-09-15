@@ -104,7 +104,11 @@ export default function CreateRentContractForm({ onClose, onSuccess }: CreateRen
         ]);
 
         setProperties(Array.isArray(propertiesData) ? propertiesData : []);
-        setDocumentTypes(Array.isArray(documentTypesData) ? documentTypesData : []);
+        setDocumentTypes(
+          documentTypesData.success && Array.isArray(documentTypesData.data)
+            ? documentTypesData.data
+            : [],
+        );
         setPersonsForSearch(Array.isArray(personsSearchData) ? personsSearchData : []);
       } catch (error) {
         console.error('Error loading data:', error);
@@ -362,6 +366,7 @@ export default function CreateRentContractForm({ onClose, onSuccess }: CreateRen
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
 
     if (!propertyId || !monthlyRent || !startDate || contractPersons.some((p) => !p.personId)) {
       alert.showAlert({
@@ -457,13 +462,13 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
       onSuccess?.();
       onClose();
       router.refresh();
+      return;
     } catch (error) {
       alert.showAlert({
         message: `Error al crear contrato: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         type: 'error',
         duration: 5000,
       });
-    } finally {
       setLoading(false);
     }
   };

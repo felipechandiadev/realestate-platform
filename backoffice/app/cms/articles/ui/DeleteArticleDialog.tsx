@@ -1,7 +1,9 @@
-import { useState } from 'react';
+'use client';
+
+import { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
-import { deleteArticle, Article } from '@/features/cms/actions/articles.action';
+import { deleteArticle, type Article } from '@/features/cms/actions/articles.action';
 import { useAlert } from '@/providers/AlertContext';
 
 export interface DeleteArticleDialogProps {
@@ -18,28 +20,30 @@ const DeleteArticleDialog: React.FC<DeleteArticleDialogProps> = ({
   article,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { success, error } = useAlert();
+  const alert = useAlert();
 
-  const handleClose = () => {
-    onClose();
-  };
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
 
   const handleConfirmDelete = async () => {
-    if (!article) return;
+    if (!article || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       const result = await deleteArticle(article.id);
       if (result.success) {
-        success('Artículo eliminado exitosamente');
-        handleClose();
+        alert.success('Artículo eliminado exitosamente');
+        onClose();
         onSuccess();
-      } else {
-        error(result.error || 'Error al eliminar artículo');
+        return;
       }
+      alert.error(result.error || 'Error al eliminar artículo');
+      setIsSubmitting(false);
     } catch (err) {
-      error('Error interno del servidor');
-    } finally {
+      alert.error('Error interno del servidor');
       setIsSubmitting(false);
     }
   };
@@ -47,9 +51,11 @@ const DeleteArticleDialog: React.FC<DeleteArticleDialogProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={handleClose}
+      onClose={isSubmitting ? () => {} : onClose}
       title="Eliminar Artículo"
       maxWidth="sm"
+      disableBackdropClick={isSubmitting}
+      persistent={isSubmitting}
     >
       <div className="space-y-4">
         <p className="text-foreground">
@@ -60,10 +66,14 @@ const DeleteArticleDialog: React.FC<DeleteArticleDialogProps> = ({
         </p>
 
         <div className="flex justify-end gap-3 pt-4">
+          <Button variant="outlined" onClick={onClose} disabled={isSubmitting}>
+            Cancelar
+          </Button>
           <Button
             variant="primary"
             onClick={handleConfirmDelete}
             disabled={isSubmitting}
+            className="border border-red-500 text-red-600 bg-white hover:bg-red-50 font-semibold"
           >
             {isSubmitting ? 'Eliminando...' : 'Eliminar'}
           </Button>

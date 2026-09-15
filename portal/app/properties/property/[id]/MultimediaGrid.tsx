@@ -18,8 +18,8 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { IconButton } from "@realestate/ui";
-import FontAwesome from '@/shared/components/ui/FontAwesome/FontAwesome';
+import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { IconButton } from '@realestate/ui';
 
 interface MediaItem {
   id?: string;
@@ -156,12 +156,15 @@ export default function MultimediaGrid({
         {options?.showOverlay && (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white pointer-events-none gap-2">
             <IconButton
-              icon="more_horiz"
+              icon="MoreHorizontal"
               variant="text"
               size="lg"
               className="pointer-events-auto text-white"
-              onClick={() => {
-                // Handle click if needed
+              ariaLabel="Ver más"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedIndex(index);
+                setIsModalOpen(true);
               }}
             />
             <span className="text-sm font-medium uppercase tracking-wide">Ver más</span>
@@ -336,14 +339,45 @@ function FullscreenModal({
     >
       {/* Close button */}
       <button
+        type="button"
         onClick={onClose}
-        className="absolute top-4 right-4 text-white hover:text-gray-300 p-2 transition-colors"
+        className="absolute top-4 right-4 z-20 text-white hover:text-gray-300 p-2 transition-colors"
         title="Cerrar (ESC)"
+        aria-label="Cerrar"
       >
-        <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>
-          close
-        </span>
+        <X size={32} strokeWidth={2} />
       </button>
+
+      {/* Navigation arrows — anclados a los costados del viewport */}
+      {media.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPrevious();
+            }}
+            className="absolute left-3 sm:left-6 md:left-10 top-1/2 z-20 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-4 sm:p-5 rounded-full transition-colors shadow-lg flex items-center justify-center min-w-12 min-h-12 sm:min-w-14 sm:min-h-14"
+            title="Anterior"
+            aria-label="Anterior"
+          >
+            <ChevronLeft size={32} strokeWidth={2} />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onNext();
+            }}
+            className="absolute right-3 sm:right-6 md:right-10 top-1/2 z-20 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-4 sm:p-5 rounded-full transition-colors shadow-lg flex items-center justify-center min-w-12 min-h-12 sm:min-w-14 sm:min-h-14"
+            title="Siguiente"
+            aria-label="Siguiente"
+          >
+            <ChevronRight size={32} strokeWidth={2} />
+          </button>
+        </>
+      )}
 
       {/* Main content */}
       <div
@@ -367,39 +401,6 @@ function FullscreenModal({
             alt={`${propertyTitle} - ${selectedIndex}`}
             className="w-full h-full object-contain"
           />
-        )}
-
-        {/* Navigation arrows */}
-        {media.length > 1 && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPrevious();
-              }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-5 rounded-full transition-colors shadow-lg"
-              style={{ minWidth: '56px', minHeight: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              title="Anterior"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>
-                chevron_left
-              </span>
-            </button>
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onNext();
-              }}
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white p-5 rounded-full transition-colors shadow-lg"
-              style={{ minWidth: '56px', minHeight: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              title="Siguiente"
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>
-                chevron_right
-              </span>
-            </button>
-          </>
         )}
       </div>
 

@@ -1,12 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
 import { useRouter } from 'next/navigation';
 import { DataGrid, type DataGridColumn } from "@realestate/ui";
 import type { ContractDocumentSummary, ContractGridRow } from '@/features/contracts/actions/contracts.action';
 import { useAlert } from '@/shared/hooks/useAlert';
-import { IconButton } from "@realestate/ui";
 import CreateSaleContractForm from './CreateSaleContractForm';
-import ContractDetailDialog from '../../ui/ContractDetail/ContractDetailDialog';
+import ContractMoreButton from '../../ui/ContractDetail/ContractMoreButton';
 
 type SalesContractsGridProps = {
   rows: ContractGridRow[];
@@ -17,13 +16,6 @@ type SalesContractsGridProps = {
 export default function SalesContractsGrid({ rows, totalRows, title }: SalesContractsGridProps) {
   const alert = useAlert();
   const router = useRouter();
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const [selectedContractId, setSelectedContractId] = useState<string | null>(null);
-
-  const handleViewDetails = (contractId: string) => {
-    setSelectedContractId(contractId);
-    setShowDetailDialog(true);
-  };
 
   const handleContractUpdate = () => {
     // Refresh the page to reload the contracts grid with updated data
@@ -296,14 +288,7 @@ export default function SalesContractsGrid({ rows, totalRows, title }: SalesCont
       sortable: false,
       filterable: false,
       actionComponent: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <IconButton
-            icon="more_horiz"
-            variant="text"
-            onClick={() => handleViewDetails(row.id)}
-            title="Ver detalles"
-          />
-        </div>
+        <ContractMoreButton contractId={row.id} detailBasePath="/contracts/sales" />
       ),
     },
   ];
@@ -317,36 +302,15 @@ export default function SalesContractsGrid({ rows, totalRows, title }: SalesCont
   };
 
   return (
-    <>
-      <DataGrid
-        title={title || 'Contratos de Compraventa'}
-        columns={columns}
-        rows={rows}
-        totalRows={totalRows ?? rows.length}
-        fillViewport
-        createForm={<CreateSaleContractForm onClose={() => {}} onSuccess={handleContractUpdate} />}
-        createFormTitle="Crear Nuevo Contrato Compraventa"
-        onExportExcel={handleExportExcel}
-      />
-
-      {/* Contract Detail Dialog */}
-      <ContractDetailDialog
-        open={showDetailDialog}
-        onClose={() => {
-          setShowDetailDialog(false);
-          setSelectedContractId(null);
-        }}
-        contractId={selectedContractId}
-        onUpdate={handleContractUpdate}
-        onEdit={(id) => {
-          setShowDetailDialog(false);
-          alert.showAlert({
-            message: `Editar contrato ${id}`,
-            type: 'info',
-            duration: 3000,
-          });
-        }}
-      />
-    </>
+    <DataGrid
+      title={title || 'Contratos de Compraventa'}
+      columns={columns}
+      rows={rows}
+      totalRows={totalRows ?? rows.length}
+      fillViewport
+      createForm={<CreateSaleContractForm onClose={() => {}} onSuccess={handleContractUpdate} />}
+      createFormTitle="Crear Nuevo Contrato Compraventa"
+      onExportExcel={handleExportExcel}
+    />
   );
 }

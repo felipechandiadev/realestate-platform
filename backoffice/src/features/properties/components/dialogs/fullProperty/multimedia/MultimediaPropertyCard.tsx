@@ -1,18 +1,17 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import { IconButton } from "@realestate/ui"
-import LazyImage from '@/shared/components/ui/LazyImage'
+import React, { useState } from 'react';
+import { IconButton } from '@realestate/ui';
 
 interface MultimediaPropertyCardProps {
-  url: string
-  type: 'image' | 'video'
-  mainImageUrl?: string
-  multimediaId: string
-  onDelete: (id: string) => void
-  onSetAsMain: (url: string) => void
-  isDeleting?: boolean
-  isUpdatingMain?: boolean
+  url: string;
+  type: 'image' | 'video';
+  mainImageUrl?: string;
+  multimediaId: string;
+  onDelete: (id: string) => void;
+  onSetAsMain: (url: string) => void;
+  isDeleting?: boolean;
+  isUpdatingMain?: boolean;
 }
 
 const MultimediaPropertyCard: React.FC<MultimediaPropertyCardProps> = ({
@@ -25,90 +24,72 @@ const MultimediaPropertyCard: React.FC<MultimediaPropertyCardProps> = ({
   isDeleting = false,
   isUpdatingMain = false,
 }) => {
-  const isMain = url === mainImageUrl
-  const [isRemoving, setIsRemoving] = useState(false)
+  const isMain = url === mainImageUrl;
+  const [isRemoving, setIsRemoving] = useState(false);
 
   const handleDelete = () => {
-    setIsRemoving(true)
+    setIsRemoving(true);
     setTimeout(() => {
-      onDelete(multimediaId)
-    }, 300)
-  }
-
-  const handleSetAsMain = () => {
-    onSetAsMain(url)
-  }
+      onDelete(multimediaId);
+    }, 300);
+  };
 
   return (
     <div
-      className={`bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col h-full ${
+      className={`flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:shadow-md ${
         isRemoving ? 'opacity-50' : ''
       }`}
     >
-      {/* Media Container */}
       <div className="relative mb-0 overflow-hidden rounded-t-lg">
         {type === 'image' ? (
-          <LazyImage
-            multimedia={{
-              id: multimediaId,
-              url: url,
-              filename: 'property-multimedia.jpg',
-              variants: []
-            }}
-            variantType="full"
-            alt="Property multimedia"
-            sizes="100vw"
-            className="w-full aspect-video object-cover"
-            maintainAspectRatio={true}
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={url}
+            alt="Multimedia de la propiedad"
+            className="aspect-video w-full object-cover"
+            loading="lazy"
           />
         ) : (
-          <video
-            src={url}
-            className="w-full aspect-video object-cover bg-black"
-          />
+          <video src={url} className="aspect-video w-full bg-black object-cover" />
         )}
 
-        {/* Main Multimedia Badge */}
-        {isMain && (
-          <div className="absolute top-2 left-2 bg-primary text-white px-3 py-1 rounded-full text-xs font-semibold">
+        {isMain ? (
+          <div className="absolute left-2 top-2 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
             Principal
           </div>
-        )}
+        ) : null}
 
-        {/* File Type Badge */}
-        <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs font-medium">
+        <div className="absolute right-2 top-2 rounded bg-black/50 px-2 py-1 text-xs font-medium text-white">
           {type === 'image' ? 'IMG' : 'VID'}
         </div>
       </div>
 
-      {/* Actions Footer */}
-      <div className="flex justify-between items-center">
-        {/* Right: Buttons */}
-        <div className="flex ml-auto">
-          {/* Set as Main Button - Only show if NOT main */}
-          {!isMain && (
+      <div className="flex items-center justify-between">
+        <div className="ml-auto flex">
+          {!isMain ? (
             <IconButton
               icon="star_outline"
               variant="text"
-              onClick={handleSetAsMain}
+              onClick={() => onSetAsMain(url)}
               disabled={isUpdatingMain || isDeleting}
+              ariaLabel="Marcar como principal"
               title="Marcar como principal"
             />
-          )}
+          ) : null}
 
-          {/* Delete Button */}
           <IconButton
             icon="delete"
             variant="text"
             onClick={handleDelete}
             disabled={isDeleting}
+            ariaLabel="Eliminar"
             title="Eliminar"
             className="text-red-500 hover:text-red-700"
           />
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default MultimediaPropertyCard
+export default MultimediaPropertyCard;

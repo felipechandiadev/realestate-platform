@@ -1,3 +1,5 @@
+import { History } from 'lucide-react';
+
 interface ContractHistoryEntryChange {
   field: string;
   previousValue: unknown;
@@ -194,7 +196,7 @@ export default function ContractHistorySection({ history, resolveActorName }: Co
   if (!sortedHistory.length) {
     return (
       <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg">
-        <span className="material-symbols-outlined text-4xl mb-2 block">history</span>
+        <History className="mx-auto mb-2 size-10" aria-hidden />
         <p>No hay eventos registrados para este contrato.</p>
         <p className="text-xs mt-2 max-w-2xl mx-auto">
           Cada cambio relevante (estado, pagos, participantes, documentos) aparecerá aquí con la fecha y el usuario que lo ejecutó.
@@ -241,7 +243,9 @@ export default function ContractHistorySection({ history, resolveActorName }: Co
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="space-y-1">
                     <p className="text-base font-semibold text-foreground flex items-center gap-2">
-                      <span className="material-symbols-outlined text-base text-primary bg-primary/10 rounded-full p-1.5">history</span>
+                      <span className="inline-flex rounded-full bg-primary/10 p-1.5 text-primary">
+                        <History className="size-4" aria-hidden />
+                      </span>
                       {getActionLabel(entry.action)}
                     </p>
                     <p className="text-xs text-muted-foreground">

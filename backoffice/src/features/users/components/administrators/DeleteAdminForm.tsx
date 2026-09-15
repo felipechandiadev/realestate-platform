@@ -21,7 +21,7 @@ const DeleteAdminForm: React.FC<DeleteAdminFormProps> = ({
 	const [loading, setLoading] = useState(false);
 
 	const handleSubmit = async () => {
-		if (!administrator) return;
+		if (!administrator || loading) return;
 
 		setLoading(true);
 		try {
@@ -33,9 +33,9 @@ const DeleteAdminForm: React.FC<DeleteAdminFormProps> = ({
 			}
 
 			onSubmitSuccess();
+			// Keep loading true until dialog unmounts / reopens.
 		} catch (err) {
 			onError('Error inesperado al eliminar el administrador');
-		} finally {
 			setLoading(false);
 		}
 	};

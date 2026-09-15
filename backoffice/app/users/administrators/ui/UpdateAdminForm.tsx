@@ -53,7 +53,7 @@ const UpdateAdminForm: React.FC<UpdateAdminFormProps> = ({
 	};
 
 	const handleSubmit = async (values: Record<string, any>) => {
-		if (!administrator) return;
+		if (!administrator || loading) return;
 
 		setLoading(true);
 		try {
@@ -120,9 +120,9 @@ const UpdateAdminForm: React.FC<UpdateAdminFormProps> = ({
 			}
 
 			onSubmitSuccess();
+			return;
 		} catch (err) {
 			onError('Error inesperado al actualizar el administrador');
-		} finally {
 			setLoading(false);
 		}
 	};

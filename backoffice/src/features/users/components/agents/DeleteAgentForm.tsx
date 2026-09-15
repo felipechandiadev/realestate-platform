@@ -21,7 +21,7 @@ const DeleteAgentForm: React.FC<DeleteAgentFormProps> = ({
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async () => {
-    if (!agent) return
+    if (!agent || loading) return
 
     setLoading(true)
     try {
@@ -33,9 +33,9 @@ const DeleteAgentForm: React.FC<DeleteAgentFormProps> = ({
       }
 
       onSubmitSuccess()
+      // Keep loading true until dialog unmounts / reopens.
     } catch (err) {
       onError('Error inesperado al eliminar el agente')
-    } finally {
       setLoading(false)
     }
   }

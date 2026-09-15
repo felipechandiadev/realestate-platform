@@ -65,6 +65,8 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     const validationErrors = validateForm(values);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
@@ -108,15 +110,19 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
           duration: 3000,
         });
         onSuccess?.();
-      } else {
-        const errorMsg = result.error || 'Error al crear el slide';
-        setErrors([errorMsg]);
-        showAlert({
-          message: errorMsg,
-          type: 'error',
-          duration: 5000,
-        });
+        // Keep submitting true until dialog closes / remounts.
+        return;
       }
+
+      const errorMsg = result.error || 'Error al crear el slide';
+      setErrors([errorMsg]);
+      showAlert({
+        message: errorMsg,
+        type: 'error',
+        duration: 5000,
+      });
+      setIsSubmitting(false);
+      onLoadingChange?.(false);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error interno del servidor';
       setErrors([errorMsg]);
@@ -125,7 +131,6 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
         type: 'error',
         duration: 5000,
       });
-    } finally {
       setIsSubmitting(false);
       onLoadingChange?.(false);
     }

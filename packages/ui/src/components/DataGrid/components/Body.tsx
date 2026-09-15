@@ -164,7 +164,8 @@ const Body: React.FC<BodyProps> = ({
                 const rawValue = row[column.field];
                 const style = computedStyles[colIndex];
                 const isPinnedActionsColumn =
-                  pinActionsColumn && column.field === actionsColumnField;
+                  (pinActionsColumn && column.field === actionsColumnField) ||
+                  Boolean(column.sticky);
 
                 const cellStyle = {
                   ...style,
@@ -176,6 +177,12 @@ const Body: React.FC<BodyProps> = ({
                         position: 'sticky' as const,
                         right: 0,
                         zIndex: DataGridZIndex.bodyPinnedCell,
+                        // Fondo opaco: sin esto el scroll horizontal se ve “a través” de actions.
+                        backgroundColor:
+                          rowAppearanceUsesBgClass && !isSelected
+                            ? undefined
+                            : rowBackgroundColor,
+                        boxShadow: 'inset 1px 0 0 color-mix(in srgb, var(--color-border) 70%, transparent)',
                         flex:
                           typeof column.width === 'number'
                             ? `0 0 ${column.width}px`
@@ -199,7 +206,9 @@ const Body: React.FC<BodyProps> = ({
                 const overflowMode = resolveColumnCellOverflow(column);
                 const cellClassName = `${CELL_BASE_CLASS} ${alignClasses.cell} ${
                   overflowMode === 'wrap' ? 'items-start' : 'items-center'
-                } ${overflow.cell} ${rowAppearanceClassName}`.trim();
+                } ${overflow.cell} ${
+                  isPinnedActionsColumn ? 'bg-background' : ''
+                } ${rowAppearanceClassName}`.trim();
                 const displayText =
                   value !== null && value !== undefined ? String(value) : '-';
                 const cellTitle =

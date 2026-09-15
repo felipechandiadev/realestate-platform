@@ -89,6 +89,7 @@ export default function CreateDocumentForm({
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
 
     if (!validate() || !documentTypeId || !user?.id || !accessToken) {
       return;
@@ -158,13 +159,13 @@ export default function CreateDocumentForm({
 
       onSuccess?.();
       onClose();
+      return;
     } catch (error) {
       showAlert({
         message: error instanceof Error ? error.message : 'Error desconocido al crear documento',
         type: 'error',
         duration: 5000,
       });
-    } finally {
       setIsSubmitting(false);
     }
   };

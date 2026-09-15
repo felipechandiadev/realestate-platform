@@ -1752,7 +1752,28 @@ export async function getPublishedFeaturedPropertiesPublic(): Promise<{
     }
 
   const payload = await res.json();
-  const data = Array.isArray(payload) ? payload : payload?.data ?? [];
+  const rawData = Array.isArray(payload) ? payload : payload?.data ?? [];
+
+  const ensureAbsoluteUrl = (url?: string | null): string | null => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    if (url.startsWith('/')) return `${env.backendApiUrl}${url}`;
+    return url;
+  };
+
+  const data = (Array.isArray(rawData) ? rawData : []).map((property: any) => ({
+    ...property,
+    mainImageUrl: ensureAbsoluteUrl(property?.mainImageUrl),
+    multimedia: (property?.multimedia || []).map((m: any) => ({
+      ...m,
+      url: ensureAbsoluteUrl(m?.url),
+      variants: (m?.variants || []).map((v: any) => ({
+        ...v,
+        url: ensureAbsoluteUrl(v?.url),
+      })),
+    })),
+  }));
+
   return { success: true, data };
   } catch (error) {
     console.error('Error fetching published featured properties (public):', error);

@@ -1,87 +1,83 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
-import { Send, Hourglass } from 'lucide-react'
-import { Dialog } from "@realestate/ui"
-import { TextField } from '@realestate/ui'
-import { Button } from '@realestate/ui'
-import { useAlert } from '@/shared/hooks/useAlert'
-import { submitContactForm } from '@/features/shared/notifications/actions/notifications.action'
+import React, { useState } from 'react';
+import { Send } from 'lucide-react';
+import { Button, Dialog, TextField } from '@realestate/ui';
+import { useAlert } from '@/shared/hooks/useAlert';
+import { submitContactForm } from '@/features/shared/notifications/actions/notifications.action';
 
 interface ContactDialogProps {
-  open: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
 }
 
+const FORM_ID = 'portal-contact-form';
+
 const ContactDialog: React.FC<ContactDialogProps> = ({ open, onClose }) => {
-  const { showAlert } = useAlert()
-  const [nombre, setNombre] = useState('')
-  const [email, setEmail] = useState('')
-  const [telefono, setTelefono] = useState('')
-  const [mensaje, setMensaje] = useState('')
-  const [loading, setLoading] = useState(false)
+  const { showAlert } = useAlert();
+  const [nombre, setNombre] = useState('');
+  const [email, setEmail] = useState('');
+  const [telefono, setTelefono] = useState('');
+  const [mensaje, setMensaje] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const resetForm = () => {
+    setNombre('');
+    setEmail('');
+    setTelefono('');
+    setMensaje('');
+  };
 
-    // Validación local
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+
     if (!nombre.trim() || !email.trim() || !telefono.trim() || !mensaje.trim()) {
-      showAlert({ 
-        message: 'Por favor completa todos los campos', 
-        type: 'error', 
-        duration: 3000 
-      })
-      return
+      showAlert({
+        message: 'Por favor completa todos los campos',
+        type: 'error',
+        duration: 3000,
+      });
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
       const result = await submitContactForm({
         name: nombre.trim(),
         email: email.trim(),
         phone: telefono.trim(),
         message: mensaje.trim(),
-      })
+      });
 
       if (!result.success) {
-        throw new Error(result.error || 'Error al enviar el mensaje')
+        throw new Error(result.error || 'Error al enviar el mensaje');
       }
 
-      showAlert({ 
-        message: 'Mensaje enviado exitosamente. Nos pondremos en contacto contigo pronto.', 
-        type: 'success', 
-        duration: 5000 
-      })
+      showAlert({
+        message: 'Mensaje enviado exitosamente. Nos pondremos en contacto contigo pronto.',
+        type: 'success',
+        duration: 5000,
+      });
 
-      // Limpia el formulario
-      setNombre('')
-      setEmail('')
-      setTelefono('')
-      setMensaje('')
-      
-      // Cierra el dialog después de un breve delay
+      resetForm();
       setTimeout(() => {
-        onClose()
-      }, 500)
-    } catch (error) {
-      showAlert({ 
-        message: 'Error al enviar el mensaje. Por favor intenta nuevamente.', 
-        type: 'error', 
-        duration: 5000 
-      })
+        onClose();
+      }, 500);
+    } catch {
+      showAlert({
+        message: 'Error al enviar el mensaje. Por favor intenta nuevamente.',
+        type: 'error',
+        duration: 5000,
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleClose = () => {
-    // Limpia el formulario al cerrar
-    setNombre('')
-    setEmail('')
-    setTelefono('')
-    setMensaje('')
-    onClose()
-  }
+    resetForm();
+    onClose();
+  };
 
   return (
     <Dialog
@@ -90,82 +86,88 @@ const ContactDialog: React.FC<ContactDialogProps> = ({ open, onClose }) => {
       title="Contacto"
       size="sm"
       scroll="paper"
-    >
-      <form onSubmit={handleSubmit} className="space-y-4">
-
-        <TextField
-          label="Nombre"
-          placeholder="Nombre"
-          value={nombre}
-          onChange={(e: any) => setNombre(e.target.value)}
-          disabled={loading}
-          required
-        />
-
-
-        <TextField
-          label="Correo Electrónico"
-          type="email"
-          placeholder="Correo Electrónico"
-          value={email}
-          onChange={(e: any) => setEmail(e.target.value)}
-          disabled={loading}
-          required
-        />
-
-
-        <TextField
-          label="Teléfono"
-          type="tel"
-          placeholder="Teléfono"
-          value={telefono}
-          onChange={(e: any) => setTelefono(e.target.value)}
-          disabled={loading}
-          required
-        />
-
-
-        <TextField
-          label="Mensaje"
-          placeholder="Mensaje"
-          value={mensaje}
-          onChange={(e: any) => setMensaje(e.target.value)}
-          rows={4}
-          disabled={loading}
-          required
-        />
-
-        <div className="flex gap-2 justify-end pt-2">
+      actionsJustify="between"
+      data-test-id="portal-contact-dialog"
+      actions={
+        <>
           <Button
             type="button"
             variant="outlined"
+            size="md"
             onClick={handleClose}
             disabled={loading}
+            data-test-id="portal-contact-cancel"
           >
             Cancelar
           </Button>
           <Button
             type="submit"
+            form={FORM_ID}
             variant="primary"
+            size="md"
             disabled={loading}
-            className="flex items-center gap-2"
+            loading={loading}
+            data-test-id="portal-contact-submit"
+            className="inline-flex items-center gap-2"
           >
-            {loading ? (
-              <>
-                <Hourglass size={16} className="animate-spin" />
-                Enviando...
-              </>
-            ) : (
-              <>
-                <Send size={16} />
-                Enviar
-              </>
-            )}
+            {!loading ? <Send size={16} aria-hidden /> : null}
+            {loading ? 'Enviando...' : 'Enviar'}
           </Button>
-        </div>
+        </>
+      }
+    >
+      <form
+        id={FORM_ID}
+        onSubmit={(e) => {
+          void handleSubmit(e);
+        }}
+        className="space-y-4"
+      >
+        <TextField
+          label="Nombre"
+          name="contact-nombre"
+          placeholder="Nombre"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          disabled={loading}
+          required
+        />
+
+        <TextField
+          label="Correo Electrónico"
+          name="contact-email"
+          type="email"
+          placeholder="Correo Electrónico"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={loading}
+          required
+        />
+
+        <TextField
+          label="Teléfono"
+          name="contact-telefono"
+          type="tel"
+          placeholder="Teléfono"
+          value={telefono}
+          onChange={(e) => setTelefono(e.target.value)}
+          disabled={loading}
+          required
+        />
+
+        <TextField
+          label="Mensaje"
+          name="contact-mensaje"
+          placeholder="Mensaje"
+          value={mensaje}
+          onChange={(e) => setMensaje(e.target.value)}
+          rows={4}
+          disabled={loading}
+          required
+        />
       </form>
     </Dialog>
-  )
-}
+  );
+};
 
-export default ContactDialog
+export default ContactDialog;

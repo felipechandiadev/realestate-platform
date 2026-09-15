@@ -1,7 +1,18 @@
 'use client';
 
 import { Button } from '@realestate/ui';
-import { IconButton } from "@realestate/ui";
+import { IconButton } from '@realestate/ui';
+import {
+  FileText,
+  MailCheck,
+  XCircle,
+  User,
+  RefreshCw,
+  Calendar,
+  Paperclip,
+  Eye,
+  type LucideIcon,
+} from 'lucide-react';
 import { env } from '@/lib/env';
 
 interface ContractDocumentCardProps {
@@ -15,25 +26,28 @@ interface ContractDocumentCardProps {
   toggleRequiredLoading?: boolean;
 }
 
-export const statusThemes: Record<string, { label: string; icon: string; tone: string }> = {
+export const statusThemes: Record<
+  string,
+  { label: string; Icon: LucideIcon | null; tone: string }
+> = {
   PENDING: {
     label: 'Pendiente',
-    icon: '',
+    Icon: null,
     tone: 'bg-amber-100 text-amber-800 border border-amber-200',
   },
   UPLOADED: {
     label: 'Subido',
-    icon: '',
+    Icon: null,
     tone: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
   },
   RECIBIDO: {
     label: 'Recibido',
-    icon: 'mark_email_read',
+    Icon: MailCheck,
     tone: 'bg-blue-100 text-blue-800 border border-blue-200',
   },
   REJECTED: {
     label: 'Rechazado',
-    icon: 'cancel',
+    Icon: XCircle,
     tone: 'bg-rose-100 text-rose-700 border border-rose-200',
   },
 };
@@ -149,6 +163,7 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
   toggleRequiredLoading = false,
 }) => {
   const status = resolveStatusBadge(document);
+  const StatusIcon = status.Icon;
   const createdAtLabel = formatDisplayDate(document?.createdAt, {
     year: 'numeric',
     month: 'short',
@@ -181,8 +196,8 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
       <div className="flex items-start gap-4 mb-3">
         <div className="flex-1 space-y-3">
           <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-base text-primary bg-primary/10 rounded-full p-2">
-              description
+            <span className="inline-flex rounded-full bg-primary/10 p-2 text-primary">
+              <FileText className="size-4" aria-hidden />
             </span>
             <div className="space-y-2">
               <div className="flex w-full items-center gap-2">
@@ -193,9 +208,7 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
                   <span
                     className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${status.tone}`}
                   >
-                    {status.icon && (
-                      <span className="material-symbols-outlined text-sm mr-1">{status.icon}</span>
-                    )}
+                    {StatusIcon ? <StatusIcon className="mr-1 size-3.5" aria-hidden /> : null}
                     {status.label}
                   </span>
                   {onToggleRequired ? (
@@ -212,9 +225,9 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
                       aria-busy={toggleRequiredLoading}
                       title={document?.required ? 'Marcar como opcional' : 'Marcar como requerido'}
                     >
-                      {toggleRequiredLoading && (
-                        <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
-                      )}
+                      {toggleRequiredLoading ? (
+                        <RefreshCw className="size-3 animate-spin" aria-hidden />
+                      ) : null}
                       {document?.required ? 'Requerido' : 'Opcional'}
                     </button>
                   ) : (
@@ -250,7 +263,7 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
                 Persona asociada
               </span>
               <span className="inline-flex items-center gap-1 text-foreground">
-                <span className="material-symbols-outlined text-sm text-muted-foreground">person</span>
+                <User className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                 {personLabel || 'Sin persona asignada'}
               </span>
             </div>
@@ -259,7 +272,7 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
                 Última actualización
               </span>
               <span className="inline-flex items-center gap-1 text-foreground">
-                <span className="material-symbols-outlined text-sm text-muted-foreground">update</span>
+                <RefreshCw className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                 {updatedAtLabel || 'Sin registro'}
               </span>
             </div>
@@ -268,7 +281,7 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
                 Creado
               </span>
               <span className="inline-flex items-center gap-1 text-foreground">
-                <span className="material-symbols-outlined text-sm text-muted-foreground">calendar_month</span>
+                <Calendar className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
                 {createdAtLabel || 'Sin registro'}
               </span>
             </div>
@@ -285,7 +298,7 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
       <div className="mt-4 border-t border-border pt-3 space-y-3">
         <div>
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-            <span className="material-symbols-outlined text-base">attach_file</span>
+            <Paperclip className="size-4 shrink-0" aria-hidden />
             Archivo
           </span>
 
@@ -311,7 +324,7 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
                     }
                   }}
                 >
-                  <span className="material-symbols-outlined text-sm mr-1">visibility</span>
+                  <Eye className="mr-1 size-3.5" aria-hidden />
                   Ver
                 </Button>
               </div>
@@ -329,7 +342,7 @@ const ContractDocumentCard: React.FC<ContractDocumentCardProps> = ({
               className="text-blue-600 hover:bg-blue-50"
               onClick={() => onAttachDocument(document)}
             >
-              <span className="material-symbols-outlined text-sm mr-1">attach_file</span>
+              <Paperclip className="mr-1 size-3.5" aria-hidden />
               {hasFile ? 'Actualizar' : 'Adjuntar'}
             </Button>
           </div>

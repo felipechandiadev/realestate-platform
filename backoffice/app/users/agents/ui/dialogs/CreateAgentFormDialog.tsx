@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Dialog } from "@realestate/ui"
 import CreateBaseForm, { BaseFormField } from '@/shared/components/ui/BaseForm/CreateBaseForm'
 import { createAgent } from '@/features/users/actions/agents.action'
@@ -43,6 +43,13 @@ export default function CreateAgentFormDialog({
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<string[]>([])
+
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false)
+      setErrors([])
+    }
+  }, [open])
 
   const handleChange = (field: string, value: any) => {
     setValues((prev) => ({
@@ -134,16 +141,18 @@ export default function CreateAgentFormDialog({
         })
         handleClose()
         onSuccess?.()
-      } else {
-        const errorMsg = result.error || 'Error al crear agente'
-        console.error('[CreateAgentFormDialog] Creation failed:', errorMsg)
-        setErrors([errorMsg])
-        showAlert({
-          message: errorMsg,
-          type: 'error',
-          duration: 5000,
-        })
+        return
       }
+
+      const errorMsg = result.error || 'Error al crear agente'
+      console.error('[CreateAgentFormDialog] Creation failed:', errorMsg)
+      setErrors([errorMsg])
+      showAlert({
+        message: errorMsg,
+        type: 'error',
+        duration: 5000,
+      })
+      setIsSubmitting(false)
     } catch (error) {
       console.error('[CreateAgentFormDialog] Exception:', error)
       const errorMsg = error instanceof Error ? error.message : 'Error interno del servidor'
@@ -153,7 +162,6 @@ export default function CreateAgentFormDialog({
         type: 'error',
         duration: 5000,
       })
-    } finally {
       setIsSubmitting(false)
     }
   }

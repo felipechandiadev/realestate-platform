@@ -120,7 +120,6 @@ const UpdateAgentForm: React.FC<UpdateAgentFormProps> = ({
     } catch (err) {
       console.error('Error in UpdateAgentForm:', err)
       onError('Error inesperado al actualizar el agente')
-    } finally {
       setLoading(false)
     }
   }

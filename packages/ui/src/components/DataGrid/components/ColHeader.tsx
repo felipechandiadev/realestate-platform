@@ -179,9 +179,11 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
         ...(maxWidth !== undefined ? { maxWidth } : {}),
       };
 
+  const isEmptyHeader = !headerName || headerName.trim() === '';
+
   return (
     <div
-      className={`${dataGridChrome.subtleLineBottom} ${DataGridCellMetrics.paddingX} box-border min-w-0 font-semibold text-xs text-foreground flex items-center ${headerAlignClasses.cell}`}
+      className={`${isEmptyHeader && isPinned ? '' : dataGridChrome.subtleLineBottom} ${DataGridCellMetrics.paddingX} box-border min-w-0 font-semibold text-xs text-foreground flex items-center ${headerAlignClasses.cell}`}
       style={{
         height: '56px',
         minHeight: '56px',
@@ -193,9 +195,11 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
         ...(isPinned
           ? {
               position: 'sticky',
-              top: 0,
               right: 0,
               zIndex: DataGridZIndex.headerPinnedCell,
+              backgroundColor: 'transparent',
+              backgroundImage: 'none',
+              boxShadow: 'none',
               flex:
                 typeof column.width === 'number'
                   ? `0 0 ${column.width}px`
@@ -207,6 +211,7 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
           : {}),
       }}
       data-test-id={`data-grid-column-header-${field}`}
+      aria-label={isEmptyHeader ? undefined : headerName}
     >
       {filterMode && filterable ? (
         <div className="relative flex h-full min-w-0 w-full flex-1 items-center justify-start overflow-hidden">
@@ -214,7 +219,7 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
             <select
               value={localFilterValue}
               onChange={handleFilterSelectChange}
-              aria-label={headerName}
+              aria-label={headerName || field}
               className="block h-[28px] w-full min-w-0 max-w-full truncate border-0 bg-transparent p-0 text-xs outline-none"
               data-test-id={`data-grid-filter-select-${field}`}
             >
@@ -227,7 +232,7 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
             </select>
           ) : (
             <>
-              {localFilterValue && (
+              {localFilterValue && !isEmptyHeader && (
                 <label
                   className="absolute left-0 text-[10px] text-foreground bg-white px-0 pointer-events-none z-10 transition-all duration-200 text-left"
                   style={{lineHeight:1, top: '2px'}}>
@@ -241,7 +246,7 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
                 onChange={handleFilterChange}
                 placeholder={headerName}
                 className={`block w-full min-w-0 max-w-full text-xs h-[28px] bg-transparent outline-none p-0 border-0 ${localFilterValue ? 'text-secondary pt-3' : ''} text-left`}
-                aria-label={headerName}
+                aria-label={headerName || field}
                 style={{ width: '100%', minWidth: 0, maxWidth: '100%', border: 'none' }}
               />
             </>
@@ -249,9 +254,13 @@ export const ColHeader: React.FC<ColHeaderProps> = ({
         </div>
       ) : (
         <>
-          <span className={`min-w-0 flex-1 truncate ${headerAlignClasses.content}`}>
-            {headerName}
-          </span>
+          {!isEmptyHeader ? (
+            <span className={`min-w-0 flex-1 truncate ${headerAlignClasses.content}`}>
+              {headerName}
+            </span>
+          ) : (
+            <span className="min-w-0 flex-1" aria-hidden />
+          )}
           {hasSortIcon ? (
             <div className="ml-1 flex h-7 w-7 shrink-0 items-center justify-center">
               <IconButton

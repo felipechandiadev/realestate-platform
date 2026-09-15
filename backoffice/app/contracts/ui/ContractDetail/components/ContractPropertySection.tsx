@@ -1,3 +1,5 @@
+import { Building2 } from 'lucide-react';
+
 interface ContractPropertySectionProps {
   property: any | null;
 }
@@ -6,7 +8,7 @@ export default function ContractPropertySection({ property }: ContractPropertySe
   if (!property) {
     return (
       <div className="text-center py-12 text-muted-foreground max-w-4xl">
-        <span className="material-symbols-outlined text-4xl mb-2 block">home_work</span>
+        <Building2 className="mx-auto mb-2 size-10" aria-hidden />
         <p>No hay propiedad asociada</p>
       </div>
     );

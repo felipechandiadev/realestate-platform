@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { TextField } from '@realestate/ui';
@@ -29,6 +29,12 @@ const CreateArticleDialog: React.FC<CreateArticleDialogProps> = ({
   });
   const [newImageFile, setNewImageFile] = useState<File[]>([]);
 
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
+
   const resetForm = () => {
     setFormData({
       title: '',
@@ -49,6 +55,7 @@ const CreateArticleDialog: React.FC<CreateArticleDialogProps> = ({
   };
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
     if (!formData.title.trim() || !formData.text.trim()) {
       error('Título y texto son obligatorios');
       return;
@@ -72,12 +79,12 @@ const CreateArticleDialog: React.FC<CreateArticleDialogProps> = ({
         success('Artículo creado exitosamente');
         handleClose();
         onSuccess();
-      } else {
-        error(result.error || 'Error al crear artículo');
+        return;
       }
+      error(result.error || 'Error al crear artículo');
+      setIsSubmitting(false);
     } catch (err) {
       error('Error interno del servidor');
-    } finally {
       setIsSubmitting(false);
     }
   };

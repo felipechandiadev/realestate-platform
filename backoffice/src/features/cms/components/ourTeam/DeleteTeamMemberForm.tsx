@@ -27,6 +27,8 @@ export default function DeleteTeamMemberForm({
   const [errors, setErrors] = useState<string[]>([]);
 
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+
     setIsSubmitting(true);
     onLoadingChange?.(true);
     setErrors([]);
@@ -41,15 +43,19 @@ export default function DeleteTeamMemberForm({
           duration: 3000,
         });
         onSuccess?.();
-      } else {
-        const errorMsg = result.error || 'Error al eliminar el miembro del equipo';
-        setErrors([errorMsg]);
-        showAlert({
-          message: errorMsg,
-          type: 'error',
-          duration: 5000,
-        });
+        // Keep submitting true until dialog closes / remounts.
+        return;
       }
+
+      const errorMsg = result.error || 'Error al eliminar el miembro del equipo';
+      setErrors([errorMsg]);
+      showAlert({
+        message: errorMsg,
+        type: 'error',
+        duration: 5000,
+      });
+      setIsSubmitting(false);
+      onLoadingChange?.(false);
     } catch (error) {
       const errorMsg = 'Error interno del servidor';
       setErrors([errorMsg]);
@@ -58,7 +64,6 @@ export default function DeleteTeamMemberForm({
         type: 'error',
         duration: 5000,
       });
-    } finally {
       setIsSubmitting(false);
       onLoadingChange?.(false);
     }

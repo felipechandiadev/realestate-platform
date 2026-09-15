@@ -1,26 +1,18 @@
 /**
  * Portal Homepage
- * 
+ *
  * Propósito:
  * - Landing page pública del sitio web inmobiliario
- * - Mostrar banner slider principal con destacados
- * - Propiedades destacadas (featured) con paginación
+ * - Banner slider principal
+ * - Propiedades destacadas (marquee infinito)
  * - Propiedades regulares con filtrado inicial
  * - Testimonios de clientes
- * - Punto de entrada para visitantes no autenticados
- * 
- * Funcionalidad:
- * - Server component con searchParams para filtrado URL
- * - Fetcha propiedades destacadas paginadas
- * - Fetcha propiedades filtradas por operación/tipo/ubicación/moneda
- * - Renderiza slider hero, bands de propiedades, testimonios
- * - Integra PortalClient para interactividad (búsqueda, filtros)
- * 
+ *
  * Audiencia: Visitantes públicos, clientes potenciales, usuarios no autenticados
  */
 
 import FeaturedPropertiesBand from '@/app/ui/FeaturedPropertiesBand';
-import { getPublishedFeaturedProperties } from '@/features/shared/properties/actions/properties.action';
+import { getPublishedFeaturedPropertiesPublic } from '@/features/shared/properties/actions/properties.action';
 import { getPublishedPropertiesFiltered } from '@/features/properties/actions/portalProperties.action';
 import Slider from './ui/Slider';
 import PortalClient from './PortalClient';
@@ -35,7 +27,6 @@ interface PortalPageProps {
     city?: string;
     currency?: string;
     page?: string;
-    featured_page?: string;
   }>;
 }
 
@@ -48,10 +39,9 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   const city = params.city || '';
   const currency = params.currency || '';
   const page = params.page || '';
-  const featuredPage = params.featured_page || '1';
 
   const [featuredResultSettled, propertiesResultSettled, testimonialsSettled] = await Promise.allSettled([
-    getPublishedFeaturedProperties(parseInt(featuredPage) || 1),
+    getPublishedFeaturedPropertiesPublic(),
     getPublishedPropertiesFiltered({
       currency: currency,
       state: state,
@@ -83,18 +73,15 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
 
   return (
     <>
-      {/* Hero Slider */}
       <Slider />
 
-
-      {/* Featured Properties Section */}
       <section className="relative z-0 bg-card pt-10">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
+        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
           <div className="mb-6">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-primary mb-2 tracking-tight">
+            <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-primary sm:text-4xl">
               Propiedades Destacadas
             </h1>
-            <p className="text-lg sm:text-xl text-muted-foreground font-light">
+            <p className="text-lg font-light text-muted-foreground sm:text-xl">
               Explora nuestras propiedades más destacadas seleccionadas especialmente para ti.
             </p>
           </div>
@@ -102,15 +89,13 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
       </section>
 
       <div className="relative w-full bg-card">
-        <FeaturedPropertiesBand properties={featuredProperties} scrollSpeed={20} />
+        <FeaturedPropertiesBand properties={featuredProperties} scrollSpeed={30} />
       </div>
 
-      {/* Regular Portal Properties Section */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 relative z-0">
+      <div className="relative z-0 mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <PortalClient initialProperties={properties} initialPagination={pagination} />
       </div>
 
-      {/* Testimonials under the properties grid (show up to 4) */}
       <TestimonialsBand testimonials={testimonials} />
     </>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { deleteTestimonial, type Testimonial } from '@/features/cms/actions/testimonials.action';
@@ -22,8 +22,14 @@ export function DeleteTestimonialDialog({
   const alert = useAlert();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
+
   const handleConfirm = async () => {
-    if (!testimonial) return;
+    if (!testimonial || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -33,12 +39,12 @@ export function DeleteTestimonialDialog({
         alert.success('Testimonio eliminado correctamente');
         onClose();
         onSuccess();
-      } else {
-        alert.error(result.error || 'Error al eliminar testimonio');
+        return;
       }
+      alert.error(result.error || 'Error al eliminar testimonio');
+      setIsSubmitting(false);
     } catch (err) {
       alert.error('Error interno del servidor');
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -46,9 +52,11 @@ export function DeleteTestimonialDialog({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={isSubmitting ? () => {} : onClose}
       title="Eliminar Testimonio"
       maxWidth="sm"
+      disableBackdropClick={isSubmitting}
+      persistent={isSubmitting}
     >
       <div className="space-y-6">
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">

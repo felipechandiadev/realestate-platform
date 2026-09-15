@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
+import { Upload, Loader2 } from 'lucide-react';
 import FileUploader from '@/shared/components/ui/FileUploader/FileUploader';
 import type { DocumentType } from '@/features/contracts/actions/documentTypes.action';
 
@@ -222,7 +223,7 @@ export default function ContractUploadContractDocumentDialog({
 
         {loadingDocumentTypes && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+            <Loader2 className="size-4 animate-spin" aria-hidden />
             <span>Cargando tipos de documento...</span>
           </div>
         )}
@@ -238,12 +239,12 @@ export default function ContractUploadContractDocumentDialog({
           >
             {submitting ? (
               <span className="flex items-center gap-2">
-                <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+                <Loader2 className="size-4 animate-spin" aria-hidden />
                 Subiendo...
               </span>
             ) : (
               <span className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">upload_file</span>
+                <Upload className="size-4" aria-hidden />
                 Adjuntar
               </span>
             )}

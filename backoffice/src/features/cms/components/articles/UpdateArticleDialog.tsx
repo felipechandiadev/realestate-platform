@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import UpdateBaseForm, { type BaseUpdateFormField } from '@/shared/components/ui/BaseForm/UpdateBaseForm';
 import { updateArticle, type Article } from '@/features/cms/actions/articles.action';
@@ -22,6 +22,12 @@ const UpdateArticleDialog: React.FC<UpdateArticleDialogProps> = ({
 }) => {
   const alert = useAlert();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
 
   const categoryOptions = Object.values(ArticleCategory).map((category) => ({
     id: category,
@@ -87,7 +93,7 @@ const UpdateArticleDialog: React.FC<UpdateArticleDialogProps> = ({
       };
 
   const handleSubmit = async (values: Record<string, unknown>) => {
-    if (!article) return;
+    if (!article || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -107,12 +113,12 @@ const UpdateArticleDialog: React.FC<UpdateArticleDialogProps> = ({
         alert.success('Artículo actualizado exitosamente');
         onClose();
         onSuccess();
-      } else {
-        alert.error(result.error || 'Error al actualizar artículo');
+        return;
       }
+      alert.error(result.error || 'Error al actualizar artículo');
+      setIsSubmitting(false);
     } catch (err) {
       alert.error('Error interno del servidor');
-    } finally {
       setIsSubmitting(false);
     }
   };

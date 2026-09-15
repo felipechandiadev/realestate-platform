@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Card } from '@realestate/ui';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Card, IconButton } from '@realestate/ui';
 import type { SalePropertyGridRow } from '@/features/properties/actions/properties.action';
 import {
   formatPropertyPrice,
@@ -16,17 +16,61 @@ interface SalePropertyCardProps {
   onDeleteSuccess?: () => void;
 }
 
+function resolveCardImageUrls(property: SalePropertyGridRow): string[] {
+  if (Array.isArray(property.imageUrls) && property.imageUrls.length > 0) {
+    return property.imageUrls.filter((u): u is string => typeof u === 'string' && u.trim() !== '');
+  }
+
+  const urls: string[] = [];
+  const push = (raw?: string | null) => {
+    const url = typeof raw === 'string' ? raw.trim() : '';
+    if (!url || urls.includes(url)) return;
+    urls.push(url);
+  };
+
+  push(property.mainImageUrl);
+
+  const multimedia = Array.isArray(property.multimedia) ? property.multimedia : [];
+  for (const media of multimedia) {
+    const format = String(media?.format || '').toUpperCase();
+    if (format && format !== 'IMG') continue;
+    push(media?.url);
+  }
+
+  return urls;
+}
+
 export function SalePropertyCard({ property, onDeleteSuccess }: SalePropertyCardProps) {
   const status = property.status ?? '';
-  const mainImageUrl =
-    typeof property.mainImageUrl === 'string' ? property.mainImageUrl : undefined;
+  const imageUrls = useMemo(() => resolveCardImageUrls(property), [property]);
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [property.id, imageUrls.length]);
+
+  const safeIndex = imageUrls.length > 0 ? Math.min(index, imageUrls.length - 1) : 0;
+  const currentUrl = imageUrls[safeIndex];
+  const canNavigate = imageUrls.length > 1;
+
+  const goPrev = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIndex((prev) => (prev <= 0 ? imageUrls.length - 1 : prev - 1));
+  };
+
+  const goNext = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIndex((prev) => (prev >= imageUrls.length - 1 ? 0 : prev + 1));
+  };
 
   const media = (
     <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
-      {mainImageUrl ? (
+      {currentUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={mainImageUrl}
+          src={currentUrl}
           alt=""
           className="h-full w-full object-cover"
           loading="lazy"
@@ -36,6 +80,39 @@ export function SalePropertyCard({ property, onDeleteSuccess }: SalePropertyCard
           Sin imagen
         </div>
       )}
+
+      {canNavigate ? (
+        <>
+          <IconButton
+            icon="ChevronLeft"
+            variant="primaryCircle"
+            size="xs"
+            className="absolute left-2 top-1/2 z-[1] -translate-y-1/2 shadow-md"
+            ariaLabel="Imagen anterior"
+            onClick={goPrev}
+            data-test-id={`sale-property-card-prev-${property.id}`}
+          />
+          <IconButton
+            icon="ChevronRight"
+            variant="primaryCircle"
+            size="xs"
+            className="absolute right-2 top-1/2 z-[1] -translate-y-1/2 shadow-md"
+            ariaLabel="Imagen siguiente"
+            onClick={goNext}
+            data-test-id={`sale-property-card-next-${property.id}`}
+          />
+          <div className="pointer-events-none absolute bottom-2 left-1/2 z-[1] flex -translate-x-1/2 gap-1">
+            {imageUrls.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1.5 w-1.5 rounded-full ${
+                  i === safeIndex ? 'bg-white' : 'bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 

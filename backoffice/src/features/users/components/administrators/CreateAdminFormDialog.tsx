@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Dialog } from "@realestate/ui";
+import React, { useEffect, useState } from 'react';
+import { Alert, Button, Dialog } from '@realestate/ui';
 import CreateBaseForm, { BaseFormField } from '@/shared/components/ui/BaseForm/CreateBaseForm';
 import { createAdmin } from '@/features/users/actions/users.action';
 import { useAlert } from '@/shared/hooks/useAlert';
@@ -23,6 +23,8 @@ interface AdminFormData {
   avatarFile: File | null;
 }
 
+const FORM_ID = 'create-admin-form';
+
 export default function CreateAdminFormDialog({
   open,
   onClose,
@@ -43,8 +45,15 @@ export default function CreateAdminFormDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+      setErrors([]);
+    }
+  }, [open]);
+
   const handleChange = (field: string, value: any) => {
-    setValues(prev => ({
+    setValues((prev) => ({
       ...prev,
       [field]: value,
     }));
@@ -95,7 +104,7 @@ export default function CreateAdminFormDialog({
       showAlert({
         message: 'Por favor corrige los errores del formulario',
         type: 'error',
-        duration: 4000
+        duration: 4000,
       });
       return;
     }
@@ -104,15 +113,6 @@ export default function CreateAdminFormDialog({
     setErrors([]);
 
     try {
-      console.log('[CreateAdminFormDialog] Submitting with:', {
-        username: values.username,
-        email: values.email,
-        firstName: values.firstName,
-        lastName: values.lastName,
-        phone: values.phone,
-        hasAvatar: !!values.avatarFile,
-      });
-
       const result = await createAdmin({
         username: values.username.trim(),
         email: values.email.trim().toLowerCase(),
@@ -123,36 +123,33 @@ export default function CreateAdminFormDialog({
         avatarFile: values.avatarFile || undefined,
       });
 
-      console.log('[CreateAdminFormDialog] Result:', result);
-
       if (result.success) {
         showAlert({
           message: 'Administrador creado exitosamente',
           type: 'success',
-          duration: 3000
+          duration: 3000,
         });
         handleClose();
         onSuccess?.();
-      } else {
-        const errorMsg = result.error || 'Error al crear administrador';
-        console.error('[CreateAdminFormDialog] Creation failed:', errorMsg);
-        setErrors([errorMsg]);
-        showAlert({
-          message: errorMsg,
-          type: 'error',
-          duration: 5000
-        });
+        return;
       }
+
+      const errorMsg = result.error || 'Error al crear administrador';
+      setErrors([errorMsg]);
+      showAlert({
+        message: errorMsg,
+        type: 'error',
+        duration: 5000,
+      });
+      setIsSubmitting(false);
     } catch (error) {
-      console.error('[CreateAdminFormDialog] Exception:', error);
       const errorMsg = error instanceof Error ? error.message : 'Error interno del servidor';
       setErrors([errorMsg]);
       showAlert({
         message: errorMsg,
         type: 'error',
-        duration: 5000
+        duration: 5000,
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -220,31 +217,68 @@ export default function CreateAdminFormDialog({
       label: 'Avatar (Opcional)',
       type: 'avatar',
       acceptedTypes: ['image/*'],
-      maxSize: 2 * 1024 * 1024, // 2MB
+      maxSize: 2 * 1024 * 1024,
     },
   ];
+
+  const alertArea =
+    errors.length > 0 ? (
+      <div className="flex flex-col gap-2">
+        {errors.map((err, i) => (
+          <Alert key={i} variant="error" data-test-id={`create-admin-error-${i}`}>
+            {err}
+          </Alert>
+        ))}
+      </div>
+    ) : null;
 
   return (
     <Dialog
       open={open}
       onClose={handleClose}
       title="Crear Nuevo Administrador"
-      maxWidth="sm"
+      size="sm"
+      scroll="paper"
+      maxHeight="90vh"
+      actionsJustify="between"
+      data-test-id="create-admin-dialog"
+      alertArea={alertArea}
+      actions={
+        <>
+          <Button
+            type="button"
+            variant="outlined"
+            size="md"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            data-test-id="create-admin-cancel"
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            form={FORM_ID}
+            variant="primary"
+            size="md"
+            disabled={isSubmitting}
+            loading={isSubmitting}
+            data-test-id="create-admin-submit"
+          >
+            Crear Administrador
+          </Button>
+        </>
+      }
     >
-      <div className="p-4">
-        <CreateBaseForm
-          fields={fields}
-          values={values}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-          isSubmitting={isSubmitting}
-          errors={errors}
-          submitLabel="Crear Administrador"
-          cancelButton={true}
-          cancelButtonText="Cancelar"
-          onCancel={handleClose}
-        />
-      </div>
+      <CreateBaseForm
+        formId={FORM_ID}
+        nested
+        fields={fields}
+        values={values}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        data-test-id="create-admin-form"
+      />
     </Dialog>
   );
 }

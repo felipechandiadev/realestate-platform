@@ -158,10 +158,11 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
     },
     {
       field: 'actions',
-      headerName: 'Acciones',
+      headerName: '',
       width: 150,
       sortable: false,
       filterable: false,
+      sticky: true,
       renderCell: ({ row }) => (
         <div className="flex h-full items-center gap-2">
           <SaleMoreButton property={row} />
@@ -207,6 +208,7 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
           limit={limit}
           fillViewport
           viewportBottomInset={24}
+          pinActionsColumn
           onAddClick={() => setDialogOpen(true)}
           searchPlaceholder="Buscar propiedades..."
           data-test-id="properties-sales-data-grid"

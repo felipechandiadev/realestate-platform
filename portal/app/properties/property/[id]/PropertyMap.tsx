@@ -51,11 +51,12 @@ export default function PropertyMap({
       controlsContainer.style.position = 'relative';
     }
 
-    // Add tile layer without attribution
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Carto Light (basemap limpio)
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: false,
-      maxZoom: 19,
+      maxZoom: 20,
       minZoom: 5,
+      subdomains: 'abcd',
     }).addTo(map);
 
     // Add marker

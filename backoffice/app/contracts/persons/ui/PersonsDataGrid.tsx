@@ -59,10 +59,11 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
     setPersonToDelete(person);
     setShowDeleteDialog(true);
     setDeleteErrors([]);
+    setIsDeleting(null);
   };
 
   const handleDeleteConfirm = async () => {
-    if (!personToDelete) return;
+    if (!personToDelete || isDeleting) return;
 
     setIsDeleting(personToDelete.id);
     setDeleteErrors([]);
@@ -77,6 +78,7 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
       router.refresh();
       setShowDeleteDialog(false);
       setPersonToDelete(null);
+      // Keep isDeleting set until dialog remounts / reopens.
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
       alert.showAlert({
@@ -85,7 +87,6 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
         duration: 5000,
       });
       setDeleteErrors([`No fue posible eliminar a la persona. Detalle: ${errorMessage}`]);
-    } finally {
       setIsDeleting(null);
     }
   };

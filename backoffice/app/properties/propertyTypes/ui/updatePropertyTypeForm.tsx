@@ -39,6 +39,8 @@ export default function UpdatePropertyTypeForm({ propertyType, onSuccess, onCanc
   };
 
   const handleSubmit = async (values: Record<string, any>) => {
+    if (isSubmitting) return;
+
     // Basic validation
     if (!values.name?.trim()) {
       setErrors(['El nombre es obligatorio']);
@@ -59,12 +61,14 @@ export default function UpdatePropertyTypeForm({ propertyType, onSuccess, onCanc
       // Call success callback
       if (onSuccess) {
         onSuccess();
+        return;
       }
+
+      setIsSubmitting(false);
     } catch (error) {
       console.error('Error updating property type:', error);
       alert.error('Error al actualizar el tipo de propiedad. Por favor, inténtalo de nuevo.');
       setErrors(['Error al actualizar el tipo de propiedad']);
-    } finally {
       setIsSubmitting(false);
     }
   };

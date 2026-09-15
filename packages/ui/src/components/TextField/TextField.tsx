@@ -53,6 +53,8 @@ interface TextFieldProps {
   className?: string;
   variante?: "normal" | "contrast" | "autocomplete";
   rows?: number;
+  /** Renderiza un textarea. Equivalente a `type="textarea"` o pasar `rows`. */
+  multiline?: boolean;
   readOnly?: boolean;
   disabled?: boolean;
   /** Tooltip nativo del input (p. ej. explicar solo lectura). */
@@ -114,6 +116,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   className = "",
   variante = "normal",
   rows,
+  multiline = false,
   required = false,
   readOnly = false,
   disabled = false,
@@ -176,6 +179,19 @@ export const TextField: React.FC<TextFieldProps> = ({
   /** Inline + readOnly: sin `disabled` nativo para no alterar colores del navegador. */
   const inputNativeDisabled = disabled && !(isInlineLabel && readOnly);
 
+  /** `{...e.target}` no copia `name` de un HTMLInputElement (props no enumerables). */
+  const emitChangeValue = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    nextValue: string,
+  ) => {
+    const name = e.target.name;
+    onChange({
+      ...e,
+      target: { name, value: nextValue },
+      currentTarget: { name, value: nextValue },
+    } as React.ChangeEvent<HTMLInputElement>);
+  };
+
   const startIconNode = useMemo(() => {
     if (!startIcon?.trim()) return null;
     const Icon = resolveLucideIconComponent(startIcon);
@@ -217,19 +233,11 @@ export const TextField: React.FC<TextFieldProps> = ({
       } else if (phonePrefix) {
         rawValue = phonePrefix + rawValue.replace(/[^\d]/g, '');
       }
-      // Crear evento sintético
-      const syntheticEvent = {
-        ...e,
-        target: {
-          ...e.target,
-          value: rawValue
-        }
-      } as React.ChangeEvent<HTMLInputElement>;
-      onChange(syntheticEvent);
+      emitChangeValue(e, rawValue);
       return;
     }
     onChange(e);
-  } 
+  };
 
   // Función para formatear DNI chileno
   const formatDNI = (value: string): string => {
@@ -319,17 +327,7 @@ export const TextField: React.FC<TextFieldProps> = ({
     
     const rawValue = e.target.value;
     const formattedValue = formatDNI(rawValue);
-    
-    // Crear un evento sintético con el valor formateado
-    const syntheticEvent = {
-      ...e,
-      target: {
-        ...e.target,
-        value: formattedValue
-      }
-    } as React.ChangeEvent<HTMLInputElement>;
-    
-    onChange(syntheticEvent);
+    emitChangeValue(e, formattedValue);
   };
 
   const handleCurrencyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -367,31 +365,13 @@ export const TextField: React.FC<TextFieldProps> = ({
       }
 
       setCurrencyRawValue(normalized);
-
-      const syntheticEvent = {
-        ...e,
-        target: {
-          ...e.target,
-          value: normalized,
-        }
-      } as React.ChangeEvent<HTMLInputElement>;
-
-      onChange(syntheticEvent);
+      emitChangeValue(e, normalized);
       return;
     }
 
     const digitsOnly = sanitizedInput.replace(/[^\d]/g, '');
     setCurrencyRawValue(digitsOnly);
-
-    const syntheticEvent = {
-      ...e,
-      target: {
-        ...e.target,
-        value: digitsOnly,
-      }
-    } as React.ChangeEvent<HTMLInputElement>;
-
-    onChange(syntheticEvent);
+    emitChangeValue(e, digitsOnly);
   };
 
   // Formatear el valor para mostrar en currency o teléfono
@@ -527,12 +507,13 @@ export const TextField: React.FC<TextFieldProps> = ({
     }
   }, [value, type, currencyRawValue]);
 
-  // Estilos para variantes
+  // Estilos para variantes — el fondo sólido lo controla `--tf-surface` en CSS
+  // (TextField input / Select·AutoComplete combo-shell). No usar `bg-*` en default.
   const variantInput = variante === "contrast"
     ? "border-background text-background focus:border-primary bg-transparent"
     : variante === "autocomplete"
     ? "border-none focus:border-none focus:ring-0 bg-transparent"
-    : "text-foreground border-border focus:border-primary bg-transparent";
+    : "text-foreground border-border focus:border-primary";
 
   const controlVariantClass =
     (variante === "contrast" ? "fs-text-field__control--contrast " : "") +
@@ -544,7 +525,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   const disabledStyles = showDisabledChrome
     ? isInlineLabel
       ? "cursor-not-allowed"
-      : "opacity-50 cursor-not-allowed bg-muted"
+      : "opacity-50 cursor-not-allowed"
     : "";
   const inlineBodyDisabledClass =
     isInlineLabel && showDisabledChrome ? " fs-text-field__inline-body--disabled" : "";
@@ -556,7 +537,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   const comboReadOnlyCursor =
     readOnly && variante === "autocomplete" && !disabled ? "cursor-pointer" : "";
 
-  const isTextArea = type === "textarea" || typeof rows === "number";
+  const isTextArea = type === "textarea" || multiline || typeof rows === "number";
   const showStaticLabel = isCompact && Boolean(label?.trim()) && !isInlineLabel;
   const compactInputClass = isCompact ? "fs-text-field__input--compact" : "";
   const inlineInsetInputClass = isInlineLabel ? "fs-text-field__input--inline-inset" : "";

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { UpdateBaseForm, type BaseUpdateFormField } from '@/shared/components/ui/BaseForm';
 import { updateTestimonial, type Testimonial } from '@/features/cms/actions/testimonials.action';
@@ -21,6 +21,12 @@ export function UpdateTestimonialDialog({
 }: UpdateTestimonialDialogProps) {
   const alert = useAlert();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setIsSubmitting(false);
+    }
+  }, [open]);
 
   const formFields: BaseUpdateFormField[] = [
     {
@@ -72,7 +78,7 @@ export function UpdateTestimonialDialog({
       };
 
   const handleSubmit = async (values: Record<string, unknown>) => {
-    if (!testimonial) return;
+    if (!testimonial || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
@@ -92,12 +98,12 @@ export function UpdateTestimonialDialog({
         alert.success('Testimonio actualizado exitosamente');
         onClose();
         onSuccess();
-      } else {
-        alert.error(result.error || 'Error al actualizar testimonio');
+        return;
       }
+      alert.error(result.error || 'Error al actualizar testimonio');
+      setIsSubmitting(false);
     } catch (err) {
       alert.error('Error interno del servidor');
-    } finally {
       setIsSubmitting(false);
     }
   };
