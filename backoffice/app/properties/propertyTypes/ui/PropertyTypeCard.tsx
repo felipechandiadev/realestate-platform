@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Switch } from "@realestate/ui";
 import { IconButton } from "@realestate/ui";
 import { Dialog } from "@realestate/ui";
+import { Button } from "@realestate/ui";
 import UpdatePropertyTypeForm from './updatePropertyTypeForm';
 import DeletePropertyTypeForm from './DeletePropertyTypeForm';
 import { useRouter } from 'next/navigation';
@@ -29,6 +30,8 @@ const defaultPropertyType: PropertyType = {
   isActive: true,
 };
 
+const UPDATE_FORM_ID = 'update-property-type-form';
+
 interface PropertyTypeCardProps {
   propertyType: PropertyType;
   onClick?: () => void;
@@ -42,6 +45,7 @@ export default function PropertyTypeCard({
 }: PropertyTypeCardProps) {
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
   const router = useRouter();
   const {
     name,
@@ -76,12 +80,14 @@ export default function PropertyTypeCard({
   };
 
   const handleUpdateSuccess = () => {
+    setIsUpdating(false);
     setShowUpdateDialog(false);
     // Refresh the page to get updated data
     router.refresh();
   };
 
   const handleUpdateCancel = () => {
+    if (isUpdating) return;
     setShowUpdateDialog(false);
   };
 
@@ -164,13 +170,46 @@ export default function PropertyTypeCard({
       <Dialog
         open={showUpdateDialog}
         onClose={handleUpdateCancel}
-    
-        size="lg"
+        title="Actualizar Tipo de Propiedad"
+        size="md"
+        actionsJustify="between"
+        disableBackdropClick={isUpdating}
+        persistent={isUpdating}
+        actions={
+          <>
+            <Button
+              type="button"
+              variant="outlined"
+              size="md"
+              onClick={handleUpdateCancel}
+              disabled={isUpdating}
+              data-test-id="update-property-type-cancel"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              form={UPDATE_FORM_ID}
+              variant="primary"
+              size="md"
+              disabled={isUpdating}
+              loading={isUpdating}
+              data-test-id="update-property-type-submit"
+            >
+              Actualizar
+            </Button>
+          </>
+        }
       >
+        <p className="mb-4 text-sm text-muted-foreground">
+          Modifique el nombre y descripción del tipo de propiedad
+        </p>
         <UpdatePropertyTypeForm
           propertyType={propertyType}
           onSuccess={handleUpdateSuccess}
           onCancel={handleUpdateCancel}
+          formId={UPDATE_FORM_ID}
+          onLoadingChange={setIsUpdating}
         />
       </Dialog>
 
@@ -178,8 +217,8 @@ export default function PropertyTypeCard({
       <Dialog
         open={showDeleteDialog}
         onClose={handleDeleteCancel}
-
-        size="md"
+        title="Eliminar Tipo de Propiedad"
+        size="sm"
       >
         <DeletePropertyTypeForm
           propertyType={propertyType}

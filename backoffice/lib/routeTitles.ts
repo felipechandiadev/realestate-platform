@@ -2,6 +2,7 @@
 export const routeTitles: Record<string, string> = {
   '/': 'Panel de Administración',
   '/properties/sales': 'Propiedades en Venta',
+  '/properties/rent': 'Propiedades en Arriendo',
   '/properties/propertyTypes': 'Tipos de Propiedad',
   '/contracts/persons': 'Personas',
   '/contracts/documents': 'Documentos',

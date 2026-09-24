@@ -18,6 +18,7 @@
  */
 
 import React from 'react'
+import { Target, Eye } from 'lucide-react'
 import { getPublicAboutUs as getAboutUs } from '@/features/cms/actions/aboutUs.action'
 
 // Mock data mientras se implementa la API
@@ -51,14 +52,6 @@ export default async function AboutUsPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
-      {/* Header Section */}
-      <div className="mb-12 text-center">
-        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-4">Sobre nosotros</h1>
-        <p className="text-sm md:text-base text-muted-foreground max-w-2xl mx-auto">
-          Conoce nuestra historia, valores y compromiso con la excelencia inmobiliaria
-        </p>
-      </div>
-
       {/* Hero Multimedia */}
       {aboutUsData.multimediaUrl && (
         <div className="mb-12">
@@ -79,7 +72,6 @@ export default async function AboutUsPage() {
                 className="w-full h-full object-cover"
               />
             )}
-            <div className="absolute inset-0 bg-black/20"></div>
           </div>
         </div>
       )}
@@ -102,7 +94,7 @@ export default async function AboutUsPage() {
         <div className="bg-card border border-border rounded-lg p-6 md:p-8 shadow-sm">
           <div className="flex items-center mb-4">
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-              <span className="material-symbols-outlined text-primary text-2xl">target</span>
+              <Target className="h-6 w-6 text-primary" aria-hidden />
             </div>
             <h3 className="text-xl md:text-2xl font-bold text-primary">Nuestra Misión</h3>
           </div>
@@ -115,7 +107,7 @@ export default async function AboutUsPage() {
         <div className="bg-card border border-border rounded-lg p-6 md:p-8 shadow-sm">
           <div className="flex items-center mb-4">
             <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mr-4">
-              <span className="material-symbols-outlined text-primary text-2xl">visibility</span>
+              <Eye className="h-6 w-6 text-primary" aria-hidden />
             </div>
             <h3 className="text-xl md:text-2xl font-bold text-primary">Nuestra Visión</h3>
           </div>

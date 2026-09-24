@@ -1,11 +1,13 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { CheckCircle, Clock, FileText, Shield, XCircle } from 'lucide-react';
 import { DataGrid, type DataGridColumn } from "@realestate/ui";
 import type { Person } from '@/features/contracts/actions/persons.action';
 import { useAlert } from '@/providers/AlertContext';
 import { deletePerson } from '@/features/contracts/actions/persons.action';
 import { Button } from '@realestate/ui';
+import { Dialog } from '@realestate/ui';
 import { IconButton } from "@realestate/ui";
 import CreatePersonForm from './CreatePersonForm';
 import PersonDocumentsList from './PersonDocumentsList';
@@ -151,11 +153,11 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
       renderCell: ({ row }) => {
         return row.verified ? (
           <div className="flex items-center justify-center">
-            <span className="material-symbols-outlined text-blue-500 text-xl" title="Verificado">verified</span>
+            <CheckCircle className="h-5 w-5 text-blue-500" aria-label="Verificado" />
           </div>
         ) : (
           <div className="flex items-center justify-center">
-            <span className="material-symbols-outlined text-muted-foreground text-xl" title="No verificado">cancel</span>
+            <XCircle className="h-5 w-5 text-muted-foreground" aria-label="No verificado" />
           </div>
         );
       },
@@ -173,7 +175,7 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
           const date = new Date(row.verificationRequest);
           return (
             <div className="flex items-center justify-center gap-1" title={date.toLocaleDateString('es-CL')}>
-              <span className="material-symbols-outlined text-orange-500 text-xl">schedule</span>
+              <Clock className="h-5 w-5 text-orange-500" aria-hidden />
             </div>
           );
         }
@@ -308,7 +310,7 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
         >
           <div className="space-y-4">
             <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
-              <span className="material-symbols-outlined text-4xl text-primary">badge</span>
+              <Shield className="h-10 w-10 text-primary shrink-0" aria-hidden />
               <div>
                 <p className="font-semibold text-foreground">{personToVerify.name || 'Sin nombre'}</p>
                 <p className="text-sm text-muted-foreground">DNI: {personToVerify.dni || 'No registrado'}</p>
@@ -317,7 +319,7 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
 
             <div className="space-y-3">
               <div className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-blue-500 mt-1">verified</span>
+                <CheckCircle className="h-5 w-5 text-blue-500 mt-1 shrink-0" aria-hidden />
                 <div>
                   <p className="font-medium text-foreground">Estado de Verificación</p>
                   <p className="text-sm text-muted-foreground">
@@ -332,7 +334,7 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
 
               {personToVerify.verificationRequest && (
                 <div className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-orange-500 mt-1">schedule</span>
+                  <Clock className="h-5 w-5 text-orange-500 mt-1 shrink-0" aria-hidden />
                   <div>
                     <p className="font-medium text-foreground">Solicitud Pendiente</p>
                     <p className="text-sm text-muted-foreground">
@@ -343,7 +345,7 @@ export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataG
               )}
 
               <div className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-purple-500 mt-1">description</span>
+                <FileText className="h-5 w-5 text-purple-500 mt-1 shrink-0" aria-hidden />
                 <div>
                   <p className="font-medium text-foreground">Documentos de Identidad</p>
                   <p className="text-sm text-muted-foreground">

@@ -1,25 +1,38 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, TextField } from '@realestate/ui';
-
-const DEV_SEED_ADMIN = {
-  email: 'admin@re.cl',
-  password: '890890',
-} as const;
-
-const isDev = process.env.NODE_ENV === 'development';
+import { getIdentity } from '@/features/cms/actions/identity.action';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
-  const [email, setEmail] = useState(isDev ? DEV_SEED_ADMIN.email : '');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const identity = await getIdentity();
+        const name = identity?.name?.trim();
+        if (!cancelled && name) {
+          setCompanyName(name);
+        }
+      } catch {
+        // Identity optional on login; keep form usable
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,21 +49,11 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (result?.error) {
-      setError(
-        isDev
-          ? 'Credenciales inválidas. En dev usa admin@re.cl / 890890 (seed). Revisa que el navegador no autocomplete otra contraseña.'
-          : 'Credenciales inválidas o sin acceso staff',
-      );
+      setError('Credenciales inválidas o sin acceso staff');
       return;
     }
     router.replace(callbackUrl.startsWith('/') ? callbackUrl : '/');
     router.refresh();
-  }
-
-  function fillDevCredentials() {
-    setEmail(DEV_SEED_ADMIN.email);
-    setPassword(DEV_SEED_ADMIN.password);
-    setError(null);
   }
 
   return (
@@ -60,23 +63,12 @@ export default function LoginPage() {
         className="w-full max-w-md space-y-4 border rounded-lg p-6"
         autoComplete="off"
       >
-        <h1 className="text-xl font-semibold">Backoffice — Iniciar sesión</h1>
-
-        {isDev ? (
-          <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-950">
-            <p className="font-medium">Dev (seed)</p>
-            <p>
-              <code>{DEV_SEED_ADMIN.email}</code> / <code>{DEV_SEED_ADMIN.password}</code>
-            </p>
-            <button
-              type="button"
-              className="mt-2 text-primary underline"
-              onClick={fillDevCredentials}
-            >
-              Rellenar credenciales
-            </button>
-          </div>
-        ) : null}
+        <div className="space-y-1 text-center sm:text-left">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
+            {companyName || 'Backoffice'}
+          </h1>
+          <p className="text-base text-muted-foreground">Iniciar sesión</p>
+        </div>
 
         <TextField
           label="Email"

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmación de interés - {{companyName}}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F3F4F6; font-family: 'Segoe UI', Arial, sans-serif;-webkit-font-smoothing: antialiased;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F3F4F6; padding: 30px 0;">
+        <tr>
+            <td align="center">
+                <!-- Contenedor Principal -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-top: 4px solid #04C9E7; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    
+                    <!-- Cabecera Logotipo -->
+                    <tr>
+                        <td align="left" style="padding: 30px 40px; background-color: #ffffff;">
+                            <h1 style="color: #1C2046; margin: 0; font-size: 22px; font-weight: bold; font-family: Arial, sans-serif;">
+                                {{companyName}}
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Cuerpo del Mensaje -->
+                    <tr>
+                        <td style="padding: 20px 40px 40px 40px;">
+                            <h2 style="color: #131615; font-size: 18px; font-weight: bold; margin-bottom: 20px;">
+                                Hemos recibido tu interés
+                            </h2>
+                            <p style="color: #131615; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+                                Hola, <strong>{{name}}</strong>.
+                            </p>
+                            <p style="color: #131615; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+                                Te confirmamos que hemos recibido correctamente tu solicitud de información sobre la siguiente propiedad. Valoramos tu interés en nuestros servicios inmobiliarios.
+                            </p>
+
+                            <!-- Información de la Propiedad -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F9FAFB; border-radius: 4px; border: 1px solid #e5e7eb; margin: 20px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="color: #1C2046; font-size: 13px; margin: 0 0 10px 0; font-weight: bold; text-transform: uppercase;">Propiedad de Interés:</p>
+                                        <p style="color: #131615; font-size: 15px; margin: 10px 0; font-weight: 600;">{{propertyTitle}}</p>
+                                        {{#if propertyCode}}
+                                        <p style="color: #6b7280; font-size: 13px; margin: 5px 0;"><strong>Código:</strong> {{propertyCode}}</p>
+                                        {{/if}}
+                                        {{#if propertyLocation}}
+                                        <p style="color: #6b7280; font-size: 13px; margin: 5px 0;"><strong>Ubicación:</strong> {{propertyLocation}}</p>
+                                        {{/if}}
+                                        {{#if propertyPrice}}
+                                        <p style="color: #6b7280; font-size: 13px; margin: 5px 0;"><strong>Precio:</strong> ${{propertyPrice}}</p>
+                                        {{/if}}
+                                        {{#if agentName}}
+                                        <p style="color: #6b7280; font-size: 13px; margin: 5px 0;"><strong>Agente:</strong> {{agentName}}</p>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Mensaje del Usuario (Si existe) -->
+                            {{#if message}}
+                            <p style="color: #131615; font-size: 15px; line-height: 1.6; margin-bottom: 15px;">
+                                <strong>Tu consulta:</strong>
+                            </p>
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #E8F5FF; border-radius: 4px; border-left: 4px solid #04C9E7; margin: 15px 0;">
+                                <tr>
+                                    <td style="padding: 15px;">
+                                        <p style="color: #131615; font-size: 14px; margin: 0; line-height: 1.5;">{{message}}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            {{/if}}
+
+                            <p style="color: #131615; font-size: 15px; line-height: 1.6; margin-bottom: 25px;">
+                                Un miembro de nuestro equipo especializado revisará los detalles de tu mensaje y se pondrá en contacto contigo a la brevedad posible para brindarte una atención personalizada.
+                            </p>
+
+                            <!-- Información de Contacto -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F0F9FF; border-radius: 4px; border-left: 4px solid #04C9E7; margin-bottom: 25px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="color: #1C2046; font-size: 13px; margin: 0 0 12px 0; font-weight: bold; text-transform: uppercase;">Datos de contacto registrados:</p>
+                                        {{#if contactPhone}}
+                                        <p style="color: #6b7280; font-size: 13px; margin: 8px 0;"><strong>📞 Teléfono:</strong> {{contactPhone}}</p>
+                                        {{/if}}
+                                        <p style="color: #6b7280; font-size: 13px; margin: 8px 0;"><strong>📧 Email:</strong> <a href="mailto:{{contactEmail}}" style="color: #04C9E7; text-decoration: none;">{{contactEmail}}</a></p>
+                                        {{#if agentName}}
+                                        <p style="color: #6b7280; font-size: 13px; margin: 8px 0;"><strong>👤 Agente de Contacto:</strong> {{agentName}}</p>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="color: #131615; font-size: 15px; line-height: 1.6; font-weight: 600; margin-bottom: 10px;">
+                                Próximos pasos:
+                            </p>
+                            <ul style="color: #131615; font-size: 14px; line-height: 1.8; margin: 0 0 25px 20px; padding: 0;">
+                                <li>Nuestro equipo revisará tu solicitud</li>
+                                <li>Te contactaremos en breve con más información</li>
+                                <li>Si tienes preguntas adicionales, no dudes en escribirnos</li>
+                            </ul>
+
+                            <!-- Nota de cierre -->
+                            <p style="color: #131615; font-size: 15px; line-height: 1.6;">
+                                Gracias por confiar en <strong>{{companyName}}</strong> para tus proyectos inmobiliarios.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Pie de página -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #F3F4F6; color: #6b7280;">
+                            <p style="font-size: 12px; margin: 0 0 5px 0;">
+                                <strong>{{companyName}} | Servicios Inmobiliarios</strong>
+                            </p>
+                            <p style="font-size: 11px; margin: 0; line-height: 1.4;">
+                                Este es un acuse de recibo automático de tu solicitud de interés. <br>
+                                © {{currentYear}} Todos los derechos reservados.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+                <!-- Fin Contenedor Principal -->
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

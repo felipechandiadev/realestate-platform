@@ -3,6 +3,7 @@
 import React from 'react';
 import { Article } from '@/features/cms/actions/articles.action';
 import ArticleCard from './ArticleCard';
+import ArticleCardSkeleton from './ArticleCardSkeleton';
 
 export interface BlogListProps {
   blogs: Article[];
@@ -19,13 +20,7 @@ export default function BlogList({
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.from({ length: 6 }).map((_, index) => (
-          <div
-            key={index}
-            className="bg-gray-200 rounded-lg overflow-hidden animate-pulse"
-            style={{ aspectRatio: '4/3' }}
-          >
-            <div className="h-full bg-gradient-to-br from-gray-200 to-gray-300" />
-          </div>
+          <ArticleCardSkeleton key={index} />
         ))}
       </div>
     );

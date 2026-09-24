@@ -1,5 +1,8 @@
+'use client';
+
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 
 interface PropertyMapWrapperProps {
   latitude: number;
@@ -10,25 +13,25 @@ interface PropertyMapWrapperProps {
   state?: string;
 }
 
-const PropertyMapClient = dynamic(
-  () => import('./PropertyMap'),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="w-full rounded-lg overflow-hidden border border-border flex items-center justify-center" style={{ height: '400px' }}>
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
-      </div>
-    ),
-  }
-);
+function MapLoadingFallback() {
+  return (
+    <div
+      className="flex w-full items-center justify-center overflow-hidden rounded-lg border border-border"
+      style={{ height: '400px' }}
+    >
+      <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
+    </div>
+  );
+}
+
+const PropertyMapClient = dynamic(() => import('./PropertyMap'), {
+  ssr: false,
+  loading: () => <MapLoadingFallback />,
+});
 
 export default function PropertyMapWrapper(props: PropertyMapWrapperProps) {
   return (
-    <Suspense fallback={
-      <div className="w-full rounded-lg overflow-hidden border border-border flex items-center justify-center" style={{ height: '400px' }}>
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
-      </div>
-    }>
+    <Suspense fallback={<MapLoadingFallback />}>
       <PropertyMapClient {...props} />
     </Suspense>
   );

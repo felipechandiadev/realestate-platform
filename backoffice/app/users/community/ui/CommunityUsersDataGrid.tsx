@@ -1,10 +1,11 @@
 'use client';
-import React, { useState } from 'react';
+
+import React, { useState, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
-import { DataGrid, type DataGridColumn, IconButton } from '@realestate/ui';
+import { DataGrid, type DataGridColumn } from '@realestate/ui';
 import type { CommunityUserGridRow } from '@/features/users/actions/users.action';
-import { useAlert } from '@/providers/AlertContext';
 import DeleteCommunityUserButton from './DeleteCommunityUserButton';
+import CommunityUserMoreButton from './CommunityUserMoreButton';
 
 type CommunityUsersDataGridProps = {
   rows: CommunityUserGridRow[];
@@ -12,7 +13,6 @@ type CommunityUsersDataGridProps = {
   title?: string;
 };
 
-// Maps backend field names to expected format
 function mapRow(row: any) {
   return {
     id: row.id,
@@ -26,8 +26,11 @@ function mapRow(row: any) {
   };
 }
 
-export default function CommunityUsersDataGrid({ rows, totalRows, title }: CommunityUsersDataGridProps) {
-  const { showAlert } = useAlert();
+function CommunityUsersDataGridInner({
+  rows,
+  totalRows,
+  title,
+}: CommunityUsersDataGridProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
@@ -37,10 +40,39 @@ export default function CommunityUsersDataGrid({ rows, totalRows, title }: Commu
   };
 
   const columns: DataGridColumn[] = [
-    { field: 'username', headerName: 'Usuario', flex: 1.2, minWidth: 150, sortable: true, filterable: true, hide: true },
-    { field: 'email', headerName: 'Email', flex: 1.4, minWidth: 200, sortable: true, filterable: true },
-    { field: 'firstName', headerName: 'Nombre', flex: 1, minWidth: 130, sortable: true, filterable: true },
-    { field: 'lastName', headerName: 'Apellido', flex: 1, minWidth: 130, sortable: true, filterable: true },
+    {
+      field: 'username',
+      headerName: 'Usuario',
+      flex: 1.2,
+      minWidth: 150,
+      sortable: true,
+      filterable: true,
+      hide: true,
+    },
+    {
+      field: 'email',
+      headerName: 'Email',
+      flex: 1.4,
+      minWidth: 200,
+      sortable: true,
+      filterable: true,
+    },
+    {
+      field: 'firstName',
+      headerName: 'Nombre',
+      flex: 1,
+      minWidth: 130,
+      sortable: true,
+      filterable: true,
+    },
+    {
+      field: 'lastName',
+      headerName: 'Apellido',
+      flex: 1,
+      minWidth: 130,
+      sortable: true,
+      filterable: true,
+    },
     {
       field: 'status',
       headerName: 'Estado',
@@ -48,11 +80,13 @@ export default function CommunityUsersDataGrid({ rows, totalRows, title }: Commu
       sortable: true,
       filterable: true,
       renderCell: (params: any) => (
-        <span className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
-          params.row.status === 'ACTIVE'
-            ? 'bg-green-100 text-green-800'
-            : 'bg-red-100 text-red-800'
-        }`}>
+        <span
+          className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${
+            params.row.status === 'ACTIVE'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+          }`}
+        >
           {params.row.status === 'ACTIVE' ? 'Activo' : 'Inactivo'}
         </span>
       ),
@@ -73,21 +107,8 @@ export default function CommunityUsersDataGrid({ rows, totalRows, title }: Commu
       sortable: false,
       filterable: false,
       actionComponent: ({ row }) => (
-        <div className="flex items-center gap-2">
-          <IconButton
-            icon="more_horiz"
-            variant="text"
-            size="sm"
-            onClick={() => {
-              showAlert({
-                message: `Ver detalles de ${row.username}`,
-                type: 'info',
-                duration: 3000,
-              });
-              // TODO: Implement view/edit user detail page
-            }}
-            title="Ver detalles"
-          />
+        <div className="flex h-full flex-shrink-0 items-center justify-center gap-1">
+          <CommunityUserMoreButton user={{ id: row.id }} />
           <DeleteCommunityUserButton
             userId={row.id}
             username={row.username}
@@ -101,21 +122,26 @@ export default function CommunityUsersDataGrid({ rows, totalRows, title }: Commu
     },
   ];
 
-  // Map rows before passing to DataGrid
   const mappedRows = rows.map(mapRow);
 
   return (
-    <>
-      <DataGrid
-        title={title || 'Usuarios de la Comunidad'}
-        columns={columns}
-        rows={mappedRows}
-        totalRows={totalRows ?? mappedRows.length}
-        fillViewport
-        data-test-id="community-users-grid"
-        limit={25}
-      />
-    </>
+    <DataGrid
+      title={title || 'Usuarios de la Comunidad'}
+      columns={columns}
+      rows={mappedRows}
+      totalRows={totalRows ?? mappedRows.length}
+      fillViewport
+      pinActionsColumn
+      data-test-id="community-users-grid"
+      limit={25}
+    />
   );
 }
 
+export default function CommunityUsersDataGrid(props: CommunityUsersDataGridProps) {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Cargando…</div>}>
+      <CommunityUsersDataGridInner {...props} />
+    </Suspense>
+  );
+}

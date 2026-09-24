@@ -43,20 +43,18 @@ export default function DeletePropertyTypeForm({ propertyType, onSuccess, onCanc
   const message = `¿Estás seguro de que deseas eliminar el tipo de propiedad "${propertyType.name}"? Esta acción no se puede deshacer.`;
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <DeleteBaseForm
-        title="Eliminar Tipo de Propiedad"
-        subtitle="Esta acción eliminará permanentemente el tipo de propiedad"
-        message={message}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        submitLabel="Eliminar Tipo de Propiedad"
-        errors={errors}
-        data-test-id="delete-property-type-form"
-        cancelButton={Boolean(onCancel)}
-        cancelButtonText="Cancelar"
-        onCancel={onCancel}
-      />
-    </div>
+    <DeleteBaseForm
+      title=""
+      subtitle="Esta acción eliminará permanentemente el tipo de propiedad"
+      message={message}
+      onSubmit={handleSubmit}
+      isSubmitting={isSubmitting}
+      submitLabel="Eliminar"
+      errors={errors}
+      data-test-id="delete-property-type-form"
+      cancelButton={Boolean(onCancel)}
+      cancelButtonText="Cancelar"
+      onCancel={onCancel}
+    />
   );
 }

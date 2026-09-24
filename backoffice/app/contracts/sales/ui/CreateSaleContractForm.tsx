@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { Loader2 } from 'lucide-react';
 import { useAlert } from '@/shared/hooks/useAlert';
 import { createContract } from '@/features/contracts/actions/contracts.action';
 import { getSalePropertiesGrid, type SalePropertyGridRow } from '@/features/properties/actions/properties.action';
@@ -361,7 +362,7 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
   if (loadingData) {
     return (
       <div className="flex justify-center items-center p-8">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
       </div>
     );
   }
@@ -388,12 +389,33 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
                 setSelectedProperty({
                   id: property.id,
                   code: property.code || 'Sin código',
-                  title: property.title || 'Sin título'
+                  title: property.title || 'Sin título',
                 });
+
+                if (property.currencyPrice === 'CLP' || property.currencyPrice === 'UF') {
+                  setCurrency(property.currencyPrice);
+                  if (property.currencyPrice === 'CLP') {
+                    setUfValue('');
+                  }
+                }
+
+                if (typeof property.price === 'number' && !Number.isNaN(property.price)) {
+                  setAmount(String(property.price));
+                }
+
+                const agentId =
+                  property.assignedAgentId ||
+                  property.assignedAgent?.id ||
+                  '';
+                setAssignedAgentId(typeof agentId === 'string' ? agentId : '');
               }
             } else {
               setPropertyId('');
               setSelectedProperty(null);
+              setAmount('');
+              setAssignedAgentId('');
+              setCurrency('CLP');
+              setUfValue('');
             }
           }}
           options={properties.map((p: SalePropertyGridRow) => ({
@@ -778,7 +800,11 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
           variant="primary"
           disabled={loading}
         >
-          {loading ? <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div> : 'Crear Contrato'}
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            'Crear Contrato'
+          )}
         </Button>
       </div>
     </form>

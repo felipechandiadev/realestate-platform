@@ -1,4 +1,5 @@
 import React from 'react';
+import { MessageSquareQuote } from 'lucide-react';
 import { listPublicTestimonials, Testimonial } from '@/features/cms/actions/testimonials.action';
 
 export default async function TestimonialsPage() {
@@ -20,9 +21,10 @@ export default async function TestimonialsPage() {
       <div className="flex flex-col items-center gap-8">
         {testimonials.length === 0 ? (
           <div className="text-center py-12">
-            <span className="material-symbols-outlined text-gray-400 mx-auto mb-4" style={{ fontSize: '64px' }}>
-              rate_review
-            </span>
+            <MessageSquareQuote
+              className="mx-auto mb-4 h-16 w-16 text-gray-400"
+              aria-hidden
+            />
             <p className="text-muted-foreground">
               No hay testimonios disponibles por ahora.
             </p>

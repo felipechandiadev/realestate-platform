@@ -32,7 +32,9 @@ export interface SalePropertyGridRow {
   operationType?: string;
   typeName?: string;
   characteristics?: string;
+  assignedAgentId?: string | null;
   assignedAgentName?: string;
+  assignedAgent?: { id?: string } | null;
   creatorName?: string;
   city?: string;
   state?: string;

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { CheckCircle, IdCard } from 'lucide-react';
 import { Person, verifyPerson, unverifyPerson, uploadDniDocument, getMultimediaUrl } from '@/features/contracts/actions/persons.action';
 import { Button } from '@realestate/ui';
 import { useAlert } from '@/providers/AlertContext';
@@ -76,13 +77,17 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
     setShowVerifyDialog(false);
 
     try {
-      await verifyPerson(person.id);
+      const verified = await verifyPerson(person.id);
       alert.showAlert({
         message: `Persona ${person.name} verificada exitosamente`,
         type: 'success',
         duration: 3000,
       });
-      router.refresh();
+      if (verified?.id && verified.id !== person.id) {
+        router.replace(`/contracts/persons/${verified.id}`);
+      } else {
+        router.refresh();
+      }
     } catch (error) {
       alert.showAlert({
         message: `Error al verificar: ${error instanceof Error ? error.message : 'Error desconocido'}`,
@@ -228,12 +233,10 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground inline-flex items-center gap-2">
             {person.name || 'Sin nombre'}
             {person.verified && (
-              <span className="ml-2 text-blue-500">
-                <span className="material-symbols-outlined align-middle">verified</span>
-              </span>
+              <CheckCircle className="h-6 w-6 text-blue-500" aria-label="Verificado" />
             )}
           </h1>
           <p className="text-muted-foreground">{person.email}</p>
@@ -275,8 +278,8 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
               <p className="text-sm text-muted-foreground">Estado</p>
               <p className="font-medium">
                 {person.verified ? (
-                  <span className="text-blue-500 flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">verified</span>
+                  <span className="text-blue-500 flex items-center gap-1.5">
+                    <CheckCircle className="h-4 w-4 shrink-0" aria-hidden />
                     Verificado
                   </span>
                 ) : (
@@ -353,7 +356,7 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
             ) : (
               <div className="space-y-2">
                 <div className="w-full max-w-md aspect-video rounded-lg flex items-center justify-center border border-dashed border-border">
-                  <span className="material-symbols-outlined text-muted-foreground text-4xl">badge</span>
+                  <IdCard className="h-12 w-12 text-muted-foreground" aria-hidden />
                 </div>
                 <input
                   ref={frontInputRef}
@@ -401,7 +404,7 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
             ) : (
               <div className="space-y-2">
                 <div className="w-full max-w-md aspect-video rounded-lg flex items-center justify-center border border-dashed border-border">
-                  <span className="material-symbols-outlined text-muted-foreground text-4xl">badge</span>
+                  <IdCard className="h-12 w-12 text-muted-foreground" aria-hidden />
                 </div>
                 <input
                   ref={rearInputRef}

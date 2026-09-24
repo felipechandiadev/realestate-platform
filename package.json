@@ -21,6 +21,7 @@
     "install:apps": "npm install",
     "install:core": "npm install --prefix core",
     "env:dev": "bash envs/sync-dev-envs.sh --force",
+    "mail:dev": "bash scripts/mail-dev.sh",
     "dev": "bash scripts/dev-all.sh",
     "dev:core": "npm run start:dev --prefix core"
   },

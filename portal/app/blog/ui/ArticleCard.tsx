@@ -1,8 +1,9 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Article } from '@/features/cms/actions/articles.action';
+import ArticleCardSkeleton from './ArticleCardSkeleton';
 
 export type ArticleCardProps = Article;
 
@@ -31,32 +32,62 @@ export default function ArticleCard({
   id,
   title,
   subtitle,
-  text,
   category,
   multimediaUrl,
   createdAt,
 }: ArticleCardProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const imageSrc = multimediaUrl || FALLBACK_IMAGE_DATA_URL;
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    setImageLoaded(false);
+    const img = imgRef.current;
+    if (img?.complete && img.naturalWidth > 0) {
+      setImageLoaded(true);
+    }
+  }, [imageSrc]);
+
   const CardInner = (
     <div
       className="relative bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group cursor-pointer"
       style={{ aspectRatio: '3/4' }}
     >
-      {/* Imagen con etiqueta img */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 z-20">
+          <ArticleCardSkeleton fill />
+        </div>
+      )}
+
       <img
-        src={multimediaUrl || FALLBACK_IMAGE_DATA_URL}
+        ref={imgRef}
+        src={imageSrc}
         alt={title}
-        className="absolute inset-0 w-full h-full object-cover"
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+        onLoad={() => setImageLoaded(true)}
         onError={(e) => {
           const img = e.target as HTMLImageElement;
-          img.src = FALLBACK_IMAGE_DATA_URL;
+          if (img.src !== FALLBACK_IMAGE_DATA_URL) {
+            img.src = FALLBACK_IMAGE_DATA_URL;
+            return;
+          }
+          setImageLoaded(true);
         }}
       />
 
-      {/* Overlay gradiente sutil en la parte inferior */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent" />
+      <div
+        className={`absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent transition-opacity duration-300 ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
 
-      {/* Badge de categoría y fecha - misma fila con space between */}
-      <div className="absolute top-4 left-4 right-4 flex justify-between items-start z-10">
+      <div
+        className={`absolute top-4 left-4 right-4 flex justify-between items-start z-10 transition-opacity duration-300 ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
         <div className="bg-white/95 backdrop-blur-sm text-gray-800 text-xs font-semibold px-3 py-1.5 rounded-full border border-white/30 shadow-sm">
           {category}
         </div>
@@ -68,8 +99,11 @@ export default function ArticleCard({
         )}
       </div>
 
-      {/* Contenido principal - parte inferior con mejor espaciado */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
+      <div
+        className={`absolute bottom-0 left-0 right-0 p-6 z-10 transition-opacity duration-300 ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
         <div className="text-left">
           <h3
             className="text-white text-xl font-bold mb-2 leading-tight"
@@ -92,7 +126,6 @@ export default function ArticleCard({
         </div>
       </div>
 
-      {/* Overlay hover sutil */}
       <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10" />
     </div>
   );

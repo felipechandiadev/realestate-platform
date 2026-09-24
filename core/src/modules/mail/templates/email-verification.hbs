@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Verificación de cuenta - {{companyName}}</title>
+    <style type="text/css">
+        * { margin: 0; padding: 0; }
+        body { margin: 0; padding: 0; min-width: 100% !important; background-color: #F3F4F6; font-family: Arial, sans-serif; }
+        table { border-collapse: collapse; border-spacing: 0; }
+        .main-table { background-color: #F3F4F6; width: 100%; }
+        .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .header { background-color: #ffffff; border-top: 4px solid #04C9E7; padding: 30px 40px; text-align: left; }
+        .header h1 { color: #1C2046; margin: 0; font-size: 22px; font-weight: bold; }
+        .body { padding: 20px 40px 40px 40px; }
+        .body h2 { color: #131615; font-size: 18px; font-weight: bold; margin-bottom: 20px; }
+        .body p { color: #131615; font-size: 15px; line-height: 1.6; margin-bottom: 20px; }
+        .button-cell { padding: 0; }
+        .button { background-color: #1C2046; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 14px; }
+        .button:hover { background-color: #0f1228; }
+        .link-section { padding: 0 40px 40px 40px; border-top: 1px solid #c1c1c2; }
+        .link-section p { color: #6b7280; font-size: 12px; margin-bottom: 10px; padding-top: 20px; }
+        .link { color: #2563a8; font-size: 12px; word-break: break-all; }
+        .important-section { padding: 0 40px 30px 40px; }
+        .important-section p { color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6; }
+        .footer { padding: 30px 40px; background-color: #F3F4F6; color: #6b7280; }
+        .footer p { font-size: 12px; margin: 0 0 5px 0; line-height: 1.4; }
+        .footer strong { color: #131615; }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F3F4F6; font-family: Arial, sans-serif;">
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #F3F4F6; padding: 30px 0;">
+        <tr>
+            <td align="center">
+                <!-- Container Principal -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-top: 4px solid #04C9E7; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td align="left" style="padding: 30px 40px; background-color: #ffffff;">
+                            <h1 style="color: #1C2046; margin: 0; font-size: 22px; font-weight: bold; font-family: Arial, sans-serif;">
+                                {{companyName}}
+                            </h1>
+                        </td>
+                    </tr>
+
+                    <!-- Body -->
+                    <tr>
+                        <td style="padding: 20px 40px 40px 40px;">
+                            <h2 style="color: #131615; font-size: 18px; font-weight: bold; margin-bottom: 20px; font-family: Arial, sans-serif;">
+                                Hola {{firstName}},
+                            </h2>
+                            <p style="color: #131615; font-size: 15px; line-height: 1.6; margin-bottom: 20px; font-family: Arial, sans-serif;">
+                                Gracias por registrarte en {{companyName}}. Para completar la configuración de tu cuenta, necesitamos que verifiques tu dirección de correo electrónico.
+                            </p>
+                            <p style="color: #131615; font-size: 15px; line-height: 1.6; margin-bottom: 30px; font-family: Arial, sans-serif;">
+                                Haz clic en el botón de abajo para verificar tu correo:
+                            </p>
+
+                            <!-- Button -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="left" style="padding: 0;">
+                                        <a href="{{verificationLink}}" target="_blank" style="background-color: #1C2046 !important; color: #ffffff !important; padding: 14px 28px !important; text-decoration: none !important; border-radius: 4px; font-weight: bold; display: inline-block; font-size: 14px; border: 1px solid #1C2046; font-family: Arial, sans-serif;">
+                                            Verificar mi correo
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Direct Link Section -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+                            <p style="color: #6b7280; font-size: 12px; margin-bottom: 10px; border-top: 1px solid #c1c1c2; padding-top: 20px; font-family: Arial, sans-serif;">
+                                Si el botón anterior no funciona, copia y pega el siguiente enlace en tu navegador:
+                            </p>
+                            <p style="color: #2563a8; font-size: 12px; word-break: break-all; font-family: Arial, sans-serif;">
+                                <a href="{{verificationLink}}" target="_blank" style="color: #2563a8; text-decoration: none;">{{verificationLink}}</a>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Important Info -->
+                    <tr>
+                        <td style="padding: 0 40px 30px 40px;">
+                            <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.6; font-family: Arial, sans-serif;">
+                                <strong style="color: #131615;">Importante:</strong> Este enlace expira en 24 horas. Si no lo utilizas, podrás solicitar un nuevo correo de verificación al intentar iniciar sesión.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px 40px; background-color: #F3F4F6; color: #6b7280;">
+                            <p style="font-size: 12px; margin: 0 0 5px 0; font-family: Arial, sans-serif;">
+                                <strong style="color: #131615;">{{companyName}}</strong>
+                            </p>
+                            <p style="font-size: 11px; margin: 0; line-height: 1.4; font-family: Arial, sans-serif;">
+                                Este mensaje se envió automáticamente. Por favor no respondas a este correo.<br>
+                                © {{currentYear}} Todos los derechos reservados.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

@@ -1,38 +1,28 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
-import { IconButton } from "@realestate/ui";
-import FullPropertyDialog from '@/features/properties/components/dialogs/fullProperty/FullPropertyDialog';
-import { useFullPropertyRevalidation } from '@/shared/hooks/useFullPropertyRevalidation';
+import React, { useCallback } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { IconButton } from '@realestate/ui';
 
 interface RentMoreButtonProps {
-  property: any;
+  property: { id: string };
 }
 
 const RentMoreButton: React.FC<RentMoreButtonProps> = ({ property }) => {
-  const [openDialogs, setOpenDialogs] = useState<Record<string, boolean>>({});
-  const { revalidate } = useFullPropertyRevalidation();
-
-  const isOpen = openDialogs[property.id] || false;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const handleOpen = useCallback(() => {
-    setOpenDialogs(prev => ({
-      ...prev,
-      [property.id]: true
-    }));
-  }, [property.id]);
-
-  const handleClose = useCallback(async () => {
-    setOpenDialogs(prev => ({
-      ...prev,
-      [property.id]: false
-    }));
-    // Revalidate the current route to refresh the rent grid
-    await revalidate();
-  }, [property.id, revalidate]);
+    const search = searchParams.toString();
+    const returnTo = `${pathname}${search ? `?${search}` : ''}`;
+    const qs = new URLSearchParams();
+    qs.set('returnTo', returnTo);
+    router.push(`/properties/rent/${encodeURIComponent(property.id)}?${qs.toString()}`);
+  }, [pathname, property.id, router, searchParams]);
 
   return (
-    <div className="flex-shrink-0 w-fit">
+    <div className="flex h-full flex-shrink-0 items-center justify-center">
       <IconButton
         icon="more_horiz"
         variant="text"
@@ -40,11 +30,6 @@ const RentMoreButton: React.FC<RentMoreButtonProps> = ({ property }) => {
         ariaLabel="Ver más detalles"
         onClick={handleOpen}
         data-test-id="rent-more-btn"
-      />
-      <FullPropertyDialog 
-        open={isOpen} 
-        onClose={handleClose}
-        propertyId={property.id}
       />
     </div>
   );

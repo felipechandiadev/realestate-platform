@@ -86,7 +86,8 @@ const DetailNotificationDialog: React.FC<DetailNotificationDialogProps> = ({
       'PAYMENT_OVERDUE': 'Pago Vencido',
       'PUBLICATION_STATUS_CHANGE': 'Cambio de Estado de Publicación',
       'CONTRACT_STATUS_CHANGE': 'Cambio de Estado de Contrato',
-      'PROPERTY_AGENT_ASSIGNMENT': 'Asignación de Agente a Propiedad'
+      'PROPERTY_AGENT_ASSIGNMENT': 'Asignación de Agente a Propiedad',
+      'PROPERTY_PUBLICATION_REQUEST': 'Solicitud de Publicación',
     };
     return typeLabels[type as keyof typeof typeLabels] || type;
   };

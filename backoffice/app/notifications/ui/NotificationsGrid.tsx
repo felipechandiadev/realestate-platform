@@ -128,7 +128,8 @@ export default function NotificationsGrid({ rows, totalRows, title, userId }: No
           'PAYMENT_OVERDUE': 'Pago Vencido',
           'PUBLICATION_STATUS_CHANGE': 'Cambio de Estado',
           'CONTRACT_STATUS_CHANGE': 'Cambio de Contrato',
-          'PROPERTY_AGENT_ASSIGNMENT': 'Asignación de Agente'
+          'PROPERTY_AGENT_ASSIGNMENT': 'Asignación de Agente',
+          'PROPERTY_PUBLICATION_REQUEST': 'Solicitud de Publicación',
         };
         return (
           <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">

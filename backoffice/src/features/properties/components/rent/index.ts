@@ -1,1 +1,4 @@
-// Rent-specific components will go here
+export {
+  PropertyRentDetailPage,
+  type PropertyRentDetailHeader,
+} from './detail';

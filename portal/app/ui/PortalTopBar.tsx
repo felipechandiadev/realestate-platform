@@ -359,7 +359,7 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
           )}
           {!logoError && (
             <img
-              src={identity?.urlLogo || "/PropLogo2.png"}
+              src={identity?.urlLogo || "/logo.svg"}
               alt="Logo"
               className={`w-10 h-10 object-contain ${logoLoading ? "hidden" : ""}`}
               data-test-id="topBarLogo"
@@ -441,7 +441,7 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
           size="xs"
         >
           <LoginForm
-            logoSrc={identity?.urlLogo || "/PropLogo2.png"}
+            logoSrc={identity?.urlLogo || "/logo.svg"}
             companyName={identity?.name}
             onClose={() => setLoginDialogOpen(false)}
             onRegisterClick={() => {

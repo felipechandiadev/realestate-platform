@@ -12,7 +12,7 @@ export interface CreateNotificationData {
   isSystem: boolean;
   message: string;
   targetUserIds: string[];
-  type: 'INTEREST' | 'CONTACT' | 'PAYMENT_RECEIPT' | 'PAYMENT_OVERDUE' | 'PUBLICATION_STATUS_CHANGE' | 'CONTRACT_STATUS_CHANGE' | 'PROPERTY_AGENT_ASSIGNMENT';
+  type: 'INTEREST' | 'CONTACT' | 'PAYMENT_RECEIPT' | 'PAYMENT_OVERDUE' | 'PUBLICATION_STATUS_CHANGE' | 'CONTRACT_STATUS_CHANGE' | 'PROPERTY_AGENT_ASSIGNMENT' | 'PROPERTY_PUBLICATION_REQUEST';
   targetMails?: string[];
   multimediaId?: string;
 }

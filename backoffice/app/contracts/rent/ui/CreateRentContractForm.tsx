@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { Loader2 } from 'lucide-react';
 import { useAlert } from '@/shared/hooks/useAlert';
 import { createContract } from '@/features/contracts/actions/contracts.action';
 import { listAvailableRentProperties, type AvailableRentProperty } from '@/features/properties/actions/properties.action';
@@ -476,7 +477,7 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
   if (loadingData) {
     return (
       <div className="flex justify-center items-center p-8">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
       </div>
     );
   }
@@ -935,7 +936,11 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={loading}>
-          {loading ? <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div> : 'Crear Contrato'}
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          ) : (
+            'Crear Contrato'
+          )}
         </Button>
       </div>
     </form>

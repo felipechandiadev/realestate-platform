@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { FileText, Paperclip } from 'lucide-react';
 import { useAlert } from '@/providers/AlertContext';
 import { DotProgress } from "@realestate/ui";
 import { 
@@ -132,9 +133,7 @@ export default function PersonDocumentsList({ personId, compact = false }: Perso
         onMouseLeave={() => setExpandedTooltip(false)}
       >
         <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-border bg-white text-[11px] font-semibold text-foreground cursor-pointer shadow-sm">
-          <span className="material-symbols-outlined text-[12px] leading-none">
-            description
-          </span>
+          <FileText className="h-3 w-3 shrink-0" aria-hidden />
           <span className="leading-none">{documents.length}</span>
         </div>
 
@@ -152,9 +151,9 @@ export default function PersonDocumentsList({ personId, compact = false }: Perso
                     <div key={doc.id} className="flex items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2 flex-1 min-w-0">
                         {doc.multimedia ? (
-                          <span className="material-symbols-outlined text-blue-500 text-sm">attach_file</span>
+                          <Paperclip className="h-3.5 w-3.5 text-blue-500 shrink-0" aria-hidden />
                         ) : (
-                          <span className="material-symbols-outlined text-muted-foreground text-sm">description</span>
+                          <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
                         )}
                         <span className="truncate text-foreground">{doc.title}</span>
                       </div>
@@ -178,7 +177,7 @@ export default function PersonDocumentsList({ personId, compact = false }: Perso
       <div className="space-y-3">
         {documents.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <span className="material-symbols-outlined text-4xl mb-2">description</span>
+            <FileText className="mx-auto mb-2 h-10 w-10" aria-hidden />
             <p>No hay documentos registrados</p>
           </div>
         ) : (
@@ -194,9 +193,9 @@ export default function PersonDocumentsList({ personId, compact = false }: Perso
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3 flex-1 min-w-0">
                     {doc.multimedia ? (
-                      <span className="material-symbols-outlined text-blue-500 text-2xl">attach_file</span>
+                      <Paperclip className="h-6 w-6 text-blue-500 shrink-0" aria-hidden />
                     ) : (
-                      <span className="material-symbols-outlined text-muted-foreground text-2xl">description</span>
+                      <FileText className="h-6 w-6 text-muted-foreground shrink-0" aria-hidden />
                     )}
                     
                     <div className="flex-1 min-w-0">

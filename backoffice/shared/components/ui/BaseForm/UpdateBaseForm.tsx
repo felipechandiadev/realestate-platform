@@ -159,7 +159,9 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 
 	useEffect(() => {
 		setValues(initialState);
-	}, [initialState]);
+		// Sync only when content of initialState changes (stable identity from callers preferred).
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- compare by value to avoid reset on new object refs
+	}, [JSON.stringify(initialState)]);
 
 	const handleChange = (field: string, value: unknown) => {
 		setValues((prev) => ({ ...prev, [field]: value }));
@@ -290,9 +292,10 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 				label={field.label}
 				value={field.formatFn ? field.formatFn(getStringValue(fieldValue)) : getStringValue(fieldValue)}
 				onChange={e => handleChange(field.name, field.formatFn ? field.formatFn(e.target.value) : e.target.value)}
-				type={field.type}
+				type={field.type === 'textarea' ? 'text' : field.type}
+				multiline={field.type === 'textarea' || Boolean(field.multiline)}
 				name={field.name}
-				rows={field.multiline ? field.rows : undefined}
+				rows={field.rows}
 				startIcon={field.startIcon}
 				endIcon={field.endIcon}
 				required={field.required}

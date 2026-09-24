@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Bed, Bath, Home, Maximize2, ParkingSquare, Heart, Plus } from 'lucide-react';
+import { Bed, Bath, Home, Maximize2, ParkingSquare, Heart, Plus, Loader2 } from 'lucide-react';
 import { getPublishedPropertyPublic, notifyPropertyInterest, getRelatedProperties, Property } from './actions';
 import { Button } from '@realestate/ui';
 import { TextField } from '@realestate/ui';
@@ -541,7 +541,7 @@ export default function PropertyDetailClient({
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                       <span className="ml-2">Enviando...</span>
                     </>
                   ) : (

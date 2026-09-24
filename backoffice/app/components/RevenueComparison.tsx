@@ -14,8 +14,14 @@ export default function RevenueComparison({
   previousYearSameMonth = 11.8,
   monthName = 'Junio'
 }: RevenueComparisonProps) {
-  const variation = ((currentMonth - previousYearSameMonth) / previousYearSameMonth) * 100
-  const isPositive = variation >= 0
+  const hasComparableBase = previousYearSameMonth > 0
+  const variation = hasComparableBase
+    ? ((currentMonth - previousYearSameMonth) / previousYearSameMonth) * 100
+    : null
+  const isPositive = variation === null ? null : variation >= 0
+  const maxAmount = Math.max(currentMonth, previousYearSameMonth, 0)
+  const currentBarWidth =
+    maxAmount > 0 ? `${(currentMonth / maxAmount) * 100}%` : '0%'
 
   return (
     <Card className="bg-white border border-gray-200 rounded-lg p-6 h-full">
@@ -44,20 +50,24 @@ export default function RevenueComparison({
         <div className="pt-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-600">Variación anual</span>
-            <div className="flex items-center gap-2">
-              <span
-                className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
-                  isPositive ? 'bg-green-100' : 'bg-red-100'
-                }`}
-              >
-                <span className={`text-lg font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {isPositive ? '↑' : '↓'}
+            {variation === null ? (
+              <span className="text-lg font-bold text-gray-500">—</span>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
+                    isPositive ? 'bg-green-100' : 'bg-red-100'
+                  }`}
+                >
+                  <span className={`text-lg font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                    {isPositive ? '↑' : '↓'}
+                  </span>
                 </span>
-              </span>
-              <span className={`text-lg font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                {isPositive ? '+' : ''}{variation.toFixed(1)}%
-              </span>
-            </div>
+                <span className={`text-lg font-bold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {isPositive ? '+' : ''}{variation.toFixed(1)}%
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Visual bar */}
@@ -67,20 +77,31 @@ export default function RevenueComparison({
               <div className="flex-1 bg-gray-200 rounded-lg overflow-hidden">
                 <div
                   className="bg-gray-400 h-full rounded-lg transition-all"
-                  style={{ width: '100%' }}
+                  style={{
+                    width:
+                      maxAmount > 0
+                        ? `${(previousYearSameMonth / maxAmount) * 100}%`
+                        : '0%',
+                  }}
                 />
               </div>
               {/* Current year bar */}
               <div className="flex-1 bg-blue-200 rounded-lg overflow-hidden">
                 <div
-                  className={`h-full rounded-lg transition-all ${isPositive ? 'bg-green-500' : 'bg-red-500'}`}
-                  style={{ width: `${(currentMonth / Math.max(currentMonth, previousYearSameMonth)) * 100}%` }}
+                  className={`h-full rounded-lg transition-all ${
+                    isPositive === null
+                      ? 'bg-gray-400'
+                      : isPositive
+                        ? 'bg-green-500'
+                        : 'bg-red-500'
+                  }`}
+                  style={{ width: currentBarWidth }}
                 />
               </div>
             </div>
             <div className="flex gap-2 mt-2 text-xs text-gray-500">
-              <span>Año anterior</span>
-              <span>Año actual</span>
+              <span className="flex-1">Año anterior</span>
+              <span className="flex-1">Año actual</span>
             </div>
           </div>
         </div>

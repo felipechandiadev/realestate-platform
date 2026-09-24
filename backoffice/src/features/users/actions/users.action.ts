@@ -701,6 +701,8 @@ export async function setUserStatus(id: string, status: 'ACTIVE' | 'INACTIVE'): 
 
 		const result = await response.json();
 		revalidatePath('/users/administrators', 'page');
+		revalidatePath('/users/community', 'page');
+		revalidatePath(`/users/community/${id}`, 'page');
 		return { success: true, data: result };
 	} catch (error) {
 		console.error('Error setting status:', error);
@@ -1184,5 +1186,286 @@ export async function getUserFavoriteIds(userId: string): Promise<string[]> {
   } catch (error) {
     console.error('[getUserFavoriteIds] unexpected error', error);
     return [];
+  }
+}
+
+export type CommunityUserDetailHeader = {
+  id: string;
+  username: string;
+  email: string;
+  displayName: string;
+  status: string | null;
+  emailVerified: boolean;
+  role: string;
+  createdAt: string | null;
+  updatedAt: string | null;
+  lastLogin: string | null;
+  personalInfo: {
+    firstName?: string | null;
+    lastName?: string | null;
+    phone?: string | null;
+    avatarUrl?: string | null;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
+    profession?: string | null;
+    company?: string | null;
+    nationality?: string | null;
+    gender?: string | null;
+    maritalStatus?: string | null;
+  } | null;
+  person: {
+    id: string;
+    dni?: string | null;
+    address?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    verified: boolean;
+    dniCardFrontUrl?: string | null;
+    dniCardRearUrl?: string | null;
+  } | null;
+};
+
+/**
+ * Header + profile payload for community user detail (COMMUNITY only).
+ */
+export async function getCommunityUserHeader(id: string): Promise<{
+  success: boolean;
+  data?: CommunityUserDetailHeader;
+  error?: string;
+}> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.accessToken) {
+      return { success: false, error: 'No authenticated' };
+    }
+
+    const [userRes, profileRes] = await Promise.all([
+      fetch(`${env.backendApiUrl}/users/${id}`, {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      }),
+      fetch(`${env.backendApiUrl}/users/${id}/profile`, {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      }),
+    ]);
+
+    if (!userRes.ok) {
+      const errorData = await userRes.json().catch(() => null);
+      return {
+        success: false,
+        error: errorData?.message || `Failed to fetch user: ${userRes.status}`,
+      };
+    }
+
+    const user = await userRes.json();
+    const profile = profileRes.ok ? await profileRes.json() : null;
+    const role = String(user.role || profile?.role || '').toUpperCase();
+    if (role && role !== 'COMMUNITY') {
+      return { success: false, error: 'NOT_COMMUNITY_USER' };
+    }
+
+    const personalInfo = profile?.personalInfo ?? user.personalInfo ?? null;
+    const firstName = personalInfo?.firstName?.trim() || '';
+    const lastName = personalInfo?.lastName?.trim() || '';
+    const displayName =
+      [firstName, lastName].filter(Boolean).join(' ') ||
+      user.username ||
+      user.email ||
+      'Usuario';
+
+    return {
+      success: true,
+      data: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        displayName,
+        status: user.status ?? null,
+        emailVerified: Boolean(user.emailVerified),
+        role: role || 'COMMUNITY',
+        createdAt: user.createdAt ? String(user.createdAt) : null,
+        updatedAt: user.updatedAt ? String(user.updatedAt) : null,
+        lastLogin: user.lastLogin ? String(user.lastLogin) : null,
+        personalInfo: personalInfo
+          ? {
+              firstName: personalInfo.firstName ?? null,
+              lastName: personalInfo.lastName ?? null,
+              phone: personalInfo.phone ?? null,
+              avatarUrl: personalInfo.avatarUrl ?? null,
+              address: personalInfo.address ?? null,
+              city: personalInfo.city ?? null,
+              state: personalInfo.state ?? null,
+              country: personalInfo.country ?? null,
+              profession: personalInfo.profession ?? null,
+              company: personalInfo.company ?? null,
+              nationality: personalInfo.nationality ?? null,
+              gender: personalInfo.gender ?? null,
+              maritalStatus: personalInfo.maritalStatus ?? null,
+            }
+          : null,
+        person: profile?.person
+          ? {
+              id: profile.person.id,
+              dni: profile.person.dni ?? null,
+              address: profile.person.address ?? null,
+              phone: profile.person.phone ?? null,
+              email: profile.person.email ?? null,
+              verified: Boolean(profile.person.verified),
+              dniCardFrontUrl: profile.person.dniCardFrontUrl ?? null,
+              dniCardRearUrl: profile.person.dniCardRearUrl ?? null,
+            }
+          : null,
+      },
+    };
+  } catch (error) {
+    console.error('Error fetching community user header:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Resend email verification for a community user (staff).
+ */
+export async function resendCommunityUserVerification(
+  id: string,
+  email: string,
+): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.accessToken) {
+      return { success: false, error: 'No authenticated' };
+    }
+
+    const response = await fetch(
+      `${env.backendApiUrl}/auth/resend-verification-email`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      return {
+        success: false,
+        error:
+          errorData?.message ||
+          `Failed to resend verification: ${response.status}`,
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error resending verification:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+export type CommunityUserInterestItem = {
+  id: string;
+  message?: string | null;
+  interestedUserMessage?: string | null;
+  interestedUserEmail?: string | null;
+  createdAt?: string | null;
+  propertyId?: string | null;
+};
+
+/**
+ * INTEREST notifications linked to this community user (sender or email match).
+ */
+export async function getCommunityUserInterestNotifications(
+  userId: string,
+  email: string,
+): Promise<{ success: boolean; data?: CommunityUserInterestItem[]; error?: string }> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.accessToken) {
+      return { success: false, error: 'No authenticated' };
+    }
+
+    const response = await fetch(
+      `${env.backendApiUrl}/notifications?page=1&limit=100`,
+      {
+        headers: {
+          Authorization: `Bearer ${session.accessToken}`,
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      },
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      return {
+        success: false,
+        error: errorData?.message || `Failed to fetch notifications: ${response.status}`,
+      };
+    }
+
+    const payload = await response.json();
+    const rows: any[] = Array.isArray(payload)
+      ? payload
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : [];
+
+    const emailNorm = email.trim().toLowerCase();
+    const filtered = rows
+      .filter((n) => {
+        if (n.type !== 'INTEREST') return false;
+        if (n.senderId && n.senderId === userId) return true;
+        if (
+          n.interestedUserEmail &&
+          String(n.interestedUserEmail).trim().toLowerCase() === emailNorm
+        ) {
+          return true;
+        }
+        return false;
+      })
+      .map((n) => {
+        const propertyMatch =
+          typeof n.message === 'string'
+            ? n.message.match(/\[PROPERTY_ID:\s*([^\]]+)\]/i)
+            : null;
+        return {
+          id: n.id,
+          message: n.message ?? null,
+          interestedUserMessage: n.interestedUserMessage ?? null,
+          interestedUserEmail: n.interestedUserEmail ?? null,
+          createdAt: n.createdAt ? String(n.createdAt) : null,
+          propertyId: propertyMatch?.[1]?.trim() || null,
+        } satisfies CommunityUserInterestItem;
+      });
+
+    return { success: true, data: filtered };
+  } catch (error) {
+    console.error('Error fetching community interest notifications:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
   }
 }

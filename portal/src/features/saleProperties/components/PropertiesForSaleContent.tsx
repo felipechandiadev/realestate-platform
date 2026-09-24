@@ -28,7 +28,7 @@ export default function PropertiesForSaleContent({
     limit: 9,
   });
   const [propertiesData, setPropertiesData] = useState<SalePropertiesResponse | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

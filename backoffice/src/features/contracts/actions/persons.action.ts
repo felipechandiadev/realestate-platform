@@ -272,11 +272,17 @@ export async function verifyPerson(id: string): Promise<Person> {
     })
 
     if (!response.ok) {
-      const error = await response.json()
+      const error = await response.json().catch(() => ({}))
       throw new Error(error.message || `Failed to verify person: ${response.status}`)
     }
 
-    return response.json()
+    const person = await response.json()
+    revalidatePath('/contracts/persons')
+    revalidatePath(`/contracts/persons/${id}`)
+    if (person?.id && person.id !== id) {
+      revalidatePath(`/contracts/persons/${person.id}`)
+    }
+    return person
   } catch (error) {
     console.error('Error verifying person:', error)
     throw error
@@ -395,7 +401,29 @@ async function getUserAsPerson(id: string): Promise<Person | null> {
     return null
   }
 
-  const user = result.data as UserLike
+  const user = result.data as UserLike & { personId?: string | null }
+  // Si el usuario ya tiene ficha de persona, preferir esa entidad.
+  if (user.personId) {
+    try {
+      const session = await getServerSession(authOptions)
+      if (session?.accessToken) {
+        const response = await fetch(`${env.backendApiUrl}/people/${user.personId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${session.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store',
+        })
+        if (response.ok) {
+          return response.json()
+        }
+      }
+    } catch {
+      // fall through to synthetic person
+    }
+  }
+
   const nowIso = new Date().toISOString()
   const firstName = user.personalInfo?.firstName?.trim() ?? ''
   const lastName = user.personalInfo?.lastName?.trim() ?? ''

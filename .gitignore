@@ -2,42 +2,69 @@
 # GENERAL
 # ==========================================
 .DS_Store
-.env
-.env.local
-.env.*.local
-*.log
-*.logs
-.idea
-.vscode
+.AppleDouble
+.LSOverride
+.idea/
+.vscode/
 *.swp
 *.swo
 *~
 .cache
 .turbo
+.eslintcache
+.nyc_output/
+coverage/
+**/coverage/
+jest-results.json
+
+# ==========================================
+# SECRETS & ENV (never commit real credentials)
+# ==========================================
+.env
+.env.*
+!**/.env.example
+!envs/*.env.example
+!**/*.env.example
+core/.env
+portal/.env
+backoffice/.env
+legacy/**/.env
 *.pem
+*.cer
+*.csr
+*.jks
+**/keys/
+core/keys/
+keys/
 
 # ==========================================
 # NODE & NPM
 # ==========================================
 node_modules/
+**/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
-pnpm-lock.yaml
+pnpm-debug.log*
+lerna-debug.log*
 .npm
 .yarn/cache
 .yarn/unplugged
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+# Keep lockfiles for reproducible installs (do not ignore package-lock.json)
 
 # ==========================================
 # CORE / BACKEND (NestJS)
 # ==========================================
 core/dist/
 core/build/
+core/tmp/
+core/coverage/
+core/*.tsbuildinfo
 core/.env.local
+core/.env.*.local
 backend/dist/
 backend/build/
 backend/.env.local
@@ -51,7 +78,6 @@ backend/node_modules/
 backend/.turbo/
 backend/.next/
 backend/out/
-backend/tsconfig.build.json.tsbuildinfo
 
 # ==========================================
 # FRONTEND APPS (Next.js)
@@ -59,13 +85,13 @@ backend/tsconfig.build.json.tsbuildinfo
 portal/.next/
 portal/out/
 portal/.env.local
-portal/node_modules/
 backoffice/.next/
 backoffice/out/
 backoffice/.env.local
-backoffice/node_modules/
 legacy/**/node_modules/
 legacy/**/.next/
+legacy/**/out/
+legacy/**/dist/
 frontend/.next/
 frontend/out/
 frontend/.env.local
@@ -81,36 +107,16 @@ frontend/.cache/
 frontend/cookies.txt
 
 # ==========================================
-# DATABASE
+# DATABASE LOCAL ARTIFACTS
 # ==========================================
-database/
 *.db
 *.sqlite
 *.sqlite3
-*.sql
+# Root-only dump folder (keep core/database seeders tracked)
+/database/
 
 # ==========================================
-# IDE & EDITORS
-# ==========================================
-.vscode/
-.idea/
-*.sublime-project
-*.sublime-workspace
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
-.DS_Store
-.AppleDouble
-.LSOverride
-*.cer
-*.csr
-*.jks
-
-# ==========================================
-# OS SPECIFIC
+# OS
 # ==========================================
 Thumbs.db
 .DS_Store
@@ -121,20 +127,23 @@ Thumbs.db
 ehthumbs.db
 
 # ==========================================
-# BUILD ARTIFACTS & TEMPORARY FILES
+# BUILD / TEMP
 # ==========================================
-.env.production
-.env.development
-jest-results.json
-.eslintcache
-.nyc_output/
-./coverage/
+*.log
+*.logs
+tmp/
+temp/
+*.pid
+*.seed
+*.pid.lock
 
 # ==========================================
-# PROJECT SPECIFIC
+# PROJECT MEDIA / LOCAL UPLOADS
 # ==========================================
-keys/
 public/docs/
 public/properties/
 public/web/
 project/documentsSample/
+core/public/docs/
+core/public/properties/
+core/public/web/

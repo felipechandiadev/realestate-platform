@@ -133,7 +133,7 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
       {companyName && (
         <h2 className="text-2xl font-bold text-center mt-4">{companyName}</h2>
       )}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <TextField
           label="Correo electrónico"
           type="email"
@@ -154,7 +154,7 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
           className="w-full"
           data-test-id="portal-login-password"
         />
-        <div className="flex justify-end mt-2">
+        <div className="flex justify-end -mt-2">
           <Link
             href="/forgot-password"
             className="text-xs text-primary hover:underline"

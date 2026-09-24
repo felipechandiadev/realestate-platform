@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import UpdateBaseForm, { BaseUpdateFormField } from '@/shared/components/ui/BaseForm/UpdateBaseForm';
 import { updatePropertyType } from '@/features/shared/propertyTypes/actions/propertyTypes.action';
 import { useAlert } from '@/providers/AlertContext';
@@ -10,44 +10,59 @@ interface UpdatePropertyTypeFormProps {
   propertyType: PropertyType;
   onSuccess?: () => void;
   onCancel?: () => void;
+  formId?: string;
+  onLoadingChange?: (loading: boolean) => void;
 }
 
-export default function UpdatePropertyTypeForm({ propertyType, onSuccess, onCancel }: UpdatePropertyTypeFormProps) {
+const fields: BaseUpdateFormField[] = [
+  {
+    name: 'name',
+    label: 'Nombre del tipo de propiedad',
+    type: 'text',
+    required: true,
+  },
+  {
+    name: 'description',
+    label: 'Descripción',
+    type: 'textarea',
+    multiline: true,
+    rows: 3,
+  },
+];
+
+export default function UpdatePropertyTypeForm({
+  propertyType,
+  onSuccess,
+  onCancel,
+  formId,
+  onLoadingChange,
+}: UpdatePropertyTypeFormProps) {
   const alert = useAlert();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
-  const fields: BaseUpdateFormField[] = [
-    {
-      name: 'name',
-      label: 'Nombre del tipo de propiedad',
-      type: 'text',
-      required: true,
-    },
-    {
-      name: 'description',
-      label: 'Descripción',
-      type: 'textarea',
-      multiline: true,
-      rows: 3,
-    },
-  ];
+  const initialState = useMemo(
+    () => ({
+      name: propertyType.name ?? '',
+      description: propertyType.description || '',
+    }),
+    [propertyType.id, propertyType.name, propertyType.description],
+  );
 
-  const initialState = {
-    name: propertyType.name,
-    description: propertyType.description || '',
+  const setSubmitting = (value: boolean) => {
+    setIsSubmitting(value);
+    onLoadingChange?.(value);
   };
 
   const handleSubmit = async (values: Record<string, any>) => {
     if (isSubmitting) return;
 
-    // Basic validation
     if (!values.name?.trim()) {
       setErrors(['El nombre es obligatorio']);
       return;
     }
 
-    setIsSubmitting(true);
+    setSubmitting(true);
     setErrors([]);
 
     try {
@@ -57,36 +72,30 @@ export default function UpdatePropertyTypeForm({ propertyType, onSuccess, onCanc
       });
 
       alert.success('Tipo de propiedad actualizado exitosamente');
-
-      // Call success callback
-      if (onSuccess) {
-        onSuccess();
-        return;
-      }
-
-      setIsSubmitting(false);
+      onSuccess?.();
     } catch (error) {
       console.error('Error updating property type:', error);
       alert.error('Error al actualizar el tipo de propiedad. Por favor, inténtalo de nuevo.');
       setErrors(['Error al actualizar el tipo de propiedad']);
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <UpdateBaseForm
-        title="Actualizar Tipo de Propiedad"
-        subtitle="Modifique el nombre y descripción del tipo de propiedad"
-        fields={fields}
-        initialState={initialState}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        submitLabel="Actualizar Tipo de Propiedad"
-        errors={errors}
-        columns={1}
-        data-test-id="update-property-type-form"
-      />
-    </div>
+    <UpdateBaseForm
+      fields={fields}
+      initialState={initialState}
+      onSubmit={handleSubmit}
+      onCancel={onCancel}
+      isSubmitting={isSubmitting}
+      submitLabel="Actualizar"
+      cancelButton={Boolean(onCancel)}
+      cancelButtonText="Cancelar"
+      errors={errors}
+      columns={1}
+      nested
+      formId={formId}
+      data-test-id="update-property-type-form"
+    />
   );
 }

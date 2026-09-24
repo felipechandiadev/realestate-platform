@@ -35,6 +35,21 @@ import { getRegiones, getComunasByRegion } from '@/features/shared/common/action
 import { listPropertyTypesPublic, PropertyTypeWithFeatures, getPropertyTypeCharacteristicsPublic, publishPropertyPublic } from '@/features/shared/properties/actions/properties.action';
 import { predictPropertyValue, PredictPropertyResult } from '@/features/shared/predictions/actions/predict.action';
 import { useAuth } from '@/app/providers';
+import {
+  Bath,
+  Bed,
+  Calculator,
+  ChartColumn,
+  BarChart3,
+  Home,
+  Info,
+  Lightbulb,
+  Loader2,
+  MapPin,
+  RefreshCw,
+  Send,
+  Upload,
+} from 'lucide-react';
 
 // ========================================
 // Types
@@ -153,26 +168,26 @@ function ValuationResultCard({
           
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-rounded text-primary text-lg">home</span>
+              <Home className="h-5 w-5 text-primary shrink-0" aria-hidden />
               <span>{propertyType}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-rounded text-primary text-lg">location_on</span>
+              <MapPin className="h-5 w-5 text-primary shrink-0" aria-hidden />
               <span>{location}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="material-symbols-rounded text-primary text-lg">home</span>
+              <Home className="h-5 w-5 text-primary shrink-0" aria-hidden />
               <span>{characteristics.m2} m²</span>
             </div>
             {characteristics.habitaciones > 0 && (
               <div className="flex items-center gap-2">
-                <span className="material-symbols-rounded text-primary text-lg">bed</span>
+                <Bed className="h-5 w-5 text-primary shrink-0" aria-hidden />
                 <span>{characteristics.habitaciones} hab.</span>
               </div>
             )}
             {characteristics.banos > 0 && (
               <div className="flex items-center gap-2">
-                <span className="material-symbols-rounded text-primary text-lg">bathtub</span>
+                <Bath className="h-5 w-5 text-primary shrink-0" aria-hidden />
                 <span>{characteristics.banos} baños</span>
               </div>
             )}
@@ -182,7 +197,7 @@ function ValuationResultCard({
         {/* Call to action */}
         <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <span className="material-symbols-outlined text-primary text-2xl">lightbulb</span>
+            <Lightbulb className="h-6 w-6 text-primary shrink-0" aria-hidden />
             <div>
               <h5 className="font-semibold text-foreground">¿Te interesa publicar tu propiedad?</h5>
               <p className="text-sm text-muted-foreground mt-1">
@@ -201,7 +216,7 @@ function ValuationResultCard({
             onClick={onPublish}
             className="flex-1"
           >
-            <span className="material-symbols-outlined mr-2">publish</span>
+            <Upload className="mr-2 h-4 w-4" aria-hidden />
             Publicar propiedad
           </Button>
           <Button
@@ -209,7 +224,7 @@ function ValuationResultCard({
             onClick={onNewValuation}
             className="flex-1"
           >
-            <span className="material-symbols-outlined mr-2">refresh</span>
+            <RefreshCw className="mr-2 h-4 w-4" aria-hidden />
             Nueva valoración
           </Button>
         </div>
@@ -567,12 +582,12 @@ export default function ValoracionPage() {
           <div className="text-center py-8 text-muted-foreground">
             {loadingCharacteristics ? (
               <div className="flex flex-col items-center gap-2">
-                <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+                <Loader2 className="h-8 w-8 animate-spin text-primary" aria-hidden />
                 <span>Cargando características...</span>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <span className="material-symbols-outlined text-4xl">info</span>
+                <Info className="h-10 w-10 text-muted-foreground" aria-hidden />
                 <span>Selecciona un tipo de propiedad en el primer paso para ver las características disponibles.</span>
               </div>
             )}
@@ -650,13 +665,9 @@ export default function ValoracionPage() {
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div className="max-w-md w-full text-center space-y-8">
           <div className="flex flex-col items-center justify-center">
-            <div className="relative mb-4">
-              <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="material-symbols-outlined text-4xl text-primary animate-pulse">
-                  calculate
-                </span>
-              </div>
+            <div className="relative mb-4 flex h-16 w-16 items-center justify-center">
+              <Loader2 className="absolute h-16 w-16 animate-spin text-primary/30" aria-hidden />
+              <Calculator className="relative h-8 w-8 text-primary animate-pulse" aria-hidden />
             </div>
             <div className="h-2 w-48 bg-muted rounded-full overflow-hidden">
               <div className="h-full bg-primary animate-pulse w-full"></div>
@@ -672,15 +683,15 @@ export default function ValoracionPage() {
 
           <div className="grid grid-cols-1 gap-4 pt-4">
             <div className="flex items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50 animate-pulse [animation-duration:2s]">
-              <span className="material-symbols-outlined text-primary">location_on</span>
+              <MapPin className="h-5 w-5 text-primary shrink-0" aria-hidden />
               <span className="text-sm font-medium">Verificando ubicación en {comunas.find(c => c.id === values.comuna)?.label}</span>
             </div>
             <div className="flex items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50 animate-pulse [animation-duration:2.5s]">
-              <span className="material-symbols-outlined text-primary">query_stats</span>
+              <ChartColumn className="h-5 w-5 text-primary shrink-0" aria-hidden />
               <span className="text-sm font-medium">Comparando con propiedades de {values.m2_construidos}m²</span>
             </div>
             <div className="flex items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50 animate-pulse [animation-duration:3s]">
-              <span className="material-symbols-outlined text-primary">analytics</span>
+              <BarChart3 className="h-5 w-5 text-primary shrink-0" aria-hidden />
               <span className="text-sm font-medium">Calculando nivel de confianza...</span>
             </div>
           </div>
@@ -782,12 +793,12 @@ export default function ValoracionPage() {
               >
                 {isPublishing ? (
                   <>
-                    <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
                     Enviando...
                   </>
                 ) : (
                   <>
-                    <span className="material-symbols-outlined mr-2">send</span>
+                    <Send className="mr-2 h-4 w-4" aria-hidden />
                     Enviar solicitud
                   </>
                 )}

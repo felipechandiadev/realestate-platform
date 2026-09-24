@@ -34,9 +34,9 @@ export default function PropertyMap({
 
     L.Marker.prototype.options.icon = defaultIcon;
 
-    // Initialize map without controls
+    // Initialize map
     const map = L.map('property-map', {
-      attributionControl: false,
+      attributionControl: true,
     }).setView([latitude, longitude], 15);
 
     const container = map.getContainer();
@@ -51,12 +51,12 @@ export default function PropertyMap({
       controlsContainer.style.position = 'relative';
     }
 
-    // Carto Light (basemap limpio)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: false,
-      maxZoom: 20,
+    // OpenStreetMap — tiles públicos sin API key
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 19,
       minZoom: 5,
-      subdomains: 'abcd',
     }).addTo(map);
 
     // Add marker

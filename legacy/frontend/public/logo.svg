@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="412px" height="412px" viewBox="0 0 412 412" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Logo</title>
+    <defs>
+        <linearGradient x1="3.90312782e-15%" y1="100%" x2="67.8326064%" y2="34.9494887%" id="linearGradient-1">
+            <stop stop-color="#242629" offset="0%"></stop>
+            <stop stop-color="#FF8A33" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="Página-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Logo">
+            <g id="Icon-Center-Image-Artwork"></g>
+            <rect id="back" fill="url(#linearGradient-1)" x="0" y="0" width="412" height="412" rx="90"></rect>
+            <rect id="Rectángulo-3" fill="#FFFFFF" x="175" y="225" width="40" height="40"></rect>
+            <rect id="Rectángulo-3" fill="#FFFFFF" x="175" y="280" width="40" height="40"></rect>
+            <rect id="Rectángulo-3" fill="#FFFFFF" x="120" y="281" width="40" height="40"></rect>
+            <rect id="Rectángulo-3" fill="#FFFFFF" x="120" y="225" width="40" height="40"></rect>
+            <rect id="Rectángulo-3" fill="#FFFFFF" x="291" y="79" width="36" height="67"></rect>
+            <polyline id="Trazado" stroke="#FFFFFF" stroke-width="40" points="46 211 206.5 59 367 211"></polyline>
+        </g>
+    </g>
+</svg>
