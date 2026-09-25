@@ -25,6 +25,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 import UpdateBaseForm, { BaseUpdateFormField, BaseUpdateFormFieldGroup } from '@/shared/components/ui/BaseForm/UpdateBaseForm';
 import { getCurrentUserProfile, updateUserProfile, updateUserAvatar, updatePerson, createPerson, uploadMultimediaDni } from '@/features/shared/users/actions/users.action';
 import { useAlert } from '@/shared/hooks/useAlert';
@@ -265,7 +266,6 @@ export default function PersonalInfoPage() {
         {
           name: 'dniCardFront',
           label: 'Foto Frente del DNI',
-          labelClassName: 'mt-6',
           type: 'image',
           currentUrl: userProfile?.person?.dniCardFrontUrl,
           maxSize: 5,
@@ -277,7 +277,6 @@ export default function PersonalInfoPage() {
         {
           name: 'dniCardRear',
           label: 'Foto Reverso del DNI',
-          labelClassName: 'mt-6',
           type: 'image',
           currentUrl: userProfile?.person?.dniCardRearUrl,
           maxSize: 5,
@@ -445,7 +444,7 @@ export default function PersonalInfoPage() {
   if (status === 'loading' || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <Loader2 className="h-10 w-10 animate-spin text-primary" aria-label="Cargando" />
       </div>
     );
   }
@@ -469,7 +468,7 @@ export default function PersonalInfoPage() {
   if (!userProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <Loader2 className="h-10 w-10 animate-spin text-primary" aria-label="Cargando" />
       </div>
     );
   }

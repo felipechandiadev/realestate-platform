@@ -20,7 +20,7 @@
 
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { getIdentity, createIdentity, updateIdentity } from '@/features/cms/actions/identity.action'
 import { env } from '@/lib/env'
 import { TextField } from '@realestate/ui'
@@ -69,6 +69,19 @@ interface Identity {
   faqs?: FAQItem[]
 }
 
+type IdentitySectionId = 'basica' | 'redes' | 'alianzas' | 'faqs'
+
+const IDENTITY_TABS: { id: IdentitySectionId; label: string }[] = [
+  { id: 'basica', label: 'Información básica' },
+  { id: 'redes', label: 'Redes sociales' },
+  { id: 'alianzas', label: 'Alianzas' },
+  { id: 'faqs', label: 'Preguntas frecuentes' },
+]
+
+function isIdentitySectionId(value: string): value is IdentitySectionId {
+  return IDENTITY_TABS.some((tab) => tab.id === value)
+}
+
 /**
  * Normaliza URLs de multimedia a rutas absolutas
  */
@@ -110,9 +123,32 @@ export default function IdentityPage() {
     faqs: []
   })
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [savingSection, setSavingSection] = useState<IdentitySectionId | null>(null)
+  const [activeSection, setActiveSection] = useState<IdentitySectionId>('basica')
   const [newLogoFile, setNewLogoFile] = useState<File | null>(null)
   const [newPartnershipLogoFiles, setNewPartnershipLogoFiles] = useState<(File | null)[]>([])
+
+  useEffect(() => {
+    const syncFromHash = () => {
+      const id = window.location.hash.replace(/^#/, '').trim()
+      if (id && isIdentitySectionId(id)) setActiveSection(id)
+    }
+    syncFromHash()
+    window.addEventListener('hashchange', syncFromHash)
+    return () => window.removeEventListener('hashchange', syncFromHash)
+  }, [])
+
+  const selectSection = useCallback((id: IdentitySectionId) => {
+    setActiveSection(id)
+    const nextHash = `#${id}`
+    if (window.location.hash !== nextHash) {
+      window.history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${window.location.search}${nextHash}`,
+      )
+    }
+  }, [])
 
   useEffect(() => {
     async function loadIdentity() {
@@ -145,65 +181,66 @@ export default function IdentityPage() {
     })
   }
 
-  const handleSave = async () => {
-    setSaving(true)
+  const saveSection = async (section: IdentitySectionId) => {
+    setSavingSection(section)
     try {
       const formData = new FormData()
 
-      // Add identity data
-      formData.append('name', identity.name)
-      formData.append('address', identity.address)
-      formData.append('phone', identity.phone)
-      formData.append('mail', identity.mail)
-      formData.append('businessHours', identity.businessHours)
-
-      formData.append('socialMedia', JSON.stringify(identity.socialMedia || {}))
-      formData.append('partnerships', JSON.stringify(identity.partnerships || []))
-      formData.append('faqs', JSON.stringify(identity.faqs || []))
-
-      // Add logo file si hay uno nuevo
-      if (newLogoFile) {
-        formData.append('logo', newLogoFile)
+      if (section === 'basica') {
+        formData.append('name', identity.name)
+        formData.append('address', identity.address)
+        formData.append('phone', identity.phone)
+        formData.append('mail', identity.mail)
+        formData.append('businessHours', identity.businessHours)
+        if (newLogoFile) formData.append('logo', newLogoFile)
       }
 
-      // Add partnership logo files que han cambiado
-      const changedPartnershipLogos: File[] = []
-      const partnershipLogoIndexes: number[] = []
-      
-      newPartnershipLogoFiles.forEach((file, index) => {
-        if (file) {
-          changedPartnershipLogos.push(file)
-          partnershipLogoIndexes.push(index)
-        }
-      })
+      if (section === 'redes') {
+        formData.append('socialMedia', JSON.stringify(identity.socialMedia || {}))
+      }
 
-      if (changedPartnershipLogos.length > 0) {
-        changedPartnershipLogos.forEach(file => {
-          formData.append('partnershipLogos', file)
+      if (section === 'alianzas') {
+        formData.append('partnerships', JSON.stringify(identity.partnerships || []))
+        const changedPartnershipLogos: File[] = []
+        const partnershipLogoIndexes: number[] = []
+        newPartnershipLogoFiles.forEach((file, index) => {
+          if (file) {
+            changedPartnershipLogos.push(file)
+            partnershipLogoIndexes.push(index)
+          }
         })
-        formData.append('partnershipLogoIndexes', JSON.stringify(partnershipLogoIndexes))
+        if (changedPartnershipLogos.length > 0) {
+          changedPartnershipLogos.forEach((file) => formData.append('partnershipLogos', file))
+          formData.append('partnershipLogoIndexes', JSON.stringify(partnershipLogoIndexes))
+        }
       }
 
-      // Create or update based on whether identity exists
-      let result
-      if (identity.id) {
-        result = await updateIdentity(identity.id, formData)
-        success('Identidad actualizada exitosamente')
-      } else {
-        result = await createIdentity(formData)
-        success('Identidad creada exitosamente')
+      if (section === 'faqs') {
+        formData.append('faqs', JSON.stringify(identity.faqs || []))
       }
 
-      // Update local state with server response to ensure ID is set
+      if (!identity.id && section !== 'basica') {
+        error('Guarda primero la información básica para crear la identidad.')
+        return
+      }
+
+      const result = identity.id
+        ? await updateIdentity(identity.id, formData)
+        : await createIdentity(formData)
+
       if (result) {
         setIdentity(result)
-        setNewLogoFile(null)
-        setNewPartnershipLogoFiles(new Array(result.partnerships?.length || 0).fill(null))
+        if (section === 'basica') setNewLogoFile(null)
+        if (section === 'alianzas') {
+          setNewPartnershipLogoFiles(new Array(result.partnerships?.length || 0).fill(null))
+        }
       }
+
+      success(identity.id ? 'Sección actualizada' : 'Identidad creada')
     } catch (err) {
-      error('Error guardando identidad')
+      error('Error guardando la sección')
     } finally {
-      setSaving(false)
+      setSavingSection(null)
     }
   }
 
@@ -272,16 +309,46 @@ export default function IdentityPage() {
     </div>
   )
 
+  const SectionSave = ({ section, label }: { section: IdentitySectionId; label: string }) => (
+    <div className="flex justify-end pt-4">
+      <Button onClick={() => saveSection(section)} disabled={savingSection !== null} variant="primary">
+        {savingSection === section ? <DotProgress className="w-4 h-4" /> : label}
+      </Button>
+    </div>
+  )
+
   return (
     <div className="p-4">
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground mb-2">Identidad de la Empresa</h1>
-        <p className="text-muted-foreground">Gestiona la información básica y redes sociales de tu empresa</p>
+        <p className="text-muted-foreground">
+          {identity.name || 'Gestiona cada sección por separado'}
+        </p>
       </div>
 
-      <div className="space-y-8">
-        {/* Información Básica */}
-        <div className="bg-card rounded-lg p-6 border border-border">
+      <nav className="flex flex-wrap border-b border-border" aria-label="Secciones de la identidad">
+        {IDENTITY_TABS.map((tab) => {
+          const isActive = tab.id === activeSection
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              className={`fs-tabs__link cursor-pointer border-0 bg-transparent ${
+                isActive ? 'fs-tabs__link--active' : 'fs-tabs__link--inactive'
+              }`}
+              onClick={() => selectSection(tab.id)}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </nav>
+
+      <div role="tabpanel" className="min-h-[16rem] pt-6">
+      {activeSection === 'basica' && (
+      <div className="bg-card rounded-lg p-6 border border-border">
           <h2 className="text-xl font-semibold mb-4">Información Básica</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TextField
@@ -338,9 +405,11 @@ export default function IdentityPage() {
               </div>
             </div>
           </div>
+          <SectionSave section="basica" label="Guardar información básica" />
         </div>
+      )}
 
-        {/* Redes Sociales */}
+      {activeSection === 'redes' && (
         <div className="bg-card rounded-lg p-6 border border-border">
           <h2 className="text-xl font-semibold mb-4">Redes Sociales</h2>
           <div className="space-y-4">
@@ -381,9 +450,11 @@ export default function IdentityPage() {
               </div>
             ))}
           </div>
+          <SectionSave section="redes" label="Guardar redes sociales" />
         </div>
+      )}
 
-        {/* Alianzas/Partners */}
+      {activeSection === 'alianzas' && (
         <div className="bg-card rounded-lg p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Alianzas y Partners</h2>
@@ -450,9 +521,11 @@ export default function IdentityPage() {
               </div>
             )}
           </div>
+          <SectionSave section="alianzas" label="Guardar alianzas" />
         </div>
+      )}
 
-        {/* Preguntas Frecuentes (FAQs) */}
+      {activeSection === 'faqs' && (
         <div className="bg-card rounded-lg p-6 border border-border">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">Preguntas Frecuentes</h2>
@@ -501,23 +574,9 @@ export default function IdentityPage() {
               </div>
             )}
           </div>
+          <SectionSave section="faqs" label="Guardar preguntas frecuentes" />
         </div>
-
-        {/* Botón Guardar */}
-        <div className="flex justify-end">
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            variant="primary"
-            size="lg"
-          >
-            {saving ? (
-              <DotProgress className="w-4 h-4" />
-            ) : (
-              'Guardar'
-            )}
-          </Button>
-        </div>
+      )}
       </div>
     </div>
   )

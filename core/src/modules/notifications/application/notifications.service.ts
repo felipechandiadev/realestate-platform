@@ -788,12 +788,29 @@ export class NotificationsService {
   }
 
   async notifyAgentAssigned(property: Property, agent: User): Promise<Notification> {
+    const code = property.code?.trim();
+    const title = property.title?.trim();
+    const location = [property.city, property.state].filter(Boolean).join(', ');
+    const amount = Number(property.price);
+    const price =
+      Number.isFinite(amount) && amount > 0
+        ? `${property.currencyPrice || 'CLP'} ${amount.toLocaleString('es-CL')}`
+        : '';
+    const description = (property.description || '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .slice(0, 180);
+    const summary = [title, location, price].filter(Boolean).join(' · ');
+    const headline = code
+      ? `Se te ha asignado la propiedad ${code}.`
+      : 'Se te ha asignado una propiedad.';
+
     const createDto: CreateNotificationDto = {
       senderType: NotificationSenderType.SYSTEM,
       senderId: undefined,
       senderName: 'Sistema',
       isSystem: true,
-      message: `Se te ha asignado la propiedad ${property.id}.`,
+      message: [headline, summary, description].filter(Boolean).join('\n'),
       targetUserIds: [agent.id],
       type: NotificationType.PROPERTY_AGENT_ASSIGNMENT,
     };

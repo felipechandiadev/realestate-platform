@@ -5,15 +5,24 @@ import {
   IsInt, 
   MaxLength, 
   IsDateString, 
-  IsUrl,
-  Min 
+  Matches,
+  Min,
+  MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { SlidePresentationDto } from './slide-presentation.dto';
 
-export class CreateSlideDto {
+const INTERNAL_OR_ABSOLUTE_URL = /^(https?:\/\/\S+|\/\S*)$/;
+
+export class CreateSlideDto extends SlidePresentationDto {
+  @IsOptional()
+  @Transform(({ value }) => (typeof value === 'string' && value.trim() === '' ? null : value))
+  @ValidateIf((_, value) => value != null && String(value).trim() !== '')
   @IsString()
+  @MinLength(3)
   @MaxLength(255)
-  title: string;
+  title?: string | null;
 
   @IsOptional()
   @IsString()
@@ -25,12 +34,13 @@ export class CreateSlideDto {
   multimediaUrl?: string;
 
   @IsOptional()
-  @IsUrl({ require_protocol: true }, { 
-    message: 'Debe ser una URL válida con protocolo (http:// o https://)' 
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @ValidateIf((_, value) => value != null && String(value).trim() !== '')
+  @Matches(INTERNAL_OR_ABSOLUTE_URL, {
+    message: 'La URL debe ser http(s) o una ruta interna que empiece con /',
   })
   @MaxLength(500)
-  @Transform(({ value }) => value?.trim() === '' ? null : value?.trim())
-  linkUrl?: string;
+  linkUrl?: string | null;
 
   @IsOptional()
   @IsInt()

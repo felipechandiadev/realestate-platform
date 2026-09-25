@@ -56,7 +56,7 @@ export class SlideService {
     return this.findActiveUseCase.execute(search);
   }
 
-  async findPublicActive(): Promise<Slide[]> {
+  async findPublicActive() {
     return this.findPublicActiveUseCase.execute();
   }
 

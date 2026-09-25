@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Home, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import ContactDialog from '@/shared/components/ui/ContactDialog/ContactDialog'
 
 export default function NavBar() {
@@ -33,13 +33,6 @@ export default function NavBar() {
   return (
     <nav className="w-full bg-background" aria-label="Main navigation">
       <ul className="flex items-center justify-center gap-2 md:gap-6 px-2 md:px-4 py-1.5 md:py-3">
-        {/* --- Home Link --- */}
-        <li>
-          <button onClick={() => router.push('/')} className="flex items-center gap-1 md:gap-2 text-xs md:text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide">
-            <Home size={20} className="md:w-6 md:h-6 text-primary" />
-          </button>
-        </li>
-
         {/* --- DROPDOWN PROPIEDADES --- */}
         <li className="relative" onBlur={handleBlur}>
           <button

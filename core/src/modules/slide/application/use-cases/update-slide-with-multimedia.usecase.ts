@@ -3,6 +3,7 @@ import { SlideRepository } from '../../domain/slide.repository';
 import { Slide } from '../../domain/slide.entity';
 import { MultimediaService } from '../../../multimedia/application/multimedia.service';
 import { StaticFilesService } from '../../../multimedia/infrastructure/storage/static-files.service';
+import { normalizeSlideInput } from '../../slide-presentation';
 
 @Injectable()
 export class UpdateSlideWithMultimediaUseCase {
@@ -34,6 +35,8 @@ export class UpdateSlideWithMultimediaUseCase {
       }
       newMultimediaUrl = await this.multimediaService.uploadFileToPath(file, 'web/slides');
     }
+
+    normalizeSlideInput(updateSlideDto);
 
     if (updateSlideDto.multimediaUrl && !updateSlideDto.multimediaUrl.startsWith('http')) {
       updateSlideDto.multimediaUrl = this.staticFilesService.getPublicUrl(

@@ -124,6 +124,9 @@ export class Identity {
   @Type(() => FAQItem)
   faqs?: FAQItem[];
 
+  @Column({ name: 'hero_autoplay_seconds', type: 'smallint', default: 6 })
+  heroAutoplaySeconds: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

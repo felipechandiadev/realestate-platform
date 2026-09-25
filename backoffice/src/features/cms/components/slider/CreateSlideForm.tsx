@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import CreateBaseForm, { BaseFormField } from '@/shared/components/ui/BaseForm/CreateBaseForm';
+import React, { useEffect, useMemo, useState } from 'react';
+import CreateBaseForm, { BaseFormFieldGroup } from '@/shared/components/ui/BaseForm/CreateBaseForm';
 import { createSlideWithMultimedia } from '@/features/cms/actions/slides.action';
 import { useAlert } from '@/providers/AlertContext';
+import { HeroBannerPreview } from './HeroBannerPreview';
 
 interface CreateSlideFormProps {
   onSuccess?: () => void;
@@ -12,6 +13,9 @@ interface CreateSlideFormProps {
   formId?: string;
   onLoadingChange?: (isLoading: boolean) => void;
 }
+
+const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+const LINK_PATTERN = /^(https?:\/\/\S+|\/\S*)$/;
 
 export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, onLoadingChange }: CreateSlideFormProps) {
   const { showAlert } = useAlert();
@@ -22,12 +26,32 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
     title: '',
     description: '',
     linkUrl: '',
-    duration: 3,
+    ctaStyle: 'none',
+    ctaLabel: '',
+    textAlign: 'left',
+    overlayOpacity: 45,
+    textColor: '',
+    ctaButtonBgColor: '',
+    ctaButtonTextColor: '',
+    ctaLinkColor: '',
     startDate: '',
     endDate: '',
     isActive: true,
     multimediaUrl: null,
   });
+
+  const previewUrl = useMemo(() => {
+    if (values.multimediaUrl instanceof File) {
+      return URL.createObjectURL(values.multimediaUrl);
+    }
+    return null;
+  }, [values.multimediaUrl]);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
   const handleFieldChange = (field: string, value: any) => {
     setValues((prev) => ({ ...prev, [field]: value }));
@@ -36,21 +60,30 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
 
   const validateForm = (formValues: Record<string, any>): string[] => {
     const newErrors: string[] = [];
+    const title = formValues.title?.trim() ?? '';
 
-    if (!formValues.title?.trim()) {
-      newErrors.push('El título es requerido');
-    } else if (formValues.title.length < 3) {
-      newErrors.push('El título debe tener al menos 3 caracteres');
-    } else if (formValues.title.length > 255) {
-      newErrors.push('El título no puede exceder 255 caracteres');
+    if (title && (title.length < 3 || title.length > 255)) {
+      newErrors.push('El título debe tener entre 3 y 255 caracteres');
     }
 
-    if (formValues.linkUrl?.trim() && !formValues.linkUrl.match(/^https?:\/\/.+/)) {
-      newErrors.push('La URL debe ser válida (http:// o https://)');
+    if (formValues.linkUrl?.trim() && !LINK_PATTERN.test(formValues.linkUrl.trim())) {
+      newErrors.push('La URL debe ser http(s) o una ruta interna que empiece con /');
     }
 
-    if (formValues.duration < 1 || formValues.duration > 60) {
-      newErrors.push('La duración debe estar entre 1 y 60 segundos');
+    const overlay = Number(formValues.overlayOpacity);
+    if (!Number.isFinite(overlay) || overlay < 0 || overlay > 90) {
+      newErrors.push('La opacidad del overlay debe estar entre 0 y 90');
+    }
+
+    for (const color of [formValues.textColor, formValues.ctaButtonBgColor, formValues.ctaButtonTextColor, formValues.ctaLinkColor]) {
+      if (color?.trim() && !HEX_COLOR.test(color.trim())) {
+        newErrors.push('Los colores deben ser hex de 6 dígitos, por ejemplo #FFFFFF');
+        break;
+      }
+    }
+
+    if ((formValues.ctaStyle === 'button' || formValues.ctaStyle === 'link') && !formValues.ctaLabel?.trim()) {
+      newErrors.push('Escribe el texto de la acción');
     }
 
     if (formValues.startDate && formValues.endDate) {
@@ -84,22 +117,22 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
 
     try {
       const formData = new FormData();
-      formData.append('title', values.title.trim());
+      formData.append('title', values.title?.trim() || '');
       formData.append('description', values.description || '');
-
-      if (values.linkUrl?.trim()) {
-        formData.append('linkUrl', values.linkUrl.trim());
-      }
-
-      formData.append('duration', values.duration.toString());
+      if (values.linkUrl?.trim()) formData.append('linkUrl', values.linkUrl.trim());
+      formData.append('ctaStyle', values.ctaStyle || 'none');
+      if (values.ctaLabel?.trim()) formData.append('ctaLabel', values.ctaLabel.trim());
+      formData.append('textAlign', values.textAlign || 'left');
+      formData.append('overlayOpacity', String(values.overlayOpacity ?? 45));
+      if (values.textColor?.trim()) formData.append('textColor', values.textColor.trim());
+      if (values.ctaButtonBgColor?.trim()) formData.append('ctaButtonBgColor', values.ctaButtonBgColor.trim());
+      if (values.ctaButtonTextColor?.trim()) formData.append('ctaButtonTextColor', values.ctaButtonTextColor.trim());
+      if (values.ctaLinkColor?.trim()) formData.append('ctaLinkColor', values.ctaLinkColor.trim());
+      formData.append('duration', '3');
       formData.append('isActive', values.isActive.toString());
-
       if (values.startDate) formData.append('startDate', values.startDate);
       if (values.endDate) formData.append('endDate', values.endDate);
-
-      if (values.multimediaUrl) {
-        formData.append('multimedia', values.multimediaUrl);
-      }
+      if (values.multimediaUrl) formData.append('multimedia', values.multimediaUrl);
 
       const result = await createSlideWithMultimedia(formData);
 
@@ -110,100 +143,135 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
           duration: 3000,
         });
         onSuccess?.();
-        // Keep submitting true until dialog closes / remounts.
         return;
       }
 
       const errorMsg = result.error || 'Error al crear el slide';
       setErrors([errorMsg]);
-      showAlert({
-        message: errorMsg,
-        type: 'error',
-        duration: 5000,
-      });
+      showAlert({ message: errorMsg, type: 'error', duration: 5000 });
       setIsSubmitting(false);
       onLoadingChange?.(false);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error interno del servidor';
       setErrors([errorMsg]);
-      showAlert({
-        message: errorMsg,
-        type: 'error',
-        duration: 5000,
-      });
+      showAlert({ message: errorMsg, type: 'error', duration: 5000 });
       setIsSubmitting(false);
       onLoadingChange?.(false);
     }
   };
 
-  const fields: BaseFormField[] = [
+  const showCta = values.ctaStyle === 'button' || values.ctaStyle === 'link';
+  const fields: BaseFormFieldGroup[] = [
     {
-      name: 'title',
-      label: 'Título del Slide',
-      type: 'text',
-      required: true,
+      id: 'content',
+      title: 'Contenido',
+      fields: [
+        { name: 'title', label: 'Título', type: 'text' },
+        { name: 'description', label: 'Mensaje', type: 'textarea', rows: 3, multiline: true },
+        { name: 'textColor', label: 'Color del texto (#RRGGBB, vacío = blanco)', type: 'text' },
+      ],
     },
     {
-      name: 'description',
-      label: 'Descripción',
-      type: 'textarea',
-      rows: 3,
-      multiline: true,
+      id: 'action',
+      title: 'Acción',
+      fields: [
+        {
+          name: 'ctaStyle',
+          label: 'Tipo de acción',
+          type: 'select',
+          options: [
+            { id: 'none', label: 'Sin acción' },
+            { id: 'button', label: 'Botón' },
+            { id: 'link', label: 'Enlace' },
+          ],
+        },
+        ...(showCta
+          ? [
+              { name: 'ctaLabel', label: values.ctaStyle === 'button' ? 'Texto del botón' : 'Texto del enlace', type: 'text' as const },
+              { name: 'linkUrl', label: 'URL de destino', type: 'text' as const },
+              ...(values.ctaStyle === 'button'
+                ? [
+                    { name: 'ctaButtonBgColor', label: 'Fondo del botón (#RRGGBB, vacío = primario)', type: 'text' as const },
+                    { name: 'ctaButtonTextColor', label: 'Texto del botón (#RRGGBB, vacío = blanco)', type: 'text' as const },
+                  ]
+                : [
+                    { name: 'ctaLinkColor', label: 'Color del enlace (#RRGGBB, vacío = color del texto)', type: 'text' as const },
+                  ]),
+            ]
+          : []),
+      ],
     },
     {
-      name: 'multimediaUrl',
-      label: 'Imagen o Video',
-      type: 'image',
-      variant: 'banner',
-      acceptedTypes: ['image/*', 'video/*'],
-      maxSize: 10,
-      uploadPath: '/uploads/web/slides',
-      buttonText: 'Seleccionar archivo',
+      id: 'advanced',
+      title: 'Avanzado',
+      fields: [
+        { name: 'overlayOpacity', label: 'Opacidad overlay', type: 'numberStepper', min: 0, max: 90, step: 5 },
+        {
+          name: 'textAlign',
+          label: 'Alineación del texto',
+          type: 'select',
+          options: [
+            { id: 'left', label: 'Izquierda' },
+            { id: 'center', label: 'Centro' },
+            { id: 'right', label: 'Derecha' },
+          ],
+        },
+      ],
     },
     {
-      name: 'linkUrl',
-      label: 'URL de destino',
-      type: 'text',
-    },
-    {
-      name: 'duration',
-      label: 'Duración (segundos)',
-      type: 'number',
-      min: 1,
-      max: 60,
-    },
-    {
-      name: 'startDate',
-      label: 'Fecha de inicio',
-      type: 'text',
-    },
-    {
-      name: 'endDate',
-      label: 'Fecha de fin',
-      type: 'text',
-    },
-    {
-      name: 'isActive',
-      label: 'Slide activo',
-      type: 'switch',
+      id: 'publish',
+      title: 'Publicación',
+      fields: [
+        {
+          name: 'multimediaUrl',
+          label: 'Imagen o Video',
+          type: 'image',
+          variant: 'banner',
+          acceptedTypes: ['image/*', 'video/*'],
+          maxSize: 10,
+          uploadPath: '/uploads/web/slides',
+          buttonText: 'Seleccionar archivo',
+        },
+        { name: 'startDate', label: 'Fecha de inicio', type: 'text' },
+        { name: 'endDate', label: 'Fecha de fin', type: 'text' },
+        { name: 'isActive', label: 'Slide activo', type: 'switch' },
+      ],
     },
   ];
 
   return (
-    <CreateBaseForm
-      formId={formId}
-      nested={nested}
-      fields={fields}
-      values={values}
-      onChange={handleFieldChange}
-      onSubmit={handleSubmit}
-      isSubmitting={isSubmitting}
-      submitLabel="Crear Slide"
-      errors={errors}
-      cancelButton={true}
-      cancelButtonText="Cancelar"
-      onCancel={onCancel}
-      validate={validateForm}
-    />
+    <div className="space-y-4">
+      <HeroBannerPreview
+        slide={{
+          title: values.title,
+          description: values.description,
+          linkUrl: values.linkUrl,
+          ctaLabel: values.ctaLabel,
+          ctaStyle: values.ctaStyle,
+          textAlign: values.textAlign,
+          overlayOpacity: Number(values.overlayOpacity),
+          textColor: values.textColor,
+          ctaButtonBgColor: values.ctaButtonBgColor,
+          ctaButtonTextColor: values.ctaButtonTextColor,
+          ctaLinkColor: values.ctaLinkColor,
+        }}
+        mediaUrl={previewUrl}
+      />
+      <CreateBaseForm
+        formId={formId}
+        nested={nested}
+        fields={fields}
+        values={values}
+        onChange={handleFieldChange}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        submitLabel="Crear Slide"
+        errors={errors}
+        cancelButton={true}
+        cancelButtonText="Cancelar"
+        onCancel={onCancel}
+        validate={validateForm}
+      />
+    </div>
   );
 }

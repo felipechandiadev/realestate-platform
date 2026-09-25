@@ -1,447 +1,366 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { getPublicSlides, Slide } from "@/features/cms/actions/slides.action";
 import { useSliderImagesReady } from "@/providers/SliderImagesReadyContext";
-import { usePathname } from "next/navigation";
 
-interface SliderProps {
-  transitionTime?: number;
+const DEFAULT_AUTOPLAY_SECONDS = 6;
+const CROSSFADE_MS = 800;
+const EMPTY_BACKGROUND = "#F0F0F0";
+const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+
+type SlideAlign = "left" | "center" | "right";
+type SlideCtaStyle = "none" | "button" | "link";
+
+const ALIGN_CLASS: Record<SlideAlign, string> = {
+  left: "items-start text-left",
+  center: "items-center text-center mx-auto",
+  right: "items-end text-right ml-auto",
+};
+
+function normalizeHex(value?: string | null): string | null {
+  const trimmed = value?.trim() ?? "";
+  return HEX_COLOR.test(trimmed) ? trimmed : null;
 }
 
-export default function Slider({ transitionTime = 2000 }: SliderProps) {
-  const [slides, setSlides] = useState<Slide[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [current, setCurrent] = useState(0);
-  const [sliderHeight, setSliderHeight] = useState<number | null>(null);
-  const videoRefs = React.useRef<{ [key: string]: HTMLVideoElement | null }>({});
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const { setSliderImagesReady } = useSliderImagesReady();
-  const pathname = usePathname();
-  
-  // Only track slider images for the main /portal page, not /* subpages
-  const isMainPortalPage = pathname === '/';
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(url);
+}
 
-  // Calculate initial height to reach bottom of viewport
+function isExternalHref(href: string): boolean {
+  return href.startsWith("http://") || href.startsWith("https://");
+}
+
+function clampAutoplaySeconds(value?: number): number {
+  const seconds = Math.round(Number(value));
+  if (!Number.isFinite(seconds)) return DEFAULT_AUTOPLAY_SECONDS;
+  return Math.max(3, seconds);
+}
+
+function resolveCta(slide: Slide): { style: SlideCtaStyle; label: string; href: string } | null {
+  const href = slide.linkUrl?.trim() || "";
+  const label = slide.ctaLabel?.trim() || "";
+  const style = slide.ctaStyle;
+
+  if (style === "button" || style === "link") {
+    if (!label) return null;
+    return { style, label, href: href || "/" };
+  }
+
+  if (slide.linkUrl?.trim() && !label) {
+    return { style: "button", label: "Ver más", href: slide.linkUrl.trim() };
+  }
+
+  return null;
+}
+
+function usePrefersReducedMotion(): boolean {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
   useEffect(() => {
-    if (typeof window !== 'undefined' && sliderRef.current) {
-      const sliderTop = sliderRef.current.getBoundingClientRect().top;
-      const availableHeight = window.innerHeight - sliderTop;
-      setSliderHeight(availableHeight);
-    }
-  }, []); // Solo se ejecuta una vez al montar
-
-  // Helper functions
-  const isVideo = (url: string) => {
-    return /\.mp4$/i.test(url);
-  };
-
-  const goToSlide = (index: number) => {
-    setCurrent(index);
-  };
-
-  const goToPrevious = () => {
-    setCurrent((prev) => (prev - 1 + slides.length) % slides.length);
-  };
-
-  const goToNext = () => {
-    setCurrent((prev) => (prev + 1) % slides.length);
-  };
-
-  // Fetch slides data
-  useEffect(() => {
-    async function fetchSlides() {
-      try {
-        setLoading(true);
-        setError(null);
-        const result = await getPublicSlides();
-        
-        if (result.success && result.data) {
-          setSlides(result.data);
-        } else {
-          setError(result.error || 'Error al cargar slides');
-        }
-      } catch (err) {
-        setError('Error interno al cargar slides');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchSlides();
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setPrefersReducedMotion(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
   }, []);
 
-  // Wait for images to be loaded before clearing splash screen
-  // Only track on main /portal page, not on /* subpages
-  useEffect(() => {
-    // Only report image loading state on main /portal page
-    if (!isMainPortalPage) {
-      return;
+  return prefersReducedMotion;
+}
+
+function SlideCta({ slide }: { slide: Slide }) {
+  const cta = resolveCta(slide);
+  if (!cta) return null;
+
+  const external = isExternalHref(cta.href);
+  if (cta.style === "link") {
+    const color = normalizeHex(slide.ctaLinkColor) || normalizeHex(slide.textColor) || "#ffffff";
+    const className = "mt-6 inline-block text-xs font-medium underline underline-offset-4 transition hover:opacity-80 md:mt-8 md:text-base";
+    if (external) {
+      return (
+        <a href={cta.href} className={className} style={{ color }} target="_blank" rel="noopener noreferrer">
+          {cta.label}
+        </a>
+      );
     }
-
-    if (slides.length === 0) {
-      setSliderImagesReady(false);
-      return;
-    }
-
-    // Pequeño delay para permitir que React renderice las imágenes en el DOM
-    const checkImagesReady = () => {
-      const sliderContainer = sliderRef.current;
-      if (!sliderContainer) {
-        setSliderImagesReady(false);
-        return;
-      }
-
-      // Buscar todas las imágenes en el slider
-      const images = sliderContainer.querySelectorAll('img');
-      
-      if (images.length === 0) {
-        // Si no hay imágenes (todos son videos o sin media), considerar listo
-        setSliderImagesReady(true);
-        return;
-      }
-
-      // Contar cuántas imágenes ya están cargadas
-      let loadedCount = 0;
-      let totalImages = images.length;
-
-      // Función para verificar si todos han cargado
-      const checkAllLoaded = () => {
-        if (loadedCount === totalImages) {
-          setSliderImagesReady(true);
-        }
-      };
-
-      // Agregar listeners a cada imagen
-      images.forEach((img) => {
-        const imgElement = img as HTMLImageElement;
-        
-        // Si la imagen ya está cargada (cached)
-        if (imgElement.complete) {
-          loadedCount++;
-        } else {
-          // Esperar a que cargue
-          imgElement.addEventListener('load', () => {
-            loadedCount++;
-            checkAllLoaded();
-          });
-
-          // En caso de error de carga, contar como cargada para no bloquear
-          imgElement.addEventListener('error', () => {
-            loadedCount++;
-            checkAllLoaded();
-          });
-        }
-      });
-
-      // Verificar inmediatamente por si todas ya están cargadas
-      checkAllLoaded();
-    };
-
-    // Esperar a que se rendericen las imágenes
-    const timer = setTimeout(checkImagesReady, 100);
-
-    return () => clearTimeout(timer);
-  }, [slides, setSliderImagesReady, isMainPortalPage]);
-
-  // Auto-advance effect
-  useEffect(() => {
-    // No auto-advance si hay 1 o menos slides
-    if (slides.length <= 1) return;
-
-    // Obtener slide actual y su duración
-    const currentSlide = slides[current];
-    if (!currentSlide) return;
-
-  const duration = ((currentSlide.duration ?? 0) + 3) * 1000; // 3 segundos base + lo que viene del backend
-
-    console.log(`Slide ${current + 1}: "${currentSlide.title}" - Duración: ${duration}ms`); // Debug
-
-    // Configurar timeout para avanzar al siguiente slide
-    const timeoutId = setTimeout(() => {
-      setCurrent((prev) => (prev + 1) % slides.length);
-    }, duration);
-
-    // Cleanup function
-    return () => {
-      clearTimeout(timeoutId);
-    };
-  }, [current, slides]); // Solo depende de current y slides
-
-  // Effect para manejar autoplay de videos
-  useEffect(() => {
-    const currentSlide = slides[current];
-    if (currentSlide && currentSlide.multimediaUrl && isVideo(currentSlide.multimediaUrl)) {
-      const videoElement = videoRefs.current[currentSlide.id];
-      if (videoElement) {
-        // Pausar todos los otros videos primero
-        Object.keys(videoRefs.current).forEach(slideId => {
-          const video = videoRefs.current[slideId];
-          if (video && slideId !== currentSlide.id) {
-            video.pause();
-          }
-        });
-
-        // Reproducir el video actual
-        videoElement.currentTime = 0;
-        const playPromise = videoElement.play();
-        
-        if (playPromise !== undefined) {
-          playPromise.catch((error: any) => {
-            console.warn('Autoplay bloqueado por el navegador:', error);
-            // Intentar reproducir después de un pequeño delay
-            setTimeout(() => {
-              videoElement.play().catch(() => {
-                console.warn('Segunda tentativa de autoplay fallida');
-              });
-            }, 100);
-          });
-        }
-      }
-    }
-  }, [current, slides]);
-
-  // Loading state
-  // if (loading) {
-  //   return (
-  //     <div 
-  //       ref={sliderRef}
-  //       className="w-full relative overflow-hidden"
-  //       style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
-  //     >
-  //       {/* Fondo base */}
-  //       <div 
-  //         className="absolute inset-0"
-  //         style={{ 
-  //           background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
-  //         }} 
-  //       />
-        
-  //       {/* Efecto shimmer animado */}
-  //       <div 
-  //         className="absolute inset-0"
-  //         style={{
-  //           background: 'linear-gradient(135deg, transparent, rgba(4, 201, 231, 0.6), transparent)',
-  //           backgroundSize: '200% 100%',
-  //           animation: 'shimmerSlide 2.5s ease-in-out infinite',
-  //         }}
-  //       />
-  //     </div>
-  //   );
-  // }
-
-  // Error state
-  // if (error) {
-  //   return (
-  //     <div 
-  //       ref={sliderRef}
-  //       className="w-full flex items-center justify-center"
-  //       style={{ 
-  //         height: sliderHeight ? `${sliderHeight}px` : '80vh',
-  //         background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
-  //       }}
-  //     >
-  //       <div className="text-center">
-  //         <h2 className="text-xl font-semibold text-gray-700 mb-2">Error al cargar slides</h2>
-  //         <p className="text-gray-500">{error}</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  // No slides state
-  // if (slides.length === 0) {
-  //   return (
-  //     <div 
-  //       ref={sliderRef}
-  //       className="w-full flex items-center justify-center"
-  //       style={{ 
-  //         height: sliderHeight ? `${sliderHeight}px` : '80vh',
-  //         background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
-  //       }}
-  //     >
-  //       <div className="text-center">
-  //         <h2 className="text-xl font-semibold text-gray-700 mb-2">No hay slides disponibles</h2>
-  //         <p className="text-gray-500">No se encontraron slides activos para mostrar</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  const currentSlide = slides[current];
-
-  // Si no hay slide actual, retornar contenedor vacío
-  if (!currentSlide) {
     return (
-      <div 
-        ref={sliderRef}
-        className="w-full relative overflow-hidden"
-        style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
-      >
-        {/* <div 
-          className="absolute inset-0"
-          style={{ 
-            background: 'linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(255, 255, 255) 60%, rgba(4, 201, 231, 0.6) 100%)'
-          }} 
-        /> */}
-      </div>
+      <Link href={cta.href} className={className} style={{ color }}>
+        {cta.label}
+      </Link>
     );
   }
 
+  const background = normalizeHex(slide.ctaButtonBgColor);
+  const color = normalizeHex(slide.ctaButtonTextColor);
+  const className = background || color
+    ? "mt-6 inline-flex min-h-[40px] items-center rounded-lg px-4 py-2 text-xs font-semibold transition hover:opacity-95 md:mt-8 md:min-h-[44px] md:px-6 md:py-3 md:text-sm"
+    : "mt-6 inline-flex min-h-[40px] items-center rounded-lg bg-primary px-4 py-2 text-xs font-semibold text-white transition hover:opacity-95 md:mt-8 md:min-h-[44px] md:px-6 md:py-3 md:text-sm";
+  const style = {
+    ...(background ? { backgroundColor: background } : {}),
+    ...(color ? { color } : {}),
+  };
+  if (external) {
+    return (
+      <a href={cta.href} className={className} style={style} target="_blank" rel="noopener noreferrer">
+        {cta.label}
+      </a>
+    );
+  }
   return (
-    <div 
-      ref={sliderRef}
-      className="w-full max-w-none overflow-hidden relative m-0"
-      style={{ height: sliderHeight ? `${sliderHeight}px` : '80vh' }}
+    <Link href={cta.href} className={className} style={style}>
+      {cta.label}
+    </Link>
+  );
+}
+
+function SlideCopy({ slide }: { slide: Slide }) {
+  const align = ALIGN_CLASS[slide.textAlign || "left"] ?? ALIGN_CLASS.left;
+  const textColor = normalizeHex(slide.textColor);
+  const textStyle = textColor
+    ? { color: textColor }
+    : { color: "#ffffff", textShadow: "2px 2px 8px #000, 0 0 2px #000" };
+
+  return (
+    <div className={`flex w-full max-w-2xl flex-col ${align}`}>
+      {slide.title ? (
+        <h2 className="text-xl font-bold tracking-tight sm:text-2xl md:text-4xl lg:text-5xl" style={textStyle}>
+          {slide.title}
+        </h2>
+      ) : null}
+      {slide.description ? (
+        <p className="mt-3 whitespace-pre-line text-xs sm:text-sm md:mt-4 md:text-xl" style={textStyle}>
+          {slide.description}
+        </p>
+      ) : null}
+      <SlideCta slide={slide} />
+    </div>
+  );
+}
+
+function NavButton({
+  direction,
+  color,
+  onClick,
+}: {
+  direction: "prev" | "next";
+  color: string;
+  onClick: () => void;
+}) {
+  const Icon = direction === "prev" ? ChevronLeft : ChevronRight;
+  return (
+    <button
+      type="button"
+      className={`absolute top-1/2 z-20 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/25 transition hover:bg-black/40 ${
+        direction === "prev" ? "left-3 md:left-5" : "right-3 md:right-5"
+      }`}
+      style={{ color }}
+      aria-label={direction === "prev" ? "Slide anterior" : "Slide siguiente"}
+      onClick={onClick}
     >
-      {/* Media container */}
-      <div 
-        className="absolute inset-0 w-full h-full bg-white"
-      >
-        {slides.map((slide, i) => {
-          if (slide.multimediaUrl && isVideo(slide.multimediaUrl)) {
-            return (
+      <Icon className="h-5 w-5" strokeWidth={2} />
+    </button>
+  );
+}
+
+export default function Slider() {
+  const [slides, setSlides] = useState<Slide[]>([]);
+  const [autoplaySeconds, setAutoplaySeconds] = useState(DEFAULT_AUTOPLAY_SECONDS);
+  const [loaded, setLoaded] = useState(false);
+  const [index, setIndex] = useState(0);
+  const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+  const { setSliderImagesReady } = useSliderImagesReady();
+  const pathname = usePathname();
+  const isMainPortalPage = pathname === "/";
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    let ignore = false;
+    async function fetchSlides() {
+      try {
+        const result = await getPublicSlides();
+        if (ignore) return;
+        if (result.success && result.data) {
+          setSlides(result.data);
+          setAutoplaySeconds(clampAutoplaySeconds(result.autoplaySeconds));
+        } else {
+          setSlides([]);
+        }
+      } catch {
+        if (!ignore) setSlides([]);
+      } finally {
+        if (!ignore) setLoaded(true);
+      }
+    }
+    fetchSlides();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isMainPortalPage) return;
+    if (!loaded) {
+      setSliderImagesReady(false);
+      return;
+    }
+    if (slides.length === 0) {
+      setSliderImagesReady(true);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const images = document.querySelectorAll<HTMLImageElement>("[data-hero-slider] img");
+      if (images.length === 0) {
+        setSliderImagesReady(true);
+        return;
+      }
+      let loadedCount = 0;
+      const done = () => {
+        loadedCount += 1;
+        if (loadedCount >= images.length) setSliderImagesReady(true);
+      };
+      images.forEach((img) => {
+        if (img.complete) done();
+        else {
+          img.addEventListener("load", done, { once: true });
+          img.addEventListener("error", done, { once: true });
+        }
+      });
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [isMainPortalPage, loaded, slides, setSliderImagesReady]);
+
+  const count = slides.length;
+  const goTo = useCallback((next: number) => {
+    setIndex(((next % count) + count) % count);
+  }, [count]);
+
+  useEffect(() => {
+    if (prefersReducedMotion || count < 2 || !loaded) return;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setIndex((current) => (current + 1) % count);
+      }, autoplaySeconds * 1000);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        if (timeoutId !== undefined) clearTimeout(timeoutId);
+        timeoutId = undefined;
+        return;
+      }
+      schedule();
+    };
+    if (document.visibilityState !== "hidden") schedule();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [index, count, autoplaySeconds, prefersReducedMotion, loaded]);
+
+  useEffect(() => {
+    const current = slides[index];
+    Object.entries(videoRefs.current).forEach(([id, video]) => {
+      if (!video) return;
+      if (current && id === current.id && isVideoUrl(current.multimediaUrl || "")) {
+        video.currentTime = 0;
+        video.play().catch(() => undefined);
+      } else {
+        video.pause();
+      }
+    });
+  }, [index, slides]);
+
+  if (!loaded || slides.length === 0) return null;
+
+  const active = slides[index];
+  const activeColor = normalizeHex(active?.textColor) || "#ffffff";
+  const carousel = slides.length > 1;
+  const sectionClass = "relative h-[380px] w-full overflow-hidden md:h-[560px]";
+
+  return (
+    <section
+      data-hero-slider
+      className={sectionClass}
+      aria-roledescription={carousel ? "carousel" : undefined}
+      aria-label="Destacados"
+    >
+      {slides.map((slide, i) => {
+        const isActive = i === index;
+        return (
+          <div
+            key={slide.id}
+            className={`absolute inset-0 ${prefersReducedMotion ? "" : "transition-opacity ease-in-out"} ${
+              isActive ? "z-10 opacity-100" : "pointer-events-none z-0 opacity-0"
+            }`}
+            style={prefersReducedMotion ? undefined : { transitionDuration: `${CROSSFADE_MS}ms` }}
+            role="group"
+            aria-roledescription="slide"
+            aria-label={slide.title || `Slide ${i + 1}`}
+            aria-hidden={!isActive}
+          >
+            {slide.multimediaUrl && isVideoUrl(slide.multimediaUrl) ? (
               <video
-                key={slide.id}
-                ref={(el) => {
-                  if (el) {
-                    videoRefs.current[slide.id] = el;
-                  }
+                ref={(node) => {
+                  videoRefs.current[slide.id] = node;
                 }}
                 src={slide.multimediaUrl}
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity ${
-                  i === current ? "opacity-100 z-10" : "opacity-0 z-0"
-                }`}
-                style={{ transition: `opacity ${transitionTime}ms ease-in-out` }}
-                autoPlay
-                loop
+                className="absolute inset-0 h-full w-full object-cover"
+                autoPlay={isActive}
                 muted
+                loop
                 playsInline
                 preload="metadata"
-                onLoadedData={(e) => {
-                  // Cuando el video está cargado, intentar reproducir si es el slide actual
-                  if (i === current) {
-                    const video = e.currentTarget;
-                    video.currentTime = 0;
-                    video.play().catch((error: any) => {
-                      console.warn('Autoplay bloqueado por el navegador:', error);
-                    });
-                  }
-                }}
-                onCanPlay={(e) => {
-                  // Backup: intentar reproducir cuando el video puede empezar a reproducirse
-                  if (i === current && e.currentTarget.paused) {
-                    e.currentTarget.play().catch((error: any) => {
-                      console.warn('Autoplay bloqueado por el navegador:', error);
-                    });
-                  }
-                }}
               />
-            );
-          } else if (slide.multimediaUrl) {
-            return (
-              <img
-                key={slide.id}
-                src={slide.multimediaUrl}
-                alt={slide.title}
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity ${
-                  i === current ? "opacity-100 z-10" : "opacity-0 z-0"
-                }`}
-                style={{ transition: `opacity ${transitionTime}ms ease-in-out` }}
-              />
-            );
-          } else {
-            return (
+            ) : slide.multimediaUrl ? (
+              <img src={slide.multimediaUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            ) : (
+              <div className="absolute inset-0" style={{ backgroundColor: EMPTY_BACKGROUND }} />
+            )}
+            {(slide.overlayOpacity ?? 45) > 0 ? (
               <div
-                key={slide.id}
-                className={`absolute inset-0 w-full h-full transition-opacity bg-white ${
-                  i === current ? "opacity-100 z-10" : "opacity-0 z-0"
-                }`}
-                style={{ 
-                  transition: `opacity ${transitionTime}ms ease-in-out`
-                }}
+                className="absolute inset-0 bg-black"
+                style={{ opacity: Math.min(90, Math.max(0, Number(slide.overlayOpacity ?? 45))) / 100 }}
               />
-            );
-          }
-        })}
-      </div>
-
-      {/* Overlay content */}
-      <div className="absolute inset-0 z-10 flex flex-col justify-between">
-        {/* Navigation arrows */}
-        {slides.length > 1 && (
-          <>
-            <button
-              onClick={goToPrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 p-2"
-              aria-label="Slide anterior"
-            >
-              <ChevronLeft size={64} className="text-white drop-shadow-lg hover:text-gray-300 transition-colors" strokeWidth={3} />
-            </button>
-            
-            <button
-              onClick={goToNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-2"
-              aria-label="Slide siguiente"
-            >
-              <ChevronRight size={64} className="text-white drop-shadow-lg hover:text-gray-300 transition-colors" strokeWidth={3} />
-            </button>
-          </>
-        )}
-
-        {/* Dots indicator */}
-        {slides.length > 1 && (
-          <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2">
-            {slides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goToSlide(i)}
-                className={`w-3 h-3 rounded-full transition-all border border-solid border-white shadow-lg ${
-                  i === current ? "bg-primary" : "bg-white/40"
-                }`}
-                aria-label={`Ir al slide ${i + 1}`}
-              />
-            ))}
+            ) : null}
+            <div className={`absolute inset-x-0 bottom-0 z-10 ${carousel ? "pb-10 md:pb-12" : "pb-5 md:pb-6"}`}>
+              <div className="mx-auto w-full max-w-6xl px-6 md:px-8">
+                <SlideCopy slide={slide} />
+              </div>
+            </div>
           </div>
-        )}
+        );
+      })}
 
-        {/* Content overlay */}
-        <div
-          className="absolute left-[10%] bottom-[10%] flex flex-col items-start text-left px-4 md:px-8 max-w-[80%] sm:max-w-[60%] md:max-w-[50%] z-20"
-        >
-          <h2
-            className="text-xl md:text-3xl lg:text-4xl font-bold text-white mb-2"
-            style={{
-              textShadow: "2px 2px 8px #000, 0 0 2px #000",
-            }}
-          >
-            {currentSlide.title}
-          </h2>
-          
-          {currentSlide.description && (
-            <p
-              className="md:text-lg lg:text-xl text-white mb-4"
-              style={{
-                textShadow: "2px 2px 8px #000, 0 0 2px #000",
-              }}
-            >
-              {currentSlide.description}
-            </p>
-          )}
-          
-          {currentSlide.linkUrl && (
-            <a
-              href={currentSlide.linkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block px-4 py-2 bg-primary text-white rounded shadow hover:bg-primary/80 transition"
-            >
-              Ver más
-            </a>
-          )}
-        </div>
-      </div>
-    </div>
+      {carousel ? (
+        <>
+          <NavButton direction="prev" color={activeColor} onClick={() => goTo(index - 1)} />
+          <NavButton direction="next" color={activeColor} onClick={() => goTo(index + 1)} />
+          <div className="absolute bottom-4 left-0 right-0 z-20 flex items-center justify-center gap-2 md:bottom-5">
+            {slides.map((slide, i) => {
+              const isActive = i === index;
+              const dotColor = normalizeHex(slide.textColor) || "#ffffff";
+              return (
+                <button
+                  key={slide.id}
+                  type="button"
+                  className={`h-2.5 rounded-full transition-all duration-500 ${isActive ? "w-8" : "w-2.5 opacity-50 hover:opacity-80"}`}
+                  style={{ backgroundColor: dotColor }}
+                  aria-label={`Ir al slide ${i + 1}`}
+                  aria-current={isActive ? "true" : undefined}
+                  onClick={() => goTo(i)}
+                />
+              );
+            })}
+          </div>
+        </>
+      ) : null}
+    </section>
   );
 }

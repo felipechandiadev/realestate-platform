@@ -9,6 +9,7 @@ import RegisterForm from "./RegisterForm";
 import { getIdentity } from "@/features/cms/actions/identity.action";
 import { getLatestUfValue } from "@/features/shared/common/actions/uf.action";
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import NavBar from "./NavBar";
 import { useNotification } from "@/providers/NotificationContext";
 
@@ -41,10 +42,13 @@ interface TopBarProps {
   uf?: number;
 }
 
+const FALLBACK_LOGO = "/logo.svg";
+
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
   identity: Identity | null;
+  logoSrc: string;
   onLoginClick: () => void;
   onRegisterClick: () => void;
   isUserLoggedIn?: boolean;
@@ -52,7 +56,7 @@ interface SidebarProps {
 }
 
 // Sidebar Component
-function Sidebar({ open, onClose, identity, onLoginClick, onRegisterClick, isUserLoggedIn = false, userName = "" }: SidebarProps) {
+function Sidebar({ open, onClose, identity, logoSrc, onLoginClick, onRegisterClick, isUserLoggedIn = false, userName = "" }: SidebarProps) {
   const router = useRouter();
   const { unreadCount } = useNotification();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -89,13 +93,11 @@ function Sidebar({ open, onClose, identity, onLoginClick, onRegisterClick, isUse
         aria-modal="true"
       >
         <div className="flex flex-col items-center justify-center p-4 text-center gap-2 flex-shrink-0">
-          {identity?.urlLogo ? (
-            <img
-              src={identity.urlLogo}
-              alt="Logo"
-              className="w-12 h-12 object-contain"
-            />
-          ) : null}
+          <img
+            src={logoSrc}
+            alt="Logo"
+            className="w-12 h-12 object-contain"
+          />
           <span className="font-medium text-foreground text-sm">
             {identity?.name || ""}
           </span>
@@ -270,8 +272,7 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [identity, setIdentity] = useState<Identity | null>(null);
-  const [logoError, setLogoError] = useState(false);
-  const [logoLoading, setLogoLoading] = useState(true);
+  const [logoSrc, setLogoSrc] = useState(FALLBACK_LOGO);
   const [ufValue, setUfValue] = useState<number | null>(null);
   const [isUfLoading, setIsUfLoading] = useState(true);
 
@@ -312,19 +313,28 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
     };
   }, []);
 
+  const remoteLogo = identity?.urlLogo?.trim() || "";
+
   useEffect(() => {
-    setLogoError(false);
-    setLogoLoading(true);
-  }, [identity?.urlLogo]);
+    if (!remoteLogo || remoteLogo === FALLBACK_LOGO) {
+      setLogoSrc(FALLBACK_LOGO);
+      return;
+    }
 
-  const handleLogoLoad = () => {
-    setLogoLoading(false);
-  };
+    let cancelled = false;
+    const probe = new Image();
+    probe.onload = () => {
+      if (!cancelled) setLogoSrc(remoteLogo);
+    };
+    probe.onerror = () => {
+      if (!cancelled) setLogoSrc(FALLBACK_LOGO);
+    };
+    probe.src = remoteLogo;
 
-  const handleLogoError = () => {
-    setLogoLoading(false);
-    setLogoError(true);
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [remoteLogo]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -338,6 +348,7 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         identity={identity}
+        logoSrc={logoSrc}
         onLoginClick={() => setLoginDialogOpen(true)}
         onRegisterClick={() => setRegisterDialogOpen(true)}
         isUserLoggedIn={!!session?.user}
@@ -349,28 +360,19 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
         className="flex items-center h-12 md:h-16 w-full bg-background sm:px-8 box-border"
         data-test-id="topBar"
       >
-        {/* Izquierda: icono imagen y nombre empresa */}
-        <div className="flex items-center gap-3 ml-4" data-test-id="topBarLogo">
-          {logoLoading && (
-            <div
-              className="h-10 w-10 rounded-lg bg-neutral-200 animate-pulse"
-              data-test-id="top-bar-logo-skeleton"
-            />
-          )}
-          {!logoError && (
-            <img
-              src={identity?.urlLogo || "/logo.svg"}
-              alt="Logo"
-              className={`w-10 h-10 object-contain ${logoLoading ? "hidden" : ""}`}
-              data-test-id="topBarLogo"
-              onLoad={handleLogoLoad}
-              onError={handleLogoError}
-            />
-          )}
+        {/* Izquierda: logo y nombre empresa, ambos al inicio */}
+        <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity" data-test-id="topBarLogo">
+          <img
+            src={logoSrc}
+            alt="Logo"
+            className="w-10 h-10 object-contain"
+            data-test-id="topBarLogo"
+            onError={() => setLogoSrc((current) => (current === FALLBACK_LOGO ? current : FALLBACK_LOGO))}
+          />
           <span className="text-base md:text-lg lg:text-2xl font-medium text-foreground whitespace-nowrap">
             {identity?.name || ""}
           </span>
-        </div>
+        </Link>
 
         {/* Centro: contacto y teléfono */}
         <div className="hidden lg:flex flex-col items-center justify-center flex-1">
@@ -441,7 +443,7 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
           size="xs"
         >
           <LoginForm
-            logoSrc={identity?.urlLogo || "/logo.svg"}
+            logoSrc={logoSrc}
             companyName={identity?.name}
             onClose={() => setLoginDialogOpen(false)}
             onRegisterClick={() => {

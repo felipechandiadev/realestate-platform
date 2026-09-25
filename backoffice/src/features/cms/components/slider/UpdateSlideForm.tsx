@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import UpdateBaseForm, { BaseUpdateFormField } from '@/shared/components/ui/BaseForm/UpdateBaseForm';
+import UpdateBaseForm, { BaseUpdateFormFieldGroup } from '@/shared/components/ui/BaseForm/UpdateBaseForm';
 import { updateSlideWithMultimedia, updateSlide } from '@/features/cms/actions/slides.action';
 import type { Slide } from '@/features/cms/actions/slides.action';
 import { useAlert } from '@/providers/AlertContext';
+import { HeroBannerPreview } from './HeroBannerPreview';
 
 interface UpdateSlideFormProps {
   slide: Slide;
@@ -15,101 +16,69 @@ interface UpdateSlideFormProps {
   onLoadingChange?: (isLoading: boolean) => void;
 }
 
-interface SlideFormData {
-  [key: string]: any;
-  title: string;
-  description: string;
-  linkUrl: string;
-  duration: number | string;
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-  multimediaUrl: string;
-  multimediaUrlFile: File | null;
-}
+const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+const LINK_PATTERN = /^(https?:\/\/\S+|\/\S*)$/;
 
 export default function UpdateSlideForm({ slide, onSuccess, onCancel, nested, formId, onLoadingChange }: UpdateSlideFormProps) {
   const { showAlert } = useAlert();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
-  const initialState: SlideFormData = {
+  const initialState = {
     title: slide.title || '',
     description: slide.description || '',
     linkUrl: slide.linkUrl || '',
-    duration: slide.duration || 3,
+    ctaStyle: slide.ctaStyle || 'none',
+    ctaLabel: slide.ctaLabel || '',
+    textAlign: slide.textAlign || 'left',
+    overlayOpacity: slide.overlayOpacity ?? 45,
+    textColor: slide.textColor || '',
+    ctaButtonBgColor: slide.ctaButtonBgColor || '',
+    ctaButtonTextColor: slide.ctaButtonTextColor || '',
+    ctaLinkColor: slide.ctaLinkColor || '',
     startDate: slide.startDate?.split('T')[0] || '',
     endDate: slide.endDate?.split('T')[0] || '',
     isActive: slide.isActive ?? true,
     multimediaUrl: slide.multimediaUrl || '',
-    multimediaUrlFile: null,
+    multimediaUrlFile: null as File | null,
   };
 
-  const normalizeLinkUrl = (input: string): string | null => {
-    const trimmed = (input ?? '').trim();
+  const [preview, setPreview] = useState(initialState);
 
-    if (!trimmed) {
-      return null;
-    }
-
-    if (trimmed.startsWith('/') && typeof window !== 'undefined') {
-      try {
-        const resolved = new URL(trimmed, window.location.origin);
-        return resolved.toString();
-      } catch {
-        return null;
-      }
-    }
-
-    return trimmed;
-  };
-
-  const validateForm = (values: SlideFormData): string[] => {
+  const validateForm = (values: typeof initialState): string[] => {
     const newErrors: string[] = [];
-
-    const normalizedTitle = values.title?.trim() ?? '';
-    if (!normalizedTitle) {
-      newErrors.push('El título es requerido');
-    } else if (normalizedTitle.length < 3) {
-      newErrors.push('El título debe tener al menos 3 caracteres');
+    const title = values.title?.trim() ?? '';
+    if (title && (title.length < 3 || title.length > 255)) {
+      newErrors.push('El título debe tener entre 3 y 255 caracteres');
     }
-
-    if (values.linkUrl?.trim()) {
-      const normalizedUrl = normalizeLinkUrl(values.linkUrl);
-      if (!normalizedUrl) {
-        newErrors.push('La URL debe ser válida (http://, https:// o comenzar con /)');
+    if (values.linkUrl?.trim() && !LINK_PATTERN.test(values.linkUrl.trim())) {
+      newErrors.push('La URL debe ser http(s) o una ruta interna que empiece con /');
+    }
+    const overlay = Number(values.overlayOpacity);
+    if (!Number.isFinite(overlay) || overlay < 0 || overlay > 90) {
+      newErrors.push('La opacidad del overlay debe estar entre 0 y 90');
+    }
+    for (const color of [values.textColor, values.ctaButtonBgColor, values.ctaButtonTextColor, values.ctaLinkColor]) {
+      if (typeof color === 'string' && color.trim() && !HEX_COLOR.test(color.trim())) {
+        newErrors.push('Los colores deben ser hex de 6 dígitos, por ejemplo #FFFFFF');
+        break;
       }
     }
-
-    const durationNumber = Number(values.duration);
-    if (!Number.isFinite(durationNumber)) {
-      newErrors.push('La duración debe ser un número válido');
-    } else if (durationNumber < 1 || durationNumber > 60) {
-      newErrors.push('La duración debe estar entre 1 y 60 segundos');
+    if ((values.ctaStyle === 'button' || values.ctaStyle === 'link') && !values.ctaLabel?.trim()) {
+      newErrors.push('Escribe el texto de la acción');
     }
-
-    if (values.startDate && values.endDate) {
-      const start = new Date(values.startDate);
-      const end = new Date(values.endDate);
-      if (start >= end) {
-        newErrors.push('La fecha de fin debe ser posterior a la fecha de inicio');
-      }
+    if (values.startDate && values.endDate && new Date(values.startDate) >= new Date(values.endDate)) {
+      newErrors.push('La fecha de fin debe ser posterior a la fecha de inicio');
     }
-
     return newErrors;
   };
 
   const handleSubmit = async (values: any) => {
     if (isSubmitting) return;
-
     const validationErrors = validateForm(values);
     if (validationErrors.length > 0) {
       setErrors(validationErrors);
-      showAlert({
-        message: 'Por favor corrige los errores del formulario',
-        type: 'error',
-        duration: 4000,
-      });
+      showAlert({ message: 'Por favor corrige los errores del formulario', type: 'error', duration: 4000 });
       return;
     }
 
@@ -118,173 +87,171 @@ export default function UpdateSlideForm({ slide, onSuccess, onCancel, nested, fo
     setErrors([]);
 
     try {
-      const normalizedTitle = values.title.trim();
-      const normalizedDescription = typeof values.description === 'string' ? values.description : '';
-      const normalizedLinkUrl = normalizeLinkUrl(values.linkUrl);
-      const durationNumber = Number(values.duration);
-      const normalizedStartDate = values.startDate?.trim() || null;
-      const normalizedEndDate = values.endDate?.trim() || null;
-
-      const initialStartDate = slide.startDate ? slide.startDate.split('T')[0] : null;
-      const initialEndDate = slide.endDate ? slide.endDate.split('T')[0] : null;
-      const resolvedLinkForComparison = slide.linkUrl ?? null;
-      const shouldClearLink = resolvedLinkForComparison !== null && normalizedLinkUrl === null;
-
-      const updatePayload: Record<string, unknown> = {};
-
-      if (normalizedTitle !== slide.title) updatePayload.title = normalizedTitle;
-      if (normalizedDescription !== (slide.description ?? '')) updatePayload.description = normalizedDescription || null;
-      if (normalizedLinkUrl !== resolvedLinkForComparison) updatePayload.linkUrl = normalizedLinkUrl;
-      if (Number.isFinite(durationNumber) && durationNumber !== slide.duration) updatePayload.duration = durationNumber;
-      if (normalizedStartDate !== initialStartDate) updatePayload.startDate = normalizedStartDate;
-      if (normalizedEndDate !== initialEndDate) updatePayload.endDate = normalizedEndDate;
-      if (typeof values.isActive === 'boolean' && values.isActive !== slide.isActive) updatePayload.isActive = values.isActive;
+      const link = values.linkUrl?.trim() || null;
+      const payload = {
+        title: values.title?.trim() || null,
+        description: values.description || null,
+        linkUrl: link,
+        ctaStyle: values.ctaStyle || 'none',
+        ctaLabel: values.ctaLabel?.trim() || null,
+        textAlign: values.textAlign || 'left',
+        overlayOpacity: Number(values.overlayOpacity ?? 45),
+        textColor: values.textColor?.trim() || null,
+        ctaButtonBgColor: values.ctaButtonBgColor?.trim() || null,
+        ctaButtonTextColor: values.ctaButtonTextColor?.trim() || null,
+        ctaLinkColor: values.ctaLinkColor?.trim() || null,
+        startDate: values.startDate?.trim() || null,
+        endDate: values.endDate?.trim() || null,
+        isActive: values.isActive,
+      };
 
       let result;
-
       if (values.multimediaUrlFile) {
         const formData = new FormData();
-
-        Object.entries(updatePayload).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            formData.append(key, String(value));
-          }
+        Object.entries(payload).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) formData.append(key, String(value));
         });
-
-        if (!formData.has('title')) formData.append('title', normalizedTitle);
-        if (!formData.has('isActive')) formData.append('isActive', String(values.isActive));
-        if (!formData.has('duration') && Number.isFinite(durationNumber)) formData.append('duration', String(durationNumber));
-
-        if (!formData.has('linkUrl')) {
-          if (normalizedLinkUrl) {
-            formData.append('linkUrl', normalizedLinkUrl);
-          } else if (shouldClearLink) {
-            formData.append('linkUrl', '');
-          }
-        }
-
-        if (!formData.has('startDate') && normalizedStartDate) formData.append('startDate', normalizedStartDate);
-        if (!formData.has('endDate') && normalizedEndDate) formData.append('endDate', normalizedEndDate);
-
+        if (!formData.has('title')) formData.append('title', '');
+        if (!formData.has('linkUrl') && link === null) formData.append('linkUrl', '');
         formData.append('multimedia', values.multimediaUrlFile);
         result = await updateSlideWithMultimedia(slide.id, formData);
       } else {
-        if (Object.keys(updatePayload).length === 0) {
-          showAlert({
-            message: 'No se detectaron cambios para actualizar',
-            type: 'info',
-            duration: 3000,
-          });
-          setIsSubmitting(false);
-          onLoadingChange?.(false);
-          return;
-        }
-
-        result = await updateSlide(slide.id, updatePayload as any);
+        result = await updateSlide(slide.id, payload as any);
       }
 
       if (result.success) {
-        showAlert({
-          message: 'Slide actualizado exitosamente',
-          type: 'success',
-          duration: 3000,
-        });
+        showAlert({ message: 'Slide actualizado exitosamente', type: 'success', duration: 3000 });
         onSuccess?.();
-        // Keep submitting true until dialog closes / remounts.
         return;
       }
 
       const errorMsg = result.error || 'Error al actualizar el slide';
       setErrors([errorMsg]);
-      showAlert({
-        message: errorMsg,
-        type: 'error',
-        duration: 5000,
-      });
+      showAlert({ message: errorMsg, type: 'error', duration: 5000 });
       setIsSubmitting(false);
       onLoadingChange?.(false);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Error interno del servidor';
       setErrors([errorMsg]);
-      showAlert({
-        message: errorMsg,
-        type: 'error',
-        duration: 5000,
-      });
+      showAlert({ message: errorMsg, type: 'error', duration: 5000 });
       setIsSubmitting(false);
       onLoadingChange?.(false);
     }
   };
 
-  const fields: BaseUpdateFormField[] = [
+  const showCta = preview.ctaStyle === 'button' || preview.ctaStyle === 'link';
+  const fields: BaseUpdateFormFieldGroup[] = [
     {
-      name: 'title',
-      label: 'Título del Slide',
-      type: 'text',
-      required: true,
+      id: 'content',
+      title: 'Contenido',
+      fields: [
+        { name: 'title', label: 'Título', type: 'text' },
+        { name: 'description', label: 'Mensaje', type: 'textarea', rows: 3, multiline: true },
+        { name: 'textColor', label: 'Color del texto (#RRGGBB, vacío = blanco)', type: 'text' },
+      ],
     },
     {
-      name: 'description',
-      label: 'Descripción',
-      type: 'textarea',
-      rows: 3,
-      multiline: true,
+      id: 'action',
+      title: 'Acción',
+      fields: [
+        {
+          name: 'ctaStyle',
+          label: 'Tipo de acción',
+          type: 'select',
+          options: [
+            { id: 'none', label: 'Sin acción' },
+            { id: 'button', label: 'Botón' },
+            { id: 'link', label: 'Enlace' },
+          ],
+        },
+        ...(showCta
+          ? [
+              { name: 'ctaLabel', label: preview.ctaStyle === 'button' ? 'Texto del botón' : 'Texto del enlace', type: 'text' as const },
+              { name: 'linkUrl', label: 'URL de destino', type: 'text' as const },
+              ...(preview.ctaStyle === 'button'
+                ? [
+                    { name: 'ctaButtonBgColor', label: 'Fondo del botón (#RRGGBB, vacío = primario)', type: 'text' as const },
+                    { name: 'ctaButtonTextColor', label: 'Texto del botón (#RRGGBB, vacío = blanco)', type: 'text' as const },
+                  ]
+                : [
+                    { name: 'ctaLinkColor', label: 'Color del enlace (#RRGGBB, vacío = color del texto)', type: 'text' as const },
+                  ]),
+            ]
+          : []),
+      ],
     },
     {
-      name: 'multimediaUrl',
-      label: 'Imagen o Video',
-      type: 'image',
-      variant: 'banner',
-      required: false,
-      currentUrl: slide.multimediaUrl,
-      currentType: slide.multimediaUrl?.includes('.mp4') || slide.multimediaUrl?.includes('.webm') ? 'video' : 'image',
-      acceptedTypes: ['image/*', 'video/*'],
-      maxSize: 60,
-      aspectRatio: '16:9',
-      previewSize: 'lg',
+      id: 'advanced',
+      title: 'Avanzado',
+      fields: [
+        { name: 'overlayOpacity', label: 'Opacidad overlay', type: 'numberStepper', min: 0, max: 90, step: 5 },
+        {
+          name: 'textAlign',
+          label: 'Alineación del texto',
+          type: 'select',
+          options: [
+            { id: 'left', label: 'Izquierda' },
+            { id: 'center', label: 'Centro' },
+            { id: 'right', label: 'Derecha' },
+          ],
+        },
+      ],
     },
     {
-      name: 'linkUrl',
-      label: 'URL de destino',
-      type: 'text',
-    },
-    {
-      name: 'duration',
-      label: 'Duración (segundos)',
-      type: 'number',
-      min: 1,
-      max: 60,
-    },
-    {
-      name: 'startDate',
-      label: 'Fecha de inicio',
-      type: 'text',
-    },
-    {
-      name: 'endDate',
-      label: 'Fecha de fin',
-      type: 'text',
-    },
-    {
-      name: 'isActive',
-      label: 'Slide activo',
-      type: 'switch',
+      id: 'publish',
+      title: 'Publicación',
+      fields: [
+        {
+          name: 'multimediaUrl',
+          label: 'Imagen o Video',
+          type: 'image',
+          variant: 'banner',
+          currentUrl: slide.multimediaUrl,
+          currentType: slide.multimediaUrl && /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(slide.multimediaUrl) ? 'video' : 'image',
+          acceptedTypes: ['image/*', 'video/*'],
+          maxSize: 60,
+          aspectRatio: '16:9',
+          previewSize: 'lg',
+        },
+        { name: 'startDate', label: 'Fecha de inicio', type: 'text' },
+        { name: 'endDate', label: 'Fecha de fin', type: 'text' },
+        { name: 'isActive', label: 'Slide activo', type: 'switch' },
+      ],
     },
   ];
 
   return (
-    <UpdateBaseForm
-      formId={formId}
-      nested={nested}
-      fields={fields}
-      initialState={initialState}
-      onSubmit={handleSubmit}
-      isSubmitting={isSubmitting}
-      errors={errors}
-      submitLabel="Actualizar Slide"
-      cancelButton={true}
-      cancelButtonText="Cancelar"
-      onCancel={onCancel}
-    />
+    <div className="space-y-4">
+      <HeroBannerPreview
+        slide={{
+          title: preview.title,
+          description: preview.description,
+          linkUrl: preview.linkUrl,
+          ctaLabel: preview.ctaLabel,
+          ctaStyle: preview.ctaStyle as Slide['ctaStyle'],
+          textAlign: preview.textAlign as Slide['textAlign'],
+          overlayOpacity: Number(preview.overlayOpacity),
+          textColor: preview.textColor,
+          ctaButtonBgColor: preview.ctaButtonBgColor,
+          ctaButtonTextColor: preview.ctaButtonTextColor,
+          ctaLinkColor: preview.ctaLinkColor,
+          multimediaUrl: typeof preview.multimediaUrl === 'string' ? preview.multimediaUrl : slide.multimediaUrl,
+        }}
+      />
+      <UpdateBaseForm
+        formId={formId}
+        nested={nested}
+        fields={fields}
+        initialState={initialState}
+        onChange={(field, value) => setPreview((current) => ({ ...current, [field]: value }))}
+        onSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        errors={errors}
+        submitLabel="Actualizar Slide"
+        cancelButton={true}
+        cancelButtonText="Cancelar"
+        onCancel={onCancel}
+      />
+    </div>
   );
 }

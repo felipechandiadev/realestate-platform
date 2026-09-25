@@ -3,9 +3,11 @@ import {
   IsString,
   IsOptional,
   IsEmail,
+  IsInt,
+  Min,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { SocialMedia, Partnership, FAQItem } from '../domain/identity.entity';
 
 export class CreateIdentityDto {
@@ -88,4 +90,14 @@ export class UpdateIdentityDto {
   @ValidateNested({ each: true })
   @Type(() => FAQItem)
   faqs?: FAQItem[];
+
+  @IsOptional()
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined;
+    const parsed = Math.round(Number(value));
+    return Number.isFinite(parsed) ? parsed : value;
+  })
+  @IsInt()
+  @Min(3)
+  heroAutoplaySeconds?: number;
 }

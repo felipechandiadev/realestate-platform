@@ -20,14 +20,16 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  rectSortingStrategy,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import {
   type Slide,
   getSlides,
   reorderSlides,
 } from '@/features/cms/actions/slides.action';
+import { updateIdentity } from '@/features/cms/actions/identity.action';
 import SortableSliderCard from './SortableSliderCard';
+import { HeroBannerPreview } from './HeroBannerPreview';
 import CreateSlideForm from './CreateSlideForm';
 import DeleteSlideForm from './DeleteSlideForm';
 import UpdateSlideForm from './UpdateSlideForm';
@@ -35,6 +37,8 @@ import UpdateSlideForm from './UpdateSlideForm';
 interface SliderContentProps {
   initialSlides: Slide[];
   initialSearch?: string;
+  identityId?: string;
+  initialAutoplaySeconds?: number;
 }
 
 /**
@@ -47,7 +51,12 @@ interface SliderContentProps {
  * @param initialSearch - Initial search query from URL
  * @returns {React.ReactNode} Slider management interface
  */
-export function SliderContent({ initialSlides, initialSearch = '' }: SliderContentProps) {
+export function SliderContent({
+  initialSlides,
+  initialSearch = '',
+  identityId,
+  initialAutoplaySeconds = 6,
+}: SliderContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const alert = useAlert();
@@ -65,6 +74,8 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
   const [isCreateLoading, setIsCreateLoading] = useState(false);
   const [isUpdateLoading, setIsUpdateLoading] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [autoplaySeconds, setAutoplaySeconds] = useState(Math.max(3, initialAutoplaySeconds || 6));
+  const [autoplaySaving, setAutoplaySaving] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -227,10 +238,25 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
 
   const filteredSlides = slides.filter(
     (slide) =>
-      slide.title.toLowerCase().includes(search.toLowerCase()) ||
+      (slide.title ?? '').toLowerCase().includes(search.toLowerCase()) ||
       (slide.description &&
         slide.description.toLowerCase().includes(search.toLowerCase())),
   );
+
+  const saveAutoplay = async () => {
+    if (!identityId) return;
+    const seconds = Math.max(3, Math.round(Number(autoplaySeconds)) || 6);
+    setAutoplaySeconds(seconds);
+    setAutoplaySaving(true);
+    try {
+      await updateIdentity(identityId, { heroAutoplaySeconds: seconds });
+      alert.success('Autoplay actualizado');
+    } catch {
+      alert.error('No se pudo guardar el autoplay');
+    } finally {
+      setAutoplaySaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6 w-full">
@@ -248,28 +274,39 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
         />
       </div>
 
-      <div className="flex-1 min-w-0 max-w-xs sm:max-w-sm">
-        <TextField
-          label="Buscar slides"
-          value={search}
-          onChange={handleSearchChange}
-          startIcon="search"
-          placeholder="Buscar por título o descripción..."
-        />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+        <div className="flex-1 min-w-0 max-w-xs sm:max-w-sm">
+          <TextField
+            label="Buscar slides"
+            value={search}
+            onChange={handleSearchChange}
+            startIcon="search"
+            placeholder="Buscar por título o descripción..."
+          />
+        </div>
+        <div className="flex items-end gap-2 max-w-xs">
+          <TextField
+            label="Autoplay del carrusel (mín. 3 s)"
+            type="number"
+            value={String(autoplaySeconds)}
+            min={3}
+            disabled={!identityId || autoplaySaving}
+            onChange={(event) => setAutoplaySeconds(Number(event.target.value))}
+            onBlur={() => {
+              void saveAutoplay();
+            }}
+          />
+        </div>
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+        <div className="flex w-full flex-col gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
               className="bg-background rounded-lg border border-border shadow-sm overflow-hidden"
             >
-              <div className="aspect-video bg-gray-100 animate-pulse" />
-              <div className="p-6 space-y-3">
-                <div className="h-6 bg-neutral animate-pulse rounded" />
-                <div className="h-4 bg-neutral animate-pulse rounded w-3/4" />
-              </div>
+              <div className="h-[200px] bg-gray-100 animate-pulse md:h-[260px]" />
             </div>
           ))}
         </div>
@@ -293,40 +330,10 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
       ) : (
         <>
           {!isMounted ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full items-stretch">
+            <div className="flex w-full flex-col gap-6">
               {filteredSlides.map((slide) => (
-                <div
-                  key={slide.id}
-                  className="h-full bg-card rounded-lg border border-border shadow-sm flex flex-col overflow-hidden"
-                >
-                  <div className="w-full overflow-hidden">
-                    {slide.multimediaUrl ? (
-                      <img
-                        src={slide.multimediaUrl}
-                        alt={slide.title}
-                        className="w-full aspect-video object-cover"
-                      />
-                    ) : (
-                      <div className="w-full aspect-video bg-gray-100 flex items-center justify-center">
-                        <IconButton
-                          icon="image_not_supported"
-                          variant="text"
-                          size="xl"
-                          className="text-gray-400"
-                        />
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-2 flex-1 p-6">
-                    <h3 className="text-lg font-semibold text-foreground line-clamp-2">
-                      {slide.title}
-                    </h3>
-                    {slide.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {slide.description}
-                      </p>
-                    )}
-                  </div>
+                <div key={slide.id} className="overflow-hidden rounded-xl border border-border shadow-sm">
+                  <HeroBannerPreview slide={slide} />
                 </div>
               ))}
             </div>
@@ -339,13 +346,15 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
             >
               <SortableContext
                 items={filteredSlides.map((slide) => slide.id)}
-                strategy={rectSortingStrategy}
+                strategy={verticalListSortingStrategy}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full items-stretch">
-                  {filteredSlides.map((slide) => (
+                <div className="flex w-full flex-col gap-6">
+                  {filteredSlides.map((slide, index) => (
                     <SortableSliderCard
                       key={slide.id}
                       slide={slide}
+                      position={slide.order >= 1 ? slide.order : index + 1}
+                      autoplaySeconds={autoplaySeconds}
                       onDelete={handleDeleteSlide}
                       onEdit={handleEditSlide}
                     />
@@ -357,6 +366,8 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
                 {activeId ? (
                   <SortableSliderCard
                     slide={filteredSlides.find((slide) => slide.id === activeId)!}
+                    position={filteredSlides.find((slide) => slide.id === activeId)?.order || 1}
+                    autoplaySeconds={autoplaySeconds}
                     isDragOverlay
                     onDelete={handleDeleteSlide}
                     onEdit={handleEditSlide}
@@ -371,7 +382,7 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
       <Dialog
         open={isCreateDialogOpen}
         onClose={() => setIsCreateDialogOpen(false)}
-        size="sm"
+        size="lg"
         title="Crear Nuevo Slide"
         description="Completa los campos para agregar un nuevo slide al carrusel"
         actions={
@@ -429,7 +440,7 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
       <Dialog 
         open={isEditDialogOpen} 
         onClose={handleEditCancel} 
-        size="sm" 
+        size="lg" 
         title="Editar Slide"
         description="Modifica los campos del slide"
         actions={

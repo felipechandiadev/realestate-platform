@@ -269,7 +269,7 @@ const PortalFooter: React.FC = () => {
         </div>
 
         <div className="text-center text-sm font-extralight text-background border-t border-gray-400/30 pt-4">
-          &copy; 2026 EstateFlow. Todos los derechos reservados.
+          &copy; {new Date().getFullYear()} {identity?.name?.trim() || 'Bravo Schott Propiedades'}. Todos los derechos reservados.
         </div>
       </div>
 

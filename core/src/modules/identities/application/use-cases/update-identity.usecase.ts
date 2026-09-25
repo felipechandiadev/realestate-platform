@@ -5,6 +5,7 @@ import { IsNull } from 'typeorm';
 import { MultimediaService } from '../../../multimedia/application/multimedia.service';
 import { StaticFilesService } from '../../../multimedia/infrastructure/storage/static-files.service';
 import { MultimediaType } from '../../../multimedia/domain/multimedia.entity';
+import { clampHeroAutoplaySeconds } from '../../../slide/slide-presentation';
 
 @Injectable()
 export class UpdateIdentityUseCase {
@@ -35,6 +36,10 @@ export class UpdateIdentityUseCase {
           partnership.logoUrl = await this.multimediaService.uploadFileToPath(logoFile, 'web/partnerships');
         }
       }
+    }
+
+    if (dto.heroAutoplaySeconds !== undefined && dto.heroAutoplaySeconds !== null && dto.heroAutoplaySeconds !== '') {
+      dto.heroAutoplaySeconds = clampHeroAutoplaySeconds(dto.heroAutoplaySeconds);
     }
 
     const updated = { ...identity, ...dto };

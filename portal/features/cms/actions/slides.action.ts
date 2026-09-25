@@ -8,15 +8,23 @@ import { env } from '@/lib/env'
 // Types
 export interface Slide {
   id: string;
-  title: string;
+  title?: string | null;
   description?: string;
   multimediaUrl?: string;
-  linkUrl?: string;
+  linkUrl?: string | null;
   duration?: number;
   startDate?: string;
   endDate?: string;
   order: number;
   isActive: boolean;
+  ctaLabel?: string | null;
+  ctaStyle?: 'none' | 'button' | 'link' | null;
+  textAlign?: 'left' | 'center' | 'right' | null;
+  overlayOpacity?: number | null;
+  textColor?: string | null;
+  ctaButtonBgColor?: string | null;
+  ctaButtonTextColor?: string | null;
+  ctaLinkColor?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -81,6 +89,7 @@ export async function getSlides(params: GetSlidesParams = {}): Promise<{
 export async function getPublicSlides(): Promise<{
   success: boolean;
   data?: Slide[];
+  autoplaySeconds?: number;
   error?: string;
 }> {
   try {
@@ -99,8 +108,16 @@ export async function getPublicSlides(): Promise<{
       }
     }
 
-    const data = await res.json()
-    return { success: true, data }
+    const payload = await res.json()
+    if (Array.isArray(payload)) {
+      return { success: true, data: payload, autoplaySeconds: 6 }
+    }
+    const seconds = Number(payload?.autoplaySeconds)
+    return {
+      success: true,
+      data: Array.isArray(payload?.slides) ? payload.slides : [],
+      autoplaySeconds: Number.isFinite(seconds) ? Math.max(3, Math.round(seconds)) : 6,
+    }
   } catch (error) {
     console.error('Error fetching public slides:', error)
     return { 

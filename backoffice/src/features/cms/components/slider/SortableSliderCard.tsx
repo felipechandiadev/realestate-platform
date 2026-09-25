@@ -7,6 +7,8 @@ import SliderCard from './SliderCard'
 
 interface SortableSliderCardProps {
   slide: Slide;
+  position: number;
+  autoplaySeconds: number;
   isDragOverlay?: boolean;
   onDelete?: (slide: Slide) => void;
   onEdit?: (slide: Slide) => void;
@@ -14,6 +16,8 @@ interface SortableSliderCardProps {
 
 export default function SortableSliderCard({
   slide,
+  position,
+  autoplaySeconds,
   isDragOverlay = false,
   onDelete,
   onEdit,
@@ -47,6 +51,8 @@ export default function SortableSliderCard({
     >
       <SliderCard
         slide={slide}
+        position={position}
+        autoplaySeconds={autoplaySeconds}
         dragAttributes={attributes}
         dragListeners={listeners}
         isDragging={isDragging}

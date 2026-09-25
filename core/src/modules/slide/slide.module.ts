@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SlideService } from './application/slide.service';
 import { SlideController } from './presentation/slide.controller';
 import { Slide } from './domain/slide.entity';
+import { Identity } from '../identities/domain/identity.entity';
 import { Multimedia } from '../multimedia/domain/multimedia.entity';
 import { AuthModule } from '../auth/auth.module';
 import { MultimediaModule } from '../multimedia/multimedia.module';
@@ -23,7 +24,7 @@ import { UpdateSlideWithMultimediaUseCase } from './application/use-cases/update
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Slide, Multimedia]),
+    TypeOrmModule.forFeature([Slide, Multimedia, Identity]),
     AuthModule,
     MultimediaModule
   ],

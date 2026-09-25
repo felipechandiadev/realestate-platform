@@ -18,17 +18,13 @@ export default function Loading() {
 
       <div className="h-14 w-80 bg-neutral animate-pulse rounded-lg" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-        {[1, 2, 3, 4, 5, 6].map((i) => (
+      <div className="flex w-full flex-col gap-6">
+        {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="bg-background rounded-lg border border-border shadow-sm overflow-hidden"
+            className="overflow-hidden rounded-lg border border-border shadow-sm"
           >
-            <div className="aspect-video bg-gray-100 animate-pulse" />
-            <div className="p-6 space-y-3">
-              <div className="h-6 bg-neutral animate-pulse rounded" />
-              <div className="h-4 bg-neutral animate-pulse rounded w-3/4" />
-            </div>
+            <div className="h-[200px] bg-gray-100 animate-pulse md:h-[260px]" />
           </div>
         ))}
       </div>

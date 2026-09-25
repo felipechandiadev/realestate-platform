@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { SlideRepository } from '../../domain/slide.repository';
 import { Slide } from '../../domain/slide.entity';
 import { MultimediaService } from '../../../multimedia/application/multimedia.service';
+import { normalizeSlideInput } from '../../slide-presentation';
 
 @Injectable()
 export class CreateSlideWithMultimediaUseCase {
@@ -15,6 +16,7 @@ export class CreateSlideWithMultimediaUseCase {
     file?: Express.Multer.File,
   ): Promise<Slide> {
     // replicating service logic for order and multimedia upload
+    normalizeSlideInput(createSlideDto);
     const maxOrder = await this.getMaxOrder();
     const nextOrder = maxOrder + 1;
     let multimediaUrl: string | undefined;
@@ -31,6 +33,14 @@ export class CreateSlideWithMultimediaUseCase {
       endDate: createSlideDto.endDate ? new Date(createSlideDto.endDate) : undefined,
       order: nextOrder,
       isActive: createSlideDto.isActive !== false,
+      ctaLabel: createSlideDto.ctaLabel ?? null,
+      ctaStyle: createSlideDto.ctaStyle ?? 'none',
+      textAlign: createSlideDto.textAlign ?? 'left',
+      overlayOpacity: createSlideDto.overlayOpacity ?? 45,
+      textColor: createSlideDto.textColor ?? null,
+      ctaButtonBgColor: createSlideDto.ctaButtonBgColor ?? null,
+      ctaButtonTextColor: createSlideDto.ctaButtonTextColor ?? null,
+      ctaLinkColor: createSlideDto.ctaLinkColor ?? null,
     };
     const slide = this.slideRepo.create(slideData);
     return this.slideRepo.save(slide);

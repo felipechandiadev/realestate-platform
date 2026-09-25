@@ -201,7 +201,7 @@ export default function NotificationsPage() {
                       notification.status === 'SEND'
                         ? 'text-foreground'
                         : 'text-muted-foreground'
-                    } line-clamp-2`}
+                    } whitespace-pre-line line-clamp-4`}
                   >
                     {notification.message}
                   </p>
@@ -213,6 +213,7 @@ export default function NotificationsPage() {
                           year: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit',
+                          hourCycle: 'h23',
                         })
                       : ''}
                   </p>

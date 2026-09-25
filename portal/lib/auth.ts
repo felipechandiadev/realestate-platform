@@ -23,6 +23,9 @@ type BackendAuthResponse = {
 const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith('https://') ?? false;
 const cookiePrefix = useSecureCookies ? '__Secure-' : '';
 
+/** Must match the cookie read by portal middleware (getToken). */
+export const sessionCookieName = `${cookiePrefix}next-auth.session.portal`;
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV !== 'production',
@@ -31,7 +34,7 @@ export const authOptions: NextAuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: `${cookiePrefix}next-auth.session.portal`,
+      name: sessionCookieName,
       options: {
         httpOnly: true,
         sameSite: 'lax',

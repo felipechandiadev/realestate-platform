@@ -341,15 +341,16 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 			<div>
 			{resolvedGroups.map((group) => {
 				const columnCount = Math.max(1, group.columns);
-				const gapValue = typeof group.gap === "number" ? `${group.gap}px` : group.gap;
-				const containerClass = columnCount > 1 ? "grid" : "flex flex-col";
-				const containerStyle = columnCount > 1 ? { gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`, gap: gapValue ?? "4px" } : { gap: gapValue ?? "4px" };
+				const multiColumn = columnCount > 1;
+				const containerClass = multiColumn
+					? "grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-x-6 md:gap-y-4"
+					: "flex flex-col gap-4";
 
 				return (
 					<div key={group.id} className={`form-group w-full mb-10 ${group.className ?? ''}`}>
 						{group.title && <h4 className="text-base font-semibold text-gray-900">{group.title}</h4>}
-						{group.subtitle && <p className="text-sm text-gray-600">{group.subtitle}</p>}
-						<div className={`${containerClass}`} style={containerStyle as React.CSSProperties}>
+						{group.subtitle && <p className="text-sm text-gray-600 mb-3">{group.subtitle}</p>}
+						<div className={containerClass}>
 							{group.fields.map((field, index) => (
 								<div key={`${group.id}-${field.name}-${index}`} className="mb-0">
 									{renderField(field)}
