@@ -25,6 +25,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { verifyEmailAction, resendVerificationEmailAction } from '@/features/shared/auth/actions/emailVerification.action';
 import { Button } from '@realestate/ui';
 import { useAlert } from '@/shared/hooks/useAlert';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
@@ -126,7 +127,9 @@ export default function VerifyEmailPage() {
         {/* Loading State */}
         {isLoading && (
           <div className="flex flex-col items-center gap-6">
-            <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+            <div className="flex justify-center">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" aria-hidden />
+            </div>
             <div className="text-center">
               <h2 className="text-lg font-semibold text-foreground mb-2">
                 Verificando tu correo...
@@ -142,9 +145,7 @@ export default function VerifyEmailPage() {
         {isSuccess && !isLoading && (
           <div className="flex flex-col items-center gap-6 text-center">
             <div className="flex items-center justify-center w-16 h-16 bg-green-100 rounded-full">
-              <span className="material-symbols-outlined text-green-600 text-3xl">
-                check_circle
-              </span>
+              <CheckCircle className="h-10 w-10 text-green-600" aria-hidden />
             </div>
 
             <div>
@@ -183,9 +184,7 @@ export default function VerifyEmailPage() {
         {isError && !isLoading && (
           <div className="flex flex-col items-center gap-6 text-center">
             <div className="flex items-center justify-center w-16 h-16 bg-red-100 rounded-full">
-              <span className="material-symbols-outlined text-red-600 text-3xl">
-                cancel
-              </span>
+              <XCircle className="h-10 w-10 text-red-600" aria-hidden />
             </div>
 
             <div>

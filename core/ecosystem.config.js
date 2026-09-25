@@ -29,19 +29,18 @@ for (const key of Object.keys(parsed)) {
   if (process.env[key] != null) resolvedEnv[key] = process.env[key];
 }
 if (resolvedEnv.NODE_ENV == null) resolvedEnv.NODE_ENV = 'production';
-if (resolvedEnv.PORT == null) resolvedEnv.PORT = '8002';
-if (resolvedEnv.HOSTNAME == null) resolvedEnv.HOSTNAME = '0.0.0.0';
+if (resolvedEnv.PORT == null) resolvedEnv.PORT = '8000';
+if (resolvedEnv.HOST == null) resolvedEnv.HOST = '0.0.0.0';
 
 module.exports = {
   apps: [
     {
-      name: 'rlst-backoffice',
+      name: 'rlst-core',
       cwd: __dirname,
-      script: 'server.js',
+      script: 'dist/main.js',
       instances: 1,
       exec_mode: 'fork',
       watch: false,
-      ignore_watch: ['node_modules', '.next'],
       env: resolvedEnv,
     },
   ],

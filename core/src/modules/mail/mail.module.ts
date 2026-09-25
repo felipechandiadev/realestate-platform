@@ -80,7 +80,7 @@ function trimEnv(value: string | undefined): string {
             },
             template: {
               dir: join(__dirname, '..', '..', '..', 'src', 'modules', 'mail', 'templates'),
-              adapter: new (require('@nestjs-modules/mailer/dist/adapters/handlebars.adapter').HandlebarsAdapter)(),
+              adapter: new (require('@nestjs-modules/mailer/adapters/handlebars.adapter').HandlebarsAdapter)(),
               options: { strict: true },
             },
           };

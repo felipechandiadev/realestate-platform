@@ -1,12 +1,12 @@
 /**
  * Notifications Page (Portal - User Dashboard)
- * 
+ *
  * Propósito:
  * - Centro de notificaciones personales del usuario
  * - Alertas sobre propiedades, contratos, mensajes
  * - Notificaciones del sistema (favoritos, publicaciones, vencimientos)
  * - Marcar notificaciones como leídas
- * 
+ *
  * Funcionalidad:
  * - Client component: requiere autenticación (useAuth)
  * - useNotification context para estado global
@@ -16,7 +16,7 @@
  * - Auto-refresh cuando cambia usuario
  * - Loading y error states
  * - Redirect si no autenticado
- * 
+ *
  * Audiencia: Usuarios registrados gestionando notificaciones
  */
 
@@ -26,9 +26,39 @@ import React, { useEffect } from 'react';
 import { useNotification } from '@/providers/NotificationContext';
 import { useAuth } from '@/app/providers';
 import { Button } from '@realestate/ui';
-import { Card } from "@realestate/ui";
-import { Alert } from "@realestate/ui";
+import { Card } from '@realestate/ui';
+import { Alert } from '@realestate/ui';
 import { useRouter } from 'next/navigation';
+import {
+  Loader2,
+  RefreshCw,
+  CheckCheck,
+  Heart,
+  AlertTriangle,
+  FileText,
+  Info,
+  BellOff,
+} from 'lucide-react';
+
+function NotificationTypeIcon({
+  type,
+  className,
+}: {
+  type?: string;
+  className?: string;
+}) {
+  const props = { size: 20, strokeWidth: 2.25, className, 'aria-hidden': true as const };
+  switch (type) {
+    case 'INTEREST':
+      return <Heart {...props} />;
+    case 'PAYMENT_OVERDUE':
+      return <AlertTriangle {...props} />;
+    case 'CONTRACT_STATUS_CHANGE':
+      return <FileText {...props} />;
+    default:
+      return <Info {...props} />;
+  }
+}
 
 export default function NotificationsPage() {
   const { user, status } = useAuth();
@@ -74,7 +104,7 @@ export default function NotificationsPage() {
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <Loader2 size={40} strokeWidth={2.25} className="animate-spin text-primary" aria-hidden />
       </div>
     );
   }
@@ -95,9 +125,12 @@ export default function NotificationsPage() {
             disabled={loading.grid}
             className="flex items-center gap-2"
           >
-            <span className={`material-symbols-outlined ${loading.grid ? 'animate-spin' : ''}`}>
-              refresh
-            </span>
+            <RefreshCw
+              size={18}
+              strokeWidth={2.25}
+              className={loading.grid ? 'animate-spin shrink-0' : 'shrink-0'}
+              aria-hidden
+            />
             Actualizar
           </Button>
           <Button
@@ -106,13 +139,12 @@ export default function NotificationsPage() {
             disabled={loading.markAllAsRead || notifications.length === 0}
             className="flex items-center gap-2"
           >
-            <span className="material-symbols-outlined">done_all</span>
+            <CheckCheck size={18} strokeWidth={2.25} className="shrink-0" aria-hidden />
             Marcar todas como leídas
           </Button>
         </div>
       </div>
 
-      {/* Errores */}
       {error && (
         <Alert variant="error" className="mb-6">
           {error}
@@ -122,7 +154,7 @@ export default function NotificationsPage() {
       <div className="space-y-4">
         {loading.grid && notifications.length === 0 ? (
           <div className="flex items-center justify-center py-12">
-            <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+            <Loader2 size={40} strokeWidth={2.25} className="animate-spin text-primary" aria-hidden />
           </div>
         ) : notifications.length > 0 ? (
           notifications.map((notification) => (
@@ -134,20 +166,28 @@ export default function NotificationsPage() {
                   : 'border-l-transparent'
               }`}
             >
-              <div 
+              <div
                 className="flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer"
                 onClick={() => handleMarkAsRead(notification.id, notification.status)}
               >
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className={`material-symbols-outlined text-xl ${
-                      notification.status === 'SEND' ? 'text-primary' : 'text-muted-foreground'
-                    }`}>
-                      {notification.type === 'INTEREST' ? 'favorite' : 
-                       notification.type === 'PAYMENT_OVERDUE' ? 'warning' :
-                       notification.type === 'CONTRACT_STATUS_CHANGE' ? 'description' : 'info'}
+                    <span
+                      className={
+                        notification.status === 'SEND'
+                          ? 'text-primary'
+                          : 'text-muted-foreground'
+                      }
+                    >
+                      <NotificationTypeIcon type={notification.type} />
                     </span>
-                    <h3 className={`font-semibold ${notification.status === 'SEND' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                    <h3
+                      className={`font-semibold ${
+                        notification.status === 'SEND'
+                          ? 'text-foreground'
+                          : 'text-muted-foreground'
+                      }`}
+                    >
                       {notification.senderName || 'Sistema'}
                     </h3>
                     {notification.status === 'SEND' && (
@@ -156,17 +196,25 @@ export default function NotificationsPage() {
                       </span>
                     )}
                   </div>
-                  <p className={`${notification.status === 'SEND' ? 'text-foreground' : 'text-muted-foreground'} line-clamp-2`}>
+                  <p
+                    className={`${
+                      notification.status === 'SEND'
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
+                    } line-clamp-2`}
+                  >
                     {notification.message}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {notification.createdAt ? new Date(notification.createdAt).toLocaleString('es-CL', {
-                      day: '2-digit',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    }) : ''}
+                    {notification.createdAt
+                      ? new Date(notification.createdAt).toLocaleString('es-CL', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })
+                      : ''}
                   </p>
                 </div>
                 {notification.status === 'SEND' && (
@@ -187,9 +235,9 @@ export default function NotificationsPage() {
           ))
         ) : (
           <Card className="flex flex-col items-center justify-center py-16 text-center">
-            <span className="material-symbols-outlined text-6xl text-muted-foreground mb-4">
-              notifications_off
-            </span>
+            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+              <BellOff size={40} strokeWidth={1.75} className="text-muted-foreground" aria-hidden />
+            </div>
             <h3 className="text-xl font-medium text-foreground">No tienes notificaciones</h3>
             <p className="text-muted-foreground max-w-sm mt-2">
               Cuando recibas avisos sobre tus propiedades o pagos, aparecerán aquí.

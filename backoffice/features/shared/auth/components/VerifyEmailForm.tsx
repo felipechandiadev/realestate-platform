@@ -7,6 +7,7 @@ import { Button } from '@realestate/ui';
 import { Alert } from "@realestate/ui";
 import { Card } from "@realestate/ui";
 import { useVerifyEmail, useResendVerificationEmail } from '@/features/shared/auth/hooks';
+import { Loader2, CheckCircle } from 'lucide-react';
 
 /**
  * VerifyEmailForm component
@@ -54,7 +55,9 @@ export const VerifyEmailForm: React.FC = () => {
     return (
       <Card className="max-w-md mx-auto p-6" data-test-id="verify-email-loading-card">
         <div className="text-center space-y-4">
-            <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+          <div className="flex justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" aria-hidden />
+          </div>
           <div>
             <h2 className="text-2xl font-semibold mb-2">Verifying Your Email</h2>
             <p className="text-sm text-secondary">Please wait while we verify your email address...</p>
@@ -68,7 +71,10 @@ export const VerifyEmailForm: React.FC = () => {
   if (isSuccess) {
     return (
       <Card className="max-w-md mx-auto p-6" data-test-id="verify-email-success-card">
-        <div className="mb-6 text-center">
+        <div className="mb-6 text-center space-y-3">
+          <div className="flex justify-center">
+            <CheckCircle className="h-12 w-12 text-green-600" aria-hidden />
+          </div>
           <h2 className="text-2xl font-semibold mb-2">Email Verified!</h2>
         </div>
 
