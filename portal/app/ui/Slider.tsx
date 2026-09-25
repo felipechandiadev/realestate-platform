@@ -7,7 +7,7 @@ import { usePathname } from "next/navigation";
 import { getPublicSlides, Slide } from "@/features/cms/actions/slides.action";
 import { useSliderImagesReady } from "@/providers/SliderImagesReadyContext";
 
-const DEFAULT_AUTOPLAY_SECONDS = 6;
+const AUTOPLAY_MS = 6000;
 const CROSSFADE_MS = 800;
 const EMPTY_BACKGROUND = "#F0F0F0";
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
@@ -32,12 +32,6 @@ function isVideoUrl(url: string): boolean {
 
 function isExternalHref(href: string): boolean {
   return href.startsWith("http://") || href.startsWith("https://");
-}
-
-function clampAutoplaySeconds(value?: number): number {
-  const seconds = Math.round(Number(value));
-  if (!Number.isFinite(seconds)) return DEFAULT_AUTOPLAY_SECONDS;
-  return Math.max(3, seconds);
 }
 
 function resolveCta(slide: Slide): { style: SlideCtaStyle; label: string; href: string } | null {
@@ -167,7 +161,6 @@ function NavButton({
 
 export default function Slider() {
   const [slides, setSlides] = useState<Slide[]>([]);
-  const [autoplaySeconds, setAutoplaySeconds] = useState(DEFAULT_AUTOPLAY_SECONDS);
   const [loaded, setLoaded] = useState(false);
   const [index, setIndex] = useState(0);
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
@@ -184,7 +177,6 @@ export default function Slider() {
         if (ignore) return;
         if (result.success && result.data) {
           setSlides(result.data);
-          setAutoplaySeconds(clampAutoplaySeconds(result.autoplaySeconds));
         } else {
           setSlides([]);
         }
@@ -246,7 +238,7 @@ export default function Slider() {
       if (timeoutId !== undefined) clearTimeout(timeoutId);
       timeoutId = setTimeout(() => {
         setIndex((current) => (current + 1) % count);
-      }, autoplaySeconds * 1000);
+      }, AUTOPLAY_MS);
     };
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
@@ -262,7 +254,7 @@ export default function Slider() {
       if (timeoutId !== undefined) clearTimeout(timeoutId);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [index, count, autoplaySeconds, prefersReducedMotion, loaded]);
+  }, [index, count, prefersReducedMotion, loaded]);
 
   useEffect(() => {
     const current = slides[index];

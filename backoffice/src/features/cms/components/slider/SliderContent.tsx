@@ -27,7 +27,6 @@ import {
   getSlides,
   reorderSlides,
 } from '@/features/cms/actions/slides.action';
-import { updateIdentity } from '@/features/cms/actions/identity.action';
 import SortableSliderCard from './SortableSliderCard';
 import { HeroBannerPreview } from './HeroBannerPreview';
 import CreateSlideForm from './CreateSlideForm';
@@ -37,8 +36,6 @@ import UpdateSlideForm from './UpdateSlideForm';
 interface SliderContentProps {
   initialSlides: Slide[];
   initialSearch?: string;
-  identityId?: string;
-  initialAutoplaySeconds?: number;
 }
 
 /**
@@ -51,12 +48,7 @@ interface SliderContentProps {
  * @param initialSearch - Initial search query from URL
  * @returns {React.ReactNode} Slider management interface
  */
-export function SliderContent({
-  initialSlides,
-  initialSearch = '',
-  identityId,
-  initialAutoplaySeconds = 6,
-}: SliderContentProps) {
+export function SliderContent({ initialSlides, initialSearch = '' }: SliderContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const alert = useAlert();
@@ -74,8 +66,6 @@ export function SliderContent({
   const [isCreateLoading, setIsCreateLoading] = useState(false);
   const [isUpdateLoading, setIsUpdateLoading] = useState(false);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
-  const [autoplaySeconds, setAutoplaySeconds] = useState(Math.max(3, initialAutoplaySeconds || 6));
-  const [autoplaySaving, setAutoplaySaving] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -189,16 +179,19 @@ export function SliderContent({
   };
 
   const handleAddSlide = () => {
+    setIsCreateLoading(false);
     setIsCreateDialogOpen(true);
   };
 
   const handleCreateSuccess = () => {
+    setIsCreateLoading(false);
     setIsCreateDialogOpen(false);
     refreshSlides();
     alert.success('Slide creado exitosamente');
   };
 
   const handleCreateCancel = () => {
+    setIsCreateLoading(false);
     setIsCreateDialogOpen(false);
   };
 
@@ -220,11 +213,13 @@ export function SliderContent({
   };
 
   const handleEditSlide = (slide: Slide) => {
+    setIsUpdateLoading(false);
     setSlideToEdit(slide);
     setIsEditDialogOpen(true);
   };
 
   const handleEditSuccess = () => {
+    setIsUpdateLoading(false);
     setIsEditDialogOpen(false);
     setSlideToEdit(null);
     refreshSlides();
@@ -232,6 +227,7 @@ export function SliderContent({
   };
 
   const handleEditCancel = () => {
+    setIsUpdateLoading(false);
     setIsEditDialogOpen(false);
     setSlideToEdit(null);
   };
@@ -242,21 +238,6 @@ export function SliderContent({
       (slide.description &&
         slide.description.toLowerCase().includes(search.toLowerCase())),
   );
-
-  const saveAutoplay = async () => {
-    if (!identityId) return;
-    const seconds = Math.max(3, Math.round(Number(autoplaySeconds)) || 6);
-    setAutoplaySeconds(seconds);
-    setAutoplaySaving(true);
-    try {
-      await updateIdentity(identityId, { heroAutoplaySeconds: seconds });
-      alert.success('Autoplay actualizado');
-    } catch {
-      alert.error('No se pudo guardar el autoplay');
-    } finally {
-      setAutoplaySaving(false);
-    }
-  };
 
   return (
     <div className="space-y-6 w-full">
@@ -274,29 +255,14 @@ export function SliderContent({
         />
       </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-        <div className="flex-1 min-w-0 max-w-xs sm:max-w-sm">
-          <TextField
-            label="Buscar slides"
-            value={search}
-            onChange={handleSearchChange}
-            startIcon="search"
-            placeholder="Buscar por título o descripción..."
-          />
-        </div>
-        <div className="flex items-end gap-2 max-w-xs">
-          <TextField
-            label="Autoplay del carrusel (mín. 3 s)"
-            type="number"
-            value={String(autoplaySeconds)}
-            min={3}
-            disabled={!identityId || autoplaySaving}
-            onChange={(event) => setAutoplaySeconds(Number(event.target.value))}
-            onBlur={() => {
-              void saveAutoplay();
-            }}
-          />
-        </div>
+      <div className="flex-1 min-w-0 max-w-xs sm:max-w-sm">
+        <TextField
+          label="Buscar slides"
+          value={search}
+          onChange={handleSearchChange}
+          startIcon="search"
+          placeholder="Buscar por título o descripción..."
+        />
       </div>
 
       {isLoading ? (
@@ -354,7 +320,6 @@ export function SliderContent({
                       key={slide.id}
                       slide={slide}
                       position={slide.order >= 1 ? slide.order : index + 1}
-                      autoplaySeconds={autoplaySeconds}
                       onDelete={handleDeleteSlide}
                       onEdit={handleEditSlide}
                     />
@@ -367,7 +332,6 @@ export function SliderContent({
                   <SortableSliderCard
                     slide={filteredSlides.find((slide) => slide.id === activeId)!}
                     position={filteredSlides.find((slide) => slide.id === activeId)?.order || 1}
-                    autoplaySeconds={autoplaySeconds}
                     isDragOverlay
                     onDelete={handleDeleteSlide}
                     onEdit={handleEditSlide}

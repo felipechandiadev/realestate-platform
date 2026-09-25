@@ -144,6 +144,7 @@ export default function UpdateSlideForm({ slide, onSuccess, onCancel, nested, fo
     {
       id: 'content',
       title: 'Contenido',
+      gap: 16,
       fields: [
         { name: 'title', label: 'Título', type: 'text' },
         { name: 'description', label: 'Mensaje', type: 'textarea', rows: 3, multiline: true },
@@ -153,6 +154,7 @@ export default function UpdateSlideForm({ slide, onSuccess, onCancel, nested, fo
     {
       id: 'action',
       title: 'Acción',
+      gap: 16,
       fields: [
         {
           name: 'ctaStyle',
@@ -183,6 +185,7 @@ export default function UpdateSlideForm({ slide, onSuccess, onCancel, nested, fo
     {
       id: 'advanced',
       title: 'Avanzado',
+      gap: 16,
       fields: [
         { name: 'overlayOpacity', label: 'Opacidad overlay', type: 'numberStepper', min: 0, max: 90, step: 5 },
         {
@@ -200,6 +203,7 @@ export default function UpdateSlideForm({ slide, onSuccess, onCancel, nested, fo
     {
       id: 'publish',
       title: 'Publicación',
+      gap: 16,
       fields: [
         {
           name: 'multimediaUrl',

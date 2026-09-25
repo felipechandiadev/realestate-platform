@@ -165,6 +165,7 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
     {
       id: 'content',
       title: 'Contenido',
+      gap: 16,
       fields: [
         { name: 'title', label: 'Título', type: 'text' },
         { name: 'description', label: 'Mensaje', type: 'textarea', rows: 3, multiline: true },
@@ -174,6 +175,7 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
     {
       id: 'action',
       title: 'Acción',
+      gap: 16,
       fields: [
         {
           name: 'ctaStyle',
@@ -204,6 +206,7 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
     {
       id: 'advanced',
       title: 'Avanzado',
+      gap: 16,
       fields: [
         { name: 'overlayOpacity', label: 'Opacidad overlay', type: 'numberStepper', min: 0, max: 90, step: 5 },
         {
@@ -221,6 +224,7 @@ export default function CreateSlideForm({ onSuccess, onCancel, nested, formId, o
     {
       id: 'publish',
       title: 'Publicación',
+      gap: 16,
       fields: [
         {
           name: 'multimediaUrl',

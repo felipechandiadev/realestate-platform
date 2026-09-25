@@ -8,7 +8,6 @@ import { HeroBannerPreview } from './HeroBannerPreview'
 interface SliderCardProps {
   slide: Slide;
   position: number;
-  autoplaySeconds: number;
   dragAttributes?: any;
   dragListeners?: any;
   isDragging?: boolean;
@@ -19,7 +18,6 @@ interface SliderCardProps {
 export default function SliderCard({
   slide,
   position,
-  autoplaySeconds,
   dragAttributes,
   dragListeners,
   isDragging = false,
@@ -36,7 +34,7 @@ export default function SliderCard({
     >
       <HeroBannerPreview slide={slide} />
       <div className="pointer-events-none absolute left-3 top-3 z-20 rounded-md border border-white/30 bg-black/45 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
-        {statusLabel} · Posición {position} · {autoplaySeconds}s
+        {statusLabel} · Posición {position}
       </div>
       <div
         role="button"
