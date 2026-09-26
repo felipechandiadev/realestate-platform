@@ -26,6 +26,15 @@ export class GridRentQueryDto {
   @IsString()
   filters?: string; // e.g. "city-Las Condes,typeName-Departamento"
 
+  /**
+   * Status filter. Use `ALL` for backoffice (no status restriction).
+   * Omitted defaults to PUBLISHED.
+   * Column filters (`filters=status-…`) override this when present.
+   */
+  @IsOptional()
+  @IsString()
+  status?: string;
+
   @IsOptional()
   @IsBooleanString()
   pagination?: string; // 'true' | 'false'

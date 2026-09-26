@@ -10,9 +10,10 @@ import { getIdentity } from '@/features/cms/actions/identity.action';
 interface PortalClientProps {
   initialProperties: PropertyData[];
   initialPagination?: any;
+  initialCompanyName?: string;
 }
 
-export default function PortalClient({ initialProperties, initialPagination }: PortalClientProps) {
+export default function PortalClient({ initialProperties, initialPagination, initialCompanyName = '' }: PortalClientProps) {
   const searchParams = useSearchParams();
   const [properties, setProperties] = useState<PropertyData[]>(initialProperties);
   
@@ -68,9 +69,10 @@ export default function PortalClient({ initialProperties, initialPagination }: P
     priceMax: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [identity, setIdentity] = useState<any | null>(null);
+  const [identity, setIdentity] = useState<any | null>(initialCompanyName ? { name: initialCompanyName } : null);
 
   useEffect(() => {
+    if (initialCompanyName) return;
     let ignore = false;
     async function loadIdentity() {
       try {
@@ -82,7 +84,7 @@ export default function PortalClient({ initialProperties, initialPagination }: P
     }
     loadIdentity();
     return () => { ignore = true; };
-  }, []);
+  }, [initialCompanyName]);
 
   // Initialize filters from URL parameters
   useEffect(() => {
@@ -167,7 +169,7 @@ export default function PortalClient({ initialProperties, initialPagination }: P
     <div>
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 pt-6 pb-6 text-center">
         <h1 className="text-3xl sm:text-4xl font-extrabold text-primary mb-2 tracking-tight">
-          {identity?.name || 'Plataforma Inmobiliaria'}
+          {identity?.name || ''}
         </h1>
         <p className="text-lg sm:text-xl text-muted-foreground font-light">
           Seleccionamos propiedades con carácter, diseño y alto valor. Te acompañamos con un servicio personalizado y discreto para que encuentres un lugar a la altura de tus expectativas.

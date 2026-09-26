@@ -481,7 +481,7 @@ export default function ValoracionPage() {
         bedrooms: values.habitaciones || undefined,
         bathrooms: values.banos || undefined,
         price: estimatedPrice.toString(),
-        currencyPrice: isRental ? 'CLP' : 'UF',
+        currencyPrice: 'CLP',
         region: selectedRegion?.label || '',
         city: selectedComuna?.label || '',
         address: `${selectedComuna?.label || ''}, ${selectedRegion?.label || ''}`,

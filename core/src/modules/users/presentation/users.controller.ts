@@ -32,6 +32,7 @@ import {
   UpdateUserDto,
   LoginDto,
   ChangePasswordDto,
+  ResetPasswordDto,
   AssignRoleDto,
   UpdatePermissionsDto,
   ListAdminUsersQueryDto,
@@ -326,6 +327,22 @@ export class UsersController {
       @Body() changePasswordDto: ChangePasswordDto,
     ): Promise<void> {
       await this.usersService.changePassword(id, changePasswordDto);
+    }
+
+    @Patch(':id/reset-password')
+    @ApiOperation({ summary: 'Reset a user password (admin)' })
+    @ApiResponse({ status: 200, description: 'Password reset successfully' })
+    @ApiParam({ name: 'id', type: String })
+    @ApiBody({ type: ResetPasswordDto })
+    @ApiBearerAuth()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @HttpCode(200)
+    async resetPassword(
+      @Param('id') id: string,
+      @Body(ValidationPipe) dto: ResetPasswordDto,
+    ): Promise<void> {
+      await this.usersService.resetPassword(id, dto.newPassword);
     }
 
     /**

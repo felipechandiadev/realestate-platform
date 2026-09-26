@@ -6,6 +6,8 @@ import { DataGrid, type DataGridColumn } from '@realestate/ui';
 import type { CommunityUserGridRow } from '@/features/users/actions/users.action';
 import DeleteCommunityUserButton from './DeleteCommunityUserButton';
 import CommunityUserMoreButton from './CommunityUserMoreButton';
+import { IconButton } from '@realestate/ui';
+import ResetPasswordDialog from '../../ui/ResetPasswordDialog';
 
 type CommunityUsersDataGridProps = {
   rows: CommunityUserGridRow[];
@@ -33,6 +35,7 @@ function CommunityUsersDataGridInner({
 }: CommunityUsersDataGridProps) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [resetUser, setResetUser] = useState<{ id: string; name: string } | null>(null);
 
   const handleDeleteSuccess = () => {
     setIsDeleting(null);
@@ -103,11 +106,28 @@ function CommunityUsersDataGridInner({
     {
       field: 'actions',
       headerName: '',
-      width: 120,
+      width: 160,
       sortable: false,
       filterable: false,
       actionComponent: ({ row }) => (
         <div className="flex h-full flex-shrink-0 items-center justify-center gap-1">
+          <IconButton
+            icon="vpn_key"
+            variant="text"
+            size="xs"
+            ariaLabel="Restablecer contraseña"
+            title="Restablecer contraseña"
+            onClick={() =>
+              setResetUser({
+                id: row.id,
+                name:
+                  `${row.firstName || ''} ${row.lastName || ''}`.trim() ||
+                  row.email ||
+                  row.username ||
+                  'usuario',
+              })
+            }
+          />
           <CommunityUserMoreButton user={{ id: row.id }} />
           <DeleteCommunityUserButton
             userId={row.id}
@@ -125,6 +145,7 @@ function CommunityUsersDataGridInner({
   const mappedRows = rows.map(mapRow);
 
   return (
+    <>
     <DataGrid
       title={title || 'Usuarios de la Comunidad'}
       columns={columns}
@@ -135,6 +156,13 @@ function CommunityUsersDataGridInner({
       data-test-id="community-users-grid"
       limit={25}
     />
+      <ResetPasswordDialog
+        open={!!resetUser}
+        userId={resetUser?.id ?? ''}
+        displayName={resetUser?.name ?? ''}
+        onClose={() => setResetUser(null)}
+      />
+    </>
   );
 }
 

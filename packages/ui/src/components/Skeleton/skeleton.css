@@ -28,15 +28,6 @@
   opacity: 0.92;
 }
 
-@media (prefers-color-scheme: dark) {
-  .fs-skeleton {
-    --fs-skeleton-base: color-mix(in srgb, var(--fs-foreground) 6%, var(--fs-surface));
-    --fs-skeleton-mid: color-mix(in srgb, var(--fs-foreground) 10%, var(--fs-surface));
-    --fs-skeleton-highlight: color-mix(in srgb, var(--fs-surface) 40%, white 12%);
-    opacity: 0.88;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .fs-skeleton {
     animation: none;

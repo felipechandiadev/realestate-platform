@@ -17,17 +17,20 @@ export class CreatePropertyUseCase {
     const prefix =
       operationType === PropertyOperationType.SALE ? 'PV' : 'PA';
 
-    const lastProperty = await this.propertyRepository
+    const existing = await this.propertyRepository
       .createQueryBuilder('property')
+      .withDeleted()
+      .select(['property.id', 'property.code'])
       .where('property.code LIKE :pattern', { pattern: `${prefix}-${year}-%` })
-      .orderBy('property.code', 'DESC')
-      .getOne();
+      .getMany();
 
     let sequence = 1;
-    if (lastProperty && lastProperty.code) {
-      const parts = lastProperty.code.split('-');
-      if (parts.length === 3) {
-        sequence = parseInt(parts[2], 10) + 1;
+    for (const property of existing) {
+      const parts = property.code?.split('-') ?? [];
+      if (parts.length !== 3) continue;
+      const value = parseInt(parts[2], 10);
+      if (!Number.isNaN(value) && value + 1 > sequence) {
+        sequence = value + 1;
       }
     }
 

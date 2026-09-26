@@ -7,6 +7,8 @@ import { Alert } from "@realestate/ui";
 import { Card } from "@realestate/ui";
 import PropertyCard from '../ui/PropertyCard';
 import { useRouter } from 'next/navigation';
+import { Heart, Loader2, LogIn } from 'lucide-react';
+import { Button } from '@realestate/ui';
 
 export default function FavoritesPage() {
   const { user, status } = useAuth();
@@ -55,15 +57,24 @@ export default function FavoritesPage() {
   if (loading || status === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <Loader2 className="animate-spin text-primary" size={40} aria-label="Cargando" />
       </div>
     );
   }
 
   if (status === 'unauthenticated') {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="warning">Debes iniciar sesión para ver tus favoritos.</Alert>
+      <div className="container mx-auto px-4 py-16 max-w-lg">
+        <Card className="p-10 text-center flex flex-col items-center">
+          <LogIn className="text-primary mb-4" size={48} />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Inicia sesión</h1>
+          <p className="text-muted-foreground mb-6">
+            Debes iniciar sesión para ver tus favoritos.
+          </p>
+          <Button onClick={() => window.dispatchEvent(new Event('portal:open-login'))}>
+            Ingresar
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -79,7 +90,7 @@ export default function FavoritesPage() {
 
       {favorites.length === 0 ? (
         <Card className="p-12 text-center flex flex-col items-center justify-center border-dashed border-2">
-          <span className="material-symbols-outlined text-6xl text-muted-foreground mb-4">favorite</span>
+          <Heart className="text-muted-foreground mb-4" size={64} />
           <h3 className="text-xl font-medium text-foreground mb-2">Aún no tienes favoritos</h3>
           <p className="text-muted-foreground max-w-md">
             Explora nuestras propiedades y marca las que te gusten para verlas aquí más tarde.

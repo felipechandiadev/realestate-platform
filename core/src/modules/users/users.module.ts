@@ -24,6 +24,7 @@ import { LoginUseCase } from './application/use-cases/login.usecase';
 import { AssignRoleUseCase } from './application/use-cases/assign-role.usecase';
 import { SetPermissionsUseCase } from './application/use-cases/set-permissions.usecase';
 import { ChangePasswordUseCase } from './application/use-cases/change-password.usecase';
+import { ResetPasswordUseCase } from './application/use-cases/reset-password.usecase';
 import { SetStatusUseCase } from './application/use-cases/set-status.usecase';
 import { GetProfileUseCase } from './application/use-cases/get-profile.usecase';
 import { ListAdminsAgentsUseCase } from './application/use-cases/list-admins-agents.usecase';
@@ -63,6 +64,7 @@ import { GridCommunityUsersUseCase } from './application/use-cases/grid-communit
     AssignRoleUseCase,
     SetPermissionsUseCase,
     ChangePasswordUseCase,
+    ResetPasswordUseCase,
     SetStatusUseCase,
     GetProfileUseCase,
     ListAdminsAgentsUseCase,

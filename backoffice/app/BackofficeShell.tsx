@@ -49,15 +49,29 @@ const menuItems = [
   { label: 'Notificaciones', url: '/notifications' },
 ];
 
-export default function BackofficeShell({ children }: { children: React.ReactNode }) {
+type IdentityBranding = {
+  name?: string | null;
+  urlLogo?: string | null;
+};
+
+export default function BackofficeShell({
+  children,
+  initialIdentity = null,
+}: {
+  children: React.ReactNode;
+  initialIdentity?: IdentityBranding | null;
+}) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string>('');
+  const seededName = initialIdentity?.name?.trim() || '';
+  const seededLogo = initialIdentity?.urlLogo?.trim() || null;
+  const [logoUrl, setLogoUrl] = useState<string | null>(seededLogo);
+  const [companyName, setCompanyName] = useState<string>(seededName);
   const [showMyAccountDialog, setShowMyAccountDialog] = useState(false);
 
   useEffect(() => {
     if (pathname?.startsWith('/login')) return;
+    if (seededName || seededLogo) return;
     async function fetchIdentityData() {
       try {
         const url = await getIdentityLogoUrl();
@@ -69,7 +83,7 @@ export default function BackofficeShell({ children }: { children: React.ReactNod
       }
     }
     fetchIdentityData();
-  }, [pathname]);
+  }, [pathname, seededName, seededLogo]);
 
   if (pathname?.startsWith('/login')) {
     return <>{children}</>;

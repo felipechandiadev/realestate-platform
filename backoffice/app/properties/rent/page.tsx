@@ -18,6 +18,7 @@
  */
 
 import RentGrid from './ui/RentGrid';
+import { RentPageLayout } from './ui/RentPageLayout';
 import { getRentPropertiesGrid } from '@/features/properties/actions/properties.action';
 
 interface PageProps {
@@ -44,13 +45,23 @@ export default async function RentPage({ searchParams }: PageProps) {
   const page = parseInt(pageParam) || 1;
   const limit = parseInt(limitParam) || 25;
 
-  const result = await getRentPropertiesGrid({ sort, sortField, search, filters, filtration, page, limit, pagination: true });
+  const result = await getRentPropertiesGrid({
+    sort,
+    sortField,
+    search,
+    filters,
+    filtration,
+    page,
+    limit,
+    pagination: true,
+    status: 'ALL',
+  });
   const rows = Array.isArray(result) ? result : result.data ?? [];
   const totalRows = Array.isArray(result) ? result.length : result.total ?? rows.length;
 
   return (
-    <div className="p-4">
-      <RentGrid rows={rows} totalRows={totalRows} />
-    </div>
+    <RentPageLayout>
+      <RentGrid rows={rows} totalRows={totalRows} page={page} limit={limit} />
+    </RentPageLayout>
   );
 }

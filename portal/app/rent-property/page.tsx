@@ -32,6 +32,7 @@ import { listPropertyTypesPublic, getPropertyTypeCharacteristicsPublic, Property
 import { getRegiones, getComunasByRegion } from '@/features/shared/common/actions/commons.action';
 import { Alert } from "@realestate/ui";
 import { Button } from '@realestate/ui';
+import { Bath, Bed, Car, CheckCircle, Home, ImageIcon, Info, Loader2, MapPin, Maximize2, Mountain } from 'lucide-react';
 
 // Dynamic import for LocationPreview to avoid SSR issues with Leaflet
 const LocationPreview = dynamic(() => import("@realestate/ui/components/LocationPicker").then(m => ({ default: m.LocationPreview })), {
@@ -112,9 +113,7 @@ function PropertyPreviewCard({
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <span className="material-symbols-outlined text-muted-foreground" style={{ fontSize: '48px' }}>
-              image
-            </span>
+            <ImageIcon className="text-muted-foreground" size={48} />
           </div>
         )}
         {/* Badge de tipo de operación */}
@@ -142,14 +141,14 @@ function PropertyPreviewCard({
 
         {/* Ubicación */}
         <div className="flex items-center gap-1 text-muted-foreground text-sm">
-          <span className="material-symbols-outlined text-base">location_on</span>
+          <MapPin size={16} className="shrink-0" />
           <span>{location || 'Ubicación no especificada'}</span>
         </div>
 
         {/* Tipo de propiedad */}
         {propertyTypeName && (
           <div className="flex items-center gap-1 text-muted-foreground text-sm">
-            <span className="material-symbols-outlined text-base">home</span>
+            <Home size={16} className="shrink-0" />
             <span>{propertyTypeName}</span>
           </div>
         )}
@@ -158,31 +157,31 @@ function PropertyPreviewCard({
         <div className="flex flex-wrap gap-3 pt-2 border-t border-border">
           {propertyType?.hasBedrooms && bedrooms !== null && bedrooms !== undefined && bedrooms > 0 && (
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <span className="material-symbols-outlined text-base">bed</span>
+              <Bed size={16} className="shrink-0" />
               <span>{bedrooms}</span>
             </div>
           )}
           {propertyType?.hasBathrooms && bathrooms !== null && bathrooms !== undefined && bathrooms > 0 && (
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <span className="material-symbols-outlined text-base">shower</span>
+              <Bath size={16} className="shrink-0" />
               <span>{bathrooms}</span>
             </div>
           )}
           {propertyType?.hasBuiltSquareMeters && builtSquareMeters !== null && builtSquareMeters !== undefined && builtSquareMeters > 0 && (
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <span className="material-symbols-outlined text-base">square_foot</span>
+              <Maximize2 size={16} className="shrink-0" />
               <span>{builtSquareMeters} m²</span>
             </div>
           )}
           {propertyType?.hasLandSquareMeters && landSquareMeters !== null && landSquareMeters !== undefined && landSquareMeters > 0 && (
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <span className="material-symbols-outlined text-base">landscape</span>
+              <Mountain size={16} className="shrink-0" />
               <span>{landSquareMeters} m²</span>
             </div>
           )}
           {propertyType?.hasParkingSpaces && parkingSpaces !== null && parkingSpaces !== undefined && parkingSpaces > 0 && (
             <div className="flex items-center gap-1 text-sm text-muted-foreground">
-              <span className="material-symbols-outlined text-base">directions_car</span>
+              <Car size={16} className="shrink-0" />
               <span>{parkingSpaces}</span>
             </div>
           )}
@@ -324,18 +323,22 @@ export default function RentPropertyPage() {
 
   // Load comunas when region changes
   useEffect(() => {
-    if (values.region) {
-      const loadComunas = async () => {
-        try {
-          const result = await getComunasByRegion(values.region as string);
-          setComunas(result);
-        } catch (error) {
-          console.error('Error loading comunas:', error);
-        }
-      };
-
-      loadComunas();
+    if (!values.region) {
+      setComunas([]);
+      return;
     }
+
+    const loadComunas = async () => {
+      try {
+        const result = await getComunasByRegion(values.region as string);
+        setComunas(result);
+      } catch (error) {
+        console.error('Error loading comunas:', error);
+        setComunas([]);
+      }
+    };
+
+    loadComunas();
   }, [values.region]);
 
   // Handle post-submit loading delay
@@ -351,7 +354,12 @@ export default function RentPropertyPage() {
   }, [showPostSubmitLoading]);
 
   const handleChange = (field: string, value: unknown) => {
-    setValues(prev => ({ ...prev, [field]: value }));
+    setValues(prev => {
+      if (field === 'region' && prev.region !== value) {
+        return { ...prev, region: value as string | null, city: null };
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
   const handleSubmit = async () => {
@@ -521,12 +529,12 @@ export default function RentPropertyPage() {
           <div className="text-center py-8 text-muted-foreground">
             {loadingCharacteristics ? (
               <div className="flex flex-col items-center gap-2">
-                <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+                <div className="flex justify-center"><Loader2 className="animate-spin" size={32} /></div>
                 <span>Cargando características...</span>
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <span className="material-symbols-outlined text-4xl">info</span>
+                <Info size={36} />
                 <span>Selecciona un tipo de propiedad en el paso anterior para ver las características disponibles.</span>
               </div>
             )}
@@ -541,7 +549,7 @@ export default function RentPropertyPage() {
         name: 'builtSquareMeters',
         label: 'M² construidos',
         type: 'number',
-        props: { placeholder: '0', min: 0 }
+        props: { placeholder: '0', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -550,7 +558,7 @@ export default function RentPropertyPage() {
         name: 'landSquareMeters',
         label: 'M² terreno',
         type: 'number',
-        props: { placeholder: '0', min: 0 }
+        props: { placeholder: '0', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -559,7 +567,7 @@ export default function RentPropertyPage() {
         name: 'bedrooms',
         label: 'Habitaciones',
         type: 'number',
-        props: { placeholder: '0', min: 0 }
+        props: { placeholder: '0', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -568,7 +576,7 @@ export default function RentPropertyPage() {
         name: 'bathrooms',
         label: 'Baños',
         type: 'number',
-        props: { placeholder: '0', min: 0 }
+        props: { placeholder: '0', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -577,7 +585,7 @@ export default function RentPropertyPage() {
         name: 'parkingSpaces',
         label: 'Estacionamientos',
         type: 'number',
-        props: { placeholder: '0', min: 0 }
+        props: { placeholder: '0', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -586,7 +594,7 @@ export default function RentPropertyPage() {
         name: 'floors',
         label: 'Pisos',
         type: 'number',
-        props: { placeholder: '0', min: 0 }
+        props: { placeholder: '0', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -595,7 +603,7 @@ export default function RentPropertyPage() {
         name: 'constructionYear',
         label: 'Año de construcción',
         type: 'number',
-        props: { placeholder: new Date().getFullYear().toString(), min: 1900, max: new Date().getFullYear() }
+        props: { placeholder: new Date().getFullYear().toString(), min: 1900, max: new Date().getFullYear(), selectOnFocus: true }
       }]);
     }
 
@@ -608,7 +616,7 @@ export default function RentPropertyPage() {
         renderComponent: () => (
           <div className="text-center py-8 text-muted-foreground">
             <div className="flex flex-col items-center gap-2">
-              <span className="material-symbols-outlined text-green-500" style={{ fontSize: '48px' }}>check_circle</span>
+              <CheckCircle className="text-green-500" size={48} />
               <span>Este tipo de propiedad no requiere características adicionales.</span>
               <span className="text-sm">Puedes continuar al siguiente paso.</span>
             </div>
@@ -638,7 +646,10 @@ export default function RentPropertyPage() {
       type: 'autocomplete',
       options: comunas,
       required: true,
-      props: { placeholder: 'Busca la comuna' }
+      props: {
+        placeholder: values.region ? 'Busca la comuna' : 'Selecciona primero la región',
+        disabled: !values.region,
+      }
     },
     {
       name: 'address',
@@ -842,7 +853,7 @@ export default function RentPropertyPage() {
         {showPostSubmitLoading ? (
           // Loading después del envío exitoso
           <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
-            <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+            <Loader2 className="animate-spin text-primary" size={40} aria-label="Cargando" />
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-bold text-foreground">Procesando tu solicitud...</h2>
               <p className="text-muted-foreground">
@@ -855,9 +866,7 @@ export default function RentPropertyPage() {
           <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
             <div className="text-center space-y-4">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <span className="material-symbols-outlined text-green-600" style={{ fontSize: '32px' }}>
-                  check_circle
-                </span>
+                <CheckCircle className="text-green-600" size={32} />
               </div>
               <h2 className="text-3xl font-bold text-foreground">¡Solicitud enviada correctamente!</h2>
               <p className="text-lg text-muted-foreground max-w-md">

@@ -18,6 +18,7 @@ import Slider from './ui/Slider';
 import PortalClient from './PortalClient';
 import TestimonialsBand from './ui/TestimonialsBand';
 import { listPublicTestimonials } from '@/features/cms/actions/testimonials.action';
+import { getIdentity } from '@/features/cms/actions/identity.action';
 
 interface PortalPageProps {
   searchParams: Promise<{
@@ -40,7 +41,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   const currency = params.currency || '';
   const page = params.page || '';
 
-  const [featuredResultSettled, propertiesResultSettled, testimonialsSettled] = await Promise.allSettled([
+  const [featuredResultSettled, propertiesResultSettled, testimonialsSettled, identitySettled] = await Promise.allSettled([
     getPublishedFeaturedPropertiesPublic(),
     getPublishedPropertiesFiltered({
       currency: currency,
@@ -51,6 +52,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
       page: page ? parseInt(page) : 1,
     }),
     listPublicTestimonials(),
+    getIdentity(),
   ]);
 
   if (featuredResultSettled.status === 'rejected') {
@@ -66,6 +68,8 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   const featuredResult = featuredResultSettled.status === 'fulfilled' ? featuredResultSettled.value : null;
   const result = propertiesResultSettled.status === 'fulfilled' ? propertiesResultSettled.value : null;
   const testimonials = testimonialsSettled.status === 'fulfilled' ? testimonialsSettled.value : [];
+  const identity = identitySettled.status === 'fulfilled' ? identitySettled.value : null;
+  const companyName = typeof identity?.name === 'string' ? identity.name.trim() : '';
 
   const featuredProperties = featuredResult?.data ?? [];
   const properties = result?.data ?? [];
@@ -75,25 +79,29 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
     <>
       <Slider />
 
-      <section className="relative z-0 bg-card pt-10">
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-          <div className="mb-6">
-            <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-primary sm:text-4xl">
-              Propiedades Destacadas
-            </h1>
-            <p className="text-lg font-light text-muted-foreground sm:text-xl">
-              Explora nuestras propiedades más destacadas seleccionadas especialmente para ti.
-            </p>
-          </div>
-        </div>
-      </section>
+      {featuredProperties.length > 0 ? (
+        <>
+          <section className="relative z-0 bg-card pt-10">
+            <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
+              <div className="mb-6">
+                <h1 className="mb-2 text-3xl font-extrabold tracking-tight text-primary sm:text-4xl">
+                  Propiedades Destacadas
+                </h1>
+                <p className="text-lg font-light text-muted-foreground sm:text-xl">
+                  Explora nuestras propiedades más destacadas seleccionadas especialmente para ti.
+                </p>
+              </div>
+            </div>
+          </section>
 
-      <div className="relative w-full bg-card">
-        <FeaturedPropertiesBand properties={featuredProperties} scrollSpeed={30} />
-      </div>
+          <div className="relative w-full bg-card">
+            <FeaturedPropertiesBand properties={featuredProperties} scrollSpeed={30} />
+          </div>
+        </>
+      ) : null}
 
       <div className="relative z-0 mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <PortalClient initialProperties={properties} initialPagination={pagination} />
+        <PortalClient initialProperties={properties} initialPagination={pagination} initialCompanyName={companyName} />
       </div>
 
       <TestimonialsBand testimonials={testimonials} />

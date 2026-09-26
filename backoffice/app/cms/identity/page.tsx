@@ -238,7 +238,7 @@ export default function IdentityPage() {
 
       success(identity.id ? 'Sección actualizada' : 'Identidad creada')
     } catch (err) {
-      error('Error guardando la sección')
+      error(err instanceof Error && err.message ? err.message : 'Error guardando la sección')
     } finally {
       setSavingSection(null)
     }

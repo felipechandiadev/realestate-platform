@@ -31,11 +31,11 @@ const ROLE_LABELS: Record<string, string> = {
   director: 'Director',
 };
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'RealState Platform';
+const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'RealEstate Platform';
 const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.33.1';
 const APP_RELEASE = process.env.NEXT_PUBLIC_APP_RELEASE || '21-Diciembre-2025';
 
-const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose, logoUrl, companyName }) => {
+const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose, logoUrl }) => {
   const { data: session } = useSession();
   const user = session?.user;
   const [isPending, startTransition] = useTransition();
@@ -203,8 +203,8 @@ const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose,
             )}
           </div>
         ) : null}
-        <div className="text-lg font-bold text-gray-800" data-test-id="side-bar-app-name">{companyName || APP_NAME}</div>
-        <div className="text-[10px] opacity-70 mt-1" data-test-id="side-bar-app-version">EstateFlow v1.4.2</div>
+        <div className="text-lg font-bold text-gray-800" data-test-id="side-bar-app-name">{APP_NAME}</div>
+        <div className="text-[10px] opacity-70 mt-1" data-test-id="side-bar-app-version">v{APP_VERSION}</div>
       </div>
 {/* 
       {user && (() => {

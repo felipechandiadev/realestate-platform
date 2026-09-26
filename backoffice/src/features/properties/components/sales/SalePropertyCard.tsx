@@ -14,6 +14,8 @@ import SaleMoreButton from './SaleMoreButton';
 interface SalePropertyCardProps {
   property: SalePropertyGridRow;
   onDeleteSuccess?: () => void;
+  moreButton?: React.ReactNode;
+  testIdPrefix?: string;
 }
 
 function resolveCardImageUrls(property: SalePropertyGridRow): string[] {
@@ -40,7 +42,12 @@ function resolveCardImageUrls(property: SalePropertyGridRow): string[] {
   return urls;
 }
 
-export function SalePropertyCard({ property, onDeleteSuccess }: SalePropertyCardProps) {
+export function SalePropertyCard({
+  property,
+  onDeleteSuccess,
+  moreButton,
+  testIdPrefix = 'sale-property-card',
+}: SalePropertyCardProps) {
   const status = property.status ?? '';
   const imageUrls = useMemo(() => resolveCardImageUrls(property), [property]);
   const [index, setIndex] = useState(0);
@@ -90,7 +97,7 @@ export function SalePropertyCard({ property, onDeleteSuccess }: SalePropertyCard
             className="absolute left-2 top-1/2 z-[1] -translate-y-1/2 shadow-md"
             ariaLabel="Imagen anterior"
             onClick={goPrev}
-            data-test-id={`sale-property-card-prev-${property.id}`}
+            data-test-id={`${testIdPrefix}-prev-${property.id}`}
           />
           <IconButton
             icon="ChevronRight"
@@ -99,7 +106,7 @@ export function SalePropertyCard({ property, onDeleteSuccess }: SalePropertyCard
             className="absolute right-2 top-1/2 z-[1] -translate-y-1/2 shadow-md"
             ariaLabel="Imagen siguiente"
             onClick={goNext}
-            data-test-id={`sale-property-card-next-${property.id}`}
+            data-test-id={`${testIdPrefix}-next-${property.id}`}
           />
           <div className="pointer-events-none absolute bottom-2 left-1/2 z-[1] flex -translate-x-1/2 gap-1">
             {imageUrls.map((_, i) => (
@@ -159,12 +166,12 @@ export function SalePropertyCard({ property, onDeleteSuccess }: SalePropertyCard
           </p>
 
           <div className="mt-auto flex items-center justify-end gap-2 border-t border-border pt-3">
-            <SaleMoreButton property={property} />
+            {moreButton ?? <SaleMoreButton property={property} />}
             <PropertiesDeleteButton propertyId={property.id} onSuccess={onDeleteSuccess} />
           </div>
         </div>
       }
-      data-test-id={`sale-property-card-${property.id}`}
+      data-test-id={`${testIdPrefix}-${property.id}`}
     />
   );
 }

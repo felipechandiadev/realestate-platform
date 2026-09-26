@@ -1,17 +1,24 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import RentMoreButton from './RentMoreButton';
 import { useRouter } from 'next/navigation';
-import { DataGrid, type DataGridColumn } from "@realestate/ui";
+import { CollectionGrid, DataGrid, type DataGridColumn } from "@realestate/ui";
 import { env } from '@/lib/env';
 import type { RentPropertyGridRow } from '@/features/properties/actions/properties.action';
 import { CreatePropertyDialog } from '@/features/properties/components/dialogs';
 import { PropertiesDeleteButton } from '@/features/properties/components/shared';
+import {
+  PROPERTY_VIEW_STORAGE_KEYS,
+  usePropertyViewMode,
+} from '@/features/properties/components/shared/propertyViewMode';
+import { SalePropertyCard } from '@/features/properties/components/sales/SalePropertyCard';
 import { getStatusInSpanish, getStatusChipClasses } from '@/features/properties/utils';
 
 type RentGridProps = {
   rows: RentPropertyGridRow[];
   totalRows?: number;
+  page?: number;
+  limit?: number;
   title?: string;
 };
 
@@ -48,8 +55,9 @@ function mapRow(row: any) {
   };
 }
 
-export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
+export default function RentGrid({ rows, totalRows, page = 1, limit = 25, title }: RentGridProps) {
   const router = useRouter();
+  const [view] = usePropertyViewMode(PROPERTY_VIEW_STORAGE_KEYS.rent);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const columns: DataGridColumn[] = [
@@ -123,6 +131,7 @@ export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
       width: 100,
       sortable: false,
       filterable: false,
+      sticky: true,
       actionComponent: ({ row }) => (
         <div className="flex items-center gap-1">
           <PropertiesDeleteButton propertyId={row.id} onSuccess={() => { router.refresh(); }} />
@@ -151,21 +160,68 @@ export default function RentGrid({ rows, totalRows, title }: RentGridProps) {
 
   // Aplica el mapeo antes de pasar los datos al DataGrid
   const mappedRows = rows.map(mapRow);
+  const cardItems = useMemo(
+    () =>
+      rows.map((row) => {
+        const id = String(row.p_id ?? row.id);
+        return (
+          <SalePropertyCard
+            key={id}
+            property={{
+              id,
+              code: row.p_code ?? row.code,
+              title: row.p_title ?? row.title,
+              status: row.p_status ?? row.status,
+              typeName: row.typeName ?? row.propertyType?.name ?? row.propertyTypeName ?? '',
+              assignedAgentName: row.assignedAgentName ?? resolveUserDisplayName(row.assignedAgent),
+              city: row.p_city ?? row.city,
+              price: row.p_price ?? row.price,
+              currencyPrice: row.p_currencyPrice ?? row.currencyPrice,
+              mainImageUrl: row.mainImageUrl ?? row.p_mainImageUrl,
+              imageUrls: row.imageUrls,
+              multimedia: row.multimedia,
+            }}
+            moreButton={<RentMoreButton property={{ id }} />}
+            testIdPrefix="rent-property-card"
+            onDeleteSuccess={() => router.refresh()}
+          />
+        );
+      }),
+    [rows, router],
+  );
 
   return (
     <>
-      <DataGrid
-        title={''}
-        columns={columns}
-        rows={mappedRows}
-        totalRows={totalRows ?? mappedRows.length}
-        fillViewport
-        data-test-id="rent-properties-grid"
-        excelUrl={excelEndpoint}
-        limit={25}
-        excelFields={excelFields}
-        onAddClick={() => setDialogOpen(true)}
-      />
+      {view === 'cards' ? (
+        <CollectionGrid
+          totalRows={totalRows ?? mappedRows.length}
+          page={page}
+          limit={limit}
+          fillViewport
+          viewportBottomInset={24}
+          onAddClick={() => setDialogOpen(true)}
+          contentItems={cardItems}
+          contentGridColumns={{ default: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
+          contentGridItemsAlign="stretch"
+          contentEmptyMessage="No hay propiedades en arriendo"
+          searchPlaceholder="Buscar propiedades..."
+          data-test-id="rent-properties-collection-grid"
+        />
+      ) : (
+        <DataGrid
+          title={title ?? ''}
+          columns={columns}
+          rows={mappedRows}
+          totalRows={totalRows ?? mappedRows.length}
+          fillViewport
+          pinActionsColumn
+          data-test-id="rent-properties-grid"
+          excelUrl={excelEndpoint}
+          limit={limit}
+          excelFields={excelFields}
+          onAddClick={() => setDialogOpen(true)}
+        />
+      )}
       {dialogOpen ? (
         <CreatePropertyDialog
           open={dialogOpen}

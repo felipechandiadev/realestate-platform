@@ -26,6 +26,7 @@ import { LoginUseCase } from './use-cases/login.usecase';
 import { AssignRoleUseCase } from './use-cases/assign-role.usecase';
 import { SetPermissionsUseCase } from './use-cases/set-permissions.usecase';
 import { ChangePasswordUseCase } from './use-cases/change-password.usecase';
+import { ResetPasswordUseCase } from './use-cases/reset-password.usecase';
 import { SetStatusUseCase } from './use-cases/set-status.usecase';
 import { GetProfileUseCase } from './use-cases/get-profile.usecase';
 import { ListAdminsAgentsUseCase } from './use-cases/list-admins-agents.usecase';
@@ -80,6 +81,7 @@ export class UsersService {
     private readonly assignRoleUseCase: AssignRoleUseCase,
     private readonly setPermissionsUseCase: SetPermissionsUseCase,
     private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly setStatusUseCase: SetStatusUseCase,
     private readonly getProfileUseCase: GetProfileUseCase,
     private readonly listAdminsAgentsUseCase: ListAdminsAgentsUseCase,
@@ -134,6 +136,10 @@ export class UsersService {
     changePasswordDto: ChangePasswordDto,
   ): Promise<void> {
     return this.changePasswordUseCase.execute(id, changePasswordDto);
+  }
+
+  async resetPassword(id: string, newPassword: string): Promise<void> {
+    return this.resetPasswordUseCase.execute(id, { newPassword });
   }
 
   async setStatus(id: string, status: UserStatus): Promise<User> {

@@ -49,13 +49,15 @@ interface Identity {
   faqs?: FAQItem[];
 }
 
-const PortalFooter: React.FC = () => {
-  const [identity, setIdentity] = useState<Identity | null>(null);
-  const [loading, setLoading] = useState(true);
+const PortalFooter: React.FC<{ initialIdentity?: Identity | Record<string, unknown> | null }> = ({ initialIdentity = null }) => {
+  const seeded = initialIdentity && typeof initialIdentity === 'object' ? (initialIdentity as Identity) : null;
+  const [identity, setIdentity] = useState<Identity | null>(seeded);
+  const [loading, setLoading] = useState(!seeded);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [faqDialogOpen, setFaqDialogOpen] = useState(false);
 
   useEffect(() => {
+    if (seeded) return;
     async function loadIdentity() {
       try {
         const data = await getIdentity();
@@ -69,7 +71,7 @@ const PortalFooter: React.FC = () => {
       }
     }
     loadIdentity();
-  }, []);
+  }, [seeded]);
 
   if (loading) {
     return (
@@ -97,16 +99,17 @@ const PortalFooter: React.FC = () => {
   ];
 
   const partnerships = identity?.partnerships ?? [];
-  const faqs = identity?.faqs ?? []; 
+  const faqs = identity?.faqs ?? [];
+  const showPartnerships = partnerships.length > 0;
 
   return (
     <footer className="bg-foreground text-background p-8 mt-12 border-t border-border">
       <div className="container mx-auto flex flex-col gap-10">
+        {showPartnerships && (
         <div className="flex flex-col gap-6">
           <h3 className="text-lg font-semibold text-background text-center">Nuestras alianzas</h3>
           <div className="flex flex-wrap gap-6 justify-center">
-            {partnerships.length > 0 ? (
-              partnerships.map((partnership, index) => {
+              {partnerships.map((partnership, index) => {
                 const imageKey = `partnership-${index}`;
                 const imageError = failedImages.has(imageKey);
 
@@ -128,14 +131,12 @@ const PortalFooter: React.FC = () => {
                     </div>
                   </div>
                 );
-              })
-            ) : (
-              <p className="text-sm text-background/70">Pronto anunciaremos nuestras alianzas estratégicas.</p>
-            )}
+              })}
           </div>
         </div>
+        )}
 
-        <hr className="border-t border-gray-400/30" />
+        {showPartnerships && <hr className="border-t border-gray-400/30" />}
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="md:col-span-1 space-y-4 flex flex-col items-center text-center md:items-start md:text-left">
@@ -143,14 +144,14 @@ const PortalFooter: React.FC = () => {
               {!failedImages.has('company-logo') && identity?.urlLogo && (
                 <img
                   src={identity.urlLogo}
-                  alt="Logo Plataforma Inmobiliaria"
+                  alt={identity?.name?.trim() ? `Logo de ${identity.name.trim()}` : 'Logo'}
                   className="w-10 h-10 object-contain flex-shrink-0"
                   onError={() => handleImageError('company-logo')}
                 />
               )}
               <div className="flex-1">
                 <h4 className="text-base font-semibold text-background">
-                  {identity?.name || 'Plataforma Inmobiliaria'}
+                  {identity?.name?.trim() || ''}
                 </h4>
               </div>
             </div>
@@ -269,7 +270,7 @@ const PortalFooter: React.FC = () => {
         </div>
 
         <div className="text-center text-sm font-extralight text-background border-t border-gray-400/30 pt-4">
-          &copy; {new Date().getFullYear()} {identity?.name?.trim() || 'Bravo Schott Propiedades'}. Todos los derechos reservados.
+          &copy; {new Date().getFullYear()}{identity?.name?.trim() ? ` ${identity.name.trim()}` : ''}. Todos los derechos reservados.
         </div>
       </div>
 

@@ -18,12 +18,15 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const session = await getServerSession(authOptions);
+  const [session, identity] = await Promise.all([
+    getServerSession(authOptions),
+    getIdentity(),
+  ]);
   return (
-    <html lang="es">
+    <html lang="es" style={{ colorScheme: 'only light' }}>
       <body>
         <ClientProviders session={session}>
-          <PortalShell>{children}</PortalShell>
+          <PortalShell initialIdentity={identity}>{children}</PortalShell>
         </ClientProviders>
       </body>
     </html>

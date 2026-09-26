@@ -6,6 +6,17 @@ import { env } from '@/lib/env'
 
 type IdentityPayload = FormData | Record<string, unknown>
 
+function readApiError(status: number, errorText: string, fallback: string): string {
+  try {
+    const parsed = JSON.parse(errorText) as { message?: string | string[] }
+    if (Array.isArray(parsed.message)) return parsed.message.join('. ')
+    if (typeof parsed.message === 'string' && parsed.message.trim()) return parsed.message
+  } catch {
+    if (errorText.trim()) return errorText
+  }
+  return `${fallback}: ${status}`
+}
+
 function ensureFormData(payload: IdentityPayload): FormData {
   if (payload instanceof FormData) {
     return payload
@@ -77,6 +88,7 @@ export async function getIdentity() {
   try {
     const res = await fetch(`${env.backendApiUrl}/identities/last`, {
       headers,
+      cache: 'no-store',
     })
 
     if (!res.ok) {
@@ -108,7 +120,7 @@ export async function updateIdentity(id: string, payload: IdentityPayload) {
   if (!res.ok) {
     const errorText = await res.text()
     console.error('Update identity failed:', res.status, errorText)
-    throw new Error(`Failed to update identity: ${res.status} ${errorText}`)
+    throw new Error(readApiError(res.status, errorText, 'No se pudo actualizar la identidad'))
   }
 
   return res.json()
@@ -131,7 +143,7 @@ export async function createIdentity(payload: IdentityPayload) {
   if (!res.ok) {
     const errorText = await res.text()
     console.error('Create identity failed:', res.status, errorText)
-    throw new Error(`Failed to create identity: ${res.status} ${errorText}`)
+    throw new Error(readApiError(res.status, errorText, 'No se pudo crear la identidad'))
   }
 
   return res.json()

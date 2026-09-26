@@ -10,6 +10,7 @@ export interface AdminCardProps {
   admin: AdministratorType;
   onEdit?: (admin: AdministratorType) => void;
   onDelete?: (admin: AdministratorType) => void;
+  onResetPassword?: (admin: AdministratorType) => void;
 }
 
 const STATUS_STYLES: Record<AdministratorStatus, { className: string; label: string }> = {
@@ -19,7 +20,7 @@ const STATUS_STYLES: Record<AdministratorStatus, { className: string; label: str
   SUSPENDED: { className: 'bg-rose-600 text-white', label: 'SUSPENDIDO' },
 };
 
-const AdminCard: React.FC<AdminCardProps> = ({ admin, onEdit, onDelete }) => {
+const AdminCard: React.FC<AdminCardProps> = ({ admin, onEdit, onDelete, onResetPassword }) => {
   const fullName =
     `${admin.personalInfo?.firstName ?? ''} ${admin.personalInfo?.lastName ?? ''}`.trim() ||
     admin.username ||
@@ -70,6 +71,15 @@ const AdminCard: React.FC<AdminCardProps> = ({ admin, onEdit, onDelete }) => {
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
+        <IconButton
+          icon="vpn_key"
+          variant="text"
+          size="md"
+          aria-label={`Restablecer contraseña de ${fullName}`}
+          title="Restablecer contraseña"
+          onClick={() => onResetPassword?.(admin)}
+          className="text-secondary"
+        />
         <IconButton
           icon="edit"
           variant="text"

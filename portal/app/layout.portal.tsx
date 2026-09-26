@@ -8,9 +8,10 @@ import { CookieConsentProvider } from "@/providers/CookieConsentContext";
 
 type PortalLayoutProps = {
   children: React.ReactNode;
+  initialIdentity?: Record<string, unknown> | null;
 };
 
-export default function PortalLayout({ children }: PortalLayoutProps) {
+export default function PortalLayout({ children, initialIdentity = null }: PortalLayoutProps) {
   return (
     <CookieConsentProvider>
       <div className="min-h-screen flex flex-col relative">
@@ -18,10 +19,7 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
         
         {/* Header sticky (TopBar + NavBar) */}
         <div className="sticky top-0 z-50">
-          <PortalTopBar
-          // onMenuClick={() => setSidebarOpen(true)} 
-
-          />
+          <PortalTopBar initialIdentity={initialIdentity} />
           
           {/* NavBar */}
           <div className="bg-background shadow-[0_4px_8px_-4px_rgba(0,0,0,0.12)]">
@@ -34,7 +32,7 @@ export default function PortalLayout({ children }: PortalLayoutProps) {
         <main className="flex-1">
           {children}
         </main>
-        <PortalFooter />
+        <PortalFooter initialIdentity={initialIdentity} />
         <Wsp />
       </div>
     </CookieConsentProvider>

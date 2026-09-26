@@ -291,6 +291,8 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
       cancelButtonText="Cancelar"
       onCancel={onClose}
       columns={2}
+      stackOnMobile
+      rowGap={16}
     />
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { MessageSquareQuote } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAlert } from '@/providers/AlertContext';
 import { TextField } from '@realestate/ui';
@@ -157,9 +158,7 @@ export function TestimonialsContent({
         </div>
       ) : filteredTestimonials.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
-          <span className="material-symbols-outlined text-5xl block mb-4" style={{ fontSize: '64px' }}>
-            comment_bank
-          </span>
+          <MessageSquareQuote className="mx-auto mb-4 text-muted-foreground" size={64} aria-hidden />
           <p className="text-lg font-medium">No hay testimonios disponibles</p>
           <p className="text-sm">Crea tu primer testimonio para empezar</p>
         </div>

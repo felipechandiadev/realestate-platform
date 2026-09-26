@@ -38,11 +38,16 @@ function formatCLP(value: number) {
 
 interface TopBarProps {
   onMenuClick?: () => void;
-  nombreEmpresa?: string;
+  initialIdentity?: Identity | Record<string, unknown> | null;
   uf?: number;
 }
 
-const FALLBACK_LOGO = "/logo.svg";
+function asIdentity(value: TopBarProps['initialIdentity']): Identity | null {
+  if (!value || typeof value !== 'object') return null;
+  const name = 'name' in value && typeof value.name === 'string' ? value.name.trim() : '';
+  if (!name && !('urlLogo' in value)) return null;
+  return value as Identity;
+}
 
 interface SidebarProps {
   open: boolean;
@@ -93,16 +98,21 @@ function Sidebar({ open, onClose, identity, logoSrc, onLoginClick, onRegisterCli
         aria-modal="true"
       >
         <div className="flex flex-col items-center justify-center p-4 text-center gap-2 flex-shrink-0">
-          <img
-            src={logoSrc}
-            alt="Logo"
-            className="w-12 h-12 object-contain"
-          />
-          <span className="font-medium text-foreground text-sm">
-            {identity?.name || ""}
-          </span>
+          {logoSrc ? (
+            <img
+              src={logoSrc}
+              alt={identity?.name ? `Logo de ${identity.name}` : 'Logo'}
+              className="w-12 h-12 object-contain"
+            />
+          ) : null}
+          {identity?.name?.trim() ? (
+            <span className="font-medium text-foreground text-sm">
+              {identity.name.trim()}
+            </span>
+          ) : null}
         </div>
 
+          {isUserLoggedIn && (
           <div className="mx-4 p-3 bg-primary/5 border border-primary/10 rounded-xl mb-2 flex-shrink-0">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
@@ -116,6 +126,7 @@ function Sidebar({ open, onClose, identity, logoSrc, onLoginClick, onRegisterCli
               </div>
             </div>
           </div>
+          )}
 
         <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
           <nav className="w-full">
@@ -265,14 +276,20 @@ function Sidebar({ open, onClose, identity, logoSrc, onLoginClick, onRegisterCli
   );
 }
 
-export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma Inmobiliaria", uf = 34879 }: TopBarProps) {
+export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf = 34879 }: TopBarProps) {
   const { data: session } = useSession();
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+
+  useEffect(() => {
+    const openLogin = () => setLoginDialogOpen(true);
+    window.addEventListener('portal:open-login', openLogin);
+    return () => window.removeEventListener('portal:open-login', openLogin);
+  }, []);
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [identity, setIdentity] = useState<Identity | null>(null);
-  const [logoSrc, setLogoSrc] = useState(FALLBACK_LOGO);
+  const [identity, setIdentity] = useState<Identity | null>(() => asIdentity(initialIdentity));
+  const [logoFailed, setLogoFailed] = useState(false);
   const [ufValue, setUfValue] = useState<number | null>(null);
   const [isUfLoading, setIsUfLoading] = useState(true);
 
@@ -280,18 +297,20 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
     let ignore = false;
 
     async function loadTopBarData() {
-      const [identityResult, ufResult] = await Promise.allSettled([
-        getIdentity(),
-        getLatestUfValue(),
-      ]);
+      const tasks: Promise<unknown>[] = [getLatestUfValue()];
+      if (!asIdentity(initialIdentity)) {
+        tasks.push(getIdentity());
+      }
+
+      const [ufResult, identityResult] = await Promise.allSettled(tasks);
 
       if (ignore) {
         return;
       }
 
-      if (identityResult.status === 'fulfilled' && identityResult.value) {
-        setIdentity(identityResult.value);
-      } else if (identityResult.status === 'rejected') {
+      if (identityResult && identityResult.status === 'fulfilled' && identityResult.value) {
+        setIdentity(identityResult.value as Identity);
+      } else if (identityResult && identityResult.status === 'rejected') {
         console.error('Error loading identity:', identityResult.reason);
       }
 
@@ -311,30 +330,12 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [initialIdentity, uf]);
 
-  const remoteLogo = identity?.urlLogo?.trim() || "";
-
-  useEffect(() => {
-    if (!remoteLogo || remoteLogo === FALLBACK_LOGO) {
-      setLogoSrc(FALLBACK_LOGO);
-      return;
-    }
-
-    let cancelled = false;
-    const probe = new Image();
-    probe.onload = () => {
-      if (!cancelled) setLogoSrc(remoteLogo);
-    };
-    probe.onerror = () => {
-      if (!cancelled) setLogoSrc(FALLBACK_LOGO);
-    };
-    probe.src = remoteLogo;
-
-    return () => {
-      cancelled = true;
-    };
-  }, [remoteLogo]);
+  const logoSrc = !logoFailed ? identity?.urlLogo?.trim() || '' : '';
+  const companyName = identity?.name?.trim() || '';
+  const companyMail = identity?.mail?.trim() || '';
+  const companyPhone = identity?.phone?.trim() || '';
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -348,7 +349,7 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         identity={identity}
-        logoSrc={logoSrc}
+        logoSrc={logoSrc || ''}
         onLoginClick={() => setLoginDialogOpen(true)}
         onRegisterClick={() => setRegisterDialogOpen(true)}
         isUserLoggedIn={!!session?.user}
@@ -362,37 +363,47 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
       >
         {/* Izquierda: logo y nombre empresa, ambos al inicio */}
         <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity" data-test-id="topBarLogo">
-          <img
-            src={logoSrc}
-            alt="Logo"
-            className="w-10 h-10 object-contain"
-            data-test-id="topBarLogo"
-            onError={() => setLogoSrc((current) => (current === FALLBACK_LOGO ? current : FALLBACK_LOGO))}
-          />
-          <span className="text-base md:text-lg lg:text-2xl font-medium text-foreground whitespace-nowrap">
-            {identity?.name || ""}
-          </span>
+          {logoSrc ? (
+            <img
+              src={logoSrc}
+              alt={companyName ? `Logo de ${companyName}` : 'Logo'}
+              className="w-10 h-10 object-contain"
+              data-test-id="topBarLogo"
+              onError={() => setLogoFailed(true)}
+            />
+          ) : null}
+          {companyName ? (
+            <span className="text-base md:text-lg lg:text-2xl font-medium text-foreground whitespace-nowrap">
+              {companyName}
+            </span>
+          ) : null}
         </Link>
 
         {/* Centro: contacto y teléfono */}
+        {(companyMail || companyPhone) && (
         <div className="hidden lg:flex flex-col items-center justify-center flex-1">
           <div className="flex items-center gap-6 justify-center">
+            {companyMail ? (
             <a 
-              href={`mailto:${identity?.mail || "contacto@empresa.cl"}`}
+              href={`mailto:${companyMail}`}
               className="flex items-center gap-1 text-xs text-foreground whitespace-nowrap hover:text-primary transition-colors"
             >
               <Mail size={16} />
-              {identity?.mail || "contacto@empresa.cl"}
+              {companyMail}
             </a>
+            ) : null}
+            {companyPhone ? (
             <a 
-              href={`tel:${identity?.phone || "+56912345678"}`}
+              href={`tel:${companyPhone}`}
               className="flex items-center gap-1 text-xs text-foreground whitespace-nowrap hover:text-primary transition-colors"
             >
               <Phone size={16} />
-              {identity?.phone || "+56 9 1234 5678"}
+              {companyPhone}
             </a>
+            ) : null}
           </div>
         </div>
+        )}
 
         <div className="ml-auto flex items-center gap-2 pr-4" data-test-id="topBarActions">
           {/* Hide UF on small screens (xs/sm) - will be shown in sidebar */}
@@ -444,7 +455,7 @@ export default function PortalTopBar({ onMenuClick, nombreEmpresa = "Plataforma 
         >
           <LoginForm
             logoSrc={logoSrc}
-            companyName={identity?.name}
+            companyName={companyName}
             onClose={() => setLoginDialogOpen(false)}
             onRegisterClick={() => {
               setLoginDialogOpen(false);

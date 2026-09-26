@@ -1,35 +1,36 @@
 import {
-  IsNotEmpty,
   IsString,
   IsOptional,
   IsEmail,
   IsInt,
   Min,
   ValidateNested,
+  ValidateIf,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { SocialMedia, Partnership, FAQItem } from '../domain/identity.entity';
 
 export class CreateIdentityDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  name: string;
+  name?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  address: string;
+  address?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  phone: string;
+  phone?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
+  @ValidateIf((_, value) => typeof value === 'string' && value.trim() !== '')
   @IsEmail()
-  mail: string;
+  mail?: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  businessHours: string;
+  businessHours?: string;
 
   @IsOptional()
   @IsString()

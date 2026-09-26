@@ -51,16 +51,3 @@
   background-color: color-mix(in srgb, var(--color-success) 45%, var(--color-background));
 }
 
-@media (prefers-color-scheme: dark) {
-  .admin-ambient-blob {
-    opacity: 0.1;
-  }
-
-  .admin-ambient-blob--primary-mid {
-    opacity: 0.08;
-  }
-
-  .admin-ambient-blob--success {
-    opacity: 0.07;
-  }
-}

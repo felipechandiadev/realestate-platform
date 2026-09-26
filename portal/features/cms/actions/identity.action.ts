@@ -77,6 +77,7 @@ export async function getIdentity() {
   try {
     const res = await fetch(`${env.backendApiUrl}/identities/last`, {
       headers,
+      cache: 'no-store',
     })
 
     if (!res.ok) {
@@ -84,7 +85,9 @@ export async function getIdentity() {
       throw new Error('Failed to fetch identity')
     }
 
-    return res.json()
+    const text = await res.text()
+    if (!text.trim()) return null
+    return JSON.parse(text)
   } catch (err) {
     console.warn('[getIdentity] fetch failed:', err)
     return null

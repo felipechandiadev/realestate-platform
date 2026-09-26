@@ -314,9 +314,9 @@ export default function PropertyDetailClient({
         </div>
 
         {/* Main Content - Two Column Layout */}
-        <div className="flex flex-col lg:flex-row gap-8 mb-8">
+        <div className="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-4">
           {/* Left Column - Images, Details and Map */}
-          <div className="w-full lg:w-3/4 rounded-lg p-6">
+          <div className="w-full rounded-lg p-6 lg:col-span-3">
             {/* Gallery Section */}
             <div className="mb-6">
               <MultimediaGrid
@@ -444,23 +444,10 @@ export default function PropertyDetailClient({
               </div>
             )}
 
-            {/* Related Properties Section */}
-            {!isLoadingRelated && relatedProperties.length > 0 && (
-              <div className="border-t pt-6 mt-6">
-                <h3 className="text-xl font-semibold text-foreground mb-4">
-                  Propiedades Relacionadas
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {relatedProperties.map((relatedProp) => (
-                    <RelatedPropertyCard key={relatedProp.id} property={relatedProp} />
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Right Column - Contact Form - Sticky */}
-          <div className="w-full lg:w-1/4">
+          <div className="w-full lg:col-span-1 lg:row-span-2">
             <div className="rounded-lg p-6 h-fit sticky top-32">
               <h3 className="text-xl font-bold text-foreground text-center mb-4 pb-3 border-b">
                 Contáctanos
@@ -554,6 +541,19 @@ export default function PropertyDetailClient({
               {/* WhatsApp Button eliminado por requerimiento */}
             </div>
           </div>
+
+          {!isLoadingRelated && relatedProperties.length > 0 && (
+            <div className="border-t pt-6 lg:col-span-3">
+              <h3 className="mb-4 text-xl font-semibold text-foreground">
+                Propiedades Relacionadas
+              </h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {relatedProperties.map((relatedProp) => (
+                  <RelatedPropertyCard key={relatedProp.id} property={relatedProp} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

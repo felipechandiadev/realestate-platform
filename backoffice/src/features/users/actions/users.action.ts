@@ -626,6 +626,49 @@ export async function changeUserPassword(id: string, passwordData: ChangePasswor
 }
 
 /**
+ * Admin sets a new password without the current one.
+ */
+export async function resetUserPassword(id: string, newPassword: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+	try {
+		const session = await getServerSession(authOptions);
+		if (!session?.accessToken) {
+			return { success: false, error: 'No autenticado' };
+		}
+
+		const response = await fetch(`${env.backendApiUrl}/users/${id}/reset-password`, {
+			method: 'PATCH',
+			headers: {
+				'Authorization': `Bearer ${session.accessToken}`,
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ newPassword }),
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => null);
+			const message = Array.isArray(errorData?.message)
+				? errorData.message.join(', ')
+				: errorData?.message;
+			return {
+				success: false,
+				error: message || `No se pudo restablecer la contraseña (${response.status})`,
+			};
+		}
+
+		return { success: true };
+	} catch (error) {
+		console.error('Error resetting password:', error);
+		return {
+			success: false,
+			error: error instanceof Error ? error.message : 'Unknown error',
+		};
+	}
+}
+
+/**
  * Assign role to user
  */
 export async function assignUserRole(id: string, role: 'ADMIN' | 'AGENT'): Promise<{

@@ -28,6 +28,7 @@ import { Alert } from "@realestate/ui";
 import { Card } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import Link from 'next/link';
+import { BarChart3, Calendar, FileSignature, FileText, Loader2, Receipt, Wallet } from 'lucide-react';
 
 export default function MyContractsPage() {
   const { user, status } = useAuth();
@@ -72,7 +73,7 @@ export default function MyContractsPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <Loader2 className="animate-spin text-primary" size={40} aria-label="Cargando" />
       </div>
     );
   }
@@ -96,7 +97,7 @@ export default function MyContractsPage() {
 
       {contracts.length === 0 ? (
         <Card className="p-12 text-center flex flex-col items-center justify-center border-dashed border-2">
-          <span className="material-symbols-outlined text-6xl text-muted-foreground mb-4">description</span>
+          <FileText className="mb-4 text-muted-foreground" size={64} aria-hidden />
           <h3 className="text-xl font-medium text-foreground mb-2">Aún no tienes contratos registrados</h3>
           <p className="text-muted-foreground max-w-md">
             Aquí aparecerá el historial de tus contratos firmados o en proceso con nosotros.
@@ -128,15 +129,15 @@ export default function MyContractsPage() {
                   
                   <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
                     <div className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-base text-primary">analytics</span>
+                      <BarChart3 className="text-primary" size={16} aria-hidden />
                       <span className="capitalize">{contract.operation.toLowerCase()}</span>
                     </div>
                     <div className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-base text-primary">calendar_today</span>
+                      <Calendar className="text-primary" size={16} aria-hidden />
                       <span>Creado el {formatDate(contract.createdAt)}</span>
                     </div>
                     <div className="flex items-center gap-1 font-medium italic">
-                      <span className="material-symbols-outlined text-base text-primary">payments</span>
+                      <Wallet className="text-primary" size={16} aria-hidden />
                       <span>{contract.currency === 'UF' ? `UF ${contract.amount}` : `$ ${contract.amount.toLocaleString('es-CL')}`}</span>
                     </div>
                   </div>
@@ -146,12 +147,12 @@ export default function MyContractsPage() {
                   {isArriendo && (
                     <Link href={`/myContracts/${contract.id}/payments`}>
                       <Button variant="outlined" size="sm" className="whitespace-nowrap flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">receipt_long</span>
+                        <Receipt size={16} aria-hidden />
                         Mis pagos de arriendo
                       </Button>
                     </Link>
                   )}
-                  <span className="material-symbols-outlined text-muted-foreground opacity-20 hidden md:block">contract</span>
+                  <FileSignature className="hidden text-muted-foreground opacity-20 md:block" size={40} aria-hidden />
                 </div>
               </Card>
             );

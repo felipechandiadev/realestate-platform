@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Dialog } from "@realestate/ui";
+import { Button, Dialog } from '@realestate/ui';
 import UpdateTeamMemberForm from '@/features/cms/components/ourTeam/UpdateTeamMemberForm';
 import type { TeamMember } from '@/features/cms/actions/ourTeam.action';
 
@@ -22,41 +22,28 @@ export default function UpdateTeamMemberDialog({
   const FORM_ID = 'update-team-member-form';
 
   const handleSuccess = () => {
-    onSuccess({} as TeamMember); // El form ya muestra el alert de éxito
+    onSuccess({} as TeamMember);
     onClose();
   };
 
   if (!open || !member) return null;
-
-  const handleUpdate = () => {
-    // Obtener el formulario por su ID y ejecutar submit
-    const form = document.getElementById(FORM_ID) as HTMLFormElement;
-    if (form) {
-      form.dispatchEvent(
-        new Event('submit', { bubbles: true, cancelable: true })
-      );
-    }
-  };
 
   return (
     <Dialog
       open={open}
       onClose={onClose}
       title="Editar miembro del equipo"
-      actions={[
-        {
-          label: 'Cancelar',
-          onClick: onClose,
-          variant: 'secondary',
-          loading: isLoading,
-        },
-        {
-          label: isLoading ? 'Actualizando...' : 'Actualizar miembro',
-          onClick: handleUpdate,
-          variant: 'primary',
-          loading: isLoading,
-        },
-      ]}
+      actionsJustify="end"
+      actions={
+        <>
+          <Button variant="outlined" type="button" onClick={onClose} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button variant="primary" type="submit" form={FORM_ID} disabled={isLoading}>
+            {isLoading ? 'Actualizando...' : 'Actualizar miembro'}
+          </Button>
+        </>
+      }
     >
       <UpdateTeamMemberForm
         nested

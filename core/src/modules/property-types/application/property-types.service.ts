@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  HttpException,
 } from '@nestjs/common';
 import {
   CreatePropertyTypeDto,
@@ -35,14 +36,13 @@ export class PropertyTypesService {
   ) {
     try {
       return await this.createUseCase.execute({
-        id: undefined as any,
         ...createPropertyTypeDto,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null,
+        description: createPropertyTypeDto.description?.trim() || null,
       } as any);
     } catch (err) {
-      throw new ConflictException(err.message);
+      if (err instanceof HttpException) throw err;
+      const message = err instanceof Error ? err.message : 'No se pudo crear el tipo de propiedad';
+      throw new ConflictException(message);
     }
   }
 

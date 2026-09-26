@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { readFile } from 'fs/promises';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Property } from '../domain/property.entity';
@@ -78,6 +79,23 @@ export class PropertyService {
 
   async createPropertyWithFiles(dto: any, creatorId: string, files: any[]) {
     const property = await this.create(dto, creatorId);
+
+    if (files?.length) {
+      try {
+        const prepared = await Promise.all(
+          files.map(async (file) => {
+            if ((!file.buffer || file.buffer.length === 0) && file.path) {
+              file.buffer = await readFile(file.path);
+            }
+            return file;
+          }),
+        );
+        const ownerId = creatorId && creatorId !== 'anonymous' ? creatorId : '';
+        await this.uploadMultimedia(property.id, prepared, {}, ownerId);
+      } catch (error) {
+        console.error('❌ [PropertyService] Failed to attach multimedia on create:', error);
+      }
+    }
 
     // Solicitudes públicas (valoración / publicar) envían contacto → notificar admins.
     if (dto?.contactName && dto?.contactEmail) {
@@ -259,13 +277,45 @@ export class PropertyService {
 
 
 async createPropertyRequest(dto: any, userId: string): Promise<Property> {
-      // legacy endpoint stub - returns placeholder or throws
-      throw new Error('createPropertyRequest not implemented');
-    }
+  const rawPrice = typeof dto?.price === 'string'
+    ? Number(dto.price.replace(/[^\d.-]/g, ''))
+    : dto?.price;
+  const price = typeof rawPrice === 'number' && Number.isFinite(rawPrice) ? rawPrice : undefined;
 
-    async updateSeoData(id: string, dto: UpdatePropertySeoDto, userId: string): Promise<Property> {
-      // stub inserted above
-      throw new Error('updateSeoData not implemented');
+  const property = await this.create(
+    {
+      ...dto,
+      status: PropertyStatus.REQUEST,
+      state: dto?.state || dto?.region,
+      price,
+      latitude: dto?.latitude ?? dto?.coordinates?.latitude ?? dto?.location?.lat,
+      longitude: dto?.longitude ?? dto?.coordinates?.longitude ?? dto?.location?.lng,
+      creatorUserId: userId,
+    },
+    userId,
+  );
+
+  if (dto?.contactName && dto?.contactEmail) {
+    await this.notifyPublicationRequest(property, dto).catch((error) => {
+      console.error('❌ [PropertyService] Failed to notify publication request:', error);
+    });
+  }
+
+  return property;
+}
+
+  async updateSeoData(id: string, dto: UpdatePropertySeoDto, _userId: string) {
+    const property = await this.propertyRepository.findOne({ where: { id, deletedAt: IsNull() } });
+    if (!property) throw new NotFoundException('Propiedad no encontrada');
+
+    if (dto.seoTitle !== undefined) property.seoTitle = dto.seoTitle;
+    if (dto.seoDescription !== undefined) property.seoDescription = dto.seoDescription;
+    if (dto.seoKeywords !== undefined) property.seoKeywords = dto.seoKeywords;
+    if (dto.isFeatured !== undefined) property.isFeatured = dto.isFeatured;
+    property.lastModifiedAt = new Date();
+
+    await this.propertyRepository.save(property);
+    return this.getSeoData(id);
   }
 
   async isMultimediaMain(propertyId: string, multimediaId: string): Promise<boolean> {

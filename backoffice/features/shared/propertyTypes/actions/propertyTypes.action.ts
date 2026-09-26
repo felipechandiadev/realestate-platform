@@ -133,7 +133,17 @@ export async function createPropertyType(data: CreatePropertyTypeDto): Promise<P
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to create property type: ${response.status}`)
+    const body = await response.text().catch(() => '')
+    console.error('createPropertyType failed', response.status, body)
+    let message = 'No se pudo crear el tipo de propiedad'
+    try {
+      const parsed = JSON.parse(body) as { message?: string | string[] }
+      if (Array.isArray(parsed.message)) message = parsed.message.join(', ')
+      else if (parsed.message) message = parsed.message
+    } catch {
+      /* keep fallback */
+    }
+    throw new Error(message)
   }
 
   revalidatePath('/properties/propertyTypes')

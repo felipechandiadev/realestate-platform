@@ -4,7 +4,7 @@ import { getToken } from 'next-auth/jwt';
 import { sessionCookieName } from '@/lib/auth';
 
 const STAFF_ROLES = new Set(['ADMIN', 'AGENT']);
-const COMMUNITY_ONLY = ['/favorites', '/myProperties', '/myContracts', '/personalInfo'];
+const COMMUNITY_ONLY = ['/myContracts', '/personalInfo'];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

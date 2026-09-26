@@ -11,6 +11,7 @@ import { Badge } from "@realestate/ui";
 import { Dialog } from "@realestate/ui";
 import FileUploader from '@/shared/components/ui/FileUploader/FileUploader';
 import { useAlert } from '@/shared/hooks/useAlert';
+import { ArrowLeft, Info, Loader2, Upload } from 'lucide-react';
 
 export default function ContractPaymentsPage() {
   const params = useParams();
@@ -117,7 +118,7 @@ export default function ContractPaymentsPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <Loader2 className="animate-spin text-primary" size={40} aria-label="Cargando" />
       </div>
     );
   }
@@ -139,7 +140,7 @@ export default function ContractPaymentsPage() {
           onClick={() => router.back()} 
           className="p-2 !rounded-full"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <ArrowLeft size={20} aria-hidden />
         </Button>
         <div>
           <h1 className="text-3xl font-bold text-foreground">Pagos de Arriendo</h1>
@@ -178,13 +179,13 @@ export default function ContractPaymentsPage() {
                     onClick={() => handleOpenUploadModal(payment)}
                     className="flex items-center gap-2"
                   >
-                    <span className="material-symbols-outlined text-sm">upload_file</span>
+                    <Upload size={16} aria-hidden />
                     Informar pago
                   </Button>
                 )}
                 {payment.status === 'PENDING_VERIFICATION' && (
                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                     <span className="material-symbols-outlined text-sm text-info">info</span>
+                     <Info className="text-info" size={16} aria-hidden />
                      Comprobante enviado
                    </span>
                 )}
@@ -233,7 +234,7 @@ export default function ContractPaymentsPage() {
               disabled={isUploading || !uploadedFiles}
               className="min-w-[120px]"
             >
-              {isUploading ? <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div> : 'Enviar comprobante'}
+              {isUploading ? <Loader2 className="animate-spin" size={18} aria-label="Cargando" /> : 'Enviar comprobante'}
             </Button>
           </div>
         </div>

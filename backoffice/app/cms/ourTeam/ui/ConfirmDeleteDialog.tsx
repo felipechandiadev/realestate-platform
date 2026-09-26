@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Dialog } from "@realestate/ui";
+import { Button, Dialog } from '@realestate/ui';
 import DeleteTeamMemberForm from '@/features/cms/components/ourTeam/DeleteTeamMemberForm';
 import type { TeamMember } from '@/features/cms/actions/ourTeam.action';
 
@@ -23,35 +23,22 @@ export default function ConfirmDeleteDialog({
 
   if (!open || !member) return null;
 
-  const handleDelete = () => {
-    // Obtener el formulario por su ID y ejecutar submit
-    const form = document.getElementById(FORM_ID) as HTMLFormElement;
-    if (form) {
-      form.dispatchEvent(
-        new Event('submit', { bubbles: true, cancelable: true })
-      );
-    }
-  };
-
   return (
     <Dialog
       open={open}
       onClose={onCancel}
       title="Confirmar eliminación"
-      actions={[
-        {
-          label: 'Cancelar',
-          onClick: onCancel,
-          variant: 'secondary',
-          loading: isLoading,
-        },
-        {
-          label: isLoading ? 'Eliminando...' : 'Eliminar miembro',
-          onClick: handleDelete,
-          variant: 'primary',
-          loading: isLoading,
-        },
-      ]}
+      actionsJustify="end"
+      actions={
+        <>
+          <Button variant="outlined" type="button" onClick={onCancel} disabled={isLoading}>
+            Cancelar
+          </Button>
+          <Button variant="primary" type="submit" form={FORM_ID} disabled={isLoading}>
+            {isLoading ? 'Eliminando...' : 'Eliminar miembro'}
+          </Button>
+        </>
+      }
     >
       <DeleteTeamMemberForm
         nested

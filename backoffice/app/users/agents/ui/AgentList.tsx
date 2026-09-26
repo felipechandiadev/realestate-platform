@@ -10,6 +10,7 @@ import { useAlert } from '@/shared/hooks/useAlert'
 import CreateAgentFormDialog from './dialogs/CreateAgentFormDialog'
 import UpdateAgentDialog from './dialogs/UpdateAgentDialog'
 import DeleteAgentDialog from './dialogs/DeleteAgentDialog'
+import ResetPasswordDialog from '../../ui/ResetPasswordDialog'
 
 interface AgentListProps {
   initialAgents: AgentType[]
@@ -30,6 +31,7 @@ const AgentList: React.FC<AgentListProps> = ({
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedAgent, setSelectedAgent] = useState<AgentType | null>(null)
+  const [resetDialogOpen, setResetDialogOpen] = useState(false)
 
   // Filter agents based on search
   const filteredAgents = useMemo(() => {
@@ -58,6 +60,11 @@ const AgentList: React.FC<AgentListProps> = ({
   const handleDeleteAgent = (agent: AgentType) => {
     setSelectedAgent(agent)
     setDeleteDialogOpen(true)
+  }
+
+  const handleResetPassword = (agent: AgentType) => {
+    setSelectedAgent(agent)
+    setResetDialogOpen(true)
   }
 
   const handleRefreshList = () => {
@@ -118,6 +125,7 @@ const AgentList: React.FC<AgentListProps> = ({
                 agent={agent}
                 onEdit={handleEditAgent}
                 onDelete={handleDeleteAgent}
+                onResetPassword={handleResetPassword}
               />
             ))}
           </div>
@@ -144,6 +152,20 @@ const AgentList: React.FC<AgentListProps> = ({
           onSuccess={handleRefreshList}
         />
       )}
+
+      <ResetPasswordDialog
+        open={resetDialogOpen && !!selectedAgent}
+        userId={selectedAgent?.id ?? ''}
+        displayName={
+          selectedAgent?.personalInfo
+            ? `${selectedAgent.personalInfo.firstName || ''} ${selectedAgent.personalInfo.lastName || ''}`.trim() || selectedAgent.username
+            : selectedAgent?.username || ''
+        }
+        onClose={() => {
+          setResetDialogOpen(false)
+          setSelectedAgent(null)
+        }}
+      />
 
       {deleteDialogOpen && selectedAgent && (
         <DeleteAgentDialog

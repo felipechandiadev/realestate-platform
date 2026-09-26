@@ -201,7 +201,6 @@ export default function CreateTeamMemberForm({
       data-test-id="create-team-member-form"
       onCancel={onCancel}
       cancelButton={true}
-      validate={validateForm}
     />
   );
 }

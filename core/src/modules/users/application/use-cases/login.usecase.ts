@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, HttpException, HttpStatus } from '@nestjs/common';
 import { UserRepository } from '../../domain/user.repository';
 import { LoginDto } from '../../dto/user.dto';
-import { UserStatus } from '../../domain/user.entity';
+import { UserRole, UserStatus } from '../../domain/user.entity';
 
 @Injectable()
 export class LoginUseCase {
@@ -17,7 +17,8 @@ export class LoginUseCase {
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas.');
     }
-    if (user.emailVerified === false) {
+    const isStaff = user.role === UserRole.ADMIN || user.role === UserRole.AGENT;
+    if (!isStaff && user.emailVerified === false) {
       console.log('LoginUseCase - email not verified for user:', user.email); // Log for unverified email case
       throw new HttpException({
         error: 'EMAIL_NOT_VERIFIED',

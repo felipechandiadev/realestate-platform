@@ -8,6 +8,7 @@ import AdminCard from "./AdminCard";
 import UpdateAdminDialog from "./UpdateAdminDialog";
 import DeleteAdminDialog from "./DeleteAdminDialog";
 import CreateAdminFormDialog from "./CreateAdminFormDialog";
+import ResetPasswordDialog from "../../ui/ResetPasswordDialog";
 
 export interface AdminListProps {
     administrators: AdministratorType[];
@@ -44,6 +45,7 @@ const AdminList: React.FC<AdminListProps> = ({
     const [selectedAdmin, setSelectedAdmin] = useState<AdministratorType | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [openCreateDialog, setOpenCreateDialog] = useState(false);
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
     useEffect(() => {
         setSearch(searchParams.get("search") || "");
@@ -79,6 +81,11 @@ const AdminList: React.FC<AdminListProps> = ({
     const handleDeleteDialogClose = () => {
         setDeleteDialogOpen(false);
         setSelectedAdmin(null);
+    };
+
+    const handleResetPassword = (admin: AdministratorType) => {
+        setSelectedAdmin(admin);
+        setResetDialogOpen(true);
     };
 
     const handleRefreshList = () => {
@@ -119,7 +126,7 @@ const AdminList: React.FC<AdminListProps> = ({
                     className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full"
                 >
                     {administrators.map(admin => (
-                        <AdminCard key={admin.id} admin={admin} onEdit={handleEditAdmin} onDelete={handleDeleteAdmin} />
+                        <AdminCard key={admin.id} admin={admin} onEdit={handleEditAdmin} onDelete={handleDeleteAdmin} onResetPassword={handleResetPassword} />
                     ))}
                 </div>
             </div>
@@ -138,6 +145,16 @@ const AdminList: React.FC<AdminListProps> = ({
                 onClose={handleDeleteDialogClose}
                 administrator={selectedAdmin}
                 onSave={handleRefreshList}
+            />
+
+            <ResetPasswordDialog
+                open={resetDialogOpen}
+                userId={selectedAdmin?.id ?? ''}
+                displayName={selectedAdmin ? getDisplayName(selectedAdmin) : ''}
+                onClose={() => {
+                    setResetDialogOpen(false);
+                    setSelectedAdmin(null);
+                }}
             />
 
             <CreateAdminFormDialog

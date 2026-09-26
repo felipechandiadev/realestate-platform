@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  NotFoundException,
   ValidationPipe,
   UseGuards,
   UseInterceptors,
@@ -180,8 +181,12 @@ export class IdentitiesController {
     description: 'Last identity record',
   })
   @Audit(AuditAction.READ, AuditEntityType.IDENTITY, 'Last identity retrieved')
-  findLast() {
-    return this.identitiesService.findLast();
+  async findLast() {
+    const identity = await this.identitiesService.findLast();
+    if (!identity) {
+      throw new NotFoundException('Identity not found');
+    }
+    return identity;
   }
 
   /**

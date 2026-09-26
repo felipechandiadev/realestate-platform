@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle, IdCard } from 'lucide-react';
 import { Person, verifyPerson, unverifyPerson, uploadDniDocument, getMultimediaUrl } from '@/features/contracts/actions/persons.action';
-import { Button } from '@realestate/ui';
+import { Button, IconButton } from '@realestate/ui';
 import { useAlert } from '@/providers/AlertContext';
 import { Dialog } from "@realestate/ui";
 import { DotProgress } from "@realestate/ui";
@@ -231,8 +231,16 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
+      <div className="flex min-w-0 items-center gap-2">
+        <IconButton
+          icon="arrow_back"
+          variant="action"
+          size="sm"
+          onClick={() => router.push('/contracts/persons')}
+          ariaLabel="Volver al listado de personas"
+          title="Volver"
+        />
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground inline-flex items-center gap-2">
             {person.name || 'Sin nombre'}
             {person.verified && (
@@ -241,12 +249,6 @@ export default function PersonDetailView({ person }: PersonDetailViewProps) {
           </h1>
           <p className="text-muted-foreground">{person.email}</p>
         </div>
-        <Button
-          variant="outlined"
-          onClick={() => router.push('/contracts/persons')}
-        >
-          Volver
-        </Button>
       </div>
 
       {/* Información Personal (editable) */}

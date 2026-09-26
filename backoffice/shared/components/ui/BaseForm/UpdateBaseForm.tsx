@@ -119,6 +119,10 @@ export interface UpdateBaseFormProps {
 	submitLabel?: string;
 	submitVariant?: ButtonVariant;
 	columns?: number;
+	/** En pantallas chicas apila los campos en una sola columna. */
+	stackOnMobile?: boolean;
+	/** Separación vertical entre campos, en píxeles. */
+	rowGap?: number;
 	cancelButton?: boolean;
 	cancelButtonText?: string;
 	onCancel?: () => void;
@@ -139,6 +143,8 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 	submitLabel,
 	submitVariant = "primary",
 	columns = 1,
+	stackOnMobile = false,
+	rowGap,
 	cancelButton = false,
 	cancelButtonText = "Cerrar",
 	onCancel,
@@ -350,8 +356,23 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 			{resolvedGroups.map((group) => {
 				const columnCount = Math.max(1, group.columns);
 				const gapValue = typeof group.gap === "number" ? `${group.gap}px` : group.gap;
-				const containerClass = columnCount > 1 ? "grid" : "flex flex-col";
-				const containerStyle = columnCount > 1 ? { gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`, gap: gapValue ?? "4px" } : { gap: gapValue ?? "4px" };
+				const stacked = stackOnMobile && columnCount > 1;
+				const verticalGap = `${rowGap ?? (typeof group.gap === "number" ? group.gap : 4)}px`;
+				const stackedColumnsClass = columnCount === 3
+					? "md:grid-cols-3"
+					: columnCount === 4
+						? "md:grid-cols-4"
+						: "md:grid-cols-2";
+				const containerClass = columnCount > 1
+					? stacked
+						? `grid grid-cols-1 ${stackedColumnsClass}`
+						: "grid"
+					: "flex flex-col";
+				const containerStyle: React.CSSProperties = columnCount > 1
+					? stacked
+						? { columnGap: gapValue ?? "16px", rowGap: verticalGap }
+						: { gridTemplateColumns: `repeat(${columnCount}, minmax(0, 1fr))`, columnGap: gapValue ?? "4px", rowGap: verticalGap }
+					: { gap: verticalGap };
 
 				return (
 					<div key={group.id} className={`form-group w-full mb-10 ${group.className ?? ''}`}>

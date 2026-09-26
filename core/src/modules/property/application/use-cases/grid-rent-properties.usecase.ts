@@ -1,10 +1,25 @@
 import { Injectable } from '@nestjs/common';
-import { IsNull } from 'typeorm';
 import { Property } from '../../domain/property.entity';
 import { PropertyRepository } from '../../domain/property.repository';
 import { FilterRentPropertiesDto } from '../..//dto/filter-rent-properties.dto';
 import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../../../shared/enums/property-operation-type.enum';
+
+function parseGridFilters(filters?: string): Record<string, string> {
+  if (!filters) return {};
+  const result: Record<string, string> = {};
+  for (const pair of filters.split(',')) {
+    const [column, ...valueParts] = pair.split('-');
+    if (!column || valueParts.length === 0) continue;
+    const raw = valueParts.join('-');
+    try {
+      result[column] = decodeURIComponent(raw);
+    } catch {
+      result[column] = raw;
+    }
+  }
+  return result;
+}
 
 @Injectable()
 export class GridRentPropertiesUseCase {
@@ -34,7 +49,7 @@ export class GridRentPropertiesUseCase {
     return null;
   }
 
-  async execute(dto: FilterRentPropertiesDto): Promise<{
+  async execute(dto: FilterRentPropertiesDto & { status?: string; filters?: string }): Promise<{
     data: Property[];
     total: number;
     page: number;
@@ -45,12 +60,22 @@ export class GridRentPropertiesUseCase {
     const page = Math.max(1, dto.page || 1);
     const skip = (page - 1) * limit;
 
+    const columnFilters = parseGridFilters(dto.filters);
+    const statusFilter = (columnFilters.status || dto.status || '').trim();
+
     let query = this.propertyRepository
       .createQueryBuilder('property')
       .leftJoinAndSelect('property.propertyType', 'pt')
-      .where('property.status = :status', { status: PropertyStatus.PUBLISHED })
-      .andWhere('property.operationType = :operationType', { operationType: PropertyOperationType.RENT })
+      .where('property.operationType = :operationType', {
+        operationType: PropertyOperationType.RENT,
+      })
       .andWhere('property.deletedAt IS NULL');
+
+    if (statusFilter && statusFilter.toUpperCase() !== 'ALL') {
+      query = query.andWhere('property.status = :status', { status: statusFilter });
+    } else if (!statusFilter) {
+      query = query.andWhere('property.status = :status', { status: PropertyStatus.PUBLISHED });
+    }
 
     if (dto.search && dto.search.trim() !== '') {
       const term = `%${dto.search.trim()}%`;

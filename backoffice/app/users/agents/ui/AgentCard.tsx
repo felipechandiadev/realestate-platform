@@ -10,6 +10,7 @@ interface AgentCardProps {
   agent: AgentType;
   onEdit: (agent: AgentType) => void;
   onDelete: (agent: AgentType) => void;
+  onResetPassword: (agent: AgentType) => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -37,7 +38,7 @@ const getStatusLabel = (status: string) => {
   return labels[status] || status;
 };
 
-const AgentCard: React.FC<AgentCardProps> = ({ agent, onEdit, onDelete }) => {
+const AgentCard: React.FC<AgentCardProps> = ({ agent, onEdit, onDelete, onResetPassword }) => {
   const fullName = agent.personalInfo
     ? `${agent.personalInfo.firstName || ''} ${agent.personalInfo.lastName || ''}`.trim()
     : agent.username;
@@ -83,6 +84,15 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onEdit, onDelete }) => {
       </div>
 
       <div className="flex justify-end gap-2 mt-4">
+        <IconButton
+          icon="vpn_key"
+          variant="text"
+          size="md"
+          aria-label={`Restablecer contraseña de ${fullName}`}
+          title="Restablecer contraseña"
+          onClick={() => onResetPassword(agent)}
+          className="text-secondary"
+        />
         <IconButton
           icon="edit"
           variant="text"

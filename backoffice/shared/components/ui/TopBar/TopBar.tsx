@@ -45,7 +45,6 @@ const TopBar: React.FC<TopBarProps> = ({
   showNotifications = false
 }) => {
   const [showSidebar, setShowSidebar] = useState(false);
-  const [logoLoaded, setLogoLoaded] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [sidebarOpenState, setSidebarOpenState] = useState<Record<string, boolean>>({});
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -143,28 +142,22 @@ const TopBar: React.FC<TopBarProps> = ({
                 ariaLabel="Abrir menú"
                 data-test-id="top-bar-menu-button"
               />
-              {logoSrc && (
-                <>
-                  {!logoLoaded && !logoError && (
-                    <div className="h-10 w-10 bg-neutral-300 rounded-lg animate-pulse" data-test-id="top-bar-logo-skeleton" />
-                  )}
-                  {!logoError && (
-                    <Image
-                      src={logoSrc}
-                      alt="Logo"
-                      width={40}
-                      height={40}
-                      className={`h-10 w-10 object-contain transition-opacity duration-300 ${!logoLoaded ? 'opacity-0 absolute' : 'opacity-100'}`}
-                      data-test-id="top-bar-logo"
-                      onLoadingComplete={() => setLogoLoaded(true)}
-                      onError={() => setLogoError(true)}
-                    />
-                  )}
-                </>
+              {logoSrc && !logoError && (
+                <Image
+                  src={logoSrc}
+                  alt={title ? `Logo de ${title}` : 'Logo'}
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 object-contain"
+                  data-test-id="top-bar-logo"
+                  onError={() => setLogoError(true)}
+                />
               )}
-              <span className="text-lg font-bold leading-tight tracking-tight text-foreground" data-test-id="top-bar-title">
-                {title}
-              </span>
+              {title ? (
+                <span className="text-lg font-bold leading-tight tracking-tight text-foreground" data-test-id="top-bar-title">
+                  {title}
+                </span>
+              ) : null}
             </div>
 
             <div className="flex min-w-0 max-w-full items-center justify-end gap-2">

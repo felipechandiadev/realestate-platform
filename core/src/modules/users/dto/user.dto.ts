@@ -6,6 +6,7 @@ import {
   IsEnum,
   ValidateNested,
   IsArray,
+  MinLength,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import {
@@ -150,6 +151,13 @@ export class ChangePasswordDto {
 
   @IsNotEmpty()
   @IsString()
+  newPassword: string;
+}
+
+export class ResetPasswordDto {
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(8)
   newPassword: string;
 }
 

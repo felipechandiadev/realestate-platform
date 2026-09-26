@@ -19,15 +19,18 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const session = await getServerSession(authOptions);
+  const [session, identity] = await Promise.all([
+    getServerSession(authOptions),
+    getIdentity(),
+  ]);
   return (
-    <html lang="es">
+    <html lang="es" style={{ colorScheme: 'only light' }}>
       <body className="min-h-full flex flex-col">
         <div className="backoffice-app-shell flex min-h-dvh flex-1 flex-col">
           <AdminAmbientBackground />
           <div className="relative z-10 flex min-h-dvh flex-1 flex-col">
             <ClientProviders session={session}>
-              <BackofficeShell>{children}</BackofficeShell>
+              <BackofficeShell initialIdentity={identity}>{children}</BackofficeShell>
             </ClientProviders>
           </div>
         </div>

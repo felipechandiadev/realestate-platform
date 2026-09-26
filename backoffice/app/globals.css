@@ -122,8 +122,12 @@
   cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='8' fill='none' stroke='%23184367' stroke-width='2'/%3E%3Cline x1='16' y1='4' x2='16' y2='12' stroke='%23184367' stroke-width='2'/%3E%3Cline x1='16' y1='20' x2='16' y2='28' stroke='%23184367' stroke-width='2'/%3E%3Cline x1='4' y1='16' x2='12' y2='16' stroke='%23184367' stroke-width='2'/%3E%3Cline x1='20' y1='16' x2='28' y2='16' stroke='%23184367' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='2' fill='%23184367'/%3E%3C/svg%3E") 16 16, crosshair;
 }
 
+html {
+  color-scheme: only light;
+}
+
 :root {
-  color-scheme: light;
+  color-scheme: only light;
 
   /* RGB channels for Tailwind opacity support (paleta Kai) */
   --color-primary-rgb: 30 115 174;         /* #1e73ae */
@@ -181,46 +185,6 @@
   --sidebar-backdrop-blur: 7px;
   --color-sidebar-overlay: rgba(2, 87, 139, 0.25);
   --app-topbar-height: 3.75rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-primary: #1e73ae;
-    --color-primary-rgb: 30 115 174;
-    --color-background: #121212;
-    --color-background-rgb: 18 18 18;
-    --color-surface: #1e1e1e;
-    --color-surface-rgb: 30 30 30;
-    --color-foreground: #f3f4f6;
-    --color-foreground-rgb: 243 244 246;
-    --color-muted: #cfeef0;
-    --color-muted-rgb: 207 238 240;
-    --color-muted-foreground: #7a8280;
-    --color-muted-foreground-rgb: 122 130 128;
-    --color-border: #374151;
-    --color-border-rgb: 55 65 81;
-    --color-neutral: #1f2937;
-    --color-neutral-rgb: 31 41 55;
-    --color-success: #2e9e5b;
-    --color-success-rgb: 46 158 91;
-    --color-info: #1e73ae;
-    --color-info-rgb: 30 115 174;
-    --color-warning: #e6a100;
-    --color-warning-rgb: 230 161 0;
-    --color-error: #d64545;
-    --color-error-rgb: 214 69 69;
-    --color-hover: color-mix(in srgb, var(--color-neutral) 40%, var(--color-background));
-    --color-active: #034b78;
-    --color-active-rgb: 3 75 120;
-    --color-accent: #02578b;
-    --color-accent-rgb: 2 87 139;
-    --color-secondary: #00deef;
-    --color-secondary-rgb: 0 222 239;
-    --color-text-disabled: color-mix(in srgb, var(--color-muted-foreground) 55%, transparent);
-    --color-sidebar-bg: rgba(18, 18, 18, 0.3);
-    --sidebar-backdrop-blur: 8px;
-    --color-sidebar-overlay: rgba(2, 87, 139, 0.35);
-  }
 }
 
 body {

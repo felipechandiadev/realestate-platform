@@ -38,10 +38,12 @@ export class CreateUserUseCase {
           }
         : {};
 
+      const role = dto.role || UserRole.COMMUNITY;
       const user = this.userRepo.create({
         ...dto,
         status: UserStatus.ACTIVE,
-        role: dto.role || UserRole.COMMUNITY,
+        role,
+        emailVerified: role === UserRole.ADMIN || role === UserRole.AGENT,
         permissions: dto.permissions || [],
         personalInfo: personalInfo as any,
       } as any);

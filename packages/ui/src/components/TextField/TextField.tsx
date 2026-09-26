@@ -596,6 +596,14 @@ export const TextField: React.FC<TextFieldProps> = ({
     el.focus({ preventScroll: true });
   };
 
+  const handleMouseUp = (e: React.MouseEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (!selectOnFocusEnabled) {
+      return;
+    }
+    e.preventDefault();
+    selectAllFieldContents(e.currentTarget);
+  };
+
   const focusField = () => {
     if (isTextArea) {
       textareaRef.current?.focus();
@@ -684,6 +692,7 @@ export const TextField: React.FC<TextFieldProps> = ({
           }}
           data-test-id={dataTestId}
           {...restInputProps}
+          onMouseUp={handleMouseUp}
         />
       ) : (
         <div className={`relative ${isInlineLabel ? "w-full min-w-0" : ""}`.trim()}>
@@ -742,6 +751,7 @@ export const TextField: React.FC<TextFieldProps> = ({
               ...(style || {}),
             }}
             {...restInputProps}
+            onMouseUp={handleMouseUp}
           />
           {type === "password" && passwordVisibilityToggle && (
             <button

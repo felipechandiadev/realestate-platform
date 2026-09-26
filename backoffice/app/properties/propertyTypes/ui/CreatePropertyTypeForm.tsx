@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import CreateBaseForm, { BaseFormField } from '@/shared/components/ui/BaseForm/CreateBaseForm';
-import { createPropertyType } from '@/features/shared/propertyTypes/actions/propertyTypes.action';
 import { useAlert } from '@/providers/AlertContext';
 import { useRouter } from 'next/navigation';
 
@@ -112,7 +111,26 @@ export default function CreatePropertyTypeForm({ onSuccess, onCancel }: CreatePr
     setErrors([]);
 
     try {
-      await createPropertyType(formData);
+      const payload = {
+        name: formData.name.trim(),
+        description: typeof formData.description === 'string' ? formData.description.trim() : '',
+        hasBedrooms: Boolean(formData.hasBedrooms),
+        hasBathrooms: Boolean(formData.hasBathrooms),
+        hasBuiltSquareMeters: Boolean(formData.hasBuiltSquareMeters),
+        hasLandSquareMeters: Boolean(formData.hasLandSquareMeters),
+        hasParkingSpaces: Boolean(formData.hasParkingSpaces),
+        hasFloors: Boolean(formData.hasFloors),
+        hasConstructionYear: Boolean(formData.hasConstructionYear),
+      };
+      const response = await fetch('/api/property-types', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json().catch(() => null) as { message?: string } | null;
+      if (!response.ok) {
+        throw new Error(result?.message || 'No se pudo crear el tipo de propiedad');
+      }
       alert.success('Tipo de propiedad creado exitosamente');
 
       // Reset form
@@ -138,8 +156,11 @@ export default function CreatePropertyTypeForm({ onSuccess, onCancel }: CreatePr
       setIsSubmitting(false);
     } catch (error) {
       console.error('Error creating property type:', error);
-      alert.error('Error al crear el tipo de propiedad. Por favor, inténtalo de nuevo.');
-      setErrors(['Error al crear el tipo de propiedad']);
+      const message = error instanceof Error && error.message
+        ? error.message
+        : 'No se pudo crear el tipo de propiedad';
+      alert.error(message);
+      setErrors([message]);
       setIsSubmitting(false);
     }
   };

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, LoadingState } from '@realestate/ui';
+import { Button, IconButton, LoadingState } from '@realestate/ui';
+import ResetPasswordDialog from '@/app/users/ui/ResetPasswordDialog';
 import {
   resendCommunityUserVerification,
   setUserStatus,
@@ -42,6 +43,7 @@ export function AccountSection({
 }: AccountSectionProps) {
   const { showAlert } = useAlert();
   const [busy, setBusy] = useState<'status' | 'resend' | null>(null);
+  const [resetOpen, setResetOpen] = useState(false);
 
   const isActive = header.status === 'ACTIVE';
 
@@ -147,6 +149,28 @@ export function AccountSection({
           </Button>
         ) : null}
       </div>
+
+      <div className="flex items-center justify-between rounded-lg border border-border p-4">
+        <div>
+          <p className="text-sm font-medium text-foreground">Contraseña</p>
+          <p className="text-xs text-muted-foreground">Asigna una contraseña nueva para esta cuenta.</p>
+        </div>
+        <IconButton
+          icon="vpn_key"
+          variant="text"
+          size="md"
+          ariaLabel="Restablecer contraseña"
+          title="Restablecer contraseña"
+          onClick={() => setResetOpen(true)}
+        />
+      </div>
+
+      <ResetPasswordDialog
+        open={resetOpen}
+        userId={userId}
+        displayName={header.displayName || header.email}
+        onClose={() => setResetOpen(false)}
+      />
     </section>
   );
 }

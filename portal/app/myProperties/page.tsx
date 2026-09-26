@@ -30,6 +30,7 @@ import { Button } from '@realestate/ui';
 import Link from 'next/link';
 import { env } from '@/lib/env';
 import { getStatusInSpanish, getStatusChipClasses } from '@/features/shared/properties/utils';
+import { House, ImageIcon, Loader2, LogIn, MapPin } from 'lucide-react';
 
 export default function MyPropertiesPage() {
   const { user, status } = useAuth();
@@ -79,15 +80,24 @@ export default function MyPropertiesPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
+        <Loader2 className="animate-spin text-primary" size={40} aria-label="Cargando" />
       </div>
     );
   }
 
   if (status === 'unauthenticated') {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Alert variant="warning">Debes iniciar sesión para ver tus propiedades.</Alert>
+      <div className="container mx-auto px-4 py-16 max-w-lg">
+        <Card className="p-10 text-center flex flex-col items-center">
+          <LogIn className="text-primary mb-4" size={48} />
+          <h1 className="text-2xl font-bold text-foreground mb-2">Inicia sesión</h1>
+          <p className="text-muted-foreground mb-6">
+            Debes iniciar sesión para ver tus propiedades.
+          </p>
+          <Button onClick={() => window.dispatchEvent(new Event('portal:open-login'))}>
+            Ingresar
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -103,7 +113,7 @@ export default function MyPropertiesPage() {
 
       {properties.length === 0 ? (
         <Card className="p-12 text-center flex flex-col items-center justify-center border-dashed border-2">
-          <span className="material-symbols-outlined text-6xl text-muted-foreground mb-4">home_work</span>
+          <House className="text-muted-foreground mb-4" size={64} />
           <h3 className="text-xl font-medium text-foreground mb-2">No tienes propiedades aún</h3>
           <p className="text-muted-foreground max-w-md mb-6">
             Aquí aparecerán las propiedades que publiques para venta o arriendo.
@@ -122,7 +132,7 @@ export default function MyPropertiesPage() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    <span className="material-symbols-outlined text-4xl">image</span>
+                    <ImageIcon size={40} />
                   </div>
                 )}
                 <div className="absolute top-2 right-2 flex gap-1">
@@ -139,7 +149,7 @@ export default function MyPropertiesPage() {
                   <span className="text-xs text-muted-foreground font-mono">{property.code}</span>
                   <h3 className="text-lg font-semibold line-clamp-1">{property.title}</h3>
                   <p className="text-sm text-muted-foreground flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm">location_on</span>
+                    <MapPin size={16} className="shrink-0" />
                     {property.city}, {property.state}
                   </p>
                 </div>
