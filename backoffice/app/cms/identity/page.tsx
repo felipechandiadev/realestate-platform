@@ -318,7 +318,7 @@ export default function IdentityPage() {
   )
 
   return (
-    <div className="p-4">
+    <div className="mx-auto w-full max-w-[1200px] pt-10 sm:pt-0">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground mb-2">Identidad de la Empresa</h1>
         <p className="text-muted-foreground">
@@ -397,7 +397,7 @@ export default function IdentityPage() {
                   onFileChange={handleLogoChange}
                   acceptedTypes={['image/*']}
                   maxSize={9}
-                  aspectRatio="16:9"
+                  aspectRatio="1:1"
                   variant="banner"
                   previewSize="md"
                 />

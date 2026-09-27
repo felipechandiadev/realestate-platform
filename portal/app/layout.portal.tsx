@@ -5,13 +5,16 @@ import Wsp from "./ui/Wsp";
 import CookieConsent from "./ui/CookieConsent";
 import NavBar from "./ui/NavBar";
 import { CookieConsentProvider } from "@/providers/CookieConsentContext";
+import { FALLBACK_PORTAL_HEADER, type PortalHeaderConfig } from "./ui/portal-header";
 
 type PortalLayoutProps = {
   children: React.ReactNode;
   initialIdentity?: Record<string, unknown> | null;
+  initialHeader?: PortalHeaderConfig | null;
 };
 
-export default function PortalLayout({ children, initialIdentity = null }: PortalLayoutProps) {
+export default function PortalLayout({ children, initialIdentity = null, initialHeader = null }: PortalLayoutProps) {
+  const header = initialHeader ?? FALLBACK_PORTAL_HEADER;
   return (
     <CookieConsentProvider>
       <div className="min-h-screen flex flex-col relative">
@@ -19,11 +22,11 @@ export default function PortalLayout({ children, initialIdentity = null }: Porta
         
         {/* Header sticky (TopBar + NavBar) */}
         <div className="sticky top-0 z-50">
-          <PortalTopBar initialIdentity={initialIdentity} />
+          <PortalTopBar initialIdentity={initialIdentity} initialHeader={header} />
           
           {/* NavBar */}
           <div className="bg-background shadow-[0_4px_8px_-4px_rgba(0,0,0,0.12)]">
-            <NavBar />
+            <NavBar navItems={header.navItems} />
           </div>
         </div>
       

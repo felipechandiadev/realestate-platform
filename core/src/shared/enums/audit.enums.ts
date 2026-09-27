@@ -43,6 +43,7 @@ export enum AuditEntityType {
   // Company
   TEAM_MEMBER = 'TEAM_MEMBER',
   IDENTITY = 'IDENTITY',
+  PORTAL_HEADER = 'PORTAL_HEADER',
   ABOUT_US = 'ABOUT_US',
 
   // Media

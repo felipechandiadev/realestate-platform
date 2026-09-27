@@ -10,6 +10,7 @@ import { TeamMembersModule } from './modules/team-members/team-members.module';
 import { ArticlesModule } from './modules/articles/articles.module';
 import { TestimonialsModule } from './modules/testimonials/testimonials.module';
 import { IdentitiesModule } from './modules/identities/identities.module';
+import { PortalHeaderModule } from './modules/portal-header/portal-header.module';
 import { AboutUsModule } from './modules/about-us/about-us.module';
 import { UsersModule } from './modules/users/users.module';
 import { PropertyModule } from './modules/property/property.module';
@@ -55,6 +56,7 @@ import { TestAdminModule } from './shared/init/test-admin.module';
     ArticlesModule,
     TestimonialsModule,
     IdentitiesModule,
+    PortalHeaderModule,
     AboutUsModule,
     UsersModule,
     PropertyModule,

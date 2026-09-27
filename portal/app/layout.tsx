@@ -5,6 +5,7 @@ import PortalShell from './layout.portal';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getIdentity } from '@/features/cms/actions/identity.action';
+import { getPortalHeader } from '@/features/cms/actions/portal-header.action';
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
@@ -18,15 +19,16 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const [session, identity] = await Promise.all([
+  const [session, identity, portalHeader] = await Promise.all([
     getServerSession(authOptions),
     getIdentity(),
+    getPortalHeader(),
   ]);
   return (
     <html lang="es" style={{ colorScheme: 'only light' }}>
       <body>
         <ClientProviders session={session}>
-          <PortalShell initialIdentity={identity}>{children}</PortalShell>
+          <PortalShell initialIdentity={identity} initialHeader={portalHeader}>{children}</PortalShell>
         </ClientProviders>
       </body>
     </html>

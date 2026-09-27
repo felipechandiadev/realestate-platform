@@ -17,7 +17,7 @@
  * - propertyTitle: Título de la propiedad
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { IconButton } from '@realestate/ui';
 
@@ -38,6 +38,61 @@ function isVideoFile(url: string): boolean {
   const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
   const lowerUrl = url.toLowerCase();
   return videoExtensions.some(ext => lowerUrl.includes(ext));
+}
+
+function LoadableMedia({
+  src,
+  alt,
+  type,
+  className,
+  videoProps,
+}: {
+  src: string;
+  alt: string;
+  type: 'image' | 'video';
+  className: string;
+  videoProps?: React.VideoHTMLAttributes<HTMLVideoElement>;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const imageRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    setLoaded(false);
+    const image = imageRef.current;
+    if (image?.complete && image.naturalWidth > 0) {
+      setLoaded(true);
+    }
+  }, [src]);
+
+  return (
+    <>
+      {!loaded && (
+        <div
+          className="absolute inset-0 animate-pulse bg-gray-200"
+          data-test-id="property-image-skeleton"
+          aria-hidden
+        />
+      )}
+      {type === 'video' ? (
+        <video
+          src={src}
+          className={`${className} transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoadedData={() => setLoaded(true)}
+          onError={() => setLoaded(true)}
+          {...videoProps}
+        />
+      ) : (
+        <img
+          ref={imageRef}
+          src={src}
+          alt={alt}
+          className={`${className} transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setLoaded(true)}
+          onError={() => setLoaded(true)}
+        />
+      )}
+    </>
+  );
 }
 
 function getMediaType(item: MediaItem): 'image' | 'video' {
@@ -123,27 +178,19 @@ export default function MultimediaGrid({
     return (
       <div
         key={media.id || index}
-        className="relative w-full h-full bg-gray-900 flex items-center justify-center cursor-pointer group overflow-hidden"
+        className="relative w-full h-full bg-muted flex items-center justify-center cursor-pointer group overflow-hidden"
         onClick={() => {
           setSelectedIndex(index);
           setIsModalOpen(true);
         }}
       >
-        {isVideo ? (
-          <video
-            src={media.url}
-            className="w-full h-full object-cover"
-            muted
-            autoPlay
-            loop
-          />
-        ) : (
-          <img
-            src={media.url}
-            alt={`${propertyTitle} - ${index}`}
-            className="w-full h-full object-cover"
-          />
-        )}
+        <LoadableMedia
+          src={media.url}
+          alt={`${propertyTitle} - ${index}`}
+          type={isVideo ? 'video' : 'image'}
+          className="w-full h-full object-cover"
+          videoProps={{ muted: true, autoPlay: true, loop: true }}
+        />
 
         {/* Overlay */}
         <div
@@ -179,7 +226,7 @@ export default function MultimediaGrid({
   if (layoutType === 'single') {
     return (
       <>
-        <div className="w-full rounded-lg overflow-hidden bg-gray-900" style={{ aspectRatio: '16/9' }}>
+        <div className="w-full rounded-lg overflow-hidden bg-muted" style={{ aspectRatio: '16/9' }}>
           {renderMediaItem(gridMedia[0], 0)}
         </div>
         {/* Fullscreen Modal */}
@@ -381,27 +428,18 @@ function FullscreenModal({
 
       {/* Main content */}
       <div
-        className="relative w-full max-w-4xl flex items-center justify-center"
+        className="relative w-full max-w-4xl min-h-[50vh] flex items-center justify-center"
         style={{ maxHeight: '80vh' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Media display */}
-        {currentMedia.type === 'video' ? (
-          <video
-            src={currentMedia.url}
-            className="w-full h-full object-contain"
-            autoPlay
-            muted
-            loop
-            controls
-          />
-        ) : (
-          <img
-            src={currentMedia.url}
-            alt={`${propertyTitle} - ${selectedIndex}`}
-            className="w-full h-full object-contain"
-          />
-        )}
+        <LoadableMedia
+          key={currentMedia.url}
+          src={currentMedia.url}
+          alt={`${propertyTitle} - ${selectedIndex}`}
+          type={currentMedia.type}
+          className="max-h-[80vh] w-full object-contain"
+          videoProps={{ autoPlay: true, muted: true, loop: true, controls: true }}
+        />
       </div>
 
       {/* Counter */}

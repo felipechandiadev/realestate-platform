@@ -10,8 +10,15 @@ import { getIdentity } from "@/features/cms/actions/identity.action";
 import { getLatestUfValue } from "@/features/shared/common/actions/uf.action";
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import NavBar from "./NavBar";
 import { useNotification } from "@/providers/NotificationContext";
+import ContactDialog from "@/shared/components/ui/ContactDialog/ContactDialog";
+import {
+  FALLBACK_PORTAL_HEADER,
+  visibleNavItems,
+  type PortalAccountItem,
+  type PortalHeaderConfig,
+  type PortalNavItem,
+} from "./portal-header";
 
 interface RegisterData {
   firstName: string;
@@ -39,6 +46,7 @@ function formatCLP(value: number) {
 interface TopBarProps {
   onMenuClick?: () => void;
   initialIdentity?: Identity | Record<string, unknown> | null;
+  initialHeader?: PortalHeaderConfig | null;
   uf?: number;
 }
 
@@ -54,14 +62,30 @@ interface SidebarProps {
   onClose: () => void;
   identity: Identity | null;
   logoSrc: string;
+  showCompanyName: boolean;
+  navItems: PortalNavItem[];
+  accountItems: PortalAccountItem[];
   onLoginClick: () => void;
   onRegisterClick: () => void;
+  onContact: () => void;
+  showLogin: boolean;
+  showRegister: boolean;
+  loginLabel: string;
+  registerLabel: string;
   isUserLoggedIn?: boolean;
   userName?: string;
 }
 
+const ACCOUNT_ICONS: Record<string, typeof User> = {
+  'mis-datos': User,
+  notificaciones: Bell,
+  'mis-propiedades': Building2,
+  favoritos: Heart,
+  'mis-contratos': FileText,
+};
+
 // Sidebar Component
-function Sidebar({ open, onClose, identity, logoSrc, onLoginClick, onRegisterClick, isUserLoggedIn = false, userName = "" }: SidebarProps) {
+function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, accountItems, onLoginClick, onRegisterClick, onContact, showLogin, showRegister, loginLabel, registerLabel, isUserLoggedIn = false, userName = "" }: SidebarProps) {
   const router = useRouter();
   const { unreadCount } = useNotification();
   const [openMenu, setOpenMenu] = useState<string | null>(null);
@@ -105,7 +129,7 @@ function Sidebar({ open, onClose, identity, logoSrc, onLoginClick, onRegisterCli
               className="w-12 h-12 object-contain"
             />
           ) : null}
-          {identity?.name?.trim() ? (
+          {showCompanyName && identity?.name?.trim() ? (
             <span className="font-medium text-foreground text-sm">
               {identity.name.trim()}
             </span>
@@ -131,115 +155,84 @@ function Sidebar({ open, onClose, identity, logoSrc, onLoginClick, onRegisterCli
         <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
           <nav className="w-full">
             <ul className="flex flex-col gap-2 pb-4">
-              {isUserLoggedIn && (
-                <>
-                  <li>
-                    <button onClick={() => handleNavigation('/personalInfo')} className="flex items-center justify-between w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+          {isUserLoggedIn && accountItems.some((item) => item.enabled) && (
+            <>
+              {accountItems.filter((item) => item.enabled).map((item) => {
+                const Icon = ACCOUNT_ICONS[item.id] ?? User;
+                return (
+                  <li key={item.id}>
+                    <button onClick={() => handleNavigation(item.href)} className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
                       <div className="flex items-center gap-3">
-                        <User size={20} className="text-primary" />
-                        <span>Mis Datos</span>
+                        <Icon size={20} className="text-primary" />
+                        <span>{item.label}</span>
                       </div>
-                    </button>
-                  </li>
-                  <li>
-                    <button onClick={() => handleNavigation('/notifications')} className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors group">
-                      <div className="flex items-center gap-3">
-                        <Bell size={20} className="text-primary" />
-                        <span>Notificaciones</span>
-                      </div>
-                      {unreadCount > 0 && (
+                      {item.id === 'notificaciones' && unreadCount > 0 && (
                         <span className="flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-primary text-white text-[10px] font-bold">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                       )}
                     </button>
                   </li>
-                  <li>
-                    <button onClick={() => handleNavigation('/myProperties')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
-                      <Building2 size={20} className="text-primary" />
-                      <span>Mis Propiedades</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button onClick={() => handleNavigation('/favorites')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
-                      <Heart size={20} className="text-primary" />
-                      <span>Favoritos</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button onClick={() => handleNavigation('/myContracts')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
-                      <FileText size={20} className="text-primary" />
-                      <span>Mis Contratos</span>
-                    </button>
-                  </li>
-                  <li className="my-2 px-3">
-                    <div className="h-[1px] bg-border w-full opacity-60" />
-                  </li>
-                </>
-              )}
+                );
+              })}
+              <li className="my-2 px-3">
+                <div className="h-[1px] bg-border w-full opacity-60" />
+              </li>
+            </>
+          )}
 
-              <li>
-                <button onClick={() => handleNavigation('/')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
-                  <Home size={20} className="text-primary" />
-                  <span>Inicio</span>
-                </button>
-              </li>
+          <li>
+            <button onClick={() => handleNavigation('/')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
+              <Home size={20} className="text-primary" />
+              <span>Inicio</span>
+            </button>
+          </li>
 
-              <li className="relative" onBlur={handleBlur}>
-                <button onClick={() => toggleMenu('propiedades')} className="flex items-center justify-between w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
-                  <span>Propiedades</span>
-                  {openMenu === 'propiedades' ? <ChevronUp size={16} className="text-primary" /> : <ChevronDown size={16} className="text-primary" />}
-                </button>
-                {openMenu === 'propiedades' && (
-                  <ul className="mt-2 ml-6 space-y-1 border-l-2 border-primary/10 pl-2">
-                    <li><button onClick={() => handleNavigation('/properties/sale')} className="w-full text-left px-3 py-2 text-sm text-foreground hover:text-primary hover:bg-primary/5 rounded transition-colors uppercase tracking-tight text-[11px]">Ventas</button></li>
-                    <li><button onClick={() => handleNavigation('/properties/rent')} className="w-full text-left px-3 py-2 text-sm text-foreground hover:text-primary hover:bg-primary/5 rounded transition-colors uppercase tracking-tight text-[11px]">Arriendos</button></li>
-                    <li><button onClick={() => handleNavigation('/services/management')} className="w-full text-left px-3 py-2 text-sm text-foreground hover:text-primary hover:bg-primary/5 rounded transition-colors uppercase tracking-tight text-[11px]">Administraciones</button></li>
-                  </ul>
-                )}
-              </li>
-
-              <li className="relative" onBlur={handleBlur}>
-                <button onClick={() => toggleMenu('nosotros')} className="flex items-center justify-between w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
-                  <span>Nosotros</span>
-                  {openMenu === 'nosotros' ? <ChevronUp size={16} className="text-primary" /> : <ChevronDown size={16} className="text-primary" />}
-                </button>
-                {openMenu === 'nosotros' && (
-                  <ul className="mt-2 ml-6 space-y-1 border-l-2 border-primary/10 pl-2">
-                    <li><button onClick={() => handleNavigation('/aboutUs')} className="w-full text-left px-3 py-2 text-sm text-foreground hover:text-primary hover:bg-primary/5 rounded transition-colors uppercase tracking-tight text-[11px]">Quiénes somos</button></li>
-                    <li><button onClick={() => handleNavigation('/ourTeam')} className="w-full text-left px-3 py-2 text-sm text-foreground hover:text-primary hover:bg-primary/5 rounded transition-colors uppercase tracking-tight text-[11px]">Nuestro Equipo</button></li>
-                    <li><button onClick={() => handleNavigation('/testimonials')} className="w-full text-left px-3 py-2 text-sm text-foreground hover:text-primary hover:bg-primary/5 rounded transition-colors uppercase tracking-tight text-[11px]">Testimonios</button></li>
-                  </ul>
-                )}
-              </li>
-
-              <li>
-                <button onClick={() => handleNavigation('/sell-property')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
-                  <span>Vende tu Propiedad</span>
-                </button>
-              </li>
-
-              <li>
-                <button onClick={() => handleNavigation('/rent-property')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
-                  <span>Arrienda tu Propiedad</span>
-                </button>
-              </li>
-
-              <li>
-                <button onClick={() => handleNavigation('/valuation')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
-                  <span>Valoriza tu Propiedad</span>
+          {visibleNavItems(navItems).map((item) => {
+            if (item.children?.length) {
+              return (
+                <li key={item.id} className="relative" onBlur={handleBlur}>
+                  <button onClick={() => toggleMenu(item.id)} className="flex items-center justify-between w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
+                    <span>{item.label}</span>
+                    {openMenu === item.id ? <ChevronUp size={16} className="text-primary" /> : <ChevronDown size={16} className="text-primary" />}
+                  </button>
+                  {openMenu === item.id && (
+                    <ul className="mt-2 ml-6 space-y-1 border-l-2 border-primary/10 pl-2">
+                      {item.children.map((child) => (
+                        <li key={child.id}>
+                          <button onClick={() => child.href && handleNavigation(child.href)} className="w-full text-left px-3 py-2 text-sm text-foreground hover:text-primary hover:bg-primary/5 rounded transition-colors uppercase tracking-tight text-[11px]">
+                            {child.label}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            }
+            return (
+              <li key={item.id}>
+                <button
+                  onClick={() => {
+                    if (item.action === 'contact') {
+                      onContact();
+                      onClose();
+                      return;
+                    }
+                    if (item.href) handleNavigation(item.href);
+                  }}
+                  className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide"
+                >
+                  <span>{item.label}</span>
                 </button>
               </li>
-              
-              <li>
-                <button onClick={() => handleNavigation('/blog')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
-                  <span>Blog</span>
-                </button>
-              </li>
+            );
+          })}
             </ul>
           </nav>
         </div>
 
+        {(isUserLoggedIn || showLogin || showRegister) && (
         <div className="p-4 border-t border-border">
           {isUserLoggedIn ? (
             <Button
@@ -252,31 +245,36 @@ function Sidebar({ open, onClose, identity, logoSrc, onLoginClick, onRegisterCli
             </Button>
           ) : (
             <div className="space-y-3">
+              {showLogin ? (
               <Button
                 variant="outlined"
                 className="w-full justify-start"
                 onClick={() => { onLoginClick(); onClose(); }}
               >
                 <LogIn size={16} className="mr-2" />
-                Ingresar
+                {loginLabel}
               </Button>
+              ) : null}
+              {showRegister ? (
               <Button
                 variant="primary"
                 className="w-full justify-start"
                 onClick={() => { onClose(); onRegisterClick(); }}
               >
                 <UserPlus size={16} className="mr-2" />
-                Registrarse
+                {registerLabel}
               </Button>
+              ) : null}
             </div>
           )}
         </div>
+        )}
       </div>
     </>
   );
 }
 
-export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf = 34879 }: TopBarProps) {
+export default function PortalTopBar({ onMenuClick, initialIdentity = null, initialHeader = null, uf = 34879 }: TopBarProps) {
   const { data: session } = useSession();
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
@@ -287,7 +285,7 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf =
   }, []);
   const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const [identity, setIdentity] = useState<Identity | null>(() => asIdentity(initialIdentity));
   const [logoFailed, setLogoFailed] = useState(false);
   const [ufValue, setUfValue] = useState<number | null>(null);
@@ -332,10 +330,12 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf =
     };
   }, [initialIdentity, uf]);
 
-  const logoSrc = !logoFailed ? identity?.urlLogo?.trim() || '' : '';
+  const header = initialHeader ?? FALLBACK_PORTAL_HEADER;
+  const identityLogoSrc = identity?.urlLogo?.trim() || '';
+  const headerLogoSrc = !logoFailed ? header.logoUrl?.trim() || '' : '';
   const companyName = identity?.name?.trim() || '';
-  const companyMail = identity?.mail?.trim() || '';
-  const companyPhone = identity?.phone?.trim() || '';
+  const companyMail = header.showMail ? identity?.mail?.trim() || '' : '';
+  const companyPhone = header.showPhone ? identity?.phone?.trim() || '' : '';
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -349,9 +349,17 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf =
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         identity={identity}
-        logoSrc={logoSrc || ''}
+        logoSrc={headerLogoSrc}
+        showCompanyName={header.showCompanyName}
+        navItems={header.navItems}
+        accountItems={header.accountItems}
         onLoginClick={() => setLoginDialogOpen(true)}
         onRegisterClick={() => setRegisterDialogOpen(true)}
+        onContact={() => setContactOpen(true)}
+        showLogin={header.showLogin}
+        showRegister={header.showRegister}
+        loginLabel={header.loginLabel}
+        registerLabel={header.registerLabel}
         isUserLoggedIn={!!session?.user}
         userName={session?.user?.name || ""}
       />
@@ -363,16 +371,16 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf =
       >
         {/* Izquierda: logo y nombre empresa, ambos al inicio */}
         <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity" data-test-id="topBarLogo">
-          {logoSrc ? (
+          {headerLogoSrc ? (
             <img
-              src={logoSrc}
+              src={headerLogoSrc}
               alt={companyName ? `Logo de ${companyName}` : 'Logo'}
               className="w-10 h-10 object-contain"
               data-test-id="topBarLogo"
               onError={() => setLogoFailed(true)}
             />
           ) : null}
-          {companyName ? (
+          {header.showCompanyName && companyName ? (
             <span className="text-base md:text-lg lg:text-2xl font-medium text-foreground whitespace-nowrap">
               {companyName}
             </span>
@@ -407,9 +415,11 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf =
 
         <div className="ml-auto flex items-center gap-2 pr-4" data-test-id="topBarActions">
           {/* Hide UF on small screens (xs/sm) - will be shown in sidebar */}
+          {header.showUf ? (
           <span className="hidden md:inline text-main text-xs font-normal whitespace-nowrap">
-            {isUfLoading ? 'UF hoy: ...' : `UF hoy: ${formatCLP(ufValue ?? uf)}`}
+            {isUfLoading ? `${header.ufLabel}: ...` : `${header.ufLabel}: ${formatCLP(ufValue ?? uf)}`}
           </span>
+          ) : null}
 
           {/* Show user info when logged in, otherwise show login/register buttons */}
           {session?.user ? (
@@ -424,14 +434,22 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf =
           ) : (
             // Usuario no logueado: mostrar botones de login/register
             <div className="hidden sm:flex items-center gap-1 text-right">
-              <div className="h-6 w-px bg-foreground mx-2" />
-              <Button variant="text" className="text-xs text-foreground px-2" onClick={() => setLoginDialogOpen(true)}>
-                Ingresar
-              </Button>
-              <div className="h-6 w-px bg-foreground mx-2" />
-              <Button variant="text" className="text-xs text-foreground px-2" onClick={() => setRegisterDialogOpen(true)}>
-                Registrarse
-              </Button>
+              {header.showLogin ? (
+                <>
+                  <div className="h-6 w-px bg-foreground mx-2" />
+                  <Button variant="text" className="text-xs text-foreground px-2" onClick={() => setLoginDialogOpen(true)}>
+                    {header.loginLabel}
+                  </Button>
+                </>
+              ) : null}
+              {header.showRegister ? (
+                <>
+                  <div className="h-6 w-px bg-foreground mx-2" />
+                  <Button variant="text" className="text-xs text-foreground px-2" onClick={() => setRegisterDialogOpen(true)}>
+                    {header.registerLabel}
+                  </Button>
+                </>
+              ) : null}
             </div>
           )}
 
@@ -454,7 +472,7 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf =
           size="xs"
         >
           <LoginForm
-            logoSrc={logoSrc}
+            logoSrc={identityLogoSrc}
             companyName={companyName}
             onClose={() => setLoginDialogOpen(false)}
             onRegisterClick={() => {
@@ -479,6 +497,7 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, uf =
             }}
           />
         </Dialog>
+        <ContactDialog open={contactOpen} onClose={() => setContactOpen(false)} />
       </div>
     </React.Fragment>
   );

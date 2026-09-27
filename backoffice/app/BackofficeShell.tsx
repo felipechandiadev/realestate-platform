@@ -44,6 +44,7 @@ const menuItems = [
       { label: 'Testimonios', url: '/cms/testimonials' },
       { label: 'Artículos de blog', url: '/cms/articles' },
       { label: 'Identidad de la empresa', url: '/cms/identity' },
+      { label: 'Top Bar', url: '/cms/topBar' },
     ],
   },
   { label: 'Notificaciones', url: '/notifications' },
@@ -99,6 +100,7 @@ export default function BackofficeShell({
         userName={userName}
         logoSrc={logoUrl || undefined}
         showNotifications={true}
+        onAccountClick={() => setShowMyAccountDialog(true)}
       />
       <div className="min-h-screen flex-1 p-2 sm:p-6">
         <MyAccountDialog

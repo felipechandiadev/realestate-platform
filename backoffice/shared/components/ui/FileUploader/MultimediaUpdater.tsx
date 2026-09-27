@@ -190,7 +190,9 @@ function MultimediaUpdaterLegacy({
       {variant === 'banner' ? (
         <div className="flex flex-col items-center gap-4">
           <div
-            className={`relative flex aspect-video w-full max-w-[480px] cursor-pointer items-center justify-center rounded-lg transition-colors hover:border-blue-500 ${aspectRatio === '1:1' ? 'aspect-square' : ''}`}
+            className={`relative flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg transition-colors hover:border-blue-500 ${
+              aspectRatio === '1:1' ? 'aspect-square max-w-[240px]' : 'aspect-video max-w-[480px]'
+            }`}
             onClick={() => fileInputRef.current?.click()}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}

@@ -17,6 +17,7 @@ import { AboutUs } from '../modules/about-us/domain/about-us.entity';
 import { Testimonial } from '../modules/testimonials/domain/testimonial.entity';
 import { TeamMember } from '../modules/team-members/domain/team-member.entity';
 import { Slide } from '../modules/slide/domain/slide.entity';
+import { PortalHeader } from '../modules/portal-header/domain/portal-header.entity';
 
 export const entities = [
   NotificationOrmEntity,
@@ -38,6 +39,7 @@ export const entities = [
   Testimonial,
   TeamMember,
   Slide,
+  PortalHeader,
 ];
 
 export default entities;

@@ -17,6 +17,7 @@ interface TopBarProps {
   menuItems?: SideBarMenuItem[]; // if provided, TopBar will render SideBar internally
   userName?: string;
   showNotifications?: boolean;
+  onAccountClick?: () => void;
 }
 
 interface SideBarControl {
@@ -42,7 +43,8 @@ const TopBar: React.FC<TopBarProps> = ({
   SideBarComponent,
   menuItems = [],
   userName,
-  showNotifications = false
+  showNotifications = false,
+  onAccountClick,
 }) => {
   const [showSidebar, setShowSidebar] = useState(false);
   const [logoError, setLogoError] = useState(false);
@@ -161,15 +163,17 @@ const TopBar: React.FC<TopBarProps> = ({
             </div>
 
             <div className="flex min-w-0 max-w-full items-center justify-end gap-2">
-              {userName && (
-                <span
-                  className="min-w-0 max-w-[min(10rem,36vw)] truncate text-right text-sm font-medium text-foreground sm:max-w-[12rem] md:max-w-xs"
-                  data-test-id="top-bar-user-name"
-                  title={userName}
-                >
-                  {userName}
-                </span>
-              )}
+              {onAccountClick ? (
+                <IconButton
+                  icon="account_circle"
+                  variant="action"
+                  size="md"
+                  strokeWidth={2.5}
+                  onClick={onAccountClick}
+                  ariaLabel={userName ? `Cuenta de ${userName}` : 'Mi cuenta'}
+                  data-test-id="top-bar-account-button"
+                />
+              ) : null}
 
               {showNotifications && (
                 <div className="relative shrink-0">

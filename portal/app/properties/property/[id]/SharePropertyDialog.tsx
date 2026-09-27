@@ -55,7 +55,17 @@ export default function SharePropertyDialog({
       onClose={onClose}
       title="Compartir propiedad"
       size="sm"
-      hideActions
+      actionsJustify="end"
+      actions={
+        <Button
+          type="button"
+          variant="outlined"
+          onClick={onClose}
+          data-test-id="sharePropertyClose"
+        >
+          Cerrar
+        </Button>
+      }
       data-test-id="sharePropertyDialog"
     >
       <div className="flex flex-col gap-3 pb-2">
