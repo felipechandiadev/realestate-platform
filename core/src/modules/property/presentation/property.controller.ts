@@ -39,6 +39,7 @@ import { CreatePropertyDto as CreatePropertyPayloadDto } from '../dto/create-pro
 import { UpdateMainImageDto } from '../dto/create-property.dto';
 import { UpdatePropertyPriceDto } from '../dto/update-property-price.dto';
 import { UpdatePropertySeoDto } from '../dto/update-property-seo.dto';
+import { SharePropertyDto } from '../dto/share-property.dto';
 import { GridSaleQueryDto } from '../dto/grid-sale.dto';
 import { GridRentQueryDto } from '../dto/grid-rent.dto';
 import { GetFullPropertyDto } from '../dto/get-full-property.dto';
@@ -47,7 +48,8 @@ import { FilterSalePropertiesDto } from '../dto/filter-sale-properties.dto';
 import { ListAvailableRentPropertiesDto } from '../dto/list-available-rent-properties.dto';
 import { Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, RolesGuard, Roles } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 import { PropertyOperationType } from '../../../shared/enums/property-operation-type.enum';
 import { UploadPropertyMultimediaDto } from '../dto/upload-property-multimedia.dto';
 import { FileUploadService } from '../../../shared/services/file-upload.service';
@@ -1038,6 +1040,24 @@ export class PropertyController {
   /**
    * Get property by ID - GENERIC ENDPOINT (MUST BE LAST to not interfere with specific routes)
    */
+  @Post(':id/share')
+  @ApiOperation({ summary: 'Email the public property page to a recipient' })
+  @ApiResponse({ status: 200, description: 'Share email sent' })
+  @ApiParam({ name: 'id', type: String })
+  @ApiBody({ type: SharePropertyDto })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
+  @Audit(AuditAction.CREATE, AuditEntityType.PROPERTY, 'Property shared by email')
+  async shareProperty(
+    @Param('id') id: string,
+    @Body(ValidationPipe) dto: SharePropertyDto,
+    @Req() req: any,
+  ) {
+    const userId = this.extractUserId(req);
+    return this.propertyService.shareByEmail(id, dto, userId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get property by ID' })
   @ApiResponse({ status: 200, description: 'Property details', type: Property })

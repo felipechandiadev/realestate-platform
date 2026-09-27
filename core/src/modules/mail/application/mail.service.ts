@@ -8,6 +8,10 @@ import { SendEmailVerificationUseCase } from './use-cases/send-email-verificatio
 import { SendWelcomeEmailUseCase } from './use-cases/send-welcome-email.usecase';
 import { SendPasswordResetUseCase } from './use-cases/send-password-reset.usecase';
 import { SendPropertyStatusChangeUseCase } from './use-cases/send-property-status-change.usecase';
+import {
+  PropertyShareMailInput,
+  SendPropertyShareUseCase,
+} from './use-cases/send-property-share.usecase';
 
 export interface MailTemplateContext {
   name?: string;
@@ -32,6 +36,7 @@ export class MailService {
     private readonly sendWelcomeEmailUseCase: SendWelcomeEmailUseCase,
     private readonly sendPasswordResetUseCase: SendPasswordResetUseCase,
     private readonly sendPropertyStatusChangeUseCase: SendPropertyStatusChangeUseCase,
+    private readonly sendPropertyShareUseCase: SendPropertyShareUseCase,
   ) {}
 
   /**
@@ -166,5 +171,9 @@ export class MailService {
     newStatus: string
   ): Promise<void> {
     return this.sendPropertyStatusChangeUseCase.execute(email, name, propertyTitle, newStatus);
+  }
+
+  async sendPropertyShare(input: PropertyShareMailInput): Promise<void> {
+    return this.sendPropertyShareUseCase.execute(input);
   }
 }

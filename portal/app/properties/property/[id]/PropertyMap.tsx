@@ -37,6 +37,13 @@ export default function PropertyMap({
     // Initialize map
     const map = L.map('property-map', {
       attributionControl: true,
+      dragging: false,
+      keyboard: false,
+      boxZoom: false,
+      doubleClickZoom: false,
+      scrollWheelZoom: false,
+      touchZoom: false,
+      zoomControl: true,
     }).setView([latitude, longitude], 15);
 
     const container = map.getContainer();

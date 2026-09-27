@@ -11,6 +11,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { MultimediaModule } from '../multimedia/multimedia.module';
 import { ConfigModule } from '@nestjs/config';
+import { MailModule } from '../mail/mail.module';
 import { FileUploadService } from '../../shared/services/file-upload.service';
 
 // domain / infrastructure imports
@@ -34,9 +35,10 @@ import { GetPublishedPropertiesFilteredUseCase } from './application/use-cases/g
 import { FindPublishedFeaturedPublicUseCase } from './application/use-cases/find-published-featured-public.usecase';
 import { FindPublishedFeaturedPublicPaginatedUseCase } from './application/use-cases/find-published-featured-public-paginated.usecase';
 import { SoftDeletePropertyUseCase } from './application/use-cases/soft-delete-property.usecase';
+import { SharePropertyByEmailUseCase } from './application/use-cases/share-property-by-email.usecase';
 
 @Module({
-  imports: [ConfigModule, TypeOrmModule.forFeature([Property, User, Multimedia, PropertyType]), AuditModule, NotificationsModule, MultimediaModule, AuthModule],
+  imports: [ConfigModule, MailModule, TypeOrmModule.forFeature([Property, User, Multimedia, PropertyType]), AuditModule, NotificationsModule, MultimediaModule, AuthModule],
   controllers: [PropertyController],
   providers: [
     PropertyService,
@@ -63,6 +65,7 @@ import { SoftDeletePropertyUseCase } from './application/use-cases/soft-delete-p
     FindPublishedFeaturedPublicUseCase,
     FindPublishedFeaturedPublicPaginatedUseCase,
     SoftDeletePropertyUseCase,
+    SharePropertyByEmailUseCase,
     GetPublishedPropertiesFilteredUseCase,
   ],
   exports: [PropertyService],

@@ -14,6 +14,7 @@ import { SendEmailVerificationUseCase } from './application/use-cases/send-email
 import { SendWelcomeEmailUseCase } from './application/use-cases/send-welcome-email.usecase';
 import { SendPasswordResetUseCase } from './application/use-cases/send-password-reset.usecase';
 import { SendPropertyStatusChangeUseCase } from './application/use-cases/send-property-status-change.usecase';
+import { SendPropertyShareUseCase } from './application/use-cases/send-property-share.usecase';
 import { MailAdapter } from './domain/mail.adapter';
 import { DEFAULT_COMPANY_NAME } from './brand.constants';
 
@@ -106,6 +107,7 @@ function trimEnv(value: string | undefined): string {
     SendWelcomeEmailUseCase,
     SendPasswordResetUseCase,
     SendPropertyStatusChangeUseCase,
+    SendPropertyShareUseCase,
   ],
   exports: [MailService],
 })

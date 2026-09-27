@@ -10,6 +10,7 @@ import MultimediaSection from '@/features/properties/components/dialogs/fullProp
 import SEOSection from '@/features/properties/components/dialogs/fullProperty/SEOSection';
 import InternalNotesSection from '@/features/properties/components/dialogs/fullProperty/InternalNotesSection';
 import HistorySection from '@/features/properties/components/dialogs/fullProperty/HistorySection';
+import { SharePropertySection } from '@/features/properties/components/detail/SharePropertySection';
 import { getPropertyHeaderInfo } from '@/features/properties/actions/properties.action';
 import {
   getStatusChipClasses,
@@ -184,6 +185,13 @@ export function PropertyDetailPage({
         ) : null}
         {activeSection === 'notas' ? <InternalNotesSection propertyId={propertyId} /> : null}
         {activeSection === 'historial' ? <HistorySection propertyId={propertyId} /> : null}
+        {activeSection === 'compartir' ? (
+          <SharePropertySection
+            propertyId={propertyId}
+            propertyTitle={displayTitle}
+            status={displayStatus}
+          />
+        ) : null}
       </div>
     </div>
   );

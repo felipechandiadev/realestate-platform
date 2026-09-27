@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Bed, Bath, Home, Maximize2, ParkingSquare, Heart, Plus, Loader2 } from 'lucide-react';
+import { Bed, Bath, Home, Maximize2, ParkingSquare, Heart, Plus, Loader2, Share2 } from 'lucide-react';
 import { getPublishedPropertyPublic, notifyPropertyInterest, getRelatedProperties, Property } from './actions';
 import { Button } from '@realestate/ui';
 import { TextField } from '@realestate/ui';
@@ -14,6 +14,7 @@ import PropertyMapWrapper from './PropertyMapWrapper';
 import MultimediaGrid from './MultimediaGrid';
 import RelatedPropertyCard from '@/app/ui/RelatedPropertyCard';
 import { useCookieConsent } from '@/providers/CookieConsentContext';
+import SharePropertyDialog from './SharePropertyDialog';
 
 interface PropertyDetailClientProps {
   property: Property;
@@ -77,6 +78,7 @@ export default function PropertyDetailClient({
   const [isLoadingFav, setIsLoadingFav] = useState(false);
   const [relatedProperties, setRelatedProperties] = useState<Property[]>([]);
   const [isLoadingRelated, setIsLoadingRelated] = useState(true);
+  const [shareOpen, setShareOpen] = useState(false);
 
   // Check if user has favorited this property
   useEffect(() => {
@@ -284,10 +286,20 @@ export default function PropertyDetailClient({
       {/* Header Section - Centered Info */}
       <div className="container mx-auto max-w-7xl px-4 py-8">
         <div className="flex flex-col items-center justify-center mb-8 text-center">
-          {/* Title */}
-          <h1 className="text-4xl font-bold text-foreground mb-4">
-            {property.title}
-          </h1>
+          <div className="mb-4 flex items-center justify-center gap-3">
+            <h1 className="text-4xl font-bold text-foreground">
+              {property.title}
+            </h1>
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-muted"
+              aria-label="Compartir propiedad"
+              data-test-id="sharePropertyButton"
+            >
+              <Share2 size={22} />
+            </button>
+          </div>
 
           {/* Property Type */}
           <div className="mb-2">
@@ -577,6 +589,12 @@ export default function PropertyDetailClient({
           </Button>
         </div>
       </Dialog>
+      <SharePropertyDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        propertyId={property.id}
+        title={property.title}
+      />
     </main>
   );
 }

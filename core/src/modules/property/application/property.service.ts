@@ -12,6 +12,7 @@ import { FilterRentPropertiesDto } from '../dto/filter-rent-properties.dto';
 import { FilterSalePropertiesDto } from '../dto/filter-sale-properties.dto';
 import { UpdatePropertyLocationDto } from '../dto/update-property-location.dto';
 import { UpdatePropertySeoDto } from '../dto/update-property-seo.dto';
+import { SharePropertyDto } from '../dto/share-property.dto';
 import { UploadPropertyMultimediaDto } from '../dto/upload-property-multimedia.dto';
 import { GridSaleQueryDto } from '../dto/grid-sale.dto';
 import { PropertyStatus } from '../../../shared/enums/property-status.enum';
@@ -39,6 +40,7 @@ import { GridSalePropertiesUseCase } from '../application/use-cases/grid-sale-pr
 import { GridRentPropertiesUseCase } from '../application/use-cases/grid-rent-properties.usecase';
 import { ListAvailableRentPropertiesUseCase } from '../application/use-cases/list-available-rent-properties.usecase';
 import { UpdatePropertyUseCase } from '../application/use-cases/update-property.usecase';
+import { SharePropertyByEmailUseCase } from '../application/use-cases/share-property-by-email.usecase';
 
 @Injectable()
 export class PropertyService {
@@ -60,6 +62,7 @@ export class PropertyService {
     private readonly gridRentPropertiesUseCase: GridRentPropertiesUseCase,
     private readonly listAvailableRentPropertiesUseCase: ListAvailableRentPropertiesUseCase,
     private readonly updatePropertyUseCase: UpdatePropertyUseCase,
+    private readonly sharePropertyByEmailUseCase: SharePropertyByEmailUseCase,
     private readonly propertyRepository: PropertyRepository,
     private readonly notificationsService: NotificationsService,
     @InjectRepository(User)
@@ -225,6 +228,10 @@ export class PropertyService {
   async getFullProperty(id: string): Promise<GetFullPropertyDto> {
     // delegate to findOne but cast to dto
     return (await this.findOne(id)) as any;
+  }
+
+  async shareByEmail(id: string, dto: SharePropertyDto, senderUserId: string) {
+    return this.sharePropertyByEmailUseCase.execute(id, dto, senderUserId);
   }
 
   async update(id: string, dto: any, userId?: string) {

@@ -33,6 +33,7 @@ import { getRegiones, getComunasByRegion } from '@/features/shared/common/action
 import { Alert } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { Bath, Bed, Car, CheckCircle, Home, ImageIcon, Info, Loader2, MapPin, Maximize2, Mountain } from 'lucide-react';
+import FeaturedSaleProperties from '../sell-property/FeaturedSaleProperties';
 
 // Dynamic import for LocationPreview to avoid SSR issues with Leaflet
 const LocationPreview = dynamic(() => import("@realestate/ui/components/LocationPicker").then(m => ({ default: m.LocationPreview })), {
@@ -885,18 +886,21 @@ export default function RentPropertyPage() {
           </div>
         ) : (
           // Stepper normal
-          <StepperBaseForm
-            title="Arrienda tu propiedad"
-            subtitle="Completa los 6 pasos para publicar tu propiedad en arriendo"
-            steps={steps}
-            values={values}
-            onChange={handleChange}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-            submitLabel="Enviar solicitud"
-            errors={errors}
-            columns={2}
-          />
+          <>
+            <StepperBaseForm
+              title="Arrienda tu propiedad"
+              subtitle="Completa los 6 pasos para publicar tu propiedad en arriendo"
+              steps={steps}
+              values={values}
+              onChange={handleChange}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+              submitLabel="Enviar solicitud"
+              errors={errors}
+              columns={2}
+            />
+            <FeaturedSaleProperties operationType="RENT" />
+          </>
         )}
       </div>
     </div>

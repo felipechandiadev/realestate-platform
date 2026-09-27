@@ -45,6 +45,9 @@ export interface Property {
     id: string;
     url: string;
     type: string;
+    format?: string;
+    width?: number | null;
+    height?: number | null;
   }>;
   mainImageUrl?: string;
   // Additional data

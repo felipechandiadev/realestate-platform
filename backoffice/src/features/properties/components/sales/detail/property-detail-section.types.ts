@@ -6,6 +6,7 @@ export const PROPERTY_DETAIL_SECTION_IDS = [
   'seo',
   'notas',
   'historial',
+  'compartir',
 ] as const;
 
 export type PropertyDetailSectionId = (typeof PROPERTY_DETAIL_SECTION_IDS)[number];
@@ -23,6 +24,7 @@ export const PROPERTY_DETAIL_TABS: PropertyDetailTabItem[] = [
   { id: 'seo', label: 'SEO y marketing' },
   { id: 'notas', label: 'Notas internas' },
   { id: 'historial', label: 'Historial' },
+  { id: 'compartir', label: 'Compartir' },
 ];
 
 export function isPropertyDetailSectionId(value: string): value is PropertyDetailSectionId {

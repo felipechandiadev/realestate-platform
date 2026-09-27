@@ -35,6 +35,7 @@ export interface RelatedProperty {
   bathrooms?: number | null;
   builtSquareMeters?: number | null;
   parkingSpaces?: number | null;
+  isFeatured?: boolean;
 }
 
 interface RelatedPropertyCardProps {
@@ -123,8 +124,30 @@ export default function RelatedPropertyCard({ property }: RelatedPropertyCardPro
             }}
           />
           
-          {/* Operation badge */}
-          <div className="absolute top-2 left-2">
+          {property.isFeatured ? (
+            <div
+              className="featured-ribbon"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                backgroundColor: '#16a34a',
+                color: 'white',
+                fontWeight: 'bold',
+                fontSize: '0.7rem',
+                padding: '0.25rem 2rem',
+                transformOrigin: '0% 0%',
+                transform: 'translate(-20%, 270%) rotate(-45deg)',
+                zIndex: 10,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                pointerEvents: 'none',
+              }}
+              data-test-id="property-card-featured"
+            >
+              DESTACADA
+            </div>
+          ) : null}
+          <div className={`absolute top-2 ${property.isFeatured ? 'right-2' : 'left-2'}`}>
             <span
               className={`px-3 py-1 text-xs font-semibold rounded-full ${
                 property.operationType === 'SALE'

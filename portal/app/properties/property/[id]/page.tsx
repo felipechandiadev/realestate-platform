@@ -19,11 +19,24 @@
  */
 
 import React from 'react';
+import type { Metadata } from 'next';
 import { getPublishedPropertyPublic } from './actions';
 import PropertyDetailClient from './PropertyDetailClient';
+import { buildPropertyShareMetadata } from './share-metadata';
 
 interface PropertyDetailPageProps {
   params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({
+  params,
+}: PropertyDetailPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const propertyResult = await getPublishedPropertyPublic(id);
+  if (!propertyResult.success || !propertyResult.data) {
+    return { title: 'Propiedad no encontrada' };
+  }
+  return buildPropertyShareMetadata(propertyResult.data, id);
 }
 
 export default async function PropertyDetailPage({
