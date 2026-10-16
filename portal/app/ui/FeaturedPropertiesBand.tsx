@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import FeaturedPropertyCard, { FeaturedProperty } from './FeaturedPropertyCard';
 import { pickImageVariant } from '@/shared/lib/pick-image-variant';
 
-const GAP_CLASS = 'gap-5';
+const GAP_CLASS = 'gap-3';
 const AUTO_SCROLL_MS = 4500;
 const SCROLL_STEP_RATIO = 0.85;
 

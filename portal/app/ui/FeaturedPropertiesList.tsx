@@ -1,46 +1,39 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import PropertyCard, { PortalProperty } from './PropertyCard';
 import { Button } from '@realestate/ui';
-import { getPublishedFeaturedProperties } from '@/features/shared/properties/actions/properties.action';
+import FeaturedPropertyCard, { FeaturedProperty } from './FeaturedPropertyCard';
+import { pickImageVariant } from '@/shared/lib/pick-image-variant';
 
 interface PropertyFromAPI {
   id: string;
   title: string;
   description?: string;
   price: number;
-  currency: 'CLP' | 'UF';
+  currency?: 'CLP' | 'UF';
+  currencyPrice?: 'CLP' | 'UF';
   operationType: 'RENT' | 'SALE';
   state?: string;
   city?: string;
-  address?: string;
   bedrooms?: number;
   bathrooms?: number;
-  totalArea?: number | null;
   builtSquareMeters?: number | null;
-  landSquareMeters?: number | null;
-  parkingSpaces?: number | null;
+  totalArea?: number | null;
   mainImageUrl?: string;
-  isFeatured: boolean;
-  multimedia?: {
+  isFeatured?: boolean;
+  otherFeatures?: string[];
+  multimedia?: Array<{
     id?: string;
     url: string;
     type?: string;
     format?: string;
-  }[];
-  propertyType?: {
-    id: string;
-    name: string;
-    hasBedrooms?: boolean;
-    hasBathrooms?: boolean;
-    hasBuiltSquareMeters?: boolean;
-    hasLandSquareMeters?: boolean;
-    hasParkingSpaces?: boolean;
-    hasFloors?: boolean;
-    hasConstructionYear?: boolean;
-  };
+    variants?: Array<{
+      variantType: string;
+      format?: string;
+      url?: string;
+    }>;
+  }>;
 }
 
 interface PaginationData {
@@ -60,12 +53,37 @@ interface FeaturedPropertiesListProps {
   columns?: number;
 }
 
-const COL_CLASS: Record<number, string> = {
-  1: 'md:grid-cols-1',
-  2: 'md:grid-cols-2',
-  3: 'md:grid-cols-3',
-  4: 'md:grid-cols-4',
-};
+
+function mapToFeaturedProperty(property: PropertyFromAPI): FeaturedProperty {
+  const mediaItems = property.multimedia || [];
+  const imageMedia =
+    mediaItems.find((item) => (item.type || '').toUpperCase() === 'PROPERTY_IMG') ||
+    mediaItems.find((item) => (item.format || '').toUpperCase() === 'IMG') ||
+    mediaItems[0];
+
+  const mainImageUrl = imageMedia
+    ? pickImageVariant(imageMedia, 'card', imageMedia.url || property.mainImageUrl) ??
+      property.mainImageUrl ??
+      null
+    : property.mainImageUrl ?? null;
+
+  return {
+    id: property.id,
+    title: property.title,
+    description: property.description ?? null,
+    price: property.price,
+    currencyPrice: property.currencyPrice ?? property.currency ?? 'CLP',
+    operationType: property.operationType === 'SALE' ? 'SALE' : 'RENT',
+    mainImageUrl,
+    city: property.city ?? null,
+    state: property.state ?? null,
+    bedrooms: property.bedrooms ?? null,
+    bathrooms: property.bathrooms ?? null,
+    builtSquareMeters: property.builtSquareMeters ?? property.totalArea ?? null,
+    otherFeatures: Array.isArray(property.otherFeatures) ? property.otherFeatures : [],
+    isFeatured: true,
+  };
+}
 
 const PaginationControls: React.FC<{
   pagination: PaginationData;
@@ -74,14 +92,12 @@ const PaginationControls: React.FC<{
 }> = ({ pagination, onPageChange, isLoading = false }) => {
   const { page, totalPages, hasPrevPage, hasNextPage } = pagination;
 
-  // Generar números de página a mostrar (máximo 5, centrados en la página actual)
   const getPageNumbers = () => {
     const pages: number[] = [];
     const maxVisible = 5;
     let start = Math.max(1, page - Math.floor(maxVisible / 2));
     let end = Math.min(totalPages, start + maxVisible - 1);
 
-    // Ajustar si estamos cerca del final
     if (end - start + 1 < maxVisible) {
       start = Math.max(1, end - maxVisible + 1);
     }
@@ -102,8 +118,7 @@ const PaginationControls: React.FC<{
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-center space-x-2 mt-8">
-      {/* Botón Anterior */}
+    <div className="mt-8 flex items-center justify-center space-x-2">
       {hasPrevPage && (
         <Button
           variant="outlined"
@@ -115,15 +130,15 @@ const PaginationControls: React.FC<{
         </Button>
       )}
 
-      {/* Números de página */}
       {getPageNumbers().map((pageNum) => (
         <button
           key={pageNum}
+          type="button"
           onClick={() => handlePageChange(pageNum)}
           disabled={isLoading}
-          className={`px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+          className={`rounded-md px-3 py-2 text-sm transition-colors duration-200 ${
             pageNum === page
-              ? 'bg-primary text-background font-medium'
+              ? 'bg-primary font-medium text-background'
               : 'text-foreground hover:bg-accent hover:text-background disabled:opacity-50'
           }`}
         >
@@ -131,7 +146,6 @@ const PaginationControls: React.FC<{
         </button>
       ))}
 
-      {/* Botón Siguiente */}
       {hasNextPage && (
         <Button
           variant="outlined"
@@ -154,61 +168,55 @@ export default function FeaturedPropertiesList({
 }: FeaturedPropertiesListProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(initialIsLoading);
-  const colClass = COL_CLASS[Math.min(4, Math.max(1, columns))] ?? COL_CLASS[3];
+  const cols = Math.min(4, Math.max(1, columns));
 
-  const handlePageChange = useCallback(async (newPage: number) => {
-    setIsLoading(true);
-    try {
-      const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-      params.set('featured_page', newPage.toString());
-      router.push(`?${params.toString()}`, { scroll: false });
-    } catch (error) {
-      console.error('Error changing featured page:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [router]);
+  const featuredProperties = useMemo(
+    () => properties.map(mapToFeaturedProperty),
+    [properties],
+  );
+
+  const handlePageChange = useCallback(
+    async (newPage: number) => {
+      setIsLoading(true);
+      try {
+        const params = new URLSearchParams(
+          typeof window !== 'undefined' ? window.location.search : '',
+        );
+        params.set('featured_page', newPage.toString());
+        router.push(`?${params.toString()}`, { scroll: false });
+      } catch (error) {
+        console.error('Error changing featured page:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [router],
+  );
 
   return (
-    <div className="w-full relative z-0">
+    <div className="relative z-0 w-full">
       <div
-        className={`grid grid-cols-1 gap-6 transition-opacity duration-200 ${colClass} ${
+        className={`mx-auto grid justify-center gap-5 transition-opacity duration-200 ${
           isLoading ? 'opacity-70' : 'opacity-100'
         }`}
+        style={{
+          // Columns sized to the carousel card (~18rem) so gap-x is the real horizontal separation
+          gridTemplateColumns: `repeat(${cols}, minmax(0, 18rem))`,
+        }}
       >
-        {properties.map((property) => {
-          // Mapear los campos de la API a la interfaz que PropertyCard espera
-          const mappedProperty: PortalProperty = {
-            id: property.id,
-            title: property.title,
-            description: property.description || null,
-            operationType: (property.operationType === 'SALE' ? 'SALE' : 'RENT') as any,
-            price: property.price,
-            currencyPrice: property.currency || 'CLP',
-            state: property.state || null,
-            city: property.city || null,
-            propertyType: property.propertyType,
-            mainImageUrl: property.mainImageUrl || null,
-            multimedia: property.multimedia || [],
-            bedrooms: property.bedrooms || null,
-            bathrooms: property.bathrooms || null,
-            builtSquareMeters: property.builtSquareMeters ?? property.totalArea ?? null,
-            landSquareMeters: property.landSquareMeters ?? null,
-            parkingSpaces: property.parkingSpaces ?? null,
-            otherFeatures: Array.isArray((property as { otherFeatures?: string[] }).otherFeatures)
-              ? (property as { otherFeatures?: string[] }).otherFeatures
-              : [],
-            isFeatured: property.isFeatured,
-          };
-
-          return <PropertyCard key={property.id} property={mappedProperty} />;
-        })}
+        {featuredProperties.map((property, index) => (
+          <FeaturedPropertyCard
+            key={property.id}
+            property={property}
+            layout="grid"
+            priorityImage={index < 4}
+          />
+        ))}
       </div>
 
-      {/* Controles de paginación */}
       {pagination && (
-        <PaginationControls 
-          pagination={pagination} 
+        <PaginationControls
+          pagination={pagination}
           onPageChange={handlePageChange}
           isLoading={isLoading}
         />

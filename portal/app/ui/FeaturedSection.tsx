@@ -43,8 +43,9 @@ export default function FeaturedSection({
       </div>
 
       {showDesktopGrid ? (
-        <div className="relative hidden w-full bg-card px-4 pb-6 md:block md:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
+        <div className="relative hidden w-full bg-card px-4 pb-6 md:block md:px-6">
+          {/* Narrower than listings (max-w-7xl) so featured cards keep carousel scale */}
+          <div className="mx-auto max-w-5xl">
             <FeaturedPropertiesList
               properties={gridProperties as any}
               pagination={pagination}

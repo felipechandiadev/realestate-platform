@@ -28,6 +28,11 @@ interface FeaturedPropertyCardProps {
   inertClone?: boolean;
   /** Eager load for above-the-fold marquee cards */
   priorityImage?: boolean;
+  /**
+   * band: fixed carousel width; grid: same visual card filling the cell
+   * (keeps carousel proportions via max-width)
+   */
+  layout?: 'band' | 'grid';
 }
 
 const formatPrice = (value: number, currency: string) => {
@@ -45,6 +50,7 @@ export default function FeaturedPropertyCard({
   property,
   inertClone = false,
   priorityImage = false,
+  layout = 'band',
 }: FeaturedPropertyCardProps) {
   const [imageError, setImageError] = useState(false);
   const [otherFeaturesOpen, setOtherFeaturesOpen] = useState(false);
@@ -174,7 +180,9 @@ export default function FeaturedPropertyCard({
   );
 
   const shellClassName =
-    'group flex h-full w-56 flex-shrink-0 flex-col overflow-hidden rounded-[20px] border border-border/70 bg-transparent shadow-sm transition-[box-shadow,transform] duration-300 ease-out hover:shadow-md sm:w-64 lg:w-72';
+    layout === 'grid'
+      ? 'group flex h-full w-full flex-col overflow-hidden rounded-[20px] border border-border/70 bg-transparent shadow-sm transition-[box-shadow,transform] duration-300 ease-out hover:shadow-md'
+      : 'group flex h-full w-56 flex-shrink-0 flex-col overflow-hidden rounded-[20px] border border-border/70 bg-transparent shadow-sm transition-[box-shadow,transform] duration-300 ease-out hover:shadow-md sm:w-64 lg:w-72';
 
   if (inertClone) {
     return (
