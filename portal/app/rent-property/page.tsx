@@ -30,10 +30,11 @@ import { useSession } from 'next-auth/react';
 import StepperBaseForm, { StepperStep, BaseFormField } from '@/shared/components/ui/BaseForm/StepperBaseForm';
 import { listPropertyTypesPublic, getPropertyTypeCharacteristicsPublic, PropertyTypeWithFeatures, publishPropertyPublic, publishProperty } from '@/features/shared/properties/actions/properties.action';
 import { getRegiones, getComunasByRegion } from '@/features/shared/common/actions/commons.action';
-import { Alert } from "@realestate/ui";
+import { Alert, OtherFeaturesChips } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { Bath, Bed, Car, CheckCircle, Home, ImageIcon, Info, Loader2, MapPin, Maximize2, Mountain } from 'lucide-react';
 import FeaturedSaleProperties from '../sell-property/FeaturedSaleProperties';
+import OtherFeaturesField from '@/shared/components/ui/OtherFeaturesField/OtherFeaturesField';
 
 // Dynamic import for LocationPreview to avoid SSR issues with Leaflet
 const LocationPreview = dynamic(() => import("@realestate/ui/components/LocationPicker").then(m => ({ default: m.LocationPreview })), {
@@ -75,6 +76,7 @@ interface PropertyPreviewCardProps {
   builtSquareMeters?: number | null;
   landSquareMeters?: number | null;
   parkingSpaces?: number | null;
+  otherFeatures?: string[];
   imageUrl?: string;
   propertyType?: PropertyTypeWithFeatures | null;
 }
@@ -91,6 +93,7 @@ function PropertyPreviewCard({
   builtSquareMeters,
   landSquareMeters,
   parkingSpaces,
+  otherFeatures = [],
   imageUrl,
   propertyType,
 }: PropertyPreviewCardProps) {
@@ -105,7 +108,7 @@ function PropertyPreviewCard({
   return (
     <div className="bg-card rounded-xl overflow-hidden border border-border shadow-md">
       {/* Imagen */}
-      <div className="relative aspect-video bg-muted">
+      <div className="relative aspect-video" style={{ backgroundColor: '#e5e7eb' }}>
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -187,6 +190,13 @@ function PropertyPreviewCard({
             </div>
           )}
         </div>
+
+        {otherFeatures.length > 0 && (
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Otras características</p>
+            <OtherFeaturesChips value={otherFeatures} hideWhenEmpty />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -206,6 +216,7 @@ type FormValues = {
   parkingSpaces: number;
   floors: number;
   constructionYear: number;
+  otherFeatures: string[];
   price: string;
   currencyPrice: string;
   region: string | null;
@@ -229,6 +240,7 @@ const INITIAL_VALUES: FormValues = {
   parkingSpaces: 0,
   floors: 0,
   constructionYear: new Date().getFullYear(),
+  otherFeatures: [],
   price: '',
   currencyPrice: 'CLP',
   region: null,
@@ -411,6 +423,7 @@ export default function RentPropertyPage() {
         parkingSpaces: values.parkingSpaces as number,
         floors: values.floors as number,
         constructionYear: values.constructionYear as number,
+        otherFeatures: Array.isArray(values.otherFeatures) ? values.otherFeatures : [],
         price: values.price as string,
         currencyPrice: values.currencyPrice as string,
         region: values.region as string,
@@ -608,23 +621,14 @@ export default function RentPropertyPage() {
       }]);
     }
 
-    // Si no hay características para este tipo
-    if (rows.length === 0) {
-      return [[{
-        name: 'noCharacteristics',
-        label: '',
-        type: 'custom',
-        renderComponent: () => (
-          <div className="text-center py-8 text-muted-foreground">
-            <div className="flex flex-col items-center gap-2">
-              <CheckCircle className="text-green-500" size={48} />
-              <span>Este tipo de propiedad no requiere características adicionales.</span>
-              <span className="text-sm">Puedes continuar al siguiente paso.</span>
-            </div>
-          </div>
-        )
-      }]];
-    }
+    rows.push([{
+      name: 'otherFeatures',
+      label: 'Otras características',
+      type: 'custom',
+      renderComponent: ({ value, onChange }) => (
+        <OtherFeaturesField value={value} onChange={onChange} />
+      ),
+    }]);
 
     return rows;
   };
@@ -785,6 +789,7 @@ export default function RentPropertyPage() {
                   builtSquareMeters={values.builtSquareMeters}
                   landSquareMeters={values.landSquareMeters}
                   parkingSpaces={values.parkingSpaces}
+                  otherFeatures={values.otherFeatures}
                   imageUrl={getPreviewImageUrl()}
                   propertyType={selectedPropertyType}
                 />

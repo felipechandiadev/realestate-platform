@@ -11,6 +11,10 @@ import { ArticlesModule } from './modules/articles/articles.module';
 import { TestimonialsModule } from './modules/testimonials/testimonials.module';
 import { IdentitiesModule } from './modules/identities/identities.module';
 import { PortalHeaderModule } from './modules/portal-header/portal-header.module';
+import { PortalFooterModule } from './modules/portal-footer/portal-footer.module';
+import { PortalListingsModule } from './modules/portal-listings/portal-listings.module';
+import { PortalFeaturedModule } from './modules/portal-featured/portal-featured.module';
+import { AppearanceModule } from './modules/appearance/appearance.module';
 import { AboutUsModule } from './modules/about-us/about-us.module';
 import { UsersModule } from './modules/users/users.module';
 import { PropertyModule } from './modules/property/property.module';
@@ -57,6 +61,10 @@ import { TestAdminModule } from './shared/init/test-admin.module';
     TestimonialsModule,
     IdentitiesModule,
     PortalHeaderModule,
+    PortalFooterModule,
+    PortalListingsModule,
+    PortalFeaturedModule,
+    AppearanceModule,
     AboutUsModule,
     UsersModule,
     PropertyModule,

@@ -92,7 +92,7 @@ export default function ContractAddPaymentDialog({
     >
       <form onSubmit={handleSubmit} className="space-y-5 p-1">
         <TextField
-          label={`Monto (${currency})`}
+          label={`Monto (${currency === 'UF' ? 'UF' : '$'})`}
           type="number"
           value={amount}
           onChange={(event) => setAmount(event.target.value)}

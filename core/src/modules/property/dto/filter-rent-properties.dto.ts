@@ -52,11 +52,52 @@ export class FilterRentPropertiesDto {
 
   @IsOptional()
   @IsString()
+  typeIds?: string;
+
+  @IsOptional()
+  @IsString()
+  types?: string;
+
+  @IsOptional()
+  @IsString()
   state?: string;
 
   @IsOptional()
   @IsString()
   city?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  builtSquareMetersMin?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  builtSquareMetersMax?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  landSquareMetersMin?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  landSquareMetersMax?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  constructionYearMin?: number;
+
+  @IsOptional()
+  @IsString()
+  otherFeatures?: string;
+
+  @IsOptional()
+  @IsString()
+  features?: string;
 
   @IsOptional()
   @IsString()

@@ -115,11 +115,11 @@ export default function PersonDocumentsList({ personId, compact = false }: Perso
   if (loading) {
     return compact ? (
       <div className="flex items-center justify-center">
-        <DotProgress />
+        <DotProgress size={5} gap={2} count={3} variant="wave" />
       </div>
     ) : (
       <div className="flex items-center justify-center py-4">
-        <DotProgress />
+        <DotProgress count={3} variant="wave" />
       </div>
     );
   }

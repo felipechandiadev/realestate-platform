@@ -7,6 +7,7 @@ import { ImageOff, User } from 'lucide-react';
 import { Button } from "@realestate/ui";
 import { useSidebarMenuState } from './SidebarMenuStateContext';
 import { useAuth } from '@/app/providers';
+import { APP_NAME, APP_VERSION } from '@/shared/config/app-info';
 
 export interface SideBarMenuItem {
   id?: string;
@@ -31,11 +32,7 @@ const ROLE_LABELS: Record<string, string> = {
   director: 'Director',
 };
 
-const APP_NAME = process.env.NEXT_PUBLIC_APP_NAME || 'RealEstate Platform';
-const APP_VERSION = process.env.NEXT_PUBLIC_APP_VERSION || '1.33.1';
-const APP_RELEASE = process.env.NEXT_PUBLIC_APP_RELEASE || '21-Diciembre-2025';
-
-const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose, logoUrl }) => {
+const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose, logoUrl, companyName }) => {
   const { data: session } = useSession();
   const user = session?.user;
   const [isPending, startTransition] = useTransition();
@@ -203,8 +200,10 @@ const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose,
             )}
           </div>
         ) : null}
-        <div className="text-lg font-bold text-gray-800" data-test-id="side-bar-app-name">{APP_NAME}</div>
-        <div className="text-[10px] opacity-70 mt-1" data-test-id="side-bar-app-version">v{APP_VERSION}</div>
+        {companyName ? (
+          <div className="px-4 text-lg font-bold leading-tight text-gray-800 break-words" data-test-id="side-bar-app-name">{companyName}</div>
+        ) : null}
+        <div className="text-xs opacity-70 mt-1" data-test-id="side-bar-app-version">{APP_NAME} v{APP_VERSION}</div>
       </div>
 {/* 
       {user && (() => {

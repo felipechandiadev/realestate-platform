@@ -21,6 +21,7 @@ export interface CreatePropertyFormData {
   builtSquareMeters: number;
   landSquareMeters: number;
   constructionYear: number;
+  otherFeatures: string[];
   seoTitle: string;
   seoDescription: string;
   status: string;

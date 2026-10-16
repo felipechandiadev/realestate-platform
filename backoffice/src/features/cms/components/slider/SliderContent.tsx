@@ -355,7 +355,7 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
               Cancelar
             </Button>
             <Button variant="primary" type="submit" form="create-slide-form" disabled={isCreateLoading}>
-              {isCreateLoading ? <DotProgress size={12} /> : 'Crear Slide'}
+              {isCreateLoading ? <DotProgress size={12} count={3} variant="wave" /> : 'Crear Slide'}
             </Button>
           </>
         }
@@ -385,7 +385,7 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
               disabled={isDeleteLoading}
               className="border border-red-500 text-red-600 bg-white hover:bg-red-50 font-semibold"
             >
-              {isDeleteLoading ? <DotProgress size={12} /> : 'Eliminar permanentemente'}
+              {isDeleteLoading ? <DotProgress size={12} count={3} variant="wave" /> : 'Eliminar permanentemente'}
             </Button>
           </>
         }
@@ -413,7 +413,7 @@ export function SliderContent({ initialSlides, initialSearch = '' }: SliderConte
               Cancelar
             </Button>
             <Button variant="primary" type="submit" form="update-slide-form" disabled={isUpdateLoading}>
-              {isUpdateLoading ? <DotProgress size={12} /> : 'Actualizar Slide'}
+              {isUpdateLoading ? <DotProgress size={12} count={3} variant="wave" /> : 'Actualizar Slide'}
             </Button>
           </>
         }

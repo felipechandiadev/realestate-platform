@@ -115,6 +115,9 @@ export default function PropertiesForRentGrid({
       builtSquareMeters: property.builtSquareMeters || property.features?.totalArea || null,
       landSquareMeters: null,
       parkingSpaces: property.parkingSpaces || property.features?.parkingSpaces || null,
+      otherFeatures: Array.isArray((property as { otherFeatures?: string[] }).otherFeatures)
+        ? (property as { otherFeatures?: string[] }).otherFeatures
+        : [],
       propertyType: property.propertyType || null,
       isFeatured: property.isFeatured || false,
     }));

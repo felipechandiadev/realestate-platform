@@ -197,6 +197,12 @@ export class Property {
   @Min(0)
   constructionYear?: number;
 
+  /** Optional amenity keys from OTHER_FEATURE_KEYS (JSON array). Empty = none. */
+  @Column({ type: 'json', nullable: true })
+  @IsOptional()
+  @IsArray()
+  otherFeatures?: string[];
+
   // Location Information
   @Column({ type: 'enum', enum: RegionEnum, nullable: true })
   @IsOptional()

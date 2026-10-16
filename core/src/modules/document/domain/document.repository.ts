@@ -4,6 +4,7 @@ export abstract class DocumentRepository {
   abstract create(doc: Partial<Document>): Document;
   abstract save(doc: Document): Promise<Document>;
   abstract findAll(): Promise<Document[]>;
+  abstract findGrid(query?: any): Promise<{ data: Document[]; total: number; page: number; limit: number }>;
   abstract findByPersonId(personId: string): Promise<Document[]>;
   abstract findByContractId(contractId: string): Promise<Document[]>;
   abstract findOne(id: string): Promise<Document | null>;

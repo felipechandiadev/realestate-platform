@@ -3,17 +3,54 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAlert } from '@/providers/AlertContext';
-import { TextField } from '@realestate/ui';
+import { TextField, DataGrid, type DataGridColumn } from '@realestate/ui';
 import { IconButton } from "@realestate/ui";
-import AdminCard from './AdminCard';
+import { downloadExcelFile, readGridExportParams } from '@/shared/lib/data-grid-export';
+import { exportGridExcel } from '@/shared/lib/fetch-grid-excel';
 import CreateAdminFormDialog from './CreateAdminFormDialog';
 import UpdateAdminDialog from './UpdateAdminDialog';
 import DeleteAdminDialog from './DeleteAdminDialog';
 import type { AdministratorType } from './types';
 
+function adminColumns(
+  onEdit: (admin: AdministratorType) => void,
+  onDelete: (admin: AdministratorType) => void,
+  displayName: (admin: AdministratorType) => string,
+): DataGridColumn[] {
+  return [
+    { field: 'email', headerName: 'Email', flex: 1.2, minWidth: 200, sortable: true, filterable: true },
+    {
+      field: 'name',
+      headerName: 'Nombre',
+      flex: 1,
+      minWidth: 160,
+      sortable: true,
+      filterable: true,
+      renderCell: ({ row }) => displayName(row),
+    },
+    { field: 'role', headerName: 'Rol', width: 140, sortable: true, filterable: true },
+    { field: 'status', headerName: 'Estado', width: 140, sortable: true, filterable: true },
+    { field: 'createdAt', headerName: 'Fecha creación', width: 180, sortable: true, filterable: true },
+    {
+      field: 'actions',
+      headerName: '',
+      width: 160,
+      sortable: false,
+      filterable: false,
+      renderCell: ({ row }) => (
+        <div className="flex gap-2">
+          <button type="button" className="text-sm text-primary" onClick={() => onEdit(row)}>Editar</button>
+          <button type="button" className="text-sm text-red-600" onClick={() => onDelete(row)}>Eliminar</button>
+        </div>
+      ),
+    },
+  ];
+}
+
 interface AdministratorsContentProps {
   initialAdministrators: AdministratorType[];
   initialSearch?: string;
+  totalRows?: number;
 }
 
 /**
@@ -28,7 +65,8 @@ interface AdministratorsContentProps {
  */
 export function AdministratorsContent({ 
   initialAdministrators, 
-  initialSearch = '' 
+  initialSearch = '',
+  totalRows,
 }: AdministratorsContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -214,16 +252,34 @@ export function AdministratorsContent({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-            {filteredAdministrators.map((admin) => (
-              <AdminCard
-                key={admin.id}
-                admin={admin}
-                onEdit={handleEditAdmin}
-                onDelete={handleDeleteAdmin}
-              />
-            ))}
-          </div>
+          <DataGrid
+            columns={adminColumns(handleEditAdmin, handleDeleteAdmin, getDisplayName)}
+            rows={filteredAdministrators}
+            totalRows={totalRows ?? filteredAdministrators.length}
+            showSearch={false}
+            fillViewport
+            onExportExcel={async () => {
+              const params = readGridExportParams(searchParams);
+              const result = await exportGridExcel(
+                'administrators',
+                {
+                  sort: params.sort,
+                  sortField: params.sortField,
+                  search: params.search || search,
+                  filters: params.filters,
+                  filtration: params.filtration ? 'true' : undefined,
+                  pagination: 'false',
+                },
+                'administradores.xlsx',
+              );
+              if (!('base64' in result)) {
+                alert.showAlert?.({ message: result.error || 'Error al exportar', type: 'error' });
+                return;
+              }
+              await downloadExcelFile(result.filename, result.base64);
+              alert.showAlert?.({ message: 'Exportado a Excel', type: 'success', duration: 3000 });
+            }}
+          />
         )}
       </div>
 

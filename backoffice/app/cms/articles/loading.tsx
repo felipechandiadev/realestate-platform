@@ -1,4 +1,4 @@
-import { DotProgress } from "@realestate/ui";
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots';
 
 /**
  * Loading fallback for articles page
@@ -6,6 +6,7 @@ import { DotProgress } from "@realestate/ui";
  */
 export default function Loading() {
   return (
+    <div className="relative">
     <div className="space-y-6 w-full">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
@@ -32,9 +33,8 @@ export default function Loading() {
         ))}
       </div>
 
-      <div className="flex justify-center py-8">
-        <DotProgress />
-      </div>
+    </div>
+    <PageLoadingDots overlay />
     </div>
   );
 }

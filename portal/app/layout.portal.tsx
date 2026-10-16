@@ -1,25 +1,52 @@
 "use client";
+import { useCallback, useEffect, useState } from "react";
 import PortalTopBar from "./ui/PortalTopBar";
 import PortalFooter from "./ui/PortalFooter";
 import Wsp from "./ui/Wsp";
-import CookieConsent from "./ui/CookieConsent";
 import NavBar from "./ui/NavBar";
-import { CookieConsentProvider } from "@/providers/CookieConsentContext";
 import { FALLBACK_PORTAL_HEADER, type PortalHeaderConfig } from "./ui/portal-header";
+import { FALLBACK_PORTAL_FOOTER, type PortalFooterConfig } from "./ui/portal-footer";
+import { getPortalHeader } from "@/features/cms/actions/portal-header.action";
+import { getPortalFooter } from "@/features/cms/actions/portal-footer.action";
 
 type PortalLayoutProps = {
   children: React.ReactNode;
   initialIdentity?: Record<string, unknown> | null;
   initialHeader?: PortalHeaderConfig | null;
+  initialFooter?: PortalFooterConfig | null;
 };
 
-export default function PortalLayout({ children, initialIdentity = null, initialHeader = null }: PortalLayoutProps) {
-  const header = initialHeader ?? FALLBACK_PORTAL_HEADER;
+export default function PortalLayout({
+  children,
+  initialIdentity = null,
+  initialHeader = null,
+  initialFooter = null,
+}: PortalLayoutProps) {
+  const [header, setHeader] = useState<PortalHeaderConfig>(initialHeader ?? FALLBACK_PORTAL_HEADER);
+  const [footer, setFooter] = useState<PortalFooterConfig>(initialFooter ?? FALLBACK_PORTAL_FOOTER);
+
+  const refreshCms = useCallback(async () => {
+    try {
+      const [nextHeader, nextFooter] = await Promise.all([getPortalHeader(), getPortalFooter()]);
+      setHeader(nextHeader);
+      setFooter(nextFooter);
+    } catch {
+      // keep current config
+    }
+  }, []);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshCms();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [refreshCms]);
+
   return (
-    <CookieConsentProvider>
       <div className="min-h-screen flex flex-col relative">
-        <CookieConsent />
-        
         {/* Header sticky (TopBar + NavBar) */}
         <div className="sticky top-0 z-50">
           <PortalTopBar initialIdentity={initialIdentity} initialHeader={header} />
@@ -35,11 +62,8 @@ export default function PortalLayout({ children, initialIdentity = null, initial
         <main className="flex-1">
           {children}
         </main>
-        <PortalFooter initialIdentity={initialIdentity} />
+        <PortalFooter initialIdentity={initialIdentity} config={footer} />
         <Wsp />
       </div>
-    </CookieConsentProvider>
   );
 }
-
-

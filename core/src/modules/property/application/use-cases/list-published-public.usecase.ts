@@ -90,6 +90,7 @@ export class ListPublishedPublicUseCase {
         builtSquareMeters: p.builtSquareMeters ?? null,
         landSquareMeters: p.landSquareMeters ?? null,
         parkingSpaces: p.parkingSpaces ?? null,
+        otherFeatures: Array.isArray(p.otherFeatures) ? p.otherFeatures : [],
         isFeatured: !!p.isFeatured,
         multimedia: p.multimedia?.map(m => ({
           id: m.id,

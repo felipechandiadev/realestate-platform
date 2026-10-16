@@ -39,6 +39,7 @@ export const useCreatePropertyForm = (
     builtSquareMeters: 0,
     landSquareMeters: 0,
     constructionYear: 2025,
+    otherFeatures: [],
     seoTitle: '',
     seoDescription: '',
     status: 'PUBLISHED',
@@ -227,6 +228,7 @@ export const useCreatePropertyForm = (
         builtSquareMeters: formData.builtSquareMeters || undefined,
         landSquareMeters: formData.landSquareMeters || undefined,
         constructionYear: formData.constructionYear || undefined,
+        otherFeatures: Array.isArray(formData.otherFeatures) ? formData.otherFeatures : [],
         state: formData.state?.id || '',
         city: formData.city?.id || '',
         // Attach location if coordinates were picked on the map

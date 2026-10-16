@@ -52,7 +52,7 @@ export default function ArticleDetailPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <DotProgress />
+        <DotProgress count={3} variant="wave" />
       </div>
     )
   }

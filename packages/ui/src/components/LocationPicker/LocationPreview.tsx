@@ -77,7 +77,10 @@ const LocationPreview: React.FC<LocationPreviewProps> = ({
           scrollWheelZoom={false}
           dragging={false}
           doubleClickZoom={false}
-          zoomControl={false}
+          touchZoom={false}
+          boxZoom={false}
+          keyboard={false}
+          zoomControl
         >
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <Marker position={[latitude, longitude]} />

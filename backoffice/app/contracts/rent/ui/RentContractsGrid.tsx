@@ -1,6 +1,9 @@
 'use client';
 import React, { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DataGrid, type DataGridColumn } from "@realestate/ui";
+import { downloadExcelFile, readGridExportParams } from '@/shared/lib/data-grid-export';
+import { exportGridExcel } from '@/shared/lib/fetch-grid-excel';
 import type { ContractGridRow } from '@/features/contracts/actions/contracts.action';
 import { useAlert } from '@/shared/hooks/useAlert';
 import CreateRentContractForm from './CreateRentContractForm';
@@ -14,6 +17,7 @@ type RentContractsGridProps = {
 
 export default function RentContractsGrid({ rows, totalRows, title }: RentContractsGridProps) {
   const alert = useAlert();
+  const searchParams = useSearchParams();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const normalizeStatusKey = (status: string | null | undefined) =>
@@ -213,11 +217,26 @@ export default function RentContractsGrid({ rows, totalRows, title }: RentContra
   ];
 
   const handleExportExcel = async () => {
-    alert.showAlert({
-      message: 'La exportación a Excel para contratos estará disponible próximamente',
-      type: 'info',
-      duration: 4000,
-    });
+    const params = readGridExportParams(searchParams);
+    const result = await exportGridExcel(
+      'contracts',
+      {
+        sort: params.sort,
+        sortField: params.sortField,
+        search: params.search,
+        filters: params.filters,
+        filtration: params.filtration ? 'true' : undefined,
+        pagination: 'false',
+        operation: 'ARRIENDO',
+      },
+      'contratos-arriendo.xlsx',
+    );
+    if (!('base64' in result)) {
+      alert.showAlert({ message: result.error || 'Error al exportar', type: 'error' });
+      return;
+    }
+    await downloadExcelFile(result.filename, result.base64);
+    alert.showAlert({ message: 'Exportado a Excel', type: 'success', duration: 3000 });
   };
 
   return (

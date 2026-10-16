@@ -5,6 +5,16 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button, TextField } from '@realestate/ui';
 import { getIdentity } from '@/features/cms/actions/identity.action';
+import { env } from '@/lib/env';
+
+function normalizeMediaUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const cleaned = url.trim().replace('/../', '/');
+  if (!cleaned) return undefined;
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) return cleaned;
+  if (cleaned.startsWith('/')) return `${env.backendApiUrl}${cleaned}`;
+  return `${env.backendApiUrl}/${cleaned}`;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,6 +25,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -22,9 +33,10 @@ export default function LoginPage() {
       try {
         const identity = await getIdentity();
         const name = identity?.name?.trim();
-        if (!cancelled && name) {
-          setCompanyName(name);
-        }
+        const logo = normalizeMediaUrl(identity?.urlLogo);
+        if (cancelled) return;
+        if (name) setCompanyName(name);
+        if (logo) setLogoUrl(logo);
       } catch {
         // Identity optional on login; keep form usable
       }
@@ -63,11 +75,21 @@ export default function LoginPage() {
         className="w-full max-w-md space-y-4 border rounded-lg p-6"
         autoComplete="off"
       >
-        <div className="space-y-1 text-center sm:text-left">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">
-            {companyName || 'Backoffice'}
-          </h1>
-          <p className="text-base text-muted-foreground">Iniciar sesión</p>
+        <div className="flex flex-col items-center gap-3 text-center">
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={companyName ? `Logo de ${companyName}` : 'Logo'}
+              className="h-16 w-auto object-contain"
+              data-test-id="backoffice-login-logo"
+            />
+          ) : null}
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">
+              {companyName || 'Backoffice'}
+            </h1>
+            <p className="text-base text-muted-foreground">Iniciar sesión</p>
+          </div>
         </div>
 
         <TextField

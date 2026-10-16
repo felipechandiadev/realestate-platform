@@ -6,7 +6,7 @@ import { DataSource } from 'typeorm';
 import { User, UserRole, UserStatus } from '../../src/modules/users/domain/user.entity';
 import { Property } from '../../src/modules/property/domain/property.entity';
 import { PersonOrmEntity } from '../../src/modules/person/infrastructure/persistence/person.orm-entity';
-import { Contract } from '../../src/modules/contracts/domain/contract.entity';
+import { loginStaff } from '../utils/auth';
 
 describe('ContractController (integration)', () => {
   let app: INestApplication;
@@ -15,6 +15,7 @@ describe('ContractController (integration)', () => {
   let testContractId: string;
 
   beforeAll(async () => {
+    process.env.NODE_ENV = 'test';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -24,12 +25,8 @@ describe('ContractController (integration)', () => {
 
     dataSource = app.get(DataSource);
 
-    // Login as admin to get token
-    const loginResponse = await request(app.getHttpServer())
-      .post('/auth/sign-in')
-      .send({ email: 'admin@realestate.com', password: '7890' });
-
-    adminToken = loginResponse.body.access_token;
+    const login = await loginStaff(app);
+    adminToken = login.accessToken;
   });
 
   afterAll(async () => {
@@ -95,7 +92,7 @@ describe('ContractController (integration)', () => {
       operation: 'COMPRAVENTA',
       status: 'IN_PROCESS',
       amount: 250000000,
-      commissionPercent: 0.05,
+      commissionPercent: 5,
       people: [{ personId: person!.id, role: 'BUYER' }],
       description: 'Contrato de prueba para integración',
     };
@@ -118,14 +115,23 @@ describe('ContractController (integration)', () => {
     testContractId = response.body.id;
   });
 
+  it('GET /contracts sin token → 401', async () => {
+    await request(app.getHttpServer()).get('/contracts').expect(401);
+  });
+
+  it('POST /contracts sin token → 401', async () => {
+    await request(app.getHttpServer()).post('/contracts').send({}).expect(401);
+  });
+
   it('GET /contracts - debe obtener la lista de contratos', async () => {
     const response = await request(app.getHttpServer())
       .get('/contracts')
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
-    expect(Array.isArray(response.body)).toBeTruthy();
-    expect(response.body.length).toBeGreaterThan(0);
+    const rows = Array.isArray(response.body) ? response.body : response.body?.data;
+    expect(Array.isArray(rows)).toBeTruthy();
+    expect(rows.length).toBeGreaterThan(0);
   });
 
   it('GET /contracts/:id - debe obtener un contrato por ID', async () => {
@@ -138,7 +144,7 @@ describe('ContractController (integration)', () => {
     expect(response.body.operation).toBe('COMPRAVENTA');
     expect(response.body.status).toBe('IN_PROCESS');
     expect(response.body.amount).toBe(250000000);
-    expect(response.body.commissionPercent).toBe(0.05);
+    expect(response.body.commissionPercent).toBe(5);
     expect(response.body.commissionAmount).toBe(12500000);
   });
 

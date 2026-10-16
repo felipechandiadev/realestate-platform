@@ -35,6 +35,7 @@ export interface PropertyData {
   builtSquareMeters?: number | null;
   landSquareMeters?: number | null;
   parkingSpaces?: number | null;
+  otherFeatures?: string[];
   mainImageUrl: string;
   multimedia?: MediaItem[];
   createdAt: string;
@@ -69,6 +70,7 @@ export async function getPublishedPropertiesFiltered(filters: {
   state?: string;
   city?: string;
   typeProperty?: string;
+  typeIds?: string;
   operation?: string;
   page?: number;
   bedrooms?: number;
@@ -78,10 +80,14 @@ export async function getPublishedPropertiesFiltered(filters: {
   bathroomsOperator?: 'lte' | 'eq' | 'gte';
   parkingSpacesOperator?: 'lte' | 'eq' | 'gte';
   builtSquareMetersMin?: number;
+  builtSquareMetersMax?: number;
   landSquareMetersMin?: number;
+  landSquareMetersMax?: number;
   constructionYearMin?: number;
   priceMin?: number;
   priceMax?: number;
+  otherFeatures?: string;
+  features?: string;
 }): Promise<PublishedPropertiesResponse | null> {
   try {
     const params = new URLSearchParams();
@@ -99,7 +105,8 @@ export async function getPublishedPropertiesFiltered(filters: {
     if (filters.currency && filters.currency !== 'all') params.append('currency', filters.currency);
     if (filters.state) params.append('state', filters.state);
     if (filters.city) params.append('city', filters.city);
-    if (filters.typeProperty) params.append('typeProperty', filters.typeProperty);
+    if (filters.typeIds) params.append('typeIds', filters.typeIds);
+    else if (filters.typeProperty) params.append('typeProperty', filters.typeProperty);
     if (filters.page) params.append('page', filters.page.toString());
     params.append('limit', '9'); // Items per page for portal
     if (filters.priceMin !== undefined && filters.priceMin > 0) {
@@ -120,9 +127,23 @@ export async function getPublishedPropertiesFiltered(filters: {
       params.append('parkingSpaces', filters.parkingSpaces.toString());
       params.append('parkingSpacesOperator', filters.parkingSpacesOperator || 'gte');
     }
-    if (filters.builtSquareMetersMin && filters.builtSquareMetersMin > 0) params.append('builtSquareMetersMin', filters.builtSquareMetersMin.toString());
-    if (filters.landSquareMetersMin && filters.landSquareMetersMin > 0) params.append('landSquareMetersMin', filters.landSquareMetersMin.toString());
-    if (filters.constructionYearMin && filters.constructionYearMin > 0) params.append('constructionYearMin', filters.constructionYearMin.toString());
+    if (filters.builtSquareMetersMin && filters.builtSquareMetersMin > 0) {
+      params.append('builtSquareMetersMin', filters.builtSquareMetersMin.toString());
+    }
+    if (filters.builtSquareMetersMax && filters.builtSquareMetersMax > 0) {
+      params.append('builtSquareMetersMax', filters.builtSquareMetersMax.toString());
+    }
+    if (filters.landSquareMetersMin && filters.landSquareMetersMin > 0) {
+      params.append('landSquareMetersMin', filters.landSquareMetersMin.toString());
+    }
+    if (filters.landSquareMetersMax && filters.landSquareMetersMax > 0) {
+      params.append('landSquareMetersMax', filters.landSquareMetersMax.toString());
+    }
+    if (filters.constructionYearMin && filters.constructionYearMin > 0) {
+      params.append('constructionYearMin', filters.constructionYearMin.toString());
+    }
+    const featuresCsv = filters.otherFeatures || filters.features;
+    if (featuresCsv) params.append('otherFeatures', featuresCsv);
 
     const url = `${env.backendApiUrl}/properties/published/filtered?${params.toString()}`;
 
@@ -174,6 +195,7 @@ export async function getPublishedPropertiesFiltered(filters: {
       builtSquareMeters: prop.builtSquareMeters ?? null,
       landSquareMeters: prop.landSquareMeters ?? null,
       parkingSpaces: prop.parkingSpaces ?? null,
+      otherFeatures: Array.isArray(prop.otherFeatures) ? prop.otherFeatures : [],
       mainImageUrl: ensureAbsoluteUrl(prop.mainImageUrl),
       multimedia: (prop.multimedia || []).map((m: any) => ({
         id: m.id,

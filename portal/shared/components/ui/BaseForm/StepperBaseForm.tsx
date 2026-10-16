@@ -427,11 +427,6 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 
 				return (
 					<div key={field.name} className="flex flex-col gap-2">
-						{(customLabel ?? field.label) && (
-							<span className="text-sm font-medium text-gray-700">
-								{(customLabel as string | undefined) ?? field.label}
-							</span>
-						)}
 						<MultimediaUploader
 							uploadPath={typedProps.uploadPath ?? "/uploads/media"}
 							label={(customLabel as string | undefined) ?? field.label}
@@ -704,7 +699,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 									}
 
 									if (isStepCompleted) {
-										return "bg-gray-300 border-2 border-gray-300 text-white";
+										return "border-2 border-primary/40 bg-primary/15 text-primary";
 									}
 
 									return "bg-transparent border border-gray-300 text-gray-500";
@@ -715,7 +710,11 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 										key={`dot-${index}`}
 										className={`${baseDotClasses} ${stateClasses}`}
 									>
-										{!isStepCompleted && (index + 1)}
+										{isStepCompleted ? (
+											<span className="text-sm leading-none" aria-hidden>✓</span>
+										) : (
+											index + 1
+										)}
 									</div>
 								);
 							})}
@@ -828,7 +827,24 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 								←
 							</Button>
 						)}
-						{isProcessing ? (
+						{isLastStep && isProcessing ? (
+							<Button
+								variant="primary"
+								type="button"
+								disabled
+								size="sm"
+								aria-label={submitLabel ?? "Guardar"}
+							>
+								<div className="flex items-center justify-center min-h-[20px]">
+									<DotProgress
+										size={12}
+										count={3}
+										variant="wave"
+										colorPrimary="currentColor"
+									/>
+								</div>
+							</Button>
+						) : isProcessing ? (
 							<DotProgress
 								size={8}
 								totalSteps={steps.length}

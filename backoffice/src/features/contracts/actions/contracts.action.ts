@@ -444,6 +444,12 @@ export async function createContract(data: {
   currency?: 'CLP' | 'UF';
   ufValue?: number;
   commissionPercent: number;
+  commissionAmount?: number;
+  monthlyRent?: number;
+  tenantCommissionPercent?: number;
+  tenantCommissionAmount?: number;
+  landlordCommissionPercent?: number;
+  landlordCommissionAmount?: number;
   description?: string;
   people: Array<{
     personId: string;

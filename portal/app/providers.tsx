@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useMemo,
+  useState,
   type ReactNode,
 } from "react";
 import { logoutAction } from "@/features/shared/auth/actions/auth.action";
@@ -32,6 +33,8 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<LoginResult>;
   logout: (options?: { redirectTo?: string }) => Promise<void>;
   refresh: () => Promise<void>;
+  favoriteIds: string[];
+  markFavorite: (propertyId: string, isFavorited: boolean) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -44,6 +47,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
   const { data: session, status, update } = useSession();
 
   const accessToken = (session as (typeof session & { accessToken?: string }) | null)?.accessToken;
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
   const login = useCallback<AuthContextValue["login"]>(
     async (email, password) => {
@@ -133,27 +137,39 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     await update();
   }, [update]);
 
-  // Sync favorites cookie when authenticated
+  const markFavorite = useCallback((propertyId: string, isFavorited: boolean) => {
+    setFavoriteIds((current) => {
+      if (isFavorited) {
+        return current.includes(propertyId) ? current : [...current, propertyId];
+      }
+      return current.filter((id) => id !== propertyId);
+    });
+  }, []);
+
   useEffect(() => {
-    if (status === "authenticated" && session?.user?.id) {
-      const userId = session.user.id;
-      const syncFavorites = async () => {
-        try {
-          const favoriteIds = await getUserFavoriteIds(userId);
-          
-          // Save to cookie (same format and path as PropertyCard)
-          const expires = new Date();
-          expires.setTime(expires.getTime() + 365 * 24 * 60 * 60 * 1000);
-          document.cookie = `favorites=${encodeURIComponent(JSON.stringify(favoriteIds))}; expires=${expires.toUTCString()}; path=/`;
-          
-          console.log("✅ Favorites synchronized for user:", userId);
-        } catch (error) {
-          console.error("❌ Error syncing favorites:", error);
-        }
-      };
-      
-      syncFavorites();
+    document.cookie = "favorites=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    document.cookie = "cookieConsent=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+  }, []);
+
+  useEffect(() => {
+    if (status !== "authenticated" || !session?.user?.id) {
+      if (status === "unauthenticated") setFavoriteIds([]);
+      return;
     }
+
+    const userId = session.user.id;
+    let cancelled = false;
+    getUserFavoriteIds(userId)
+      .then((ids) => {
+        if (!cancelled) setFavoriteIds(ids);
+      })
+      .catch((error) => {
+        console.error("Error loading favorites:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [status, session?.user?.id]);
 
   const value = useMemo<AuthContextValue>(() => {
@@ -181,8 +197,10 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
       login,
       logout,
       refresh,
+      favoriteIds,
+      markFavorite,
     };
-  }, [session, status, login, logout, refresh, accessToken]);
+  }, [session, status, login, logout, refresh, accessToken, favoriteIds, markFavorite]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

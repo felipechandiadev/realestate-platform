@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ContractRepository } from '../domain/contract.repository';
@@ -15,14 +16,16 @@ import { AddPaymentUseCase } from './use-cases/add-payment.usecase';
 import { AddPersonUseCase } from './use-cases/add-person.usecase';
 import { GetPeopleByRoleUseCase } from './use-cases/get-people-by-role.usecase';
 import { ValidateRequiredRolesUseCase } from './use-cases/validate-required-roles.usecase';
-import { Payment } from '../domain/payment.entity';
+import { Payment, PaymentStatus, PaymentType } from '../domain/payment.entity';
 import { AddPaymentDto, AddPersonDto, CloseContractDto, CreateContractDto, UpdateContractAgentDto, UpdateContractDto, UploadContractDocumentDto, UploadPaymentDocumentDto } from '../dto/contract.dto';
 import { Person } from '../../person/domain/person.entity';
 import { PersonOrmEntity } from '../../person/infrastructure/persistence/person.orm-entity';
 import { User } from '../../users/domain/user.entity';
 import { Property } from '../../property/domain/property.entity';
 import { NotificationsService } from '../../notifications/application/notifications.service';
-import { Document as DocumentEntity } from '../../document/domain/document.entity';
+import { Document as DocumentEntity, DocumentStatus } from '../../document/domain/document.entity';
+import { MultimediaService } from '../../multimedia/application/multimedia.service';
+import { MultimediaType } from '../../multimedia/domain/multimedia.entity';
 import { DocumentTypeOrmEntity } from '../../document-types/infrastructure/persistence/document-type.orm-entity';
 import { ContractRole } from '../domain/contract.entity';
 import { ContractPerson } from '../domain/contract.entity';
@@ -57,6 +60,7 @@ export class ContractsService {
     private readonly propertyRepository: Repository<Property>,
     private readonly notificationsService: NotificationsService,
     private readonly auditService: AuditService,
+    private readonly multimediaService: MultimediaService,
   ) {}
 
   async create(dto: CreateContractDto, actorId?: string): Promise<Contract> {
@@ -86,39 +90,61 @@ export class ContractsService {
   }
 
   async findAll(query?: any): Promise<any> {
-    // Transform query params into TypeORM FindOptions
-    const options: any = {};
+    return this.contractRepository.findForGrid(query ?? {});
+  }
 
-    // Handle pagination
-    if (query?.page && query?.limit) {
-      const page = parseInt(query.page, 10) || 1;
-      const limit = parseInt(query.limit, 10) || 25;
-      options.skip = (page - 1) * limit;
-      options.take = limit;
+  async exportExcel(query?: any): Promise<Buffer> {
+    const result = await this.findAll({ ...(query ?? {}), pagination: 'false' });
+    const rows = Array.isArray(result) ? result : result.data ?? [];
+
+    const columns = [
+      { key: 'code', header: 'Código' },
+      { key: 'status', header: 'Estado' },
+      { key: 'propertyTitle', header: 'Propiedad' },
+      { key: 'clientName', header: 'Cliente' },
+      { key: 'amount', header: 'Monto' },
+      { key: 'commissionAmount', header: 'Comisión' },
+      { key: 'agentName', header: 'Agente' },
+      { key: 'createdAt', header: 'Fecha creación' },
+      { key: 'endDate', header: 'Fecha término' },
+    ];
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Contratos');
+    sheet.columns = columns.map((col) => ({ key: col.key, header: col.header, width: 22 }));
+
+    for (const contract of rows) {
+      const people = Array.isArray(contract.people) ? contract.people : [];
+      const client = people.find((person: { role?: string }) =>
+        person?.role === 'BUYER' || person?.role === 'TENANT',
+      );
+      const agent = contract.user as {
+        personalInfo?: { firstName?: string; lastName?: string };
+        username?: string;
+        email?: string;
+      } | undefined;
+      const agentName = agent
+        ? `${agent.personalInfo?.firstName || ''} ${agent.personalInfo?.lastName || ''}`.trim() ||
+          agent.username ||
+          agent.email ||
+          ''
+        : '';
+
+      sheet.addRow({
+        code: contract.code ?? '',
+        status: contract.status ?? '',
+        propertyTitle: contract.property?.title ?? '',
+        clientName: client?.personName || client?.person?.name || '',
+        amount: contract.amount ?? '',
+        commissionAmount: contract.commissionAmount ?? '',
+        agentName,
+        createdAt: contract.createdAt ?? '',
+        endDate: contract.endDate ?? '',
+      });
     }
 
-    // Handle sorting
-    if (query?.sortField && query?.sort) {
-      options.order = {
-        [query.sortField]: query.sort.toUpperCase() === 'DESC' ? 'DESC' : 'ASC',
-      };
-    }
-
-    // Handle filtering by operation
-    if (query?.operation) {
-      if (!options.where) options.where = {};
-      options.where.operation = query.operation;
-    }
-
-    // Handle search (if you have a search implementation)
-    if (query?.search) {
-      if (!options.where) options.where = {};
-      // Implement search logic based on your domain
-      // This is a basic example - adjust based on your needs
-      options.where.code = query.search;
-    }
-
-    return this.findAllContracts.execute(options);
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 
   async findOne(id: string): Promise<Contract> {
@@ -126,7 +152,52 @@ export class ContractsService {
     if (!result) {
       throw new NotFoundException();
     }
-    return result;
+    return this.hydratePayments(result);
+  }
+
+  private async hydratePayments(contract: Contract): Promise<Contract> {
+    const payments = await this.paymentRepository.find({
+      where: { contractId: contract.id },
+      order: { date: 'ASC', createdAt: 'ASC' },
+    });
+    if (!payments.length) {
+      return contract;
+    }
+
+    const documents = await this.documentRepository.find({
+      where: { contractId: contract.id },
+      relations: ['multimedia', 'documentType'],
+    });
+    const byPayment = new Map<string, any[]>();
+    for (const doc of documents) {
+      if (!doc.paymentId) continue;
+      const list = byPayment.get(doc.paymentId) ?? [];
+      list.push({
+        id: doc.id,
+        documentId: doc.id,
+        title: doc.title,
+        status: doc.status,
+        uploaded: doc.status === DocumentStatus.UPLOADED || doc.status === DocumentStatus.RECIBIDO,
+        multimedia: doc.multimedia,
+        url: doc.multimedia?.url,
+        documentTypeId: doc.documentTypeId,
+        createdAt: doc.createdAt,
+      });
+      byPayment.set(doc.paymentId, list);
+    }
+
+    (contract as any).payments = payments.map((payment) => ({
+      id: payment.id,
+      amount: Number(payment.amount),
+      date: payment.date,
+      description: payment.description,
+      type: payment.type,
+      status: payment.status,
+      paidAt: payment.paidAt,
+      isAgencyRevenue: payment.isAgencyRevenue,
+      documents: byPayment.get(payment.id) ?? [],
+    }));
+    return contract;
   }
 
   async update(id: string, dto: UpdateContractDto, actorId?: string): Promise<Contract> {
@@ -320,14 +391,24 @@ export class ContractsService {
     return this.validateRequiredRolesUseCase.execute(contract);
   }
   async uploadContractDocument(file: Express.Multer.File, dto: UploadContractDocumentDto, actorId?: string): Promise<any> {
-    // Minimal implementation to satisfy integration tests:
-    // - validate document type exists
-    // - ensure contract exists
-    // - save a Document record with status UPLOADED
-    // - append a document entry to the contract and persist
+    if (!file) {
+      throw new BadRequestException('Selecciona un archivo para adjuntar.');
+    }
+
     const contract = await this.contractRepository.findById(dto.contractId);
     if (!contract) {
       throw new NotFoundException('contract not found');
+    }
+
+    let paymentId = dto.paymentId;
+    if (paymentId) {
+      const payment = await this.paymentRepository.findOne({ where: { id: paymentId } });
+      if (!payment) {
+        throw new NotFoundException('payment not found');
+      }
+      if (payment.contractId !== dto.contractId) {
+        throw new BadRequestException('El pago no pertenece a este contrato.');
+      }
     }
 
     const docTypeRepo = this.documentRepository.manager.getRepository(DocumentTypeOrmEntity as any);
@@ -336,79 +417,214 @@ export class ContractsService {
       throw new NotFoundException('document type not found');
     }
 
-    const toSave: any = {
-      title: dto.title,
-      documentTypeId: dto.documentTypeId,
-      uploadedById: actorId || dto.uploadedById,
-      contractId: dto.contractId,
-      status: 'UPLOADED',
-      required: false,
-      notes: dto.notes || '',
-    };
+    const uploadedById = actorId || dto.uploadedById;
+    if (!uploadedById) {
+      throw new BadRequestException('Usuario no autenticado');
+    }
 
-    const saved = await this.documentRepository.save(toSave as any);
+    const multimedia = await this.multimediaService.uploadFile(
+      file,
+      {
+        type: MultimediaType.DOCUMENT,
+        seoTitle: dto.seoTitle || dto.title,
+      },
+      uploadedById,
+    );
 
-    // update contract documents
-    const existing = (contract as any).documents ?? [];
-    const docEntry: any = {
+    let documentId = dto.documentId;
+    if (documentId) {
+      const existing = await this.documentRepository.findOne({ where: { id: documentId } });
+      if (!existing) {
+        throw new NotFoundException('document not found');
+      }
+      existing.title = dto.title;
+      existing.documentTypeId = dto.documentTypeId;
+      existing.notes = dto.notes ?? existing.notes ?? '';
+      existing.status = DocumentStatus.UPLOADED;
+      existing.multimedia = multimedia;
+      existing.multimediaId = multimedia.id;
+      existing.contractId = dto.contractId;
+      existing.uploadedById = uploadedById;
+      if (paymentId) existing.paymentId = paymentId;
+      if (dto.personId) existing.personId = dto.personId;
+      await this.documentRepository.save(existing);
+    } else {
+      const created = await this.documentRepository.save(
+        this.documentRepository.create({
+          title: dto.title,
+          documentTypeId: dto.documentTypeId,
+          uploadedById,
+          contractId: dto.contractId,
+          ...(paymentId ? { paymentId } : {}),
+          personId: dto.personId,
+          status: DocumentStatus.UPLOADED,
+          required: false,
+          notes: dto.notes || '',
+          multimedia,
+          multimediaId: multimedia.id,
+        }),
+      );
+      documentId = created.id;
+    }
+
+    const document = await this.documentRepository.findOne({
+      where: { id: documentId },
+      relations: ['multimedia', 'documentType'],
+    });
+
+    const existingDocuments = Array.isArray((contract as any).documents)
+      ? [...(contract as any).documents]
+      : [];
+    const summary = {
       documentTypeId: dto.documentTypeId,
-      documentId: saved.id,
-      id: saved.id,
-      title: saved.title,
-      required: false,
+      documentId,
+      id: documentId,
+      title: document?.title ?? dto.title,
+      required: document?.required ?? false,
       uploaded: true,
-      status: saved.status,
-      uploadedById: saved.uploadedById,
-      createdAt: saved.createdAt,
+      status: document?.status ?? DocumentStatus.UPLOADED,
+      uploadedById,
+      paymentId: paymentId ?? null,
+      createdAt: document?.createdAt,
+      multimedia: document?.multimedia ?? multimedia,
+      url: document?.multimedia?.url ?? multimedia.url,
     };
-    existing.push(docEntry);
-    // Do not attempt to persist a 'documents' property on the contract ORM entity
-    // (some contract implementations store documents separately). For test purposes
-    // return the contract with an in-memory documents array.
-    const updatedContract = { ...(contract as any), documents: existing } as any;
+    const summaryIndex = existingDocuments.findIndex(
+      (row: any) => row?.documentId === documentId || row?.id === documentId,
+    );
+    if (summaryIndex >= 0) {
+      existingDocuments[summaryIndex] = { ...existingDocuments[summaryIndex], ...summary };
+    } else {
+      existingDocuments.push(summary);
+    }
+    await this.contractRepository.update(dto.contractId, { documents: existingDocuments } as any);
 
-    const multimedia = { id: saved.multimediaId || null, url: '/__test__/placeholder', filename: file?.originalname || '' };
-
-    // Create audit log
     await this.auditService.createAuditLog({
       userId: actorId,
       action: AuditAction.UPDATE,
       entityType: AuditEntityType.CONTRACT,
       entityId: dto.contractId,
-      description: 'Documento cargado al contrato',
+      description: paymentId ? 'Comprobante cargado al pago' : 'Documento cargado al contrato',
       metadata: {
-        documentId: saved.id,
+        documentId,
         documentTitle: dto.title,
         documentTypeId: dto.documentTypeId,
-        fileName: file?.originalname,
+        paymentId: paymentId ?? null,
+        fileName: file.originalname,
+        multimediaId: multimedia.id,
       },
       source: RequestSource.USER,
     });
 
-    return { contract: updatedContract, document: saved, multimedia };
+    const hydrated = await this.hydratePayments({ ...(contract as any), documents: existingDocuments });
+    return {
+      contract: hydrated,
+      document: document ?? { id: documentId, multimedia },
+      multimedia: document?.multimedia ?? multimedia,
+    };
   }
+
   async associateDocumentToPayment(paymentId: string, documentId: string): Promise<any> {
-    throw new Error('Not implemented');
+    const payment = await this.paymentRepository.findOne({ where: { id: paymentId } });
+    if (!payment) throw new NotFoundException('payment not found');
+    const document = await this.documentRepository.findOne({ where: { id: documentId } });
+    if (!document) throw new NotFoundException('document not found');
+    document.paymentId = paymentId;
+    document.contractId = payment.contractId;
+    await this.documentRepository.save(document);
+    return this.getPaymentDocuments(paymentId);
   }
+
   async getPaymentDocuments(paymentId: string): Promise<any> {
-    throw new Error('Not implemented');
+    const payment = await this.paymentRepository.findOne({ where: { id: paymentId } });
+    if (!payment) throw new NotFoundException('payment not found');
+    return this.documentRepository.find({
+      where: { paymentId },
+      relations: ['multimedia', 'documentType'],
+      order: { createdAt: 'DESC' },
+    });
   }
+
   async validatePaymentWithDocuments(paymentId: string): Promise<any> {
-    throw new Error('Not implemented');
+    const docs = await this.getPaymentDocuments(paymentId);
+    const accepted = (docs as DocumentEntity[]).filter(
+      (d) => d.status === DocumentStatus.UPLOADED || d.status === DocumentStatus.RECIBIDO,
+    );
+    return {
+      paymentId,
+      valid: accepted.length > 0,
+      documentCount: (docs as DocumentEntity[]).length,
+      acceptedCount: accepted.length,
+    };
   }
-  async getPaymentsByType(id: string, type: any): Promise<any> {
-    throw new Error('Not implemented');
+
+  async getPaymentsByType(id: string, type: PaymentType | string): Promise<any> {
+    return this.paymentRepository.find({
+      where: { contractId: id, type: type as PaymentType },
+      order: { date: 'ASC' },
+    });
   }
+
   async getCommissionPayments(): Promise<any> {
-    throw new Error('Not implemented');
+    return this.paymentRepository.find({
+      where: { type: PaymentType.COMMISSION_INCOME },
+      order: { date: 'DESC' },
+    });
   }
+
   async getRentPayments(): Promise<any> {
-    throw new Error('Not implemented');
+    return this.paymentRepository.find({
+      where: { type: PaymentType.RENT_PAYMENT },
+      order: { date: 'DESC' },
+    });
   }
+
   async uploadPaymentProof(file: Express.Multer.File, id: string, paymentId: string, userId: string): Promise<any> {
-    throw new Error('Not implemented');
+    const payment = await this.paymentRepository.findOne({ where: { id: paymentId, contractId: id } });
+    if (!payment) throw new NotFoundException('payment not found');
+
+    const docTypeRepo = this.documentRepository.manager.getRepository(DocumentTypeOrmEntity as any);
+    const docType =
+      (await docTypeRepo.findOne({ where: { name: 'Comprobante de pago' } as any })) ||
+      (await docTypeRepo.find({ take: 1 }))[0];
+    if (!docType) {
+      throw new BadRequestException('No hay tipo de documento configurado para comprobantes.');
+    }
+
+    return this.uploadContractDocument(
+      file,
+      {
+        title: `Comprobante ${payment.description || payment.type}`,
+        documentTypeId: docType.id,
+        contractId: id,
+        paymentId,
+        uploadedById: userId,
+      },
+      userId,
+    );
   }
-  async updatePaymentStatus(paymentId: string, status: any, actorId?: string): Promise<any> {
-    throw new Error('Not implemented');
+
+  async updatePaymentStatus(paymentId: string, status: PaymentStatus, actorId?: string): Promise<any> {
+    const payment = await this.paymentRepository.findOne({ where: { id: paymentId } });
+    if (!payment) throw new NotFoundException('payment not found');
+
+    const oldStatus = payment.status;
+    payment.status = status;
+    payment.paidAt = status === PaymentStatus.PAID ? new Date() : null;
+    await this.paymentRepository.save(payment);
+
+    await this.auditService.createAuditLog({
+      userId: actorId,
+      action: AuditAction.UPDATE,
+      entityType: AuditEntityType.CONTRACT,
+      entityId: payment.contractId,
+      description: 'Estado de pago actualizado',
+      oldValues: { status: oldStatus },
+      newValues: { status: payment.status, paidAt: payment.paidAt },
+      metadata: { paymentId },
+      source: RequestSource.USER,
+    });
+
+    return payment;
   }
 }

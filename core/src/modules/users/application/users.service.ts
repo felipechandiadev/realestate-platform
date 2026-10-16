@@ -9,6 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as ExcelJS from 'exceljs';
 import {
   User,
   UserStatus,
@@ -103,7 +104,7 @@ export class UsersService {
     return this.findAllUsersUseCase.execute();
   }
 
-  async findAdminUsers(filters: ListAdminUsersQueryDto): Promise<User[]> {
+  async findAdminUsers(filters: ListAdminUsersQueryDto): Promise<any> {
     return this.findAdminUsersUseCase.execute(filters);
   }
 
@@ -162,8 +163,30 @@ export class UsersService {
     search?: string;
     page?: number;
     limit?: number;
+    sort?: string;
+    sortField?: string;
+    filters?: string;
+    filtration?: string | boolean;
+    pagination?: string | boolean;
+    status?: string;
   }): Promise<{ data: User[]; total: number; page: number; limit: number }> {
     return this.listAgentsUseCase.execute(params);
+  }
+
+  async exportAdminsExcel(query: any): Promise<Buffer> {
+    const result = await this.findAdminUsers({ ...query, pagination: 'false' });
+    const rows = Array.isArray(result) ? result : result.data ?? [];
+    return usersToExcel(rows, 'Administradores');
+  }
+
+  async exportAgentsExcel(query: any): Promise<Buffer> {
+    const result = await this.listAgents({ ...query, pagination: 'false' });
+    return usersToExcel(result.data ?? [], 'Agentes');
+  }
+
+  async exportCommunityExcel(query: any): Promise<Buffer> {
+    const result = await this.gridCommunityUsers({ ...query, pagination: 'false' });
+    return usersToExcel(result.data ?? [], 'Comunidad');
   }
 
 
@@ -248,4 +271,31 @@ export class UsersService {
 
     return res;
   }
+}
+
+async function usersToExcel(rows: any[], sheetName: string): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet(sheetName);
+  sheet.columns = [
+    { key: 'email', header: 'Email', width: 28 },
+    { key: 'name', header: 'Nombre', width: 24 },
+    { key: 'username', header: 'Usuario', width: 18 },
+    { key: 'role', header: 'Rol', width: 14 },
+    { key: 'status', header: 'Estado', width: 14 },
+    { key: 'createdAt', header: 'Fecha creación', width: 22 },
+  ];
+  for (const row of rows) {
+    const first = row.personalInfo?.firstName || row.firstName || '';
+    const last = row.personalInfo?.lastName || row.lastName || '';
+    sheet.addRow({
+      email: row.email ?? '',
+      name: `${first} ${last}`.trim(),
+      username: row.username ?? '',
+      role: row.role ?? '',
+      status: row.status ?? '',
+      createdAt: row.createdAt ?? '',
+    });
+  }
+  const buffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(buffer);
 }

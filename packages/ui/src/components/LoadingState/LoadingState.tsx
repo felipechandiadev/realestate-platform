@@ -15,7 +15,7 @@ export default function LoadingState({
 }: LoadingStateProps) {
   return (
     <div className={className} role="status" aria-label={label}>
-      <DotProgress size={size} />
+      <DotProgress size={size} count={3} variant="wave" />
     </div>
   );
 }

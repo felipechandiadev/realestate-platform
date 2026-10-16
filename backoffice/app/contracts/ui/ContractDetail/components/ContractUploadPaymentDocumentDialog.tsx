@@ -112,7 +112,7 @@ export default function ContractUploadPaymentDocumentDialog({
 
     return {
       typeLabel: getPaymentTypeLabel(payment.type),
-      amountLabel: `${currency} ${localizedAmount}`,
+      amountLabel: `${currency === 'UF' ? 'UF' : '$'} ${localizedAmount}`,
       dateLabel: formattedDate,
       description: payment.description,
     };

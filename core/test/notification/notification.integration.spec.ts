@@ -3,14 +3,20 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { DataSource } from 'typeorm';
+import { loginStaff } from '../utils/auth';
+import { createJwtToken } from '../utils/jwt';
+import { UserRole } from '../../src/modules/users/domain/user.entity';
 
 describe('NotificationController (integration)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let adminToken: string;
   let testNotificationId: string;
+  const userAId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+  const userBId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
 
   beforeAll(async () => {
+    process.env.NODE_ENV = 'test';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -20,12 +26,8 @@ describe('NotificationController (integration)', () => {
 
     dataSource = app.get(DataSource);
 
-    // Login as admin to get token
-    const loginResponse = await request(app.getHttpServer())
-      .post('/auth/sign-in')
-      .send({ email: 'admin@realestate.com', password: '7890' });
-
-    adminToken = loginResponse.body.access_token;
+    const login = await loginStaff(app);
+    adminToken = login.accessToken;
   });
 
   afterAll(async () => {
@@ -158,6 +160,44 @@ describe('NotificationController (integration)', () => {
       .get(`/notifications/${nonExistentId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(404);
+  });
+
+  it('IDOR: community user A cannot read user B grid/excel', async () => {
+    const tokenA = await createJwtToken({
+      sub: userAId,
+      email: 'user-a@example.com',
+      role: UserRole.COMMUNITY,
+      authAudience: 'community',
+    });
+
+    await request(app.getHttpServer())
+      .get(`/notifications/user/${userBId}/grid`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .get(`/notifications/user/${userBId}/grid/excel`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(403);
+  });
+
+  it('IDOR: community user A can read own grid; staff can read any', async () => {
+    const tokenA = await createJwtToken({
+      sub: userAId,
+      email: 'user-a@example.com',
+      role: UserRole.COMMUNITY,
+      authAudience: 'community',
+    });
+
+    await request(app.getHttpServer())
+      .get(`/notifications/user/${userAId}/grid`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/notifications/user/${userBId}/grid`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
   });
 
   it('GET /notifications/user/:userId/grid/excel - debe exportar notificaciones filtradas a Excel (sin paginación)', async () => {

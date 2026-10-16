@@ -103,7 +103,7 @@ const CreateArticleDialog: React.FC<CreateArticleDialogProps> = ({
       title="Crear Artículo"
       maxWidth="md"
     >
-      <div className="space-y-6">
+      <div className="flex flex-col gap-8 pt-1">
         <TextField
           label="Título"
           value={formData.title}

@@ -7,12 +7,12 @@ import DotProgress from '../DotProgress/DotProgress';
 // Importar DataGrid dinámicamente para evitar SSR y hydration mismatches
 const DataGrid = dynamic(() => import('./DataGrid'), {
   ssr: false,
-  loading: () => <div className="flex items-center justify-center h-64"><DotProgress /></div>
+  loading: () => <div className="flex items-center justify-center h-64"><DotProgress count={3} variant="wave" /></div>
 });
 
 const DataGridWrapper: React.FC<DataGridProps> = (props) => {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-64"><DotProgress /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><DotProgress count={3} variant="wave" /></div>}>
       <DataGrid {...props} />
     </Suspense>
   );

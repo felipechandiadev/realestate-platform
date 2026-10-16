@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { LoadingState } from '@realestate/ui';
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots';
 import { getContractById } from '@/features/contracts/actions/contracts.action';
 import ContractDetailPage from '../../ui/ContractDetail/ContractDetailPage';
 
@@ -20,11 +20,7 @@ export default async function ContractRentDetailRoutePage({ params }: PageProps)
 
   return (
     <Suspense
-      fallback={
-        <div className="flex justify-center py-16">
-          <LoadingState />
-        </div>
-      }
+      fallback={<PageLoadingDots />}
     >
       <ContractDetailPage
         contractId={id}

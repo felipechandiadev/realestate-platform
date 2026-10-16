@@ -60,11 +60,9 @@ export function ProfileSection({ header }: ProfileSectionProps) {
         <Field label="Apellido" value={info?.lastName} />
         <Field label="Teléfono" value={info?.phone} />
         <Field label="Dirección" value={info?.address} />
-        <Field label="Ciudad" value={info?.city} />
+        <Field label="Comuna" value={info?.city} />
         <Field label="Región" value={info?.state} />
         <Field label="País" value={info?.country} />
-        <Field label="Profesión" value={info?.profession} />
-        <Field label="Empresa" value={info?.company} />
         <Field label="Nacionalidad" value={info?.nationality} />
         <Field label="Género" value={info?.gender} />
         <Field label="Estado civil" value={info?.maritalStatus} />

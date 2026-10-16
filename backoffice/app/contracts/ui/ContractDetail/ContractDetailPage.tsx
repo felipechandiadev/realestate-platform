@@ -1585,9 +1585,19 @@ export default function ContractDetailPage({
   const handleUpdateFinancialData = async ({
     amount,
     commissionPercent,
+    commissionAmount,
+    tenantCommissionPercent,
+    tenantCommissionAmount,
+    landlordCommissionPercent,
+    landlordCommissionAmount,
   }: {
     amount: number;
     commissionPercent: number;
+    commissionAmount?: number;
+    tenantCommissionPercent?: number;
+    tenantCommissionAmount?: number;
+    landlordCommissionPercent?: number;
+    landlordCommissionAmount?: number;
   }) => {
     if (!contractId) {
       showAlert({
@@ -1637,7 +1647,10 @@ export default function ContractDetailPage({
       return;
     }
 
-    if (!Number.isFinite(commissionPercent) || commissionPercent <= 0) {
+    const hasSplitCommission =
+      typeof tenantCommissionPercent === 'number' && typeof landlordCommissionPercent === 'number';
+
+    if (!hasSplitCommission && (!Number.isFinite(commissionPercent) || commissionPercent <= 0)) {
       showAlert({
         message: 'Ingresa un porcentaje de comisión válido',
         type: 'warning',
@@ -1649,7 +1662,15 @@ export default function ContractDetailPage({
     const payload: Record<string, any> = {
       amount,
       commissionPercent,
+      commissionAmount,
     };
+
+    if (hasSplitCommission) {
+      payload.tenantCommissionPercent = tenantCommissionPercent;
+      payload.tenantCommissionAmount = tenantCommissionAmount;
+      payload.landlordCommissionPercent = landlordCommissionPercent;
+      payload.landlordCommissionAmount = landlordCommissionAmount;
+    }
 
     if (currency === 'UF' && typeof currentUfValue === 'number') {
       payload.ufValue = currentUfValue;
@@ -1841,6 +1862,22 @@ export default function ContractDetailPage({
         ufValue={contract?.ufValue ?? null}
         defaultAmount={typeof contract?.amount === 'number' ? contract.amount : null}
         defaultCommissionPercent={typeof contract?.commissionPercent === 'number' ? contract.commissionPercent : null}
+        monthlyRent={
+          contract?.operation === 'ARRIENDO' && typeof contract?.monthlyRent === 'number'
+            ? contract.monthlyRent
+            : null
+        }
+        defaultTenantCommissionPercent={
+          typeof contract?.tenantCommissionPercent === 'number' ? contract.tenantCommissionPercent : null
+        }
+        defaultLandlordCommissionPercent={
+          typeof contract?.landlordCommissionPercent === 'number' ? contract.landlordCommissionPercent : null
+        }
+        saleSplit={
+          contract?.operation === 'COMPRAVENTA' &&
+          typeof contract?.tenantCommissionPercent === 'number' &&
+          typeof contract?.landlordCommissionPercent === 'number'
+        }
       />
 
       <ContractAddPaymentDialog

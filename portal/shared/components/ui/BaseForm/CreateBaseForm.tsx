@@ -305,7 +305,7 @@ const CreateBaseForm: React.FC<CreateBaseFormProps> = ({
 						{isSubmitting ? (
 							<Button variant="primary" type="submit" disabled data-test-id="submit-button">
 								<div className="flex items-center justify-center min-h-[20px]">
-									<DotProgress size={12} />
+									<DotProgress size={12} count={3} variant="wave" />
 								</div>
 							</Button>
 						) : (

@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { LoadingState } from '@realestate/ui';
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots';
 import { getCommunityUserHeader } from '@/features/users/actions/users.action';
 import { CommunityUserDetailPage } from '@/features/users/components/community/detail';
 
@@ -20,11 +20,7 @@ export default async function CommunityUserDetailRoutePage({ params }: PageProps
 
   return (
     <Suspense
-      fallback={
-        <div className="flex justify-center py-16">
-          <LoadingState />
-        </div>
-      }
+      fallback={<PageLoadingDots />}
     >
       <CommunityUserDetailPage userId={id} initialHeader={result.data} />
     </Suspense>

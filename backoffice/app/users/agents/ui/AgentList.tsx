@@ -5,7 +5,7 @@ import { AgentType } from './types'
 import AgentCard from './AgentCard'
 import { TextField } from '@realestate/ui'
 import { IconButton } from "@realestate/ui"
-import { DotProgress } from "@realestate/ui"
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots'
 import { useAlert } from '@/shared/hooks/useAlert'
 import CreateAgentFormDialog from './dialogs/CreateAgentFormDialog'
 import UpdateAgentDialog from './dialogs/UpdateAgentDialog'
@@ -74,9 +74,7 @@ const AgentList: React.FC<AgentListProps> = ({
 
   if (loading && agents.length === 0) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <DotProgress />
-      </div>
+      <PageLoadingDots />
     )
   }
 

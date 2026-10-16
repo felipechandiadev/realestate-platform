@@ -126,15 +126,28 @@ export class Contract {
   currency: ContractCurrency;
   // optional business attributes referenced by service logic
   ufValue?: number;
+  monthlyRent?: number;
   commissionPercent?: number;
   commissionAmount?: number;
+  tenantCommissionPercent?: number;
+  tenantCommissionAmount?: number;
+  landlordCommissionPercent?: number;
+  landlordCommissionAmount?: number;
   description?: string;
   people?: ContractPerson[];
   payments?: ContractPayment[];
   documents?: ContractDocument[];
   changeHistory?: ContractHistoryEntry[];
   user?: { id: string };
-  property?: { id: string };
+  property?: {
+    id: string;
+    code?: string;
+    title?: string;
+    address?: string;
+    city?: string;
+    price?: number;
+    currencyPrice?: string;
+  };
   // ... additional fields as needed
   createdAt: Date;
   updatedAt: Date;

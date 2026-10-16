@@ -11,6 +11,12 @@ export interface Slide {
   title?: string | null;
   description?: string;
   multimediaUrl?: string;
+  /** Optional optimized variants when slide media went through media-optimization */
+  variants?: Array<{
+    variantType: string;
+    format?: string;
+    url?: string;
+  }>;
   linkUrl?: string | null;
   duration?: number;
   startDate?: string;

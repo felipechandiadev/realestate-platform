@@ -22,12 +22,13 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import UpdateBaseForm, { BaseUpdateFormField, BaseUpdateFormFieldGroup } from '@/shared/components/ui/BaseForm/UpdateBaseForm';
 import { getCurrentUserProfile, updateUserProfile, updateUserAvatar, updatePerson, createPerson, uploadMultimediaDni } from '@/features/shared/users/actions/users.action';
+import { getRegiones, getComunasByRegion } from '@/features/shared/common/actions/commons.action';
 import { useAlert } from '@/shared/hooks/useAlert';
 
 interface PersonData {
@@ -36,6 +37,8 @@ interface PersonData {
   address?: string;
   phone?: string;
   email?: string;
+  city?: string;
+  state?: string;
   dniCardFrontUrl?: string;
   dniCardRearUrl?: string;
   verified: boolean;
@@ -54,8 +57,6 @@ interface UserProfile {
     state?: string;
     country?: string;
     avatarUrl?: string;
-    profession?: string;
-    company?: string;
     nationality?: string;
     gender?: string;
     maritalStatus?: string;
@@ -67,6 +68,8 @@ interface UserProfile {
   updatedAt: string;
 }
 
+type LocationOption = { id: string; label: string };
+
 export default function PersonalInfoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -76,6 +79,9 @@ export default function PersonalInfoPage() {
   const [submitting, setSubmitting] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [regions, setRegions] = useState<LocationOption[]>([]);
+  const [comunas, setComunas] = useState<LocationOption[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string>('');
 
   // Load user profile on mount
   useEffect(() => {
@@ -92,7 +98,11 @@ export default function PersonalInfoPage() {
 
         const result = await getCurrentUserProfile();
         if (result.success && result.data) {
-          setUserProfile(result.data as UserProfile);
+          const profile = result.data as UserProfile;
+          setUserProfile(profile);
+          const region =
+            profile.personalInfo?.state || profile.person?.state || '';
+          setSelectedRegion(region);
           setError(null);
         } else {
           setError(result.error || 'Error al cargar el perfil');
@@ -118,8 +128,41 @@ export default function PersonalInfoPage() {
     loadProfile();
   }, [status, router, showAlert]);
 
+  useEffect(() => {
+    getRegiones()
+      .then(setRegions)
+      .catch(() => setRegions([]));
+  }, []);
+
+  useEffect(() => {
+    if (!selectedRegion) {
+      setComunas([]);
+      return;
+    }
+    let cancelled = false;
+    getComunasByRegion(selectedRegion)
+      .then((list) => {
+        if (!cancelled) setComunas(list);
+      })
+      .catch(() => {
+        if (!cancelled) setComunas([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRegion]);
+
+  const handleFieldChange = useCallback((field: string, value: unknown) => {
+    if (field === 'state') {
+      const nextRegion = typeof value === 'string' ? value : '';
+      setSelectedRegion(nextRegion);
+      return { city: '' };
+    }
+    return undefined;
+  }, []);
+
   // Define form field groups (User + Person data combined)
-  const formFieldGroups: BaseUpdateFormFieldGroup[] = [
+  const formFieldGroups: BaseUpdateFormFieldGroup[] = useMemo(() => [
     {
       title: '',
       subtitle: '',
@@ -180,21 +223,9 @@ export default function PersonalInfoPage() {
       fields: [
         {
           name: 'dni',
-          label: 'Documento de Identidad (DNI)',
+          label: 'Documento de identidad',
           type: 'dni',
           startIcon: 'badge',
-        },
-        {
-          name: 'profession',
-          label: 'Profesión',
-          type: 'text',
-          startIcon: 'work',
-        },
-        {
-          name: 'company',
-          label: 'Empresa',
-          type: 'text',
-          startIcon: 'business',
         },
         {
           name: 'nationality',
@@ -207,9 +238,9 @@ export default function PersonalInfoPage() {
           label: 'Género',
           type: 'select',
           options: [
-            { value: 'MALE', label: 'Masculino' },
-            { value: 'FEMALE', label: 'Femenino' },
-            { value: 'OTHER', label: 'Otro' },
+            { id: 'MALE', label: 'Masculino' },
+            { id: 'FEMALE', label: 'Femenino' },
+            { id: 'OTHER', label: 'Otro' },
           ],
           startIcon: 'person',
         },
@@ -218,10 +249,10 @@ export default function PersonalInfoPage() {
           label: 'Estado Civil',
           type: 'select',
           options: [
-            { value: 'SINGLE', label: 'Soltero(a)' },
-            { value: 'MARRIED', label: 'Casado(a)' },
-            { value: 'DIVORCED', label: 'Divorciado(a)' },
-            { value: 'WIDOWED', label: 'Viudo(a)' },
+            { id: 'SINGLE', label: 'Soltero(a)' },
+            { id: 'MARRIED', label: 'Casado(a)' },
+            { id: 'DIVORCED', label: 'Divorciado(a)' },
+            { id: 'WIDOWED', label: 'Viudo(a)' },
           ],
           startIcon: 'people',
         },
@@ -239,16 +270,19 @@ export default function PersonalInfoPage() {
           startIcon: 'location_on',
         },
         {
-          name: 'city',
-          label: 'Ciudad',
-          type: 'text',
-          startIcon: 'location_city',
-        },
-        {
           name: 'state',
           label: 'Región',
-          type: 'text',
+          type: 'select',
+          options: regions,
           startIcon: 'map',
+        },
+        {
+          name: 'city',
+          label: 'Comuna',
+          type: 'select',
+          options: comunas,
+          startIcon: 'location_city',
+          disabled: !selectedRegion,
         },
         {
           name: 'country',
@@ -260,34 +294,34 @@ export default function PersonalInfoPage() {
     },
     {
       title: 'Documentos de Identidad',
-      subtitle: 'Copia de tu documento de identidad (frente y reverso)',
+      subtitle: 'Fotos del documento de identidad (frente y reverso)',
       columns: 2,
       fields: [
         {
           name: 'dniCardFront',
-          label: 'Foto Frente del DNI',
+          label: 'Foto de frente',
           type: 'image',
           currentUrl: userProfile?.person?.dniCardFrontUrl,
           maxSize: 5,
           aspectRatio: '16:9',
           variant: 'banner',
-          buttonText: 'Subir Frente',
+          buttonText: 'Subir frente',
           startIcon: 'image',
         },
         {
           name: 'dniCardRear',
-          label: 'Foto Reverso del DNI',
+          label: 'Foto reverso',
           type: 'image',
           currentUrl: userProfile?.person?.dniCardRearUrl,
           maxSize: 5,
           aspectRatio: '16:9',
           variant: 'banner',
-          buttonText: 'Subir Reverso',
+          buttonText: 'Subir reverso',
           startIcon: 'image',
         },
       ] as BaseUpdateFormField[],
     },
-  ];
+  ], [regions, comunas, selectedRegion, userProfile?.person?.dniCardFrontUrl, userProfile?.person?.dniCardRearUrl]);
 
   const handleSubmit = async (values: Record<string, any>) => {
     setSubmitting(true);
@@ -331,7 +365,7 @@ export default function PersonalInfoPage() {
         const frontResult = await uploadMultimediaDni(dniCardFrontFile, 'DNI_FRONT');
         if (!frontResult.success) {
           showAlert({
-            message: frontResult.error || 'Error al subir foto del frente del DNI',
+            message: frontResult.error || 'Error al subir la foto de frente',
             type: 'error',
             duration: 3000,
           });
@@ -347,7 +381,7 @@ export default function PersonalInfoPage() {
         const rearResult = await uploadMultimediaDni(dniCardRearFile, 'DNI_REAR');
         if (!rearResult.success) {
           showAlert({
-            message: rearResult.error || 'Error al subir foto del reverso del DNI',
+            message: rearResult.error || 'Error al subir la foto reverso',
             type: 'error',
             duration: 3000,
           });
@@ -368,8 +402,6 @@ export default function PersonalInfoPage() {
           state: values.state || userProfile.personalInfo?.state,
           country: values.country || userProfile.personalInfo?.country,
           avatarUrl: avatarUrl,
-          profession: values.profession || userProfile.personalInfo?.profession,
-          company: values.company || userProfile.personalInfo?.company,
           nationality: values.nationality || userProfile.personalInfo?.nationality,
           gender: values.gender || userProfile.personalInfo?.gender,
           maritalStatus: values.maritalStatus || userProfile.personalInfo?.maritalStatus,
@@ -485,8 +517,6 @@ export default function PersonalInfoPage() {
     country: userProfile.personalInfo?.country || '',
     // Person data
     dni: userProfile.person?.dni || '',
-    profession: userProfile.personalInfo?.profession || '',
-    company: userProfile.personalInfo?.company || '',
     nationality: userProfile.personalInfo?.nationality || '',
     gender: userProfile.personalInfo?.gender || '',
     maritalStatus: userProfile.personalInfo?.maritalStatus || '',
@@ -511,6 +541,7 @@ export default function PersonalInfoPage() {
           fields={formFieldGroups}
           initialState={initialValues}
           onSubmit={handleSubmit}
+          onChange={handleFieldChange}
           isSubmitting={submitting}
           submitLabel="Guardar Cambios"
           submitVariant="primary"

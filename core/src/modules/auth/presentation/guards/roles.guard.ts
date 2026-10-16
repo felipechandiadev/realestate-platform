@@ -11,6 +11,8 @@ import { UserRole } from '../../../users/domain/user.entity';
 
 export type AuthAudience = 'staff' | 'community';
 
+const STAFF_ROLES = [UserRole.ADMIN, UserRole.AGENT];
+
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
@@ -41,21 +43,16 @@ export class RolesGuard implements CanActivate {
     }
 
     const authAudience = resolveAuthAudience(user);
+    const isStaffUser = STAFF_ROLES.includes(user.role);
+    const isCommunityUser = user.role === UserRole.COMMUNITY;
 
-    // Staff-only routes require staff audience when it can be resolved.
-    const staffRoles = [UserRole.ADMIN, UserRole.AGENT];
-    const needsStaff = requiredRoles.some((r) => staffRoles.includes(r));
-    if (needsStaff && authAudience && authAudience !== 'staff') {
+    // Audience checks follow the caller's role, so mixed @Roles(staff, COMMUNITY)
+    // still work for both audiences.
+    if (isStaffUser && authAudience && authAudience !== 'staff') {
       throw new ForbiddenException('Staff audience required');
     }
 
-    const needsCommunity = requiredRoles.includes(UserRole.COMMUNITY);
-    if (
-      needsCommunity &&
-      !needsStaff &&
-      authAudience &&
-      authAudience !== 'community'
-    ) {
+    if (isCommunityUser && authAudience && authAudience !== 'community') {
       throw new ForbiddenException('Community audience required');
     }
 

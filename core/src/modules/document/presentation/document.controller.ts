@@ -6,6 +6,8 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
+  Res,
   ValidationPipe,
   UseInterceptors,
   UploadedFile,
@@ -29,8 +31,11 @@ import {
   ApiResponse,
   ApiParam,
 } from '@nestjs/swagger';
-import type { Express, Request } from 'express';
+import type { Express, Request, Response } from 'express';
 import { JweAuthGuard } from '../../auth/jwe/jwe-auth.guard';
+import { JwtAuthGuard, RolesGuard } from '../../auth/guards/jwt-auth.guard';
+import { Roles } from '../../auth/presentation/decorators/roles.decorator';
+import { UserRole } from '../../users/domain/user.entity';
 
 type AuthenticatedRequest = Request & { user?: { id?: string } };
 
@@ -43,6 +48,8 @@ export class DocumentController {
    * Create a new document record
    */
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Create new document' })
   @ApiResponse({
     status: 201,
@@ -181,12 +188,14 @@ export class DocumentController {
    * Get all documents
    */
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Get all documents (optionally filtered by personId)' })
   @ApiResponse({
     status: 200,
     description: 'List of all documents',
   })
-  findAll(@Body() body: any, @Req() req: AuthenticatedRequest) {
+  findAll(@Body() body: any, @Req() req: AuthenticatedRequest, @Query() query: Record<string, string | undefined>) {
     // Support ?personId=... as query param
     const personId = req.query?.personId;
     const contractId = req.query?.contractId;
@@ -196,13 +205,31 @@ export class DocumentController {
     if (contractId) {
       return this.documentService.findByContractId(String(Array.isArray(contractId) ? contractId[0] : contractId));
     }
+    const wantsGrid = Boolean(query?.page || query?.sort || query?.sortField || query?.filters || query?.search || query?.limit);
+    if (wantsGrid) {
+      return this.documentService.findGrid(query);
+    }
     return this.documentService.findAll();
+  }
+
+  @Get('excel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
+  async exportExcel(@Query() query: Record<string, string | undefined>, @Res() res: Response) {
+    const buffer = await this.documentService.exportExcel(query);
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="documentos.xlsx"',
+    });
+    res.send(buffer);
   }
 
   /**
    * Get document by ID
    */
   @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Get document by ID' })
   @ApiResponse({
     status: 200,
@@ -221,6 +248,8 @@ export class DocumentController {
    * Update document
    */
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Update document' })
   @ApiResponse({
     status: 200,
@@ -239,6 +268,8 @@ export class DocumentController {
    * Delete document (soft delete)
    */
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Delete document' })
   @ApiResponse({
     status: 200,

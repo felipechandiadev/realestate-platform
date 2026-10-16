@@ -100,11 +100,11 @@ export default function ContactContent({
           <div className="mt-8 text-center text-sm text-gray-500">
             <p>
               Al enviar este formulario, usted acepta nuestra{' '}
-              <a href="/politica-privacidad" className="text-primary hover:underline">
+              <a href="/privacidad" className="text-primary hover:underline">
                 Política de Privacidad
               </a>{' '}
               y nuestros{' '}
-              <a href="/terminos-condiciones" className="text-primary hover:underline">
+              <a href="/privacidad" className="text-primary hover:underline">
                 Términos y Condiciones
               </a>
               .

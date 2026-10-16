@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useAlert } from '@/providers/AlertContext';
+import { downloadExcelFile, readGridExportParams } from '@/shared/lib/data-grid-export';
+import { exportGridExcel } from '@/shared/lib/fetch-grid-excel';
 import { DataGrid, type DataGridColumn } from '@realestate/ui';
 import type { CommunityUserGridRow } from '@/features/users/actions/users.action';
 import DeleteCommunityUserButton from './DeleteCommunityUserButton';
@@ -34,6 +37,8 @@ function CommunityUsersDataGridInner({
   title,
 }: CommunityUsersDataGridProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const alert = useAlert();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [resetUser, setResetUser] = useState<{ id: string; name: string } | null>(null);
 
@@ -155,6 +160,27 @@ function CommunityUsersDataGridInner({
       pinActionsColumn
       data-test-id="community-users-grid"
       limit={25}
+      onExportExcel={async () => {
+        const params = readGridExportParams(searchParams);
+        const result = await exportGridExcel(
+          'community',
+          {
+            sort: params.sort,
+            sortField: params.sortField,
+            search: params.search,
+            filters: params.filters,
+            filtration: params.filtration ? 'true' : undefined,
+            pagination: 'false',
+          },
+          'comunidad.xlsx',
+        );
+        if (!('base64' in result)) {
+          alert.showAlert({ message: result.error || 'Error al exportar', type: 'error' });
+          return;
+        }
+        await downloadExcelFile(result.filename, result.base64);
+        alert.showAlert({ message: 'Exportado a Excel', type: 'success', duration: 3000 });
+      }}
     />
       <ResetPasswordDialog
         open={!!resetUser}

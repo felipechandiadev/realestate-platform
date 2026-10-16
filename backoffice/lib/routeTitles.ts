@@ -14,7 +14,9 @@ export const routeTitles: Record<string, string> = {
   '/cms/testimonials': 'Testimonios',
   '/cms/articles': 'Artículos de Blog',
   '/cms/identity': 'Identidad de la Empresa',
-  // Agregar más rutas según sea necesario
+  '/cms/listings': 'Listados de propiedades',
+  '/cms/featured': 'Propiedades destacadas',
+  '/cms/appearance': 'Apariencia',
 };
 
 /**

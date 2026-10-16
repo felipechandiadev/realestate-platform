@@ -9,12 +9,15 @@
 'use client';
 
 import React, { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   CollectionGrid,
   DataGrid,
   type DataGridColumn,
 } from '@realestate/ui';
+import { useAlert } from '@/providers/AlertContext';
+import { downloadExcelFile, readGridExportParams } from '@/shared/lib/data-grid-export';
+import { exportGridExcel } from '@/shared/lib/fetch-grid-excel';
 import type { SalePropertyGridRow } from '@/features/properties/actions/properties.action';
 import { CreatePropertyDialog } from '@/features/properties/components/dialogs';
 import { PropertiesDeleteButton } from '@/features/properties/components/shared';
@@ -40,8 +43,33 @@ interface PropertiesSalesGridProps {
  */
 export function PropertiesSalesGrid({ properties, total, page, limit }: PropertiesSalesGridProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const alert = useAlert();
   const [view, setView] = useSalesViewMode();
   const [dialogOpen, setDialogOpen] = React.useState(false);
+
+  const handleExportExcel = async () => {
+    const params = readGridExportParams(searchParams);
+    const result = await exportGridExcel(
+      'properties-sale',
+      {
+        sort: params.sort,
+        sortField: params.sortField,
+        search: params.search,
+        filters: params.filters,
+        filtration: params.filtration ? 'true' : undefined,
+        pagination: 'false',
+        status: 'ALL',
+      },
+      'propiedades-en-venta.xlsx',
+    );
+    if (!('base64' in result)) {
+      alert.showAlert({ message: result.error || 'Error al exportar', type: 'error' });
+      return;
+    }
+    await downloadExcelFile(result.filename, result.base64);
+    alert.showAlert({ message: 'Exportado a Excel', type: 'success', duration: 3000 });
+  };
 
   const rows = useMemo(() => {
     return properties.map((item) => ({
@@ -210,6 +238,7 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
           viewportBottomInset={24}
           pinActionsColumn
           onAddClick={() => setDialogOpen(true)}
+          onExportExcel={handleExportExcel}
           searchPlaceholder="Buscar propiedades..."
           data-test-id="properties-sales-data-grid"
         />

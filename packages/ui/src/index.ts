@@ -131,6 +131,23 @@ export { default as LoadingState } from "./components/LoadingState";
 export type { LoadingStateProps } from "./components/LoadingState";
 export { Skeleton } from "./components/Skeleton";
 export type { SkeletonProps } from "./components/Skeleton";
+export {
+  OTHER_FEATURE_KEYS,
+  OTHER_FEATURE_LABELS,
+  OTHER_FEATURE_OPTIONS,
+  isOtherFeatureKey,
+  normalizeOtherFeatures,
+  labelsForOtherFeatures,
+  OtherFeaturesPickerDialog,
+  OtherFeaturesReadonlyDialog,
+  OtherFeaturesChips,
+} from "./components/OtherFeatures";
+export type {
+  OtherFeatureKey,
+  OtherFeaturesPickerDialogProps,
+  OtherFeaturesReadonlyDialogProps,
+  OtherFeaturesChipsProps,
+} from "./components/OtherFeatures";
 
 // Layouts
 export {

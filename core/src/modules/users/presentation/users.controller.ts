@@ -10,6 +10,7 @@ import {
   HttpCode,
   UseGuards,
   Query,
+  Res,
   Put,
   UseInterceptors,
   Req,
@@ -26,6 +27,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { UsersService } from '../application/users.service';
 import {
   CreateUserDto,
@@ -93,6 +95,9 @@ export class UsersController {
      * List admin users with search and pagination
      */
     @Get('admins')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @ApiBearerAuth()
     @ApiOperation({ summary: 'Get list of admin users' })
     @ApiResponse({
       status: 200,
@@ -103,6 +108,19 @@ export class UsersController {
     @ApiQuery({ name: 'limit', required: false, type: Number })
     listAdmins(@Query(ValidationPipe) filters: ListAdminUsersQueryDto) {
       return this.usersService.findAdminUsers(filters);
+    }
+
+    @Get('admins/excel')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN)
+    @ApiBearerAuth()
+    async exportAdminsExcel(@Query() query: Record<string, string | undefined>, @Res() res: Response) {
+      const buffer = await this.usersService.exportAdminsExcel(query);
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment; filename="administradores.xlsx"',
+      });
+      res.send(buffer);
     }
 
     /**
@@ -173,12 +191,37 @@ export class UsersController {
       @Query('search') search?: string,
       @Query('page') page?: number,
       @Query('limit') limit?: number,
+      @Query('sort') sort?: string,
+      @Query('sortField') sortField?: string,
+      @Query('filters') filters?: string,
+      @Query('filtration') filtration?: string,
+      @Query('pagination') pagination?: string,
+      @Query('status') status?: string,
     ) {
       return this.usersService.listAgents({
         search,
         page: page ? Number(page) : undefined,
         limit: limit ? Number(limit) : undefined,
+        sort,
+        sortField,
+        filters,
+        filtration,
+        pagination,
+        status,
       });
+    }
+
+    @Get('agents/excel')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.AGENT)
+    @ApiBearerAuth()
+    async exportAgentsExcel(@Query() query: Record<string, string | undefined>, @Res() res: Response) {
+      const buffer = await this.usersService.exportAgentsExcel(query);
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment; filename="agentes.xlsx"',
+      });
+      res.send(buffer);
     }
 
     /**
@@ -205,6 +248,19 @@ export class UsersController {
     @ApiQuery({ name: 'limit', required: false, type: Number })
     gridCommunityUsers(@Query(ValidationPipe) query: GridCommunityUsersQueryDto) {
       return this.usersService.gridCommunityUsers(query);
+    }
+
+    @Get('grid/community/excel')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles(UserRole.ADMIN, UserRole.AGENT)
+    @ApiBearerAuth()
+    async exportCommunityExcel(@Query() query: Record<string, string | undefined>, @Res() res: Response) {
+      const buffer = await this.usersService.exportCommunityExcel(query);
+      res.set({
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment; filename="comunidad.xlsx"',
+      });
+      res.send(buffer);
     }
 
     /**

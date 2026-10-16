@@ -32,11 +32,11 @@ export default async function OurTeamPage({
   const initialMembers = result.success && result.data ? result.data : [];
 
   return (
-    <main className="p-4">
-      <TeamMemberList 
+    <div className="mx-auto w-full max-w-[1200px] pt-10 sm:pt-0">
+      <TeamMemberList
         initialMembers={initialMembers}
         initialSearch={search}
       />
-    </main>
+    </div>
   );
 }

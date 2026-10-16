@@ -6,8 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import { RolesGuard } from '../../auth/presentation/guards/roles.guard';
+import { Roles } from '../../auth/presentation/decorators/roles.decorator';
+import { UserRole } from '../../users/domain/user.entity';
 import { PersonService } from '../application/person.service';
 import { CreatePersonDto, UpdatePersonDto } from '../dto/person.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -36,8 +42,27 @@ export class PersonController {
   }
 
   @Get('all')
-  findAllIncludingUsers() {
+  findAllIncludingUsers(@Query() query: Record<string, string | undefined>) {
+    const wantsGrid = Boolean(
+      query?.page || query?.sort || query?.sortField || query?.filters || query?.search || query?.pagination,
+    );
+    if (wantsGrid) {
+      return this.personService.findGrid(query);
+    }
     return this.personService.findAllIncludingUsers();
+  }
+
+  @Get('excel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
+  @ApiBearerAuth()
+  async exportExcel(@Query() query: Record<string, string | undefined>, @Res() res: Response) {
+    const buffer = await this.personService.exportExcel(query);
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': 'attachment; filename="personas.xlsx"',
+    });
+    res.send(buffer);
   }
 
   @Post(':id/verify')

@@ -7,20 +7,12 @@ import {
   getCommunityUserInterestNotifications,
   type CommunityUserInterestItem,
 } from '@/features/users/actions/users.action';
+import { formatDate } from '../formatDate';
 
 type InterestSectionProps = {
   userId: string;
   email: string;
 };
-
-function formatDate(value?: string | null) {
-  if (!value) return '—';
-  try {
-    return new Date(value).toLocaleString('es-CL');
-  } catch {
-    return value;
-  }
-}
 
 export function InterestSection({ userId, email }: InterestSectionProps) {
   const [loading, setLoading] = useState(true);

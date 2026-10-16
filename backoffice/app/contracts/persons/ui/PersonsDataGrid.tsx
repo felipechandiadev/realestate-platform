@@ -1,6 +1,8 @@
 'use client';
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { downloadExcelFile, readGridExportParams } from '@/shared/lib/data-grid-export';
+import { exportGridExcel } from '@/shared/lib/fetch-grid-excel';
 import { CheckCircle, Clock, FileText, Shield, XCircle } from 'lucide-react';
 import { DataGrid, type DataGridColumn } from "@realestate/ui";
 import type { Person } from '@/features/contracts/actions/persons.action';
@@ -22,14 +24,29 @@ type PersonsDataGridProps = {
 export default function PersonsDataGrid({ rows, totalRows, title }: PersonsDataGridProps) {
   const alert = useAlert();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const handleExportExcel = async () => {
-    alert.showAlert({
-      message: 'La exportación a Excel para personas estará disponible próximamente',
-      type: 'info',
-      duration: 4000,
-    });
+    const params = readGridExportParams(searchParams);
+    const result = await exportGridExcel(
+      'persons',
+      {
+        sort: params.sort,
+        sortField: params.sortField,
+        search: params.search,
+        filters: params.filters,
+        filtration: params.filtration ? 'true' : undefined,
+        pagination: 'false',
+      },
+      'personas.xlsx',
+    );
+    if (!('base64' in result)) {
+      alert.showAlert({ message: result.error || 'Error al exportar', type: 'error' });
+      return;
+    }
+    await downloadExcelFile(result.filename, result.base64);
+    alert.showAlert({ message: 'Exportado a Excel', type: 'success', duration: 3000 });
   };
   const [personToDelete, setPersonToDelete] = useState<Person | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);

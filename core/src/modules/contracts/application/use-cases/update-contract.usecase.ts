@@ -7,7 +7,24 @@ export class UpdateContractUseCase {
   constructor(private readonly contractRepository: ContractRepository) {}
 
   async execute(id: string, dto: UpdateContractDto): Promise<void> {
-    // basic validation and patch
-    await this.contractRepository.update(id, dto as any);
+    const patch: Record<string, unknown> = { ...(dto as any) };
+
+    const hasSplit =
+      patch.tenantCommissionAmount != null || patch.landlordCommissionAmount != null;
+    if (hasSplit && patch.commissionAmount == null) {
+      const tenant = Number(patch.tenantCommissionAmount) || 0;
+      const landlord = Number(patch.landlordCommissionAmount) || 0;
+      patch.commissionAmount = Math.round((tenant + landlord) * 100) / 100;
+    } else if (
+      patch.amount != null &&
+      patch.commissionPercent != null &&
+      patch.commissionAmount == null
+    ) {
+      const amt = Number(patch.amount);
+      const pct = Number(patch.commissionPercent) / 100;
+      patch.commissionAmount = Math.round(amt * pct * 100) / 100;
+    }
+
+    await this.contractRepository.update(id, patch as any);
   }
 }

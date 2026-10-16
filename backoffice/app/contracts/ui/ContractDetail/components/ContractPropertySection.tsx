@@ -22,7 +22,9 @@ export default function ContractPropertySection({ property }: ContractPropertySe
             Propiedad Asociada
           </label>
           <h3 className="text-lg font-semibold text-foreground">{property.title}</h3>
-          <p className="text-sm text-muted-foreground">{property.address}</p>
+          <p className="text-sm text-muted-foreground">
+            {[property.address, property.city].filter(Boolean).join(', ') || 'Sin dirección'}
+          </p>
         </div>
         <span className="font-mono text-sm font-medium text-primary px-3 py-1 bg-primary/10 rounded">
           {property.code}
@@ -35,7 +37,7 @@ export default function ContractPropertySection({ property }: ContractPropertySe
             Precio de la Propiedad
           </label>
           <p className="text-lg font-semibold text-foreground">
-            CLP {property.price?.toLocaleString('es-CL')}
+            {property.currencyPrice === 'UF' ? 'UF' : '$'} {property.price?.toLocaleString('es-CL')}
           </p>
         </div>
       </div>

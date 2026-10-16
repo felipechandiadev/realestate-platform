@@ -27,6 +27,7 @@ import { ValidateRequiredRolesUseCase } from './application/use-cases/validate-r
 import { DocumentTypesModule } from '../document-types/document-types.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { AuditModule } from '../audit/audit.module';
+import { MultimediaModule } from '../multimedia/multimedia.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AuditModule } from '../audit/audit.module';
     DocumentTypesModule,
     NotificationsModule,
     AuditModule,
+    MultimediaModule,
   ],
   controllers: [ContractsController],
   providers: [

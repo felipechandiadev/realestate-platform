@@ -1532,6 +1532,7 @@ export interface UpdatePropertyCharacteristicsDto {
   parkingSpaces?: number;
   floors?: number;
   constructionYear?: number;
+  otherFeatures?: string[];
 }
 
 /**

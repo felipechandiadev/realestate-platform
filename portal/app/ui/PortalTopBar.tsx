@@ -155,9 +155,9 @@ function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, 
         <div className="p-4 flex-1 overflow-y-auto custom-scrollbar">
           <nav className="w-full">
             <ul className="flex flex-col gap-2 pb-4">
-          {isUserLoggedIn && accountItems.some((item) => item.enabled) && (
+          {isUserLoggedIn && accountItems.some((item) => item.enabled !== false) && (
             <>
-              {accountItems.filter((item) => item.enabled).map((item) => {
+              {accountItems.filter((item) => item.enabled !== false).map((item) => {
                 const Icon = ACCOUNT_ICONS[item.id] ?? User;
                 return (
                   <li key={item.id}>

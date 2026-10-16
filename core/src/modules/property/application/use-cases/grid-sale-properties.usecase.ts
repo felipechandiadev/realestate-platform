@@ -25,6 +25,7 @@ type GridSaleQuery = {
   filtration?: string | boolean;
   filters?: string;
   status?: string;
+  pagination?: string | boolean;
 };
 
 function parseGridFilters(filters?: string): Record<string, string> {
@@ -59,7 +60,8 @@ export class GridSalePropertiesUseCase {
     const limit = dto.limit || 9;
     const page = Math.max(1, dto.page || 1);
     const skip = (page - 1) * limit;
-    const columnFilters = parseGridFilters(dto.filters);
+    const filtrationOn = dto.filtration === true || dto.filtration === 'true';
+    const columnFilters = filtrationOn ? parseGridFilters(dto.filters) : {};
 
     let query = this.propertyRepository
       .createQueryBuilder('property')
@@ -112,16 +114,29 @@ export class GridSalePropertiesUseCase {
     }
     if (columnFilters.creatorName) {
       query = query.andWhere(
-        `(LOWER(COALESCE(creatorUser.username, '')) LIKE LOWER(:creatorName)
+        `(LOWER(CONCAT(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(creatorUser.personalInfo, '$.firstName')), ''), ' ', COALESCE(JSON_UNQUOTE(JSON_EXTRACT(creatorUser.personalInfo, '$.lastName')), ''))) LIKE LOWER(:creatorName)
+          OR LOWER(COALESCE(creatorUser.username, '')) LIKE LOWER(:creatorName)
           OR LOWER(COALESCE(creatorUser.email, '')) LIKE LOWER(:creatorName))`,
         { creatorName: `%${columnFilters.creatorName}%` },
       );
     }
     if (columnFilters.assignedAgentName) {
       query = query.andWhere(
-        `(LOWER(COALESCE(assignedAgent.username, '')) LIKE LOWER(:agentName)
+        `(LOWER(CONCAT(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(assignedAgent.personalInfo, '$.firstName')), ''), ' ', COALESCE(JSON_UNQUOTE(JSON_EXTRACT(assignedAgent.personalInfo, '$.lastName')), ''))) LIKE LOWER(:agentName)
+          OR LOWER(COALESCE(assignedAgent.username, '')) LIKE LOWER(:agentName)
           OR LOWER(COALESCE(assignedAgent.email, '')) LIKE LOWER(:agentName))`,
         { agentName: `%${columnFilters.assignedAgentName}%` },
+      );
+    }
+    if (columnFilters.price) {
+      query = query.andWhere('CAST(property.price AS CHAR) LIKE :priceFilter', {
+        priceFilter: `%${columnFilters.price}%`,
+      });
+    }
+    if (columnFilters.createdAt) {
+      query = query.andWhere(
+        "(DATE_FORMAT(property.createdAt, '%Y-%m-%d %H:%i') LIKE :createdAtFilter OR DATE_FORMAT(property.createdAt, '%d-%m-%Y') LIKE :createdAtFilter)",
+        { createdAtFilter: `%${columnFilters.createdAt}%` },
       );
     }
 
@@ -213,6 +228,10 @@ export class GridSalePropertiesUseCase {
         title: 'property.title',
         status: 'property.status',
         typeName: 'pt.name',
+        creatorName:
+          "CONCAT(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(creatorUser.personalInfo, '$.firstName')), ''), ' ', COALESCE(JSON_UNQUOTE(JSON_EXTRACT(creatorUser.personalInfo, '$.lastName')), ''))",
+        assignedAgentName:
+          "CONCAT(COALESCE(JSON_UNQUOTE(JSON_EXTRACT(assignedAgent.personalInfo, '$.firstName')), ''), ' ', COALESCE(JSON_UNQUOTE(JSON_EXTRACT(assignedAgent.personalInfo, '$.lastName')), ''))",
         city: 'property.city',
         state: 'property.state',
         price: 'property.price',
@@ -241,10 +260,14 @@ export class GridSalePropertiesUseCase {
       query = query.orderBy('property.createdAt', 'DESC');
     }
 
+    const paginate = dto.pagination !== false && dto.pagination !== 'false';
     const total = await query.getCount();
-    const data = await query.skip(skip).take(limit).getMany();
+    const data = paginate
+      ? await query.skip(skip).take(limit).getMany()
+      : await query.getMany();
 
-    const totalPages = Math.ceil(total / limit);
+    const effectiveLimit = paginate ? limit : Math.max(total, 1);
+    const totalPages = paginate ? Math.ceil(total / limit) : 1;
 
     const enrichedData = data.map((property) => {
       const row = property as any;
@@ -255,7 +278,13 @@ export class GridSalePropertiesUseCase {
       return row;
     });
 
-    return { data: enrichedData, total, page, limit, totalPages };
+    return {
+      data: enrichedData,
+      total,
+      page: paginate ? page : 1,
+      limit: effectiveLimit,
+      totalPages,
+    };
   }
 
   /** URLs de imagen para carrusel en cards (main primero, sin duplicados). */

@@ -399,10 +399,12 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         attributionControl={false}
         className={!isEditable ? 'cursor-default' : cursorClasses[cursorState]}
         dragging={isEditable}
-        zoomControl={isEditable}
-        scrollWheelZoom={isEditable}
-        doubleClickZoom={isEditable}
-        touchZoom={isEditable}
+        zoomControl
+        scrollWheelZoom={false}
+        doubleClickZoom={false}
+        touchZoom={false}
+        boxZoom={false}
+        keyboard={false}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

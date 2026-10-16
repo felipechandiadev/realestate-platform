@@ -335,7 +335,7 @@ export default function ContractPaymentsSection({
                   <div className="text-right space-y-2">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Monto</p>
                     <p className="text-lg font-bold text-foreground">
-                      {currency} {formatAmount(payment.amount ?? 0)}
+                      {currency === 'UF' ? 'UF' : '$'} {formatAmount(payment.amount ?? 0)}
                     </p>
                   </div>
                 </div>

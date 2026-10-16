@@ -17,7 +17,7 @@ function CollectionGridFallback({ title }: { title?: string }) {
         ) : null}
       </div>
       <div className="flex flex-1 items-center justify-center">
-        <DotProgress />
+        <DotProgress count={3} variant="wave" />
       </div>
     </div>
   );

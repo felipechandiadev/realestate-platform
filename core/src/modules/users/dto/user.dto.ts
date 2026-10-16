@@ -183,4 +183,28 @@ export class ListAdminUsersQueryDto {
   @IsOptional()
   @IsEnum(UserStatus)
   status?: UserStatus;
+
+  @IsOptional()
+  @IsString()
+  sort?: string;
+
+  @IsOptional()
+  @IsString()
+  sortField?: string;
+
+  @IsOptional()
+  @IsString()
+  filters?: string;
+
+  @IsOptional()
+  @IsString()
+  pagination?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined ? parseInt(value, 10) : undefined))
+  page?: number;
+
+  @IsOptional()
+  @Transform(({ value }) => (value !== undefined ? parseInt(value, 10) : undefined))
+  limit?: number;
 }

@@ -242,7 +242,7 @@ export default function CreateDocumentForm({
         <Button type="submit" variant="primary" disabled={isSubmitting}>
           {isSubmitting ? (
             <span className="flex items-center gap-2">
-              <DotProgress size={12} />
+              <DotProgress size={12} count={3} variant="wave" />
               Guardando
             </span>
           ) : (

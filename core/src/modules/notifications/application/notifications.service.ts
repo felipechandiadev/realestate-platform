@@ -584,9 +584,20 @@ export class NotificationsService {
     if (filtration && filters) {
       const filterPairs = filters.split(',');
       for (const filterPair of filterPairs) {
-        const [field, value] = filterPair.split('-');
+        const dash = filterPair.indexOf('-');
+        if (dash <= 0) continue;
+        const field = filterPair.slice(0, dash);
+        let value = filterPair.slice(dash + 1);
+        try {
+          value = decodeURIComponent(value);
+        } catch {
+          // keep raw value
+        }
         if (field && value) {
           switch (field) {
+            case 'message':
+              queryBuilder = queryBuilder.andWhere('notification.message LIKE :message', { message: `%${value}%` });
+              break;
             case 'type':
               queryBuilder = queryBuilder.andWhere('notification.type = :type', { type: value });
               break;
@@ -614,7 +625,7 @@ export class NotificationsService {
     }
 
     // Apply sorting
-    const validSortFields = ['createdAt', 'updatedAt', 'type', 'status', 'senderName', 'senderType', 'interestedUserName', 'interestedUserEmail', 'interestedUserPhone'];
+    const validSortFields = ['message', 'createdAt', 'updatedAt', 'type', 'status', 'senderName', 'senderType', 'interestedUserName', 'interestedUserEmail', 'interestedUserPhone'];
     const sortBy = validSortFields.includes(sortField) ? sortField : 'createdAt';
     const sortOrder = sort === 'asc' ? 'ASC' : 'DESC';
     queryBuilder = queryBuilder.orderBy(`notification.${sortBy}`, sortOrder);

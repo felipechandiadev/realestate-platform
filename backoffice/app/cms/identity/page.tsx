@@ -24,8 +24,8 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { getIdentity, createIdentity, updateIdentity } from '@/features/cms/actions/identity.action'
 import { env } from '@/lib/env'
 import { TextField } from '@realestate/ui'
-import { Button } from '@realestate/ui'
-import { DotProgress } from "@realestate/ui"
+import { Button, DotProgress } from '@realestate/ui'
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots'
 import { Switch } from "@realestate/ui"
 import { IconButton } from "@realestate/ui"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -304,15 +304,13 @@ export default function IdentityPage() {
   }
 
   if (loading) return (
-    <div className="flex justify-center items-center min-h-[400px]">
-      <DotProgress />
-    </div>
+    <PageLoadingDots />
   )
 
   const SectionSave = ({ section, label }: { section: IdentitySectionId; label: string }) => (
     <div className="flex justify-end pt-4">
       <Button onClick={() => saveSection(section)} disabled={savingSection !== null} variant="primary">
-        {savingSection === section ? <DotProgress className="w-4 h-4" /> : label}
+        {savingSection === section ? <DotProgress size={12} count={3} variant="wave" /> : label}
       </Button>
     </div>
   )

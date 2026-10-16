@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { Button, DotProgress, Switch, TextField } from '@realestate/ui'
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots'
 import { useAlert } from '@/providers/AlertContext'
 import { env } from '@/lib/env'
 import MultimediaUpdater from '@/shared/components/ui/FileUploader/MultimediaUpdater'
@@ -178,11 +179,30 @@ export default function PortalHeaderPage() {
     })
   }
 
+  const setNavLabel = (id: string, label: string, parentId?: string) => {
+    setHeader((current) => {
+      if (!current) return current
+      return {
+        ...current,
+        navItems: current.navItems.map((item) => {
+          if (parentId && item.id === parentId) {
+            return {
+              ...item,
+              children: item.children?.map((child) => (child.id === id ? { ...child, label } : child)),
+            }
+          }
+          return item.id === id ? { ...item, label } : item
+        }),
+      }
+    })
+  }
+
+  const routeLabel = (item: { href?: string; action?: 'contact' }) =>
+    item.href ?? (item.action === 'contact' ? 'Formulario de contacto' : undefined)
+
   if (loading) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <DotProgress />
-      </div>
+      <PageLoadingDots />
     )
   }
 
@@ -193,7 +213,7 @@ export default function PortalHeaderPage() {
   const SectionSave = ({ section, label }: { section: SectionId; label: string }) => (
     <div className="flex justify-end pt-4">
       <Button onClick={() => saveSection(section)} disabled={savingSection !== null} variant="primary">
-        {savingSection === section ? <DotProgress className="h-4 w-4" /> : label}
+        {savingSection === section ? <DotProgress size={12} count={3} variant="wave" /> : label}
       </Button>
     </div>
   )
@@ -244,7 +264,7 @@ export default function PortalHeaderPage() {
                 }}
                 acceptedTypes={['image/*']}
                 maxSize={9}
-                aspectRatio="16:9"
+                aspectRatio="1:1"
                 variant="banner"
                 previewSize="md"
               />
@@ -270,55 +290,55 @@ export default function PortalHeaderPage() {
                 label="Nombre de la empresa"
                 description={identity?.name || 'Sin nombre en Identidad'}
                 checked={header.showCompanyName}
-                onChange={(checked) => setHeader({ ...header, showCompanyName: checked })}
+                onChange={(checked) => setHeader((prev) => (prev ? { ...prev, showCompanyName: checked } : prev))}
               />
               <ToggleRow
                 label="Correo"
                 description={identity?.mail || 'Sin correo en Identidad'}
                 checked={header.showMail}
-                onChange={(checked) => setHeader({ ...header, showMail: checked })}
+                onChange={(checked) => setHeader((prev) => (prev ? { ...prev, showMail: checked } : prev))}
               />
               <ToggleRow
                 label="Teléfono"
                 description={identity?.phone || 'Sin teléfono en Identidad'}
                 checked={header.showPhone}
-                onChange={(checked) => setHeader({ ...header, showPhone: checked })}
+                onChange={(checked) => setHeader((prev) => (prev ? { ...prev, showPhone: checked } : prev))}
               />
               <ToggleRow
                 label="Indicador de UF"
                 description="El valor del día se calcula solo"
                 checked={header.showUf}
-                onChange={(checked) => setHeader({ ...header, showUf: checked })}
+                onChange={(checked) => setHeader((prev) => (prev ? { ...prev, showUf: checked } : prev))}
               />
               <TextField
                 label="Etiqueta de la UF"
                 value={header.ufLabel}
                 onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                  setHeader({ ...header, ufLabel: e.target.value })
+                  setHeader((prev) => (prev ? { ...prev, ufLabel: e.target.value } : prev))
                 }
               />
               <ToggleRow
                 label="Ingresar"
                 checked={header.showLogin}
-                onChange={(checked) => setHeader({ ...header, showLogin: checked })}
+                onChange={(checked) => setHeader((prev) => (prev ? { ...prev, showLogin: checked } : prev))}
               />
               <TextField
                 label="Texto de Ingresar"
                 value={header.loginLabel}
                 onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                  setHeader({ ...header, loginLabel: e.target.value })
+                  setHeader((prev) => (prev ? { ...prev, loginLabel: e.target.value } : prev))
                 }
               />
               <ToggleRow
                 label="Registrarse"
                 checked={header.showRegister}
-                onChange={(checked) => setHeader({ ...header, showRegister: checked })}
+                onChange={(checked) => setHeader((prev) => (prev ? { ...prev, showRegister: checked } : prev))}
               />
               <TextField
                 label="Texto de Registrarse"
                 value={header.registerLabel}
                 onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                  setHeader({ ...header, registerLabel: e.target.value })
+                  setHeader((prev) => (prev ? { ...prev, registerLabel: e.target.value } : prev))
                 }
               />
             </div>
@@ -330,25 +350,38 @@ export default function PortalHeaderPage() {
           <div className="rounded-lg border border-border bg-card p-6">
             <h2 className="mb-4 text-xl font-semibold">NavBar</h2>
             <p className="mb-4 text-sm text-muted-foreground">
-              Un enlace apagado desaparece de la barra y del menú lateral. La página sigue disponible por su dirección.
+              La ruta de cada enlace es fija. Un enlace apagado desaparece de la barra y del menú lateral. La página sigue disponible por su dirección.
             </p>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {header.navItems.map((item) => (
-                <div key={item.id} className="space-y-2">
+                <div key={item.id} className="space-y-3 rounded-lg border border-border p-4">
                   <ToggleRow
                     label={item.label}
+                    description={routeLabel(item)}
                     checked={item.enabled}
                     onChange={(checked) => setNavEnabled(item.id, checked)}
                   />
+                  <TextField
+                    label="Etiqueta"
+                    value={item.label}
+                    onChange={(e) => setNavLabel(item.id, e.target.value)}
+                  />
                   {item.children?.length ? (
-                    <div className="ml-6 space-y-2">
+                    <div className="ml-6 space-y-3">
                       {item.children.map((child) => (
-                        <ToggleRow
-                          key={child.id}
-                          label={child.label}
-                          checked={child.enabled}
-                          onChange={(checked) => setNavEnabled(child.id, checked, item.id)}
-                        />
+                        <div key={child.id} className="space-y-2 rounded-lg border border-border p-4">
+                          <ToggleRow
+                            label={child.label}
+                            description={routeLabel(child)}
+                            checked={child.enabled}
+                            onChange={(checked) => setNavEnabled(child.id, checked, item.id)}
+                          />
+                          <TextField
+                            label="Etiqueta"
+                            value={child.label}
+                            onChange={(e) => setNavLabel(child.id, e.target.value, item.id)}
+                          />
+                        </div>
                       ))}
                     </div>
                   ) : null}
@@ -363,23 +396,45 @@ export default function PortalHeaderPage() {
           <div className="rounded-lg border border-border bg-card p-6">
             <h2 className="mb-4 text-xl font-semibold">Menú de cuenta</h2>
             <p className="mb-4 text-sm text-muted-foreground">
-              Se muestran en el menú lateral cuando hay una sesión. Cerrar sesión permanece siempre.
+              La ruta de cada enlace es fija. Se muestran en el menú lateral cuando hay una sesión. Cerrar sesión permanece siempre.
             </p>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {header.accountItems.map((item) => (
-                <ToggleRow
-                  key={item.id}
-                  label={item.label}
-                  checked={item.enabled}
-                  onChange={(checked) =>
-                    setHeader({
-                      ...header,
-                      accountItems: header.accountItems.map((row) =>
-                        row.id === item.id ? { ...row, enabled: checked } : row,
-                      ),
-                    })
-                  }
-                />
+                <div key={item.id} className="space-y-2 rounded-lg border border-border p-4">
+                  <ToggleRow
+                    label={item.label}
+                    description={item.href}
+                    checked={item.enabled}
+                    onChange={(checked) =>
+                      setHeader((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              accountItems: prev.accountItems.map((row) =>
+                                row.id === item.id ? { ...row, enabled: checked } : row,
+                              ),
+                            }
+                          : prev,
+                      )
+                    }
+                  />
+                  <TextField
+                    label="Etiqueta"
+                    value={item.label}
+                    onChange={(e) =>
+                      setHeader((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              accountItems: prev.accountItems.map((row) =>
+                                row.id === item.id ? { ...row, label: e.target.value } : row,
+                              ),
+                            }
+                          : prev,
+                      )
+                    }
+                  />
+                </div>
               ))}
             </div>
             <SectionSave section="cuenta" label="Guardar menú de cuenta" />

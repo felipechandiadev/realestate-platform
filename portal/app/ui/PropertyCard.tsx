@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Bed, Bath, Home, Maximize2, ParkingSquare, Heart } from 'lucide-react';
-import { Button } from '@realestate/ui';
+import React, { useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight, Bed, Bath, Home, Maximize2, ParkingSquare, Heart, MoreHorizontal } from 'lucide-react';
+import { Button, OtherFeaturesReadonlyDialog } from '@realestate/ui';
 import { env } from '@/lib/env';
 import { useAlert } from '@/shared/hooks/useAlert';
 import { togglePropertyFavorite } from '@/features/shared/properties/actions/properties.action';
-import { useCookieConsent } from '@/providers/CookieConsentContext';
 import { useAuth } from '@/app/providers';
+import { pickImageVariant } from '@/shared/lib/pick-image-variant';
 
 type Currency = 'CLP' | 'UF';
 type OperationType = 'SALE' | 'RENT';
@@ -60,6 +60,7 @@ export interface PortalProperty {
   builtSquareMeters?: number | null;
   landSquareMeters?: number | null;
   parkingSpaces?: number | null;
+  otherFeatures?: string[] | null;
   isFeatured?: boolean;
 }
 
@@ -113,36 +114,12 @@ function isVideoFile(url: string): boolean {
   return videoExtensions.some(ext => lowerUrl.includes(ext));
 }
 
-function normalizeVariantType(value?: string): string {
-  return (value || '').trim().toLowerCase().replace(/-/g, '_');
-}
-
-function pickBestImageVariantUrl(mediaItem: MediaItem): string | undefined {
-  if (!mediaItem.variants || mediaItem.variants.length === 0) return undefined;
-
-  const preferredTypes = ['thumbnail_md', 'thumbnail_lg', 'thumbnail_sm', 'full', 'og_image'];
-
-  const findVariant = (format: 'webp' | 'jpeg' | 'png') =>
-    preferredTypes
-      .map((type) => mediaItem.variants?.find((variant) => {
-        const matchesType = normalizeVariantType(variant.variantType) === type;
-        const matchesFormat = (variant.format || '').toLowerCase() === format;
-        return matchesType && matchesFormat && !!variant.url;
-      }))
-      .find(Boolean);
-
-  return (
-    findVariant('webp')?.url ||
-    findVariant('jpeg')?.url ||
-    findVariant('png')?.url ||
-    mediaItem.variants.find((variant) => !!variant.url)?.url
-  );
-}
-
 function resolveMediaUrl(mediaItem: MediaItem): string | undefined {
   const baseUrl = mediaItem.url;
   const isVideo = baseUrl ? isVideoFile(baseUrl) : false;
-  const finalUrl = isVideo ? baseUrl : pickBestImageVariantUrl(mediaItem) || baseUrl;
+  const finalUrl = isVideo
+    ? baseUrl
+    : pickImageVariant(mediaItem, 'card', baseUrl) || baseUrl;
   return normalizeMediaUrl(finalUrl);
 }
 
@@ -294,15 +271,16 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
     return primaryMedia;
   });
   const [currentMediaIndex, setCurrentMediaIndex] = useState(hasMedia ? 0 : -1);
-  const [isFavorited, setIsFavorited] = useState(false);
   const [isLoadingFav, setIsLoadingFav] = useState(false);
+  const [otherFeaturesOpen, setOtherFeaturesOpen] = useState(false);
   const { showAlert } = useAlert();
-  const { hasConsented: cookiesAccepted } = useCookieConsent();
-  const { status: authStatus } = useAuth();
+  const { status: authStatus, favoriteIds, markFavorite } = useAuth();
   
   const isUF = property.currencyPrice === 'UF';
   const opText = operationLabel(property.operationType);
   const featured = !!property.isFeatured;
+  const otherFeatures = Array.isArray(property.otherFeatures) ? property.otherFeatures : [];
+  const hasOtherFeatures = otherFeatures.length > 0;
 
   const propertyTypeName = property.propertyType?.name || '';
   const region = property.state || '';
@@ -313,105 +291,36 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
   const showLandSquareMeters = property.landSquareMeters != null && (property.propertyType?.hasLandSquareMeters ?? true);
   const showParkingSpaces = property.parkingSpaces != null && (property.propertyType?.hasParkingSpaces ?? true);
 
-  // Check favorite status on mount and from cookies
-  useEffect(() => {
-    const checkFavorite = () => {
-      try {
-        const favCookie = document.cookie
-          .split('; ')
-          .find((row) => row.startsWith('favorites='));
-        
-        if (favCookie) {
-          const favoritesStr = decodeURIComponent(favCookie.split('=')[1]);
-          let favorites: string[] = [];
-          if (favoritesStr && favoritesStr.trim() !== '') {
-            favorites = JSON.parse(favoritesStr);
-          }
-          setIsFavorited(Array.isArray(favorites) && favorites.includes(property.id));
-        } else {
-          setIsFavorited(false);
-        }
-      } catch (error) {
-        console.error('Error reading favorites cookie:', error);
-        setIsFavorited(false);
-      }
-    };
-
-    checkFavorite();
-    // Re-check periodically or when auth status changes
-    const interval = setInterval(checkFavorite, 2000); 
-    return () => clearInterval(interval);
-  }, [property.id, authStatus]);
+  const isFavorited = favoriteIds.includes(property.id);
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.stopPropagation();
-
     if (isLoadingFav) return;
+    if (authStatus !== 'authenticated') {
+      window.dispatchEvent(new Event('portal:open-login'));
+      return;
+    }
+
     setIsLoadingFav(true);
 
     try {
-      // Update DB and cookies
       const result = await togglePropertyFavorite(property.id);
 
-      if (!result.success) {
+      if (!result.success || typeof result.isFavorited !== 'boolean') {
         showAlert({
           message: result.error || 'Error al agregar/remover favorito',
           type: 'error',
           duration: 3000,
         });
-        setIsLoadingFav(false);
         return;
       }
 
-      // Update cookie - read fresh state from cookie
-      try {
-        const favCookie = document.cookie
-          .split('; ')
-          .find((row) => row.startsWith('favorites='));
-        
-        let favorites: string[] = [];
-        if (favCookie) {
-          const favoritesStr = decodeURIComponent(favCookie.split('=')[1]);
-          if (favoritesStr && favoritesStr.trim() !== '') {
-            favorites = JSON.parse(favoritesStr);
-          }
-        }
-
-        // Use the API result as the source of truth for the property status
-        const isFavoritedNow = result.isFavorited;
-        
-        let newFavorites: string[];
-        if (isFavoritedNow) {
-          // Add to favorites, ensure no duplicates
-          newFavorites = Array.from(new Set([...favorites, property.id]));
-        } else {
-          // Remove from favorites
-          newFavorites = favorites.filter((id) => id !== property.id);
-        }
-
-        // Save to cookie
-        const expires = new Date();
-        expires.setTime(expires.getTime() + 365 * 24 * 60 * 60 * 1000);
-        document.cookie = `favorites=${encodeURIComponent(JSON.stringify(newFavorites))}; expires=${expires.toUTCString()}; path=/`;
-
-        // Update UI state
-        setIsFavorited(!!isFavoritedNow);
-
-        showAlert({
-          message: isFavoritedNow
-            ? 'Agregado a favoritos'
-            : 'Removido de favoritos',
-          type: 'success',
-          duration: 2000,
-        });
-      } catch (error) {
-        console.error('Error updating favorites cookie:', error);
-        showAlert({
-          message: 'Error al actualizar favorito',
-          type: 'error',
-          duration: 2000,
-        });
-      }
+      markFavorite(property.id, result.isFavorited);
+      showAlert({
+        message: result.isFavorited ? 'Agregado a favoritos' : 'Removido de favoritos',
+        type: 'success',
+        duration: 2000,
+      });
     } finally {
       setIsLoadingFav(false);
     }
@@ -642,6 +551,21 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
               <span className="text-thin text-xs text-gray-700">{property.parkingSpaces}</span>
             </div>
           )}
+          {hasOtherFeatures && (
+            <button
+              type="button"
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                setOtherFeaturesOpen(true);
+              }}
+              className="flex items-center gap-1 whitespace-nowrap text-primary hover:opacity-80 transition-opacity"
+              title="Otras características"
+              aria-label="Ver otras características"
+              data-test-id="property-card-other-features"
+            >
+              <MoreHorizontal size={20} />
+            </button>
+          )}
         </div>
 
         <div className="px-4 md:px-6 pt-2 md:pt-3 pb-2 md:pb-3 text-center flex flex-col flex-1 justify-start gap-1">
@@ -681,28 +605,31 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
           Ver propiedad
         </Button>
 
-        {/* Favorite heart button - only show if cookies accepted */}
-        {cookiesAccepted ? (
-          <button
-            onClick={handleToggleFavorite}
-            disabled={isLoadingFav}
-            className="transition-all duration-200 hover:scale-110 disabled:opacity-50 p-2 rounded-full"
-            title={isFavorited ? 'Remover de favoritos' : 'Agregar a favoritos'}
-          >
-            <Heart
-              size={24}
-              fill={isFavorited ? 'currentColor' : 'none'}
-              className={`transition-all ${
-                isFavorited
-                  ? 'text-accent'
-                  : 'text-gray-400 hover:text-accent'
-              }`}
-            />
-          </button>
-        ) : (
-          <span className="w-10 h-10" aria-hidden />
-        )}
+        <button
+          onClick={handleToggleFavorite}
+          disabled={isLoadingFav}
+          className="transition-all duration-200 hover:scale-110 disabled:opacity-50 p-2 rounded-full"
+          title={isFavorited ? 'Remover de favoritos' : 'Agregar a favoritos'}
+        >
+          <Heart
+            size={24}
+            fill={isFavorited ? 'currentColor' : 'none'}
+            className={`transition-all ${
+              isFavorited
+                ? 'text-accent'
+                : 'text-gray-400 hover:text-accent'
+            }`}
+          />
+        </button>
       </div>
+
+      {hasOtherFeatures ? (
+        <OtherFeaturesReadonlyDialog
+          open={otherFeaturesOpen}
+          onClose={() => setOtherFeaturesOpen(false)}
+          value={otherFeatures}
+        />
+      ) : null}
     </div>
   );
 

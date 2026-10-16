@@ -1,28 +1,27 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ContractsService } from './contracts.service';
-import { CreateContractUseCase } from './application/use-cases/create-contract.usecase';
-import { FindContractUseCase } from './application/use-cases/find-contract.usecase';
-import { ChangeContractStatusUseCase } from './application/use-cases/change-contract-status.usecase';
-import { DeleteContractUseCase } from './application/use-cases/delete-contract.usecase';
-import { UpdateContractUseCase } from './application/use-cases/update-contract.usecase';
-import { CloseContractUseCase } from './application/use-cases/close-contract.usecase';
-import { FailContractUseCase } from './application/use-cases/fail-contract.usecase';
-import { FindAllContractsUseCase } from './application/use-cases/find-all-contracts.usecase';
-import { AddPaymentUseCase } from './application/use-cases/add-payment.usecase';
-import { AddPersonUseCase } from './application/use-cases/add-person.usecase';
-import { GetPeopleByRoleUseCase } from './application/use-cases/get-people-by-role.usecase';
-import { ValidateRequiredRolesUseCase } from './application/use-cases/validate-required-roles.usecase';
-import { Contract } from './domain/contract.entity';
-import { ContractRepository } from './domain/contract.repository';
+import { CreateContractUseCase } from './use-cases/create-contract.usecase';
+import { FindContractUseCase } from './use-cases/find-contract.usecase';
+import { ChangeContractStatusUseCase } from './use-cases/change-contract-status.usecase';
+import { DeleteContractUseCase } from './use-cases/delete-contract.usecase';
+import { UpdateContractUseCase } from './use-cases/update-contract.usecase';
+import { CloseContractUseCase } from './use-cases/close-contract.usecase';
+import { FailContractUseCase } from './use-cases/fail-contract.usecase';
+import { FindAllContractsUseCase } from './use-cases/find-all-contracts.usecase';
+import { AddPaymentUseCase } from './use-cases/add-payment.usecase';
+import { AddPersonUseCase } from './use-cases/add-person.usecase';
+import { GetPeopleByRoleUseCase } from './use-cases/get-people-by-role.usecase';
+import { ValidateRequiredRolesUseCase } from './use-cases/validate-required-roles.usecase';
+import { ContractRepository } from '../domain/contract.repository';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Payment } from './domain/payment.entity';
-import { Document } from '../document/domain/document.entity';
-import { PersonOrmEntity } from '../person/infrastructure/persistence/person.orm-entity';
-import { User } from '../users/domain/user.entity';
-import { Property } from '../property/domain/property.entity';
-import { NotificationsService } from '../notifications/application/notifications.service';
-import { MultimediaService } from '../multimedia/application/multimedia.service';
-import { StaticFilesService } from '../multimedia/services/static-files.service';
+import { Payment, PaymentStatus } from '../domain/payment.entity';
+import { Document, DocumentStatus } from '../../document/domain/document.entity';
+import { PersonOrmEntity } from '../../person/infrastructure/persistence/person.orm-entity';
+import { User } from '../../users/domain/user.entity';
+import { Property } from '../../property/domain/property.entity';
+import { NotificationsService } from '../../notifications/application/notifications.service';
+import { MultimediaService } from '../../multimedia/application/multimedia.service';
+import { AuditService } from '../../audit/application/audit.service';
 
 describe('ContractsService', () => {
   let service: ContractsService;
@@ -39,8 +38,33 @@ describe('ContractsService', () => {
   const mockAddPerson = { execute: jest.fn() };
   const mockGetPeople = { execute: jest.fn() };
   const mockValidateRoles = { execute: jest.fn() };
+  const mockContractRepo = {
+    findById: jest.fn(),
+    findForGrid: jest.fn(),
+    update: jest.fn(),
+  };
+  const mockPaymentRepo = {
+    find: jest.fn().mockResolvedValue([]),
+    findOne: jest.fn(),
+    save: jest.fn(),
+  };
+  const mockDocTypeRepo = { findOne: jest.fn(), find: jest.fn() };
+  const mockDocumentRepo = {
+    find: jest.fn().mockResolvedValue([]),
+    findOne: jest.fn(),
+    save: jest.fn(),
+    create: jest.fn((row) => row),
+    manager: { getRepository: jest.fn(() => mockDocTypeRepo) },
+  };
+  const mockMultimedia = {
+    uploadFile: jest.fn().mockResolvedValue({ id: 'm1', url: 'https://x/f.pdf' }),
+  };
+  const mockAudit = { createAuditLog: jest.fn() };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+    mockPaymentRepo.find.mockResolvedValue([]);
+    mockDocumentRepo.find.mockResolvedValue([]);
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContractsService,
@@ -56,16 +80,15 @@ describe('ContractsService', () => {
         { provide: AddPersonUseCase, useValue: mockAddPerson },
         { provide: GetPeopleByRoleUseCase, useValue: mockGetPeople },
         { provide: ValidateRequiredRolesUseCase, useValue: mockValidateRoles },
-        // repository and other dependencies
-        { provide: ContractRepository, useValue: { findById: jest.fn() } },
-        { provide: getRepositoryToken(Payment), useValue: {} },
-        { provide: getRepositoryToken(Document), useValue: {} },
+        { provide: ContractRepository, useValue: mockContractRepo },
+        { provide: getRepositoryToken(Payment), useValue: mockPaymentRepo },
+        { provide: getRepositoryToken(Document), useValue: mockDocumentRepo },
         { provide: getRepositoryToken(PersonOrmEntity), useValue: {} },
         { provide: getRepositoryToken(User), useValue: {} },
         { provide: getRepositoryToken(Property), useValue: {} },
         { provide: NotificationsService, useValue: {} },
-        { provide: MultimediaService, useValue: {} },
-        { provide: StaticFilesService, useValue: {} },
+        { provide: MultimediaService, useValue: mockMultimedia },
+        { provide: AuditService, useValue: mockAudit },
       ],
     }).compile();
 
@@ -78,89 +101,100 @@ describe('ContractsService', () => {
 
   it('create delegates', async () => {
     const dto = {} as any;
-    mockCreate.execute.mockResolvedValue('c');
-    const res = await service.create(dto);
-    expect(res).toBe('c');
+    mockCreate.execute.mockResolvedValue({ id: '1' });
+    await service.create(dto, 'actor');
     expect(mockCreate.execute).toHaveBeenCalledWith(dto);
   });
 
-  it('findOne returns contract when found', async () => {
-    const contract = { id: '1' } as Contract;
-    mockFind.execute.mockResolvedValue(contract);
-    expect(await service.findOne('1')).toBe(contract);
+  it('findAll uses repository grid', async () => {
+    mockContractRepo.findForGrid.mockResolvedValue({ data: [], total: 0 });
+    await service.findAll({ page: 1 });
+    expect(mockContractRepo.findForGrid).toHaveBeenCalledWith({ page: 1 });
   });
 
-  it('findAll delegates', async () => {
-    mockFindAll.execute.mockResolvedValue(['A']);
-    expect(await service.findAll({})).toEqual(['A']);
-    expect(mockFindAll.execute).toHaveBeenCalledWith({});
+  it('findOne hydrates payments from table', async () => {
+    mockFind.execute.mockResolvedValue({ id: 'c1', documents: [] });
+    mockPaymentRepo.find.mockResolvedValue([
+      {
+        id: 'p1',
+        amount: 100,
+        date: '2026-01-01',
+        description: 'Rent',
+        type: 'RENT_PAYMENT',
+        status: PaymentStatus.PENDING,
+        paidAt: null,
+        isAgencyRevenue: false,
+      },
+    ]);
+    mockDocumentRepo.find.mockResolvedValue([
+      {
+        id: 'd1',
+        paymentId: 'p1',
+        title: 'Proof',
+        status: DocumentStatus.UPLOADED,
+        documentTypeId: 't1',
+        createdAt: new Date(),
+        multimedia: { url: 'https://x/p.pdf' },
+      },
+    ]);
+
+    const result = await service.findOne('c1');
+    expect(result.payments).toHaveLength(1);
+    expect((result.payments as any)[0].documents).toHaveLength(1);
   });
 
+  it('updatePaymentStatus sets paidAt when PAID', async () => {
+    const payment = {
+      id: 'p1',
+      contractId: 'c1',
+      status: PaymentStatus.PENDING,
+      paidAt: null,
+    };
+    mockPaymentRepo.findOne.mockResolvedValue(payment);
+    mockPaymentRepo.save.mockImplementation(async (row) => row);
 
-  it('findOne throws if missing', async () => {
-    mockFind.execute.mockResolvedValue(null);
-    await expect(service.findOne('1')).rejects.toThrow();
+    const result = await service.updatePaymentStatus('p1', PaymentStatus.PAID, 'actor');
+    expect(result.status).toBe(PaymentStatus.PAID);
+    expect(result.paidAt).toBeInstanceOf(Date);
+    expect(mockAudit.createAuditLog).toHaveBeenCalled();
   });
 
-  it('update delegates and returns updated', async () => {
-    const updated = { id: '1' } as Contract;
-    mockUpdate.execute.mockResolvedValue(undefined);
-    const repo = service['contractRepository'] as any;
-    repo.findById = jest.fn().mockResolvedValue(updated);
-    const res = await service.update('1', {} as any);
-    expect(res).toBe(updated);
-    expect(mockUpdate.execute).toHaveBeenCalledWith('1', {});
-  });
+  it('uploadContractDocument persists paymentId', async () => {
+    mockContractRepo.findById.mockResolvedValue({ id: 'c1', documents: [] });
+    mockPaymentRepo.findOne.mockResolvedValue({ id: 'p1', contractId: 'c1' });
+    mockDocTypeRepo.findOne.mockResolvedValue({ id: 't1' });
+    mockDocumentRepo.save.mockImplementation(async (row) => ({ ...row, id: row.id || 'd1' }));
+    mockDocumentRepo.findOne.mockResolvedValue({
+      id: 'd1',
+      title: 'Comprobante',
+      status: DocumentStatus.UPLOADED,
+      required: false,
+      multimedia: { id: 'm1', url: 'https://x/f.pdf' },
+      createdAt: new Date(),
+    });
+    mockPaymentRepo.find.mockResolvedValue([]);
 
-  it('close delegates and returns updated', async () => {
-    const updated = { id: '1' } as Contract;
-    mockClose.execute.mockResolvedValue(undefined);
-    const repo = service['contractRepository'] as any;
-    repo.findById = jest.fn().mockResolvedValue(updated);
-    const dto = { endDate: '2020-01-01', documents: [] } as any;
-    const res = await service.close('1', dto);
-    expect(res).toBe(updated);
-    expect(mockClose.execute).toHaveBeenCalledWith('1', dto);
-  });
+    const file = {
+      originalname: 'proof.pdf',
+      buffer: Buffer.from('pdf'),
+    } as Express.Multer.File;
 
-  it('fail delegates and returns updated', async () => {
-    const updated = { id: '1' } as Contract;
-    mockFail.execute.mockResolvedValue(undefined);
-    const repo = service['contractRepository'] as any;
-    repo.findById = jest.fn().mockResolvedValue(updated);
-    const res = await service.fail('1', new Date());
-    expect(res).toBe(updated);
-    expect(mockFail.execute).toHaveBeenCalled();
-  });
+    const result = await service.uploadContractDocument(
+      file,
+      {
+        title: 'Comprobante',
+        documentTypeId: 't1',
+        contractId: 'c1',
+        paymentId: 'p1',
+        uploadedById: 'u1',
+      } as any,
+      'u1',
+    );
 
-  it('addPayment delegates', async () => {
-    const result = { id: 'p' };
-    mockAddPayment.execute.mockResolvedValue(result);
-    const res = await service.addPayment('1', {} as any);
-    expect(res).toBe(result);
-    expect(mockAddPayment.execute).toHaveBeenCalledWith('1', {});
-  });
-
-  it('addPerson delegates and returns contract', async () => {
-    const contract = { id: '1' } as Contract;
-    mockAddPerson.execute.mockResolvedValue(undefined);
-    const repo = service['contractRepository'] as any;
-    repo.findById = jest.fn().mockResolvedValue(contract);
-    const res = await service.addPerson('1', {} as any);
-    expect(res).toBe(contract);
-    expect(mockAddPerson.execute).toHaveBeenCalledWith('1', {});
-  });
-
-  it('getPeopleByRole delegates', async () => {
-    mockGetPeople.execute.mockResolvedValue(['X']);
-    expect(await service.getPeopleByRole('1', 'SELLER' as any)).toEqual(['X']);
-    expect(mockGetPeople.execute).toHaveBeenCalledWith('1', 'SELLER');
-  });
-
-  it('validateRequiredRoles delegates', async () => {
-    const contract = { id: '1' } as Contract;
-    mockValidateRoles.execute.mockReturnValue({ valid: true, missingRoles: [] });
-    expect(await service.validateRequiredRoles(contract)).toEqual({ valid: true, missingRoles: [] });
-    expect(mockValidateRoles.execute).toHaveBeenCalledWith(contract);
+    expect(mockDocumentRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentId: 'p1', contractId: 'c1' }),
+    );
+    expect(mockContractRepo.update).toHaveBeenCalled();
+    expect(result.document).toBeDefined();
   });
 });

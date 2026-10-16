@@ -109,7 +109,8 @@ export interface UpdateBaseFormProps {
 	fields: UpdateBaseFormFields;
 	initialState: FormValues;
 	onSubmit: (values: FormValues) => void;
-	onChange?: (field: string, value: any) => void;
+	/** Optional patch returned is merged into form values (e.g. clear dependent fields). */
+	onChange?: (field: string, value: any) => void | Record<string, unknown>;
 	isSubmitting?: boolean;
 	errors?: string[];
 	title?: string;
@@ -160,10 +161,12 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 	}, [initialState]);
 
 	const handleChange = (field: string, value: unknown) => {
-		setValues((prev) => ({ ...prev, [field]: value }));
-		if (onChange) {
-			onChange(field, value);
-		}
+		const patch = onChange?.(field, value);
+		setValues((prev) => ({
+			...prev,
+			[field]: value,
+			...(patch && typeof patch === "object" ? patch : {}),
+		}));
 	};
 
 	const handleSubmit = (e: React.FormEvent) => {
@@ -222,6 +225,9 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 					placeholder={field.label}
 					value={selectValue}
 					onChange={(id: string | number | null) => handleChange(field.name, id)}
+					disabled={field.disabled}
+					label={field.label}
+					alwaysShowLabel
 				/>
 			);
 		}
@@ -380,7 +386,7 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 						{isSubmitting ? (
 							<Button variant={submitVariant} type="submit" disabled data-test-id="submit-button">
 								<div className="flex items-center justify-center min-h-[20px]">
-									<DotProgress size={12} />
+									<DotProgress size={12} count={3} variant="wave" />
 								</div>
 							</Button>
 						) : (

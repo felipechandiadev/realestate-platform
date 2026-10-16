@@ -1,5 +1,5 @@
 import React from 'react';
-import { DotProgress } from "@realestate/ui";
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots';
 
 /**
  * Loading fallback for administrators page
@@ -7,6 +7,7 @@ import { DotProgress } from "@realestate/ui";
  */
 export default function Loading() {
   return (
+    <div className="relative">
     <div className="space-y-6 w-full">
       {/* Header skeleton */}
       <div className="flex items-center justify-between">
@@ -46,10 +47,8 @@ export default function Loading() {
         ))}
       </div>
 
-      {/* Progress indicator */}
-      <div className="flex justify-center py-8">
-        <DotProgress />
-      </div>
+    </div>
+    <PageLoadingDots overlay />
     </div>
   );
 }

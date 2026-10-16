@@ -116,7 +116,7 @@ const DetailNotificationDialog: React.FC<DetailNotificationDialogProps> = ({
       <div className="space-y-4">
         {loading && (
           <div className="flex justify-center py-8">
-            <DotProgress />
+            <DotProgress count={3} variant="wave" />
           </div>
         )}
 

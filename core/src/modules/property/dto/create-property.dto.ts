@@ -143,8 +143,30 @@ export class CreatePropertyDto {
 
   @IsOptional()
   @IsNumber()
-  @Transform(({ value }) => value === '' || value === undefined ? undefined : (typeof value === 'string' ? parseFloat(value) : value))
+  @Transform(({ value }) => {
+    if (value === '' || value === null || value === undefined) return undefined;
+    const n = typeof value === 'string' ? parseFloat(value) : value;
+    if (typeof n !== 'number' || Number.isNaN(n) || n === 0) return undefined;
+    return n;
+  })
   constructionYear?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : undefined;
+      } catch {
+        return undefined;
+      }
+    }
+    return Array.isArray(value) ? value : undefined;
+  })
+  otherFeatures?: string[];
 
   // Precio (opcional, soporta CLP y UF correctamente)
   @IsOptional()

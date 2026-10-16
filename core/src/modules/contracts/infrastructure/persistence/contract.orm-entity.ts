@@ -49,11 +49,26 @@ export class ContractOrmEntity {
   @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
   ufValue?: number | null;
 
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
+  monthlyRent?: number | null;
+
   @Column({ type: 'double', nullable: true })
   commissionPercent?: number | null;
 
   @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
   commissionAmount?: number | null;
+
+  @Column({ type: 'double', nullable: true })
+  tenantCommissionPercent?: number | null;
+
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
+  tenantCommissionAmount?: number | null;
+
+  @Column({ type: 'double', nullable: true })
+  landlordCommissionPercent?: number | null;
+
+  @Column({ type: 'decimal', precision: 18, scale: 2, nullable: true })
+  landlordCommissionAmount?: number | null;
 
   @Column({ type: 'text', nullable: true })
   description?: string | null;

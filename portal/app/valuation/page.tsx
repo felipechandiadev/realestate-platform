@@ -666,11 +666,11 @@ export default function ValoracionPage() {
         <div className="max-w-md w-full text-center space-y-8">
           <div className="flex flex-col items-center justify-center">
             <div className="relative mb-4 flex h-16 w-16 items-center justify-center">
-              <Loader2 className="absolute h-16 w-16 animate-spin text-primary/30" aria-hidden />
-              <Calculator className="relative h-8 w-8 text-primary animate-pulse" aria-hidden />
+              <Loader2 className="absolute h-16 w-16 animate-spin text-gray-300" aria-hidden />
+              <Calculator className="relative h-8 w-8 text-gray-500 animate-pulse" aria-hidden />
             </div>
-            <div className="h-2 w-48 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-primary animate-pulse w-full"></div>
+            <div className="h-2 w-48 rounded-full overflow-hidden" style={{ backgroundColor: '#e5e7eb' }}>
+              <div className="h-full w-full animate-pulse" style={{ backgroundColor: '#9ca3af' }}></div>
             </div>
           </div>
           
@@ -682,16 +682,25 @@ export default function ValoracionPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-4 pt-4">
-            <div className="flex items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50 animate-pulse [animation-duration:2s]">
-              <MapPin className="h-5 w-5 text-primary shrink-0" aria-hidden />
+            <div
+              className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 animate-pulse [animation-duration:2s]"
+              style={{ backgroundColor: '#f3f4f6' }}
+            >
+              <MapPin className="h-5 w-5 text-gray-500 shrink-0" aria-hidden />
               <span className="text-sm font-medium">Verificando ubicación en {comunas.find(c => c.id === values.comuna)?.label}</span>
             </div>
-            <div className="flex items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50 animate-pulse [animation-duration:2.5s]">
-              <ChartColumn className="h-5 w-5 text-primary shrink-0" aria-hidden />
+            <div
+              className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 animate-pulse [animation-duration:2.5s]"
+              style={{ backgroundColor: '#f3f4f6' }}
+            >
+              <ChartColumn className="h-5 w-5 text-gray-500 shrink-0" aria-hidden />
               <span className="text-sm font-medium">Comparando con propiedades de {values.m2_construidos}m²</span>
             </div>
-            <div className="flex items-center gap-3 bg-muted/30 p-4 rounded-xl border border-border/50 animate-pulse [animation-duration:3s]">
-              <BarChart3 className="h-5 w-5 text-primary shrink-0" aria-hidden />
+            <div
+              className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 animate-pulse [animation-duration:3s]"
+              style={{ backgroundColor: '#f3f4f6' }}
+            >
+              <BarChart3 className="h-5 w-5 text-gray-500 shrink-0" aria-hidden />
               <span className="text-sm font-medium">Calculando nivel de confianza...</span>
             </div>
           </div>

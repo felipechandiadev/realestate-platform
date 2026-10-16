@@ -19,7 +19,7 @@
  */
 
 import PersonsDataGrid from './ui/PersonsDataGrid';
-import { listPersons } from '@/features/contracts/actions/persons.action';
+import { listPersonsPage } from '@/features/contracts/actions/persons.action';
 
 interface PageProps {
   searchParams: Promise<{
@@ -28,6 +28,8 @@ interface PageProps {
     search?: string;
     page?: string;
     limit?: string;
+    filters?: string;
+    filtration?: string;
     city?: string;
     state?: string;
     country?: string;
@@ -46,13 +48,16 @@ export default async function PersonsPage({ searchParams }: PageProps) {
   const city = typeof params.city === 'string' ? params.city : undefined;
   const state = typeof params.state === 'string' ? params.state : undefined;
   const country = typeof params.country === 'string' ? params.country : undefined;
+  const filters = typeof params.filters === 'string' ? params.filters : '';
 
-  const rows = await listPersons({
+  const result = await listPersonsPage({
     sort,
     sortField,
     search,
     page,
     limit,
+    filters,
+    filtration: params.filtration === 'true' || filters !== '',
     city,
     state,
     country,
@@ -60,7 +65,7 @@ export default async function PersonsPage({ searchParams }: PageProps) {
 
   return (
     <div className="p-4">
-      <PersonsDataGrid rows={rows} totalRows={rows.length} />
+      <PersonsDataGrid rows={result.data} totalRows={result.total} />
     </div>
   );
 }

@@ -137,7 +137,11 @@ const TopBar: React.FC<TopBarProps> = ({
               {logoSrc && (
                 <>
                   {!logoLoaded && !logoError && (
-                    <div className="h-10 w-10 bg-neutral-300 rounded-lg animate-pulse" data-test-id="top-bar-logo-skeleton" />
+                    <div
+                      className="h-10 w-10 rounded-lg animate-pulse"
+                      style={{ backgroundColor: '#d1d5db' }}
+                      data-test-id="top-bar-logo-skeleton"
+                    />
                   )}
                   {!logoError && (
                     <Image

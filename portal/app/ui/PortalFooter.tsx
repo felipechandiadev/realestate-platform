@@ -12,6 +12,7 @@ import { MapPin, Phone, Clock, Mail } from "lucide-react";
 import { getIdentity } from "@/features/cms/actions/identity.action";
 import { Dialog } from "@realestate/ui";
 import { Button } from "@realestate/ui";
+import { FALLBACK_PORTAL_FOOTER, type PortalFooterConfig } from "./portal-footer";
 
 interface SocialMediaItem {
   url?: string;
@@ -49,7 +50,11 @@ interface Identity {
   faqs?: FAQItem[];
 }
 
-const PortalFooter: React.FC<{ initialIdentity?: Identity | Record<string, unknown> | null }> = ({ initialIdentity = null }) => {
+const PortalFooter: React.FC<{
+  initialIdentity?: Identity | Record<string, unknown> | null;
+  config?: PortalFooterConfig | null;
+}> = ({ initialIdentity = null, config = null }) => {
+  const footer = config ?? FALLBACK_PORTAL_FOOTER;
   const seeded = initialIdentity && typeof initialIdentity === 'object' ? (initialIdentity as Identity) : null;
   const [identity, setIdentity] = useState<Identity | null>(seeded);
   const [loading, setLoading] = useState(!seeded);
@@ -87,27 +92,25 @@ const PortalFooter: React.FC<{ initialIdentity?: Identity | Record<string, unkno
     setFailedImages(prev => new Set([...prev, imageKey]));
   };
 
-  const navigationLinks = [
-    { label: "Inicio", href: "/" },
-    { label: "Arriendos", href: "/properties/rent" },
-    { label: "Ventas", href: "/properties/sale" },
-    { label: "Administraciones", href: "/services/management" },
-    { label: "Publica tu propiedad", href: "/publish" },
-    { label: "Nuestro equipo", href: "/ourTeam" },
-    { label: "Testimonios", href: "/testimonials" },
-    { label: "Blog", href: "/blog" },
-  ];
-
   const partnerships = identity?.partnerships ?? [];
   const faqs = identity?.faqs ?? [];
-  const showPartnerships = partnerships.length > 0;
+  const menuItems = footer.menuItems.filter((item) => item.enabled !== false);
+  const showPartnerships = footer.showPartnerships && partnerships.length > 0;
+  const companyName = identity?.name?.trim() || '';
+  const address = footer.showAddress ? identity?.address?.trim() || '' : '';
+  const phone = footer.showPhone ? identity?.phone?.trim() || '' : '';
+  const hours = footer.showHours ? identity?.businessHours?.trim() || '' : '';
+  const mail = footer.showMail ? identity?.mail?.trim() || '' : '';
+  const logoSrc = footer.logoUrl?.trim() || identity?.urlLogo?.trim() || '';
+  const showCompany = footer.showCompany && Boolean(logoSrc || companyName || address || phone || hours);
+  const showContact = Boolean(mail) || footer.showFaqs;
 
   return (
     <footer className="bg-foreground text-background p-8 mt-12 border-t border-border">
       <div className="container mx-auto flex flex-col gap-10">
         {showPartnerships && (
         <div className="flex flex-col gap-6">
-          <h3 className="text-lg font-semibold text-background text-center">Nuestras alianzas</h3>
+          <h3 className="text-lg font-semibold text-background text-center">{footer.partnershipsTitle}</h3>
           <div className="flex flex-wrap gap-6 justify-center">
               {partnerships.map((partnership, index) => {
                 const imageKey = `partnership-${index}`;
@@ -139,50 +142,55 @@ const PortalFooter: React.FC<{ initialIdentity?: Identity | Record<string, unkno
         {showPartnerships && <hr className="border-t border-gray-400/30" />}
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
+          {showCompany ? (
           <div className="md:col-span-1 space-y-4 flex flex-col items-center text-center md:items-start md:text-left">
             <div className="flex items-center gap-3">
-              {!failedImages.has('company-logo') && identity?.urlLogo && (
+              {!failedImages.has('company-logo') && logoSrc ? (
                 <img
-                  src={identity.urlLogo}
-                  alt={identity?.name?.trim() ? `Logo de ${identity.name.trim()}` : 'Logo'}
+                  src={logoSrc}
+                  alt={companyName ? `Logo de ${companyName}` : 'Logo'}
                   className="w-10 h-10 object-contain flex-shrink-0"
                   onError={() => handleImageError('company-logo')}
                 />
-              )}
-              <div className="flex-1">
-                <h4 className="text-base font-semibold text-background">
-                  {identity?.name?.trim() || ''}
-                </h4>
-              </div>
+              ) : null}
+              {companyName ? (
+                <div className="flex-1">
+                  <h4 className="text-base font-semibold text-background">{companyName}</h4>
+                </div>
+              ) : null}
             </div>
 
+            {(address || phone || hours) ? (
             <div className="space-y-2 text-xs text-background/80 flex flex-col items-center md:items-start">
+              {address ? (
               <div className="flex items-start gap-2">
                 <MapPin size={16} className="text-background mt-0.5 flex-shrink-0" />
-                <p className="leading-relaxed">
-                  {identity?.address || '572 Francesca Stream, Parral, Región del Maule'}
-                </p>
+                <p className="leading-relaxed">{address}</p>
               </div>
-
+              ) : null}
+              {phone ? (
               <div className="flex items-start gap-2">
                 <Phone size={16} className="text-background mt-0.5 flex-shrink-0" />
-                <p>{identity?.phone || '+56 9 1429 0441'}</p>
+                <p>{phone}</p>
               </div>
-
+              ) : null}
+              {hours ? (
               <div className="flex items-start gap-2">
                 <Clock size={16} className="text-background mt-0.5 flex-shrink-0" />
-                <p className="leading-relaxed whitespace-pre-line">
-                  {identity?.businessHours || 'Lunes a Viernes: 9:00 - 18:00\nSábado: 9:00 - 13:00\nDomingo: Cerrado'}
-                </p>
+                <p className="leading-relaxed whitespace-pre-line">{hours}</p>
               </div>
+              ) : null}
             </div>
+            ) : null}
           </div>
+          ) : null}
 
+          {menuItems.length > 0 ? (
           <div className="md:col-span-1 text-center">
-            <h3 className="text-lg font-semibold text-background">Menu</h3>
+            <h3 className="text-lg font-semibold text-background">{footer.menuTitle}</h3>
             <ul className="mt-4 space-y-2">
-              {navigationLinks.map((link) => (
-                <li key={link.href}>
+              {menuItems.map((link) => (
+                <li key={link.id}>
                   <a
                     href={link.href}
                     className="text-sm text-background hover:text-primary transition-colors font-light"
@@ -193,34 +201,44 @@ const PortalFooter: React.FC<{ initialIdentity?: Identity | Record<string, unkno
               ))}
             </ul>
           </div>
+          ) : null}
 
+          {showContact ? (
           <div className="md:col-span-1 space-y-4 flex flex-col items-center text-center md:items-start md:text-left">
-            <h3 className="text-lg font-semibold text-background">Contacto</h3>
+            {mail ? (
+            <>
+            <h3 className="text-lg font-semibold text-background">{footer.contactTitle}</h3>
             <div className="flex items-center gap-3">
               <Mail size={18} className="text-background" />
               <a
-                href={`mailto:${identity?.mail || 'contacto@plataformainmobiliaria.cl'}`}
+                href={`mailto:${mail}`}
                 className="text-sm text-background/90 hover:text-primary transition-colors"
               >
-                {identity?.mail || 'contacto@plataformainmobiliaria.cl'}
+                {mail}
               </a>
             </div>
+            </>
+            ) : null}
 
-            <div className="mt-8">
+            {footer.showFaqs ? (
+            <div className={mail ? 'mt-8' : ''}>
               <h3 className="text-lg font-semibold text-background">
                 <button
                   type="button"
                   onClick={() => setFaqDialogOpen(true)}
                   className="w-full text-center md:text-left hover:text-primary transition-colors"
                 >
-                  FAQs
+                  {footer.faqsTitle}
                 </button>
               </h3>
             </div>
+            ) : null}
           </div>
+          ) : null}
 
+          {footer.showSocial ? (
           <div className="md:col-span-1 space-y-4 flex flex-col items-center text-center">
-            <h3 className="text-lg font-semibold text-background">Síguenos en redes sociales</h3>
+            <h3 className="text-lg font-semibold text-background">{footer.socialTitle}</h3>
             <div className="flex flex-wrap gap-4 justify-center">
               {identity?.socialMedia?.instagram?.available && (
                 <a
@@ -267,17 +285,20 @@ const PortalFooter: React.FC<{ initialIdentity?: Identity | Record<string, unkno
               )}
             </div>
           </div>
+          ) : null}
         </div>
 
+        {footer.showCopyright ? (
         <div className="text-center text-sm font-extralight text-background border-t border-gray-400/30 pt-4">
-          &copy; {new Date().getFullYear()}{identity?.name?.trim() ? ` ${identity.name.trim()}` : ''}. Todos los derechos reservados.
+          &copy; {new Date().getFullYear()}{companyName ? ` ${companyName}` : ''}. {footer.copyrightSuffix}
         </div>
+        ) : null}
       </div>
 
       <Dialog
         open={faqDialogOpen}
         onClose={() => setFaqDialogOpen(false)}
-        title="Preguntas frecuentes"
+        title={footer.faqsTitle || 'Preguntas frecuentes'}
         size="md"
         closeButtonText="Cerrar"
         actions={(

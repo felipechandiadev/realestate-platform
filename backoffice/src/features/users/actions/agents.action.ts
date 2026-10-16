@@ -17,6 +17,10 @@ export async function listAgents(params: {
   search?: string
   page?: number
   limit?: number
+  sort?: 'asc' | 'desc'
+  sortField?: string
+  filters?: string
+  pagination?: boolean
 } = {}): Promise<{
   success: boolean
   data?: ListAgentsResponse

@@ -21,7 +21,7 @@ const SplashScreen = () => {
             className="h-64 w-64 mb-4"
           />
           <div style={{ marginTop: "10vh" }}>
-            <DotProgress size={16} gap={10} colorPrimary="#1976D2" colorNeutral="#1976D2" />
+            <DotProgress size={16} gap={10} colorPrimary="#1976D2" colorNeutral="#1976D2" count={3} variant="wave" />
           </div>
         </div>
       </div>

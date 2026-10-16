@@ -45,9 +45,14 @@ const menuItems = [
       { label: 'Artículos de blog', url: '/cms/articles' },
       { label: 'Identidad de la empresa', url: '/cms/identity' },
       { label: 'Top Bar', url: '/cms/topBar' },
+      { label: 'Footer', url: '/cms/footer' },
+      { label: 'Listados', url: '/cms/listings' },
+      { label: 'Destacadas', url: '/cms/featured' },
+      { label: 'Apariencia', url: '/cms/appearance' },
     ],
   },
   { label: 'Notificaciones', url: '/notifications' },
+  { label: 'Acerca de', url: '/about' },
 ];
 
 type IdentityBranding = {

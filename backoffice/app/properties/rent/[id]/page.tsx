@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { LoadingState } from '@realestate/ui';
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots';
 import { getPropertyHeaderInfo } from '@/features/properties/actions/properties.action';
 import { PropertyRentDetailPage } from '@/features/properties/components/rent/detail';
 
@@ -20,11 +20,7 @@ export default async function PropertyRentDetailRoutePage({ params }: PageProps)
 
   return (
     <Suspense
-      fallback={
-        <div className="flex justify-center py-16">
-          <LoadingState />
-        </div>
-      }
+      fallback={<PageLoadingDots />}
     >
       <PropertyRentDetailPage
         propertyId={id}

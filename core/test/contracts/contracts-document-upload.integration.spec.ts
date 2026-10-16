@@ -81,7 +81,7 @@ describe('Contracts Document Upload (integration)', () => {
       operation: 'COMPRAVENTA',
       status: 'IN_PROCESS',
       amount: 100000,
-      commissionPercent: 0.05,
+      commissionPercent: 5,
       commissionAmount: 5000,
       people: [
         {

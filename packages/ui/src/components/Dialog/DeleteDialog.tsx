@@ -110,7 +110,7 @@ export function DeleteDialog({
           >
             {isSubmitting ? (
               <span className="inline-flex min-h-[1.25rem] items-center justify-center">
-                <DotProgress size={12} />
+                <DotProgress size={12} count={3} variant="wave" />
               </span>
             ) : (
               confirmLabel

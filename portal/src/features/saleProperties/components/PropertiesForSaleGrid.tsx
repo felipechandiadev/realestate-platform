@@ -116,6 +116,9 @@ export default function PropertiesForSaleGrid({
       builtSquareMeters: property.builtSquareMeters || property.features?.totalArea || null,
       landSquareMeters: property.landSquareMeters || null,
       parkingSpaces: property.parkingSpaces || property.features?.parkingSpaces || null,
+      otherFeatures: Array.isArray((property as { otherFeatures?: string[] }).otherFeatures)
+        ? (property as { otherFeatures?: string[] }).otherFeatures
+        : [],
       propertyType: property.propertyType || null,
       isFeatured: property.isFeatured || false,
     }));

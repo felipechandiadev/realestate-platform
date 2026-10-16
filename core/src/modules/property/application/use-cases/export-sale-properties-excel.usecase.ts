@@ -8,17 +8,15 @@ export class ExportSalePropertiesExcelUseCase {
 
   async execute(query: any): Promise<Buffer> {
     const columns = [
-      { key: 'id', header: 'ID' },
+      { key: 'code', header: 'Código' },
       { key: 'title', header: 'Título' },
       { key: 'status', header: 'Estado' },
-      { key: 'isFeatured', header: 'Destacada' },
-      { key: 'operationType', header: 'Operación' },
       { key: 'typeName', header: 'Tipo' },
+      { key: 'creatorName', header: 'Creador' },
       { key: 'assignedAgentName', header: 'Agente' },
       { key: 'city', header: 'Ciudad' },
-      { key: 'state', header: 'Región' },
       { key: 'price', header: 'Precio' },
-      { key: 'createdAt', header: 'Creado' },
+      { key: 'createdAt', header: 'Fecha' },
     ];
 
     const fields = columns.map(c => c.key).join(',');

@@ -102,12 +102,19 @@ export async function getCommunityUsersGrid(
 
 export type ListAdministratorsParams = {
 	search?: string;
+	sort?: 'asc' | 'desc';
+	sortField?: string;
+	filters?: string;
+	page?: number;
+	limit?: number;
+	pagination?: boolean;
 };
 
 export type BackendAdministrator = {
 	id: string;
 	username: string;
 	email: string;
+	createdAt?: string;
 	status?: string;
 	personalInfo?: {
 		firstName?: string | null;
@@ -151,6 +158,14 @@ export async function listAdministrators(
 	if (normalizedSearch) {
 		url.searchParams.set('search', normalizedSearch);
 	}
+	if (params.sort) url.searchParams.set('sort', params.sort);
+	if (params.sortField) url.searchParams.set('sortField', params.sortField);
+	if (params.filters) url.searchParams.set('filters', params.filters);
+	if (typeof params.page === 'number') url.searchParams.set('page', String(params.page));
+	if (typeof params.limit === 'number') url.searchParams.set('limit', String(params.limit));
+	if (typeof params.pagination === 'boolean') {
+		url.searchParams.set('pagination', params.pagination ? 'true' : 'false');
+	}
 
 	const response = await fetch(url.toString(), {
 		headers: {
@@ -171,8 +186,18 @@ export async function listAdministrators(
 		};
 	}
 
-	const data = await response.json();
-	return { success: true, data: { data, total: data.length, page: 1, limit: data.length } };
+	const payload = await response.json();
+	const rows = Array.isArray(payload) ? payload : payload?.data ?? [];
+	const total = Array.isArray(payload) ? payload.length : payload?.total ?? rows.length;
+	return {
+		success: true,
+		data: {
+			data: rows,
+			total,
+			page: payload?.page ?? 1,
+			limit: payload?.limit ?? rows.length,
+		},
+	};
 }
 
 export async function listAdminsAgents(params: {

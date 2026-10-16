@@ -36,10 +36,11 @@ import {
   publishProperty 
 } from '@/features/shared/properties/actions/properties.action';
 import { getRegiones, getComunasByRegion } from '@/features/shared/common/actions/commons.action';
-import { Alert } from "@realestate/ui";
+import { Alert, OtherFeaturesChips } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { Bath, Bed, Car, CheckCircle, Home, ImageIcon, Info, Loader2, MapPin, Maximize2, Mountain } from 'lucide-react';
 import FeaturedSaleProperties from './FeaturedSaleProperties';
+import OtherFeaturesField from '@/shared/components/ui/OtherFeaturesField/OtherFeaturesField';
 
 // Dynamic import for LocationPreview to avoid SSR issues with Leaflet
 const LocationPreview = dynamic(() => import("@realestate/ui/components/LocationPicker").then(m => ({ default: m.LocationPreview })), {
@@ -81,6 +82,7 @@ interface PropertyPreviewCardProps {
   builtSquareMeters?: number | null;
   landSquareMeters?: number | null;
   parkingSpaces?: number | null;
+  otherFeatures?: string[];
   imageUrl?: string;
   propertyType?: PropertyTypeWithFeatures | null;
 }
@@ -97,6 +99,7 @@ function PropertyPreviewCard({
   builtSquareMeters,
   landSquareMeters,
   parkingSpaces,
+  otherFeatures = [],
   imageUrl,
   propertyType,
 }: PropertyPreviewCardProps) {
@@ -111,7 +114,7 @@ function PropertyPreviewCard({
   return (
     <div className="bg-card rounded-xl overflow-hidden border border-border shadow-md">
       {/* Imagen */}
-      <div className="relative aspect-video bg-muted">
+      <div className="relative aspect-video" style={{ backgroundColor: '#e5e7eb' }}>
         {imageUrl ? (
           <img
             src={imageUrl}
@@ -192,6 +195,13 @@ function PropertyPreviewCard({
             </div>
           )}
         </div>
+
+        {otherFeatures.length > 0 && (
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs font-medium text-muted-foreground mb-2">Otras características</p>
+            <OtherFeaturesChips value={otherFeatures} hideWhenEmpty />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -211,6 +221,7 @@ type FormValues = {
   parkingSpaces: number;
   floors: number;
   constructionYear: number;
+  otherFeatures: string[];
   price: string;
   currencyPrice: string;
   region: string | null;
@@ -234,6 +245,7 @@ const INITIAL_VALUES: FormValues = {
   parkingSpaces: 0,
   floors: 0,
   constructionYear: new Date().getFullYear(),
+  otherFeatures: [],
   price: '',
   currencyPrice: 'UF', // Por defecto UF para ventas
   region: null,
@@ -416,6 +428,7 @@ export default function SellPropertyPage() {
         parkingSpaces: values.parkingSpaces as number,
         floors: values.floors as number,
         constructionYear: values.constructionYear as number,
+        otherFeatures: Array.isArray(values.otherFeatures) ? values.otherFeatures : [],
         price: (values.price as string)?.toString().replace(/[^\d.-]/g, ''),
         currencyPrice: values.currencyPrice as string,
         region: regions.find(r => r.id === values.region)?.label || values.region as string,
@@ -468,7 +481,7 @@ export default function SellPropertyPage() {
           label: 'Título de la propiedad',
           type: 'text',
           required: true,
-          props: { placeholder: 'Ej: Casa 4D 3B en Las Condes con piscina' }
+          props: { placeholder: 'Título de la propiedad' }
         }
       ],
       [
@@ -477,7 +490,7 @@ export default function SellPropertyPage() {
           label: 'Descripción',
           type: 'textarea',
           props: { 
-            placeholder: 'Describe las características principales de tu propiedad...',
+            placeholder: 'Descripción',
             rows: 3
           }
         }
@@ -489,7 +502,7 @@ export default function SellPropertyPage() {
           type: 'select',
           options: propertyTypes,
           required: true,
-          props: { placeholder: 'Selecciona el tipo' }
+          props: { placeholder: 'Tipo de propiedad' }
         }
       ],
     ];
@@ -503,7 +516,7 @@ export default function SellPropertyPage() {
         required: true,
         props: {
           currencyField: 'currencyPrice',
-          placeholder: '5.000'
+          placeholder: 'Precio de venta'
         }
       },
       {
@@ -555,7 +568,7 @@ export default function SellPropertyPage() {
         name: 'builtSquareMeters',
         label: 'M² construidos',
         type: 'number',
-        props: { placeholder: '0', min: 0, selectOnFocus: true }
+        props: { placeholder: 'M² construidos', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -564,7 +577,7 @@ export default function SellPropertyPage() {
         name: 'landSquareMeters',
         label: 'M² terreno',
         type: 'number',
-        props: { placeholder: '0', min: 0, selectOnFocus: true }
+        props: { placeholder: 'M² terreno', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -573,7 +586,7 @@ export default function SellPropertyPage() {
         name: 'bedrooms',
         label: 'Habitaciones',
         type: 'number',
-        props: { placeholder: '0', min: 0, selectOnFocus: true }
+        props: { placeholder: 'Habitaciones', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -582,7 +595,7 @@ export default function SellPropertyPage() {
         name: 'bathrooms',
         label: 'Baños',
         type: 'number',
-        props: { placeholder: '0', min: 0, selectOnFocus: true }
+        props: { placeholder: 'Baños', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -591,7 +604,7 @@ export default function SellPropertyPage() {
         name: 'parkingSpaces',
         label: 'Estacionamientos',
         type: 'number',
-        props: { placeholder: '0', min: 0, selectOnFocus: true }
+        props: { placeholder: 'Estacionamientos', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -600,7 +613,7 @@ export default function SellPropertyPage() {
         name: 'floors',
         label: 'Pisos',
         type: 'number',
-        props: { placeholder: '0', min: 0, selectOnFocus: true }
+        props: { placeholder: 'Pisos', min: 0, selectOnFocus: true }
       }]);
     }
 
@@ -609,27 +622,18 @@ export default function SellPropertyPage() {
         name: 'constructionYear',
         label: 'Año de construcción',
         type: 'number',
-        props: { placeholder: new Date().getFullYear().toString(), min: 1900, max: new Date().getFullYear(), selectOnFocus: true }
+        props: { placeholder: 'Año de construcción', min: 1900, max: new Date().getFullYear(), selectOnFocus: true }
       }]);
     }
 
-    // Si no hay características para este tipo
-    if (rows.length === 0) {
-      return [[{
-        name: 'noCharacteristics',
-        label: '',
-        type: 'custom',
-        renderComponent: () => (
-          <div className="text-center py-8 text-muted-foreground">
-            <div className="flex flex-col items-center gap-2">
-              <CheckCircle className="text-green-500" size={48} />
-              <span>Este tipo de propiedad no requiere características adicionales.</span>
-              <span className="text-sm">Puedes continuar al siguiente paso.</span>
-            </div>
-          </div>
-        )
-      }]];
-    }
+    rows.push([{
+      name: 'otherFeatures',
+      label: 'Otras características',
+      type: 'custom',
+      renderComponent: ({ value, onChange }) => (
+        <OtherFeaturesField value={value} onChange={onChange} />
+      ),
+    }]);
 
     return rows;
   };
@@ -644,7 +648,7 @@ export default function SellPropertyPage() {
       type: 'select',
       options: regions,
       required: true,
-      props: { placeholder: 'Selecciona la región' }
+      props: { placeholder: 'Región' }
     },
     {
       name: 'city',
@@ -653,7 +657,7 @@ export default function SellPropertyPage() {
       options: comunas,
       required: true,
       props: {
-        placeholder: values.region ? 'Busca la comuna' : 'Selecciona primero la región',
+        placeholder: values.region ? 'Comuna' : 'Selecciona primero la región',
         disabled: !values.region,
       }
     },
@@ -664,7 +668,7 @@ export default function SellPropertyPage() {
       required: true,
       multiline: true,
       rows: 2,
-      props: { placeholder: 'Calle Los Aromos 1234, Las Condes' }
+      props: { placeholder: 'Dirección' }
     },
     {
       name: 'coordinates',
@@ -699,7 +703,7 @@ export default function SellPropertyPage() {
       type: 'text',
       required: true,
       props: { 
-        placeholder: 'Tu nombre',
+        placeholder: 'Nombre completo',
         disabled: !!session?.user
       }
     },
@@ -709,7 +713,7 @@ export default function SellPropertyPage() {
       type: 'text',
       required: true,
       props: { 
-        placeholder: '+56 9 1234 5678',
+        placeholder: 'Teléfono',
         disabled: !!session?.user && !!(session.user as any).phone
       }
     },
@@ -719,7 +723,7 @@ export default function SellPropertyPage() {
       type: 'email',
       required: true,
       props: { 
-        placeholder: 'tu@email.com',
+        placeholder: 'Correo electrónico',
         disabled: !!session?.user
       }
     }
@@ -792,6 +796,7 @@ export default function SellPropertyPage() {
                   builtSquareMeters={values.builtSquareMeters}
                   landSquareMeters={values.landSquareMeters}
                   parkingSpaces={values.parkingSpaces}
+                  otherFeatures={values.otherFeatures}
                   imageUrl={getPreviewImageUrl()}
                   propertyType={selectedPropertyType}
                 />

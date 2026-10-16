@@ -119,6 +119,12 @@ export class GetFullPropertyDto {
   @Expose()
   constructionYear?: number;
 
+  @Expose()
+  @IsOptional()
+  @IsArray()
+  @Transform(({ value }) => (Array.isArray(value) ? value : []))
+  otherFeatures?: string[];
+
   // Location Information
   @Expose()
   state?: RegionEnum;

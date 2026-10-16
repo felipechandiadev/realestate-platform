@@ -1,9 +1,14 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { TextField } from '@realestate/ui'
-import { Alert } from "@realestate/ui"
-import { Button } from '@realestate/ui'
+import {
+  TextField,
+  Button,
+  OtherFeaturesChips,
+  OtherFeaturesPickerDialog,
+  normalizeOtherFeatures,
+  type OtherFeatureKey,
+} from '@realestate/ui'
 import { getPropertyCharacteristics, updatePropertyCharacteristics } from '@/features/properties/actions/properties.action'
 import { useAlert } from '@/shared/hooks/useAlert'
 import { LucideIcon } from './LucideIcon'
@@ -26,12 +31,13 @@ const CharacteristicsSection: React.FC<CharacteristicsSectionProps> = ({
   const { showAlert } = useAlert()
   const [characteristics, setCharacteristics] = useState<Characteristic[]>([])
   const [propertyType, setPropertyType] = useState<string>('')
+  const [otherFeatures, setOtherFeatures] = useState<OtherFeatureKey[]>([])
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState<{ [key: string]: string }>({})
 
-  // Load characteristics
   useEffect(() => {
     const loadCharacteristics = async () => {
       try {
@@ -46,6 +52,7 @@ const CharacteristicsSection: React.FC<CharacteristicsSectionProps> = ({
               : []
           setCharacteristics(chars)
           setPropertyType(payload?.propertyType || '')
+          setOtherFeatures(normalizeOtherFeatures(payload?.otherFeatures))
 
           const initialData: { [key: string]: string } = {}
           chars.forEach((char: Characteristic) => {
@@ -71,8 +78,7 @@ const CharacteristicsSection: React.FC<CharacteristicsSectionProps> = ({
   const handleUpdateCharacteristics = async () => {
     try {
       setUpdating(true)
-      
-      // Map characteristic names to the DTO field names
+
       const characteristicsMap: { [key: string]: string } = {
         'Metros cuadrados construidos': 'builtSquareMeters',
         'Metros cuadrados de terreno': 'landSquareMeters',
@@ -83,17 +89,29 @@ const CharacteristicsSection: React.FC<CharacteristicsSectionProps> = ({
         'Año de construcción': 'constructionYear',
       }
 
-      const characteristicsData: { [key: string]: number } = {}
-      
+      const characteristicsData: { [key: string]: number | string[] } = {
+        otherFeatures,
+      }
+
       characteristics.forEach((char) => {
         const dtoKey = characteristicsMap[char.name]
-        if (dtoKey) {
-          characteristicsData[dtoKey] = parseFloat(formData[char.name] || '0')
+        if (!dtoKey) return
+
+        const raw = (formData[char.name] ?? '').trim()
+        if (dtoKey === 'constructionYear') {
+          // Optional: omit empty / 0 so backend does not reject Min(1800)
+          if (!raw) return
+          const year = Number(raw)
+          if (!Number.isFinite(year) || year === 0) return
+          characteristicsData[dtoKey] = year
+          return
         }
+
+        characteristicsData[dtoKey] = parseFloat(raw || '0')
       })
 
       const response = await updatePropertyCharacteristics(propertyId, characteristicsData)
-      
+
       if (response.success) {
         showAlert({
           message: 'Características actualizadas exitosamente',
@@ -140,17 +158,6 @@ const CharacteristicsSection: React.FC<CharacteristicsSectionProps> = ({
     )
   }
 
-  if (characteristics.length === 0) {
-    return (
-      <section className="space-y-4">
-        <header className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{title}</p>
-        </header>
-        <p className="text-sm text-muted-foreground">No hay características disponibles para este tipo de propiedad.</p>
-      </section>
-    )
-  }
-
   return (
     <section className="space-y-4">
       <header className="space-y-1">
@@ -160,20 +167,46 @@ const CharacteristicsSection: React.FC<CharacteristicsSectionProps> = ({
         )}
       </header>
 
-      <div className="space-y-4">
-        {characteristics.map((char: Characteristic) => (
-          <TextField
-            key={char.name}
-            label={char.name}
-            value={formData[char.name] || ''}
-            onChange={(e) => setFormData({ ...formData, [char.name]: e.target.value })}
-            type="number"
-            placeholder={`Ingrese ${char.name}`}
-            className="w-full"
-            readOnly={!char.enabled}
-          />
-        ))}
+      {characteristics.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No hay características numéricas disponibles para este tipo de propiedad.</p>
+      ) : (
+        <div className="space-y-4">
+          {characteristics.map((char: Characteristic) => (
+            <TextField
+              key={char.name}
+              label={char.name}
+              value={formData[char.name] || ''}
+              onChange={(e) => setFormData({ ...formData, [char.name]: e.target.value })}
+              type="number"
+              placeholder={`Ingrese ${char.name}`}
+              className="w-full"
+              readOnly={!char.enabled}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="flex w-full flex-col gap-3 rounded-lg border border-border p-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-medium text-foreground">Otras características</p>
+            <p className="text-xs text-muted-foreground">
+              Amenities opcionales (piscina, parrilla, amoblado, etc.).
+            </p>
+          </div>
+          <Button type="button" variant="outlined" onClick={() => setPickerOpen(true)}>
+            Seleccionar
+          </Button>
+        </div>
+        <OtherFeaturesChips value={otherFeatures} />
       </div>
+
+      <OtherFeaturesPickerDialog
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        value={otherFeatures}
+        onApply={(keys) => setOtherFeatures(keys)}
+      />
 
       <div className="flex justify-end mt-6">
         <Button

@@ -89,7 +89,13 @@ export function CreatePropertyStepFields({
         };
 
         return (
-          <div key={field.name} className="min-h-[200px] w-full">
+          <div key={field.name} className="min-h-[200px] w-full flex flex-col gap-2">
+            {field.label ? (
+              <span className="text-sm font-medium text-foreground">
+                {field.label}
+                {field.required ? ' *' : ''}
+              </span>
+            ) : null}
             <LocationField
               onChangeCallback={getCoordHandler(field.name)}
               initialLat={locationProps.initialLat}
@@ -183,10 +189,12 @@ export function CreatePropertyStepFields({
           <div key={field.name}>
             <Select
               options={field.options || []}
-              placeholder={field.label}
+              label={field.label}
+              placeholder={field.label ? `Seleccionar ${field.label.toLowerCase()}` : 'Seleccionar'}
               value={selectValue ?? undefined}
               onChange={(id: string | number | null) => onChange(field.name, id)}
               required={field.required}
+              alwaysShowLabel
               data-test-id={`select-${field.name}`}
               {...commonProps}
             />

@@ -41,6 +41,7 @@ import { GridRentPropertiesUseCase } from '../application/use-cases/grid-rent-pr
 import { ListAvailableRentPropertiesUseCase } from '../application/use-cases/list-available-rent-properties.usecase';
 import { UpdatePropertyUseCase } from '../application/use-cases/update-property.usecase';
 import { SharePropertyByEmailUseCase } from '../application/use-cases/share-property-by-email.usecase';
+import { normalizeOtherFeatures } from '../domain/other-features';
 
 @Injectable()
 export class PropertyService {
@@ -385,6 +386,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
       .createQueryBuilder('p')
       .leftJoinAndSelect('p.propertyType', 'pt')
       .leftJoinAndSelect('p.multimedia', 'm')
+      .leftJoinAndSelect('m.variants', 'variants')
       .where('p.status = :status', { status: PropertyStatus.PUBLISHED })
       .andWhere('p.deletedAt IS NULL')
       .andWhere('p.id != :refId', { refId: refProperty.id });
@@ -463,6 +465,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
   async getPropertyCharacteristics(propertyId: string): Promise<{
     propertyType: string;
     characteristics: Array<{ name: string; value: number; enabled: boolean }>;
+    otherFeatures: string[];
   }> {
     const p = await this.propertyRepository
       .createQueryBuilder('p')
@@ -478,6 +481,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
         'p.parkingSpaces',
         'p.floors',
         'p.constructionYear',
+        'p.otherFeatures',
         'pt.id',
         'pt.name',
         'pt.hasBedrooms',
@@ -536,6 +540,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     return {
       propertyType: pt?.name || '',
       characteristics,
+      otherFeatures: normalizeOtherFeatures(p.otherFeatures),
     };
   }
 

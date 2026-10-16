@@ -50,22 +50,33 @@ export const DEFAULT_ACCOUNT_ITEMS: PortalAccountItem[] = [
   { id: 'mis-contratos', label: 'Mis Contratos', href: '/myContracts', enabled: true },
 ];
 
-export function applyEnabledFlags<T extends { id: string; enabled: boolean; children?: T[] }>(
-  catalog: T[],
-  incoming: unknown,
-): T[] {
+function asBool(value: unknown, fallback: boolean): boolean {
+  if (typeof value === 'boolean') return value;
+  if (value === 'true' || value === '1' || value === 1) return true;
+  if (value === 'false' || value === '0' || value === 0) return false;
+  return fallback;
+}
+
+export function applyEnabledFlags<
+  T extends { id: string; label: string; enabled: boolean; children?: T[] },
+>(catalog: T[], incoming: unknown): T[] {
   const rows = Array.isArray(incoming) ? incoming : [];
   return catalog.map((item) => {
     const match = rows.find((row) => row && typeof row === 'object' && (row as { id?: string }).id === item.id) as
-      | { enabled?: boolean; children?: unknown }
+      | { enabled?: unknown; label?: unknown; children?: unknown }
       | undefined;
-    const enabled = typeof match?.enabled === 'boolean' ? match.enabled : item.enabled;
+    const enabled = match ? asBool(match.enabled, item.enabled) : item.enabled;
+    const label =
+      typeof match?.label === 'string' && match.label.trim()
+        ? match.label.trim().slice(0, 80)
+        : item.label;
     if (!item.children) {
-      return { ...item, enabled };
+      return { ...item, enabled, label };
     }
     return {
       ...item,
       enabled,
+      label,
       children: applyEnabledFlags(item.children, match?.children),
     };
   });

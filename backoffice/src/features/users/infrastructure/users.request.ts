@@ -17,11 +17,23 @@ async function authHeaders(): Promise<HeadersInit> {
  * Actions should call this — not fetch directly.
  */
 export const UsersRequest = {
-  async listAgents(params?: { search?: string; page?: number; limit?: number }) {
+  async listAgents(params?: {
+    search?: string;
+    page?: number;
+    limit?: number;
+    sort?: string;
+    sortField?: string;
+    filters?: string;
+    pagination?: boolean;
+  }) {
     const qs = new URLSearchParams();
     if (params?.search) qs.set('search', params.search);
     if (params?.page) qs.set('page', String(params.page));
     if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.sort) qs.set('sort', params.sort);
+    if (params?.sortField) qs.set('sortField', params.sortField);
+    if (params?.filters) qs.set('filters', params.filters);
+    if (typeof params?.pagination === 'boolean') qs.set('pagination', params.pagination ? 'true' : 'false');
     const url = `${env.backendApiUrl}/users/agents${qs.toString() ? `?${qs}` : ''}`;
     const res = await fetch(url, {
       headers: await authHeaders(),

@@ -12,7 +12,15 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
+
+/** Empty / 0 year is "not set" — do not apply Min(1800). */
+function optionalConstructionYear({ value }: { value: unknown }): number | undefined {
+  if (value === '' || value === null || value === undefined) return undefined;
+  const n = typeof value === 'string' ? Number(value) : value;
+  if (typeof n !== 'number' || Number.isNaN(n) || n === 0) return undefined;
+  return n;
+}
 import { PropertyStatus } from '../../../shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../../shared/enums/property-operation-type.enum';
 import {
@@ -125,10 +133,16 @@ export class CreatePropertyDto {
   floors?: number;
 
   @IsOptional()
+  @Transform(optionalConstructionYear)
   @IsNumber()
   @Min(1800)
   @Max(new Date().getFullYear())
   constructionYear?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  otherFeatures?: string[];
 
   @IsOptional()
   @IsString()
@@ -241,10 +255,16 @@ export class UpdatePropertyCharacteristicsDto {
   floors?: number;
 
   @IsOptional()
+  @Transform(optionalConstructionYear)
   @IsNumber()
   @Min(1800)
   @Max(new Date().getFullYear())
   constructionYear?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  otherFeatures?: string[];
 }
 
 export class UpdatePropertyDto {
@@ -344,10 +364,16 @@ export class UpdatePropertyDto {
   floors?: number;
 
   @IsOptional()
+  @Transform(optionalConstructionYear)
   @IsNumber()
   @Min(1800)
   @Max(new Date().getFullYear())
   constructionYear?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  otherFeatures?: string[];
 
   @IsOptional()
   @IsString()

@@ -859,6 +859,9 @@ export async function getUserContracts(userId: string, params: ListContractsPara
     throw new Error('No autorizado');
   }
 
+  // Community tokens can only read their own contracts; ignore mismatched client ids.
+  const effectiveUserId = session.user?.id || userId;
+
   const queryParams = new URLSearchParams({
     fields: 'id,code,operation,status,amount,currency,ufValue,createdAt,endDate,property',
     sort: params.sort || '',
@@ -868,7 +871,7 @@ export async function getUserContracts(userId: string, params: ListContractsPara
     pagination: 'true',
   });
 
-  const response = await fetch(`${env.backendApiUrl}/contracts/user/${userId}?${queryParams}`, {
+  const response = await fetch(`${env.backendApiUrl}/contracts/user/${effectiveUserId}?${queryParams}`, {
     headers: {
       'Authorization': `Bearer ${session.accessToken}`,
       'Accept': 'application/json',

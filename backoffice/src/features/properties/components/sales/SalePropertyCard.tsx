@@ -73,7 +73,7 @@ export function SalePropertyCard({
   };
 
   const media = (
-    <div className="relative aspect-[16/10] w-full overflow-hidden bg-muted">
+    <div className="relative aspect-[2/1] w-full overflow-hidden bg-muted">
       {currentUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -83,7 +83,7 @@ export function SalePropertyCard({
           loading="lazy"
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+        <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
           Sin imagen
         </div>
       )}
@@ -134,13 +134,14 @@ export function SalePropertyCard({
   return (
     <Card
       fillHeight
+      className="[&_.fs-card__header]:px-3 [&_.fs-card__header]:pb-1.5 [&_.fs-card__header]:pt-2 [&_.fs-card__title]:text-base [&_.fs-card__title]:leading-snug [&_.fs-card__title]:line-clamp-2 [&_.fs-card__subtitle]:text-xs [&_.fs-card__content]:p-3 [&_.fs-card__content]:pt-1.5"
       media={media}
       title={property.title || 'Sin título'}
       subtitle={property.code ? `Código ${property.code}` : undefined}
       headerEnd={statusChip}
       content={
-        <div className="flex h-full flex-col gap-3">
-          <dl className="grid gap-1 text-sm">
+        <div className="flex h-full flex-col gap-1.5">
+          <dl className="grid gap-0.5 text-xs leading-snug">
             {property.typeName ? (
               <div>
                 <dt className="inline text-muted-foreground">Tipo: </dt>
@@ -154,18 +155,18 @@ export function SalePropertyCard({
               </div>
             ) : null}
             {property.assignedAgentName ? (
-              <div>
+              <div className="line-clamp-1">
                 <dt className="inline text-muted-foreground">Agente: </dt>
                 <dd className="inline">{property.assignedAgentName}</dd>
               </div>
             ) : null}
           </dl>
 
-          <p className="text-lg font-semibold tabular-nums">
+          <p className="text-base font-semibold tabular-nums">
             {formatPropertyPrice(property.price, property.currencyPrice)}
           </p>
 
-          <div className="mt-auto flex items-center justify-end gap-2 border-t border-border pt-3">
+          <div className="mt-auto flex items-center justify-end gap-1.5 border-t border-border pt-2">
             {moreButton ?? <SaleMoreButton property={property} />}
             <PropertiesDeleteButton propertyId={property.id} onSuccess={onDeleteSuccess} />
           </div>

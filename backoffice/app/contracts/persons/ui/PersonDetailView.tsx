@@ -1,13 +1,19 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { CheckCircle, IdCard } from 'lucide-react';
-import { Person, verifyPerson, unverifyPerson, uploadDniDocument, getMultimediaUrl } from '@/features/contracts/actions/persons.action';
-import { Button, IconButton } from '@realestate/ui';
-import { useAlert } from '@/providers/AlertContext';
-import { Dialog } from "@realestate/ui";
-import { DotProgress } from "@realestate/ui";
-import EditPersonForm from './EditPersonForm';
+
+import { useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { CheckCircle } from 'lucide-react';
+import type { Person } from '@/features/contracts/actions/persons.action';
+import { IconButton } from '@realestate/ui';
+import { PersonDetailSectionNav } from './detail/PersonDetailSectionNav';
+import {
+  PERSON_DETAIL_TABS,
+  type PersonDetailSectionId,
+  personDetailSectionFromHash,
+} from './detail/person-detail-section.types';
+import { PersonDatosSection } from './detail/sections/PersonDatosSection';
+import { PersonIdentidadSection } from './detail/sections/PersonIdentidadSection';
+import { PersonDocumentosSection } from './detail/sections/PersonDocumentosSection';
 
 interface PersonDetailViewProps {
   person: Person;
@@ -15,478 +21,117 @@ interface PersonDetailViewProps {
 
 export default function PersonDetailView({ person }: PersonDetailViewProps) {
   const router = useRouter();
-  const alert = useAlert();
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [showVerifyDialog, setShowVerifyDialog] = useState(false);
-  const [showUnverifyDialog, setShowUnverifyDialog] = useState(false);
-  const [isUploadingFront, setIsUploadingFront] = useState(false);
-  const [isUploadingRear, setIsUploadingRear] = useState(false);
-  const [frontImageUrl, setFrontImageUrl] = useState<string | null>(person.dniCardFront?.url ?? null);
-  const [rearImageUrl, setRearImageUrl] = useState<string | null>(person.dniCardRear?.url ?? null);
-  const frontInputRef = useRef<HTMLInputElement>(null);
-  const rearInputRef = useRef<HTMLInputElement>(null);
+  const searchParams = useSearchParams();
+  const [activeSection, setActiveSection] = useState<PersonDetailSectionId>('datos');
 
-  // Load existing DNI images on component mount
   useEffect(() => {
-    let canceled = false;
-
-    const resolveFront = async () => {
-      if (person.dniCardFront?.url) {
-        setFrontImageUrl(person.dniCardFront.url);
-        return;
-      }
-      if (person.dniCardFrontId) {
-        const url = await getMultimediaUrl(person.dniCardFrontId);
-        if (!canceled) {
-          setFrontImageUrl(url);
-        }
-        return;
-      }
-      if (!canceled) {
-        setFrontImageUrl(null);
-      }
+    const syncFromHash = () => {
+      const fromHash = personDetailSectionFromHash(window.location.hash);
+      if (fromHash) setActiveSection(fromHash);
     };
+    syncFromHash();
+    window.addEventListener('hashchange', syncFromHash);
+    return () => window.removeEventListener('hashchange', syncFromHash);
+  }, []);
 
-    const resolveRear = async () => {
-      if (person.dniCardRear?.url) {
-        setRearImageUrl(person.dniCardRear.url);
-        return;
-      }
-      if (person.dniCardRearId) {
-        const url = await getMultimediaUrl(person.dniCardRearId);
-        if (!canceled) {
-          setRearImageUrl(url);
-        }
-        return;
-      }
-      if (!canceled) {
-        setRearImageUrl(null);
-      }
-    };
-
-    resolveFront();
-    resolveRear();
-
-    return () => {
-      canceled = true;
-    };
-  }, [person.dniCardFront?.url, person.dniCardFrontId, person.dniCardRear?.url, person.dniCardRearId]);
-
-  const handleVerify = async () => {
-    setIsVerifying(true);
-    setShowVerifyDialog(false);
-
-    try {
-      const verified = await verifyPerson(person.id);
-      alert.showAlert({
-        message: `Persona ${person.name} verificada exitosamente`,
-        type: 'success',
-        duration: 3000,
-      });
-      if (verified?.id && verified.id !== person.id) {
-        router.replace(`/contracts/persons/${verified.id}`);
-      } else {
-        router.refresh();
-      }
-    } catch (error) {
-      alert.showAlert({
-        message: `Error al verificar: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        type: 'error',
-        duration: 5000,
-      });
-    } finally {
-      setIsVerifying(false);
+  const selectSection = useCallback((id: PersonDetailSectionId) => {
+    setActiveSection(id);
+    const nextHash = `#${id}`;
+    if (window.location.hash !== nextHash) {
+      window.history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${window.location.search}${nextHash}`,
+      );
     }
-  };
+  }, []);
 
-  const handleUnverify = async () => {
-    setIsVerifying(true);
-    setShowUnverifyDialog(false);
-
-    try {
-      await unverifyPerson(person.id);
-      alert.showAlert({
-        message: `Verificación de ${person.name} removida`,
-        type: 'success',
-        duration: 3000,
-      });
-      router.refresh();
-    } catch (error) {
-      alert.showAlert({
-        message: `Error al desverificar: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        type: 'error',
-        duration: 5000,
-      });
-    } finally {
-      setIsVerifying(false);
+  const goBack = useCallback(() => {
+    const returnTo = searchParams.get('returnTo')?.trim();
+    if (returnTo && returnTo.startsWith('/contracts/persons')) {
+      router.push(returnTo);
+      return;
     }
-  };
-
-  const handleUploadDniFront = async (files: File[]) => {
-    if (files.length === 0) return;
-    
-    setIsUploadingFront(true);
-    try {
-      const result = await uploadDniDocument(person.id, files[0], 'front');
-      if (result.success) {
-        alert.showAlert({
-          message: 'DNI frontal subido exitosamente',
-          type: 'success',
-          duration: 3000,
-        });
-        // Load the new image URL
-        if (result.url) {
-          setFrontImageUrl(result.url);
-        } else if (result.multimediaId) {
-          // Retry fetching URL up to 3 times with delay
-          let url: string | null = null;
-          for (let i = 0; i < 3; i++) {
-            url = await getMultimediaUrl(result.multimediaId);
-            if (url) break;
-            if (i < 2) await new Promise(resolve => setTimeout(resolve, 500));
-          }
-          if (url) {
-            setFrontImageUrl(url);
-          }
-        }
-        router.refresh();
-      } else {
-        alert.showAlert({
-          message: result.error || 'Error al subir DNI frontal',
-          type: 'error',
-          duration: 5000,
-        });
-      }
-    } catch (error) {
-      alert.showAlert({
-        message: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        type: 'error',
-        duration: 5000,
-      });
-    } finally {
-      setIsUploadingFront(false);
-    }
-  };
-
-  const handleFrontFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleUploadDniFront([files[0]]);
-    }
-  };
-
-  const handleRearFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleUploadDniRear([files[0]]);
-    }
-  };
-
-  const handleUploadDniRear = async (files: File[]) => {
-    if (files.length === 0) return;
-    
-    setIsUploadingRear(true);
-    try {
-      const result = await uploadDniDocument(person.id, files[0], 'rear');
-      if (result.success) {
-        alert.showAlert({
-          message: 'DNI trasero subido exitosamente',
-          type: 'success',
-          duration: 3000,
-        });
-        // Load the new image URL
-        if (result.url) {
-          setRearImageUrl(result.url);
-        } else if (result.multimediaId) {
-          // Retry fetching URL up to 3 times with delay
-          let url: string | null = null;
-          for (let i = 0; i < 3; i++) {
-            url = await getMultimediaUrl(result.multimediaId);
-            if (url) break;
-            if (i < 2) await new Promise(resolve => setTimeout(resolve, 500));
-          }
-          if (url) {
-            setRearImageUrl(url);
-          }
-        }
-        router.refresh();
-      } else {
-        alert.showAlert({
-          message: result.error || 'Error al subir DNI trasero',
-          type: 'error',
-          duration: 5000,
-        });
-      }
-    } catch (error) {
-      alert.showAlert({
-        message: `Error: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        type: 'error',
-        duration: 5000,
-      });
-    } finally {
-      setIsUploadingRear(false);
-    }
-  };
+    router.push('/contracts/persons');
+  }, [router, searchParams]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex min-w-0 items-center gap-2">
-        <IconButton
-          icon="arrow_back"
-          variant="action"
-          size="sm"
-          onClick={() => router.push('/contracts/persons')}
-          ariaLabel="Volver al listado de personas"
-          title="Volver"
-        />
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold text-foreground inline-flex items-center gap-2">
+    <div
+      className="mx-auto w-full max-w-4xl space-y-3 px-0 py-2 sm:space-y-6 sm:px-6 sm:py-6"
+      data-test-id="person-detail-root"
+    >
+      <header
+        className="border-b border-border pb-2 sm:pb-4"
+        data-test-id="person-detail-header"
+      >
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 sm:gap-x-3 sm:gap-y-2">
+          <IconButton
+            icon="arrow_back"
+            variant="action"
+            size="sm"
+            onClick={goBack}
+            ariaLabel="Volver al listado de personas"
+            title="Volver"
+            data-test-id="person-detail-back"
+          />
+          <h1
+            className="min-w-0 text-xl font-bold tracking-tight text-foreground sm:text-3xl"
+            title={person.name || 'Sin nombre'}
+          >
             {person.name || 'Sin nombre'}
-            {person.verified && (
-              <CheckCircle className="h-6 w-6 text-blue-500" aria-label="Verificado" />
-            )}
           </h1>
-          <p className="text-muted-foreground">{person.email}</p>
-        </div>
-      </div>
-
-      {/* Información Personal (editable) */}
-      <div className="bg-card rounded-lg border border-border p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Información Personal</h2>
-        <EditPersonForm
-          person={person}
-          onClose={() => {
-            // Reset form to current values
-            router.refresh();
-          }}
-          onSuccess={() => {
-            router.refresh();
-          }}
-        />
-        <div className="mt-6">
-          <p className="text-sm text-muted-foreground">Fecha de Registro</p>
-          <p className="font-medium">
-            {new Date(person.createdAt).toLocaleDateString('es-CL')}
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-card rounded-lg border border-border p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Estado de Verificación</h2>
-        <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground">Estado</p>
-              <p className="font-medium">
-                {person.verified ? (
-                  <span className="text-blue-500 flex items-center gap-1.5">
-                    <CheckCircle className="h-4 w-4 shrink-0" aria-hidden />
-                    Verificado
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">No verificado</span>
-                )}
-              </p>
-            </div>
-            {person.verificationRequest && (
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground">Solicitud de Verificación</p>
-                <p className="font-medium">
-                  {new Date(person.verificationRequest).toLocaleDateString('es-CL')}
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2">
-            {!person.verified ? (
-              <Button
-                variant="primary"
-                onClick={() => setShowVerifyDialog(true)}
-                disabled={isVerifying}
-              >
-                Verificar Persona
-              </Button>
+          <span
+            className={`inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold ${
+              person.verified
+                ? 'bg-blue-100 text-blue-800'
+                : 'bg-amber-100 text-amber-800'
+            }`}
+          >
+            {person.verified ? (
+              <>
+                <CheckCircle className="h-3.5 w-3.5" aria-hidden />
+                Verificado
+              </>
             ) : (
-              <Button
-                variant="outlined"
-                onClick={() => setShowUnverifyDialog(true)}
-                disabled={isVerifying}
-                className="border-red-500 text-red-500 hover:bg-red-50"
-              >
-                Remover Verificación
-              </Button>
+              'Pendiente'
             )}
-          </div>
+          </span>
         </div>
+        {person.email ? (
+          <p className="mt-1.5 text-sm text-muted-foreground sm:mt-3">{person.email}</p>
+        ) : null}
+        {person.dni ? (
+          <p className="mt-0.5 font-mono text-xs text-muted-foreground">
+            Doc: {person.dni}
+          </p>
+        ) : null}
+        <p className="mt-0.5 hidden font-mono text-xs text-muted-foreground sm:block">
+          ID: {person.id}
+        </p>
+      </header>
+
+      <PersonDetailSectionNav
+        tabs={PERSON_DETAIL_TABS}
+        activeId={activeSection}
+        onSelect={selectSection}
+      />
+
+      <div
+        id={`person-section-panel-${activeSection}`}
+        role="tabpanel"
+        aria-labelledby={`person-section-tab-${activeSection}`}
+        className="min-h-[16rem]"
+        data-test-id="person-detail-section-panel"
+        data-active-section={activeSection}
+      >
+        {activeSection === 'datos' ? <PersonDatosSection person={person} /> : null}
+        {activeSection === 'identidad' ? (
+          <PersonIdentidadSection person={person} />
+        ) : null}
+        {activeSection === 'documentos' ? (
+          <PersonDocumentosSection personId={person.id} />
+        ) : null}
       </div>
-
-      <div className="bg-card rounded-lg border border-border p-6">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Documentos de Identificación</h2>
-        <div className="space-y-6">
-          <p className="text-sm text-muted-foreground">
-            Los documentos de identificación (DNI frontal y trasero) permiten verificar la identidad de la persona antes de aprobar su verificación.
-          </p>
-
-          <div className="grid grid-cols-2 gap-6">
-            {/* DNI Frontal */}
-            <div className="space-y-2">
-            <h3 className="text-sm font-medium text-foreground">DNI Frontal</h3>
-            {frontImageUrl ? (
-              <div className="space-y-2">
-                <img 
-                  src={frontImageUrl} 
-                  alt="DNI Frontal" 
-                  className="w-full max-w-md rounded-lg border border-border"
-                />
-                <input
-                  ref={frontInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFrontFileChange}
-                  className="hidden"
-                />
-                <Button
-                  variant="outlined"
-                  onClick={() => frontInputRef.current?.click()}
-                  disabled={isUploadingFront}
-                >
-                  {isUploadingFront ? <DotProgress /> : 'Reemplazar DNI Frontal'}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="w-full max-w-md aspect-video rounded-lg flex items-center justify-center border border-dashed border-border">
-                  <IdCard className="h-12 w-12 text-muted-foreground" aria-hidden />
-                </div>
-                <input
-                  ref={frontInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFrontFileChange}
-                  className="hidden"
-                />
-                <Button
-                  variant="outlined"
-                  onClick={() => frontInputRef.current?.click()}
-                  disabled={isUploadingFront}
-                >
-                  {isUploadingFront ? <DotProgress /> : 'Subir DNI Frontal'}
-                </Button>
-              </div>
-            )}
-            </div>
-
-            {/* DNI Trasero */}
-            <div className="space-y-2">
-              <h3 className="text-sm font-medium text-foreground">DNI Trasero</h3>
-            {rearImageUrl ? (
-              <div className="space-y-2">
-                <img 
-                  src={rearImageUrl} 
-                  alt="DNI Trasero" 
-                  className="w-full max-w-md rounded-lg border border-border"
-                />
-                <input
-                  ref={rearInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleRearFileChange}
-                  className="hidden"
-                />
-                <Button
-                  variant="outlined"
-                  onClick={() => rearInputRef.current?.click()}
-                  disabled={isUploadingRear}
-                >
-                  {isUploadingRear ? <DotProgress /> : 'Reemplazar DNI Trasero'}
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="w-full max-w-md aspect-video rounded-lg flex items-center justify-center border border-dashed border-border">
-                  <IdCard className="h-12 w-12 text-muted-foreground" aria-hidden />
-                </div>
-                <input
-                  ref={rearInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleRearFileChange}
-                  className="hidden"
-                />
-                <Button
-                  variant="outlined"
-                  onClick={() => rearInputRef.current?.click()}
-                  disabled={isUploadingRear}
-                >
-                  {isUploadingRear ? <DotProgress /> : 'Subir DNI Trasero'}
-                </Button>
-              </div>
-            )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Diálogo de Verificación */}
-      {showVerifyDialog && (
-        <Dialog
-          open={showVerifyDialog}
-          onClose={() => setShowVerifyDialog(false)}
-          title="Confirmar Verificación"
-          size="sm"
-          actions={
-            <div className="flex gap-2 justify-end">
-              <Button variant="outlined" onClick={() => setShowVerifyDialog(false)}>
-                Cancelar
-              </Button>
-              <Button variant="primary" onClick={handleVerify}>
-                Verificar
-              </Button>
-            </div>
-          }
-        >
-          <p className="text-foreground">
-            ¿Está seguro que desea verificar a <strong>{person.name || 'esta persona'}</strong>?
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
-            Esta acción confirmará que ha revisado los documentos de identificación y valida la identidad de la persona.
-          </p>
-        </Dialog>
-      )}
-
-      {/* Diálogo de Desverificación */}
-      {showUnverifyDialog && (
-        <Dialog
-          open={showUnverifyDialog}
-          onClose={() => setShowUnverifyDialog(false)}
-          title="Remover Verificación"
-          size="sm"
-          actions={
-            <div className="flex gap-2 justify-end">
-              <Button variant="outlined" onClick={() => setShowUnverifyDialog(false)}>
-                Cancelar
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleUnverify}
-                className="bg-red-500 hover:bg-red-600"
-              >
-                Remover Verificación
-              </Button>
-            </div>
-          }
-        >
-          <p className="text-foreground">
-            ¿Está seguro que desea remover la verificación de <strong>{person.name || 'esta persona'}</strong>?
-          </p>
-          <p className="text-muted-foreground text-sm mt-2">
-            Esta acción quitará el estado verificado de la persona.
-          </p>
-        </Dialog>
-      )}
-
     </div>
   );
 }

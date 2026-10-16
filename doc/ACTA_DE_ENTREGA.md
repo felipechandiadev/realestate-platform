@@ -176,3 +176,15 @@ Al firmar, las partes declaran que el sistema descrito se encuentra entregado en
 |---|---|---|---|---|
 | Entrega | | Desarrollo | | |
 | Recibe | | Bravo Shott Propiedades | | |
+
+
+DE:
+JUAN FRANCISCO FUENTEALBA GUZMÁN
+DIRECTOR SEGURIDAD PÚBLICA
+PARA:
+KARLA GUZMAN GUZMAN DIRECTOR (S) DE RECURSOS HUMANOS  
+Por medio del presente, vengo en certificar que la funcionaria regida por el Código del Trabajo, doña MARÍA ISABEL CASTILLO VARAS, C.N.I. N.º 14.442.094-2,
+cumplió íntegramente su jornada laboral correspondiente a los días 05/08/2026, en horario de entrada, y 11/09/2026, en horario de salida.
+Se deja constancia de que la falta de marcación registrada en el reporte de asistencia se debió a que el dispositivo de lectura biométrica no efectuó correctamente la captura de la marcación correspondiente, pese a haberse realizado el intento de registro.
+Por lo anterior, se extiende el presente certificado con el objeto de justificar la falta de registro biométrico de la entrada correspondiente al día 05/08/2026 y de la salida correspondiente al día 11/09/2026, dejando constancia de que la funcionaria cumplió íntegramente con su jornada laboral.
+Se extiende el presente certificado para los fines administrativos que correspondan.

@@ -11,7 +11,7 @@ export default function TestimonialsBand({ testimonials, limit = 4 }: Testimonia
   if (!items.length) return null
 
   return (
-    <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
+    <section id="testimonials" className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10">
       <div className="mb-8 text-center">
         <h2 className="text-2xl sm:text-3xl font-bold text-primary">Testimonios</h2>
         <p className="text-sm text-muted-foreground mt-2 max-w-2xl mx-auto">

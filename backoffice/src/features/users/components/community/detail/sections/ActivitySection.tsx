@@ -1,19 +1,11 @@
 'use client';
 
 import type { CommunityUserDetailHeader } from '@/features/users/actions/users.action';
+import { formatDate } from '../formatDate';
 
 type ActivitySectionProps = {
   header: CommunityUserDetailHeader;
 };
-
-function formatDate(value?: string | null) {
-  if (!value) return null;
-  try {
-    return new Date(value).toLocaleString('es-CL');
-  } catch {
-    return value;
-  }
-}
 
 export function ActivitySection({ header }: ActivitySectionProps) {
   const events: { id: string; label: string; at: string }[] = [];

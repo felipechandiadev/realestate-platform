@@ -5,6 +5,7 @@ import { PropertyRepository } from '../../domain/property.repository';
 import { CreatePropertyDto } from '../../dto/property.dto';
 import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../../../shared/enums/property-operation-type.enum';
+import { normalizeOtherFeatures } from '../../domain/other-features';
 
 @Injectable()
 export class CreatePropertyUseCase {
@@ -55,6 +56,11 @@ export class CreatePropertyUseCase {
       createPropertyDto.operationType,
     );
 
+    const otherFeatures =
+      createPropertyDto.otherFeatures !== undefined
+        ? normalizeOtherFeatures(createPropertyDto.otherFeatures)
+        : undefined;
+
     const property = this.propertyRepository.create({
       ...createPropertyDto,
       code,
@@ -77,6 +83,7 @@ export class CreatePropertyUseCase {
         (createPropertyDto as any).propertyType ||
         undefined,
       status: createPropertyDto.status || PropertyStatus.REQUEST,
+      otherFeatures,
       createdAt: new Date(),
       lastModifiedAt: new Date(),
     });

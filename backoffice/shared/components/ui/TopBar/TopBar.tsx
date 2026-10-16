@@ -144,17 +144,6 @@ const TopBar: React.FC<TopBarProps> = ({
                 ariaLabel="Abrir menú"
                 data-test-id="top-bar-menu-button"
               />
-              {logoSrc && !logoError && (
-                <Image
-                  src={logoSrc}
-                  alt={title ? `Logo de ${title}` : 'Logo'}
-                  width={40}
-                  height={40}
-                  className="h-10 w-10 object-contain"
-                  data-test-id="top-bar-logo"
-                  onError={() => setLogoError(true)}
-                />
-              )}
               {title ? (
                 <span className="text-lg font-bold leading-tight tracking-tight text-foreground" data-test-id="top-bar-title">
                   {title}
@@ -192,6 +181,18 @@ const TopBar: React.FC<TopBarProps> = ({
                     </span>
                   )}
                 </div>
+              )}
+
+              {logoSrc && !logoError && (
+                <Image
+                  src={logoSrc}
+                  alt={title ? `Logo de ${title}` : 'Logo'}
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 shrink-0 object-contain"
+                  data-test-id="top-bar-logo"
+                  onError={() => setLogoError(true)}
+                />
               )}
             </div>
           </header>

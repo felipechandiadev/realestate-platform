@@ -1,9 +1,11 @@
 'use client';
 import React, { useMemo, useState } from 'react';
 import RentMoreButton from './RentMoreButton';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { CollectionGrid, DataGrid, type DataGridColumn } from "@realestate/ui";
-import { env } from '@/lib/env';
+import { useAlert } from '@/providers/AlertContext';
+import { downloadExcelFile, readGridExportParams } from '@/shared/lib/data-grid-export';
+import { exportGridExcel } from '@/shared/lib/fetch-grid-excel';
 import type { RentPropertyGridRow } from '@/features/properties/actions/properties.action';
 import { CreatePropertyDialog } from '@/features/properties/components/dialogs';
 import { PropertiesDeleteButton } from '@/features/properties/components/shared';
@@ -57,8 +59,33 @@ function mapRow(row: any) {
 
 export default function RentGrid({ rows, totalRows, page = 1, limit = 25, title }: RentGridProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const alert = useAlert();
   const [view] = usePropertyViewMode(PROPERTY_VIEW_STORAGE_KEYS.rent);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleExportExcel = async () => {
+    const params = readGridExportParams(searchParams);
+    const result = await exportGridExcel(
+      'properties-rent',
+      {
+        sort: params.sort,
+        sortField: params.sortField,
+        search: params.search,
+        filters: params.filters,
+        filtration: params.filtration ? 'true' : undefined,
+        pagination: 'false',
+        status: 'ALL',
+      },
+      'propiedades-en-arriendo.xlsx',
+    );
+    if (!('base64' in result)) {
+      alert.showAlert({ message: result.error || 'Error al exportar', type: 'error' });
+      return;
+    }
+    await downloadExcelFile(result.filename, result.base64);
+    alert.showAlert({ message: 'Exportado a Excel', type: 'success', duration: 3000 });
+  };
 
   const columns: DataGridColumn[] = [
     { field: 'code', headerName: 'Código', width: 140, sortable: true, filterable: true },
@@ -141,23 +168,6 @@ export default function RentGrid({ rows, totalRows, page = 1, limit = 25, title 
     },
   ];
 
-  const excelEndpoint = `${env.backendApiUrl}/properties/grid-rent/excel`;
-  const excelFields = [
-    'id',
-    'code',
-    'title',
-    'status',
-    'isFeatured',
-    'operationType',
-    'typeName',
-    'creatorName',
-    'assignedAgentName',
-    'city',
-    'state',
-    'price',
-    'createdAt',
-  ].join(',');
-
   // Aplica el mapeo antes de pasar los datos al DataGrid
   const mappedRows = rows.map(mapRow);
   const cardItems = useMemo(
@@ -216,9 +226,8 @@ export default function RentGrid({ rows, totalRows, page = 1, limit = 25, title 
           fillViewport
           pinActionsColumn
           data-test-id="rent-properties-grid"
-          excelUrl={excelEndpoint}
           limit={limit}
-          excelFields={excelFields}
+          onExportExcel={handleExportExcel}
           onAddClick={() => setDialogOpen(true)}
         />
       )}

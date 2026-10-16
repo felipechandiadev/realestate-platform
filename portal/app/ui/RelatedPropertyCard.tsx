@@ -4,6 +4,7 @@ import React from 'react';
 import { MapPin, Bed, Bath, Maximize2, ParkingSquare } from 'lucide-react';
 import { env } from '@/lib/env';
 import Link from 'next/link';
+import { pickImageVariant } from '@/shared/lib/pick-image-variant';
 
 type Currency = 'CLP' | 'UF';
 type OperationType = 'SALE' | 'RENT';
@@ -13,6 +14,11 @@ type MediaItem = {
   url: string;
   type?: string;
   format?: string;
+  variants?: Array<{
+    variantType: string;
+    format?: string;
+    url?: string;
+  }>;
 };
 
 type PropertyTypeLite = {
@@ -78,21 +84,21 @@ function formatPrice(price: number, currency: Currency): string {
 }
 
 function getMainImage(property: RelatedProperty): string {
-  // Try mainImageUrl first
+  if (property.multimedia && property.multimedia.length > 0) {
+    const firstImage =
+      property.multimedia.find(
+        (m) => m.type === 'PROPERTY_IMG' || m.format === 'IMG',
+      ) || property.multimedia[0];
+    if (firstImage) {
+      const picked = pickImageVariant(firstImage, 'thumb', firstImage.url);
+      const normalized = normalizeMediaUrl(picked);
+      if (normalized) return normalized;
+    }
+  }
+
   if (property.mainImageUrl) {
     const normalized = normalizeMediaUrl(property.mainImageUrl);
     if (normalized) return normalized;
-  }
-
-  // Try first image from multimedia
-  if (property.multimedia && property.multimedia.length > 0) {
-    const firstImage = property.multimedia.find(
-      (m) => m.type === 'PROPERTY_IMG' || m.format === 'IMG'
-    );
-    if (firstImage) {
-      const normalized = normalizeMediaUrl(firstImage.url);
-      if (normalized) return normalized;
-    }
   }
 
   return FALLBACK_IMAGE_DATA_URL;
@@ -111,7 +117,10 @@ export default function RelatedPropertyCard({ property }: RelatedPropertyCardPro
     >
       <div className="bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow overflow-hidden h-full flex flex-col">
         {/* Image */}
-        <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted">
+        <div
+          className="relative w-full aspect-[4/3] overflow-hidden"
+          style={{ backgroundColor: '#e5e7eb' }}
+        >
           <img
             src={imageUrl}
             alt={property.title}

@@ -56,7 +56,16 @@ interface FeaturedPropertiesListProps {
   properties: PropertyFromAPI[];
   pagination?: PaginationData;
   isLoading?: boolean;
+  /** Desktop grid columns (1–4) */
+  columns?: number;
 }
+
+const COL_CLASS: Record<number, string> = {
+  1: 'md:grid-cols-1',
+  2: 'md:grid-cols-2',
+  3: 'md:grid-cols-3',
+  4: 'md:grid-cols-4',
+};
 
 const PaginationControls: React.FC<{
   pagination: PaginationData;
@@ -141,18 +150,18 @@ export default function FeaturedPropertiesList({
   properties,
   pagination,
   isLoading: initialIsLoading = false,
+  columns = 3,
 }: FeaturedPropertiesListProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(initialIsLoading);
+  const colClass = COL_CLASS[Math.min(4, Math.max(1, columns))] ?? COL_CLASS[3];
 
   const handlePageChange = useCallback(async (newPage: number) => {
     setIsLoading(true);
     try {
-      // Actualizar URL con el parámetro featured_page
-      const params = new URLSearchParams();
+      const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
       params.set('featured_page', newPage.toString());
-      
-      router.push(`?${params.toString()}`);
+      router.push(`?${params.toString()}`, { scroll: false });
     } catch (error) {
       console.error('Error changing featured page:', error);
     } finally {
@@ -163,7 +172,7 @@ export default function FeaturedPropertiesList({
   return (
     <div className="w-full relative z-0">
       <div
-        className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${
+        className={`grid grid-cols-1 gap-6 transition-opacity duration-200 ${colClass} ${
           isLoading ? 'opacity-70' : 'opacity-100'
         }`}
       >
@@ -186,6 +195,9 @@ export default function FeaturedPropertiesList({
             builtSquareMeters: property.builtSquareMeters ?? property.totalArea ?? null,
             landSquareMeters: property.landSquareMeters ?? null,
             parkingSpaces: property.parkingSpaces ?? null,
+            otherFeatures: Array.isArray((property as { otherFeatures?: string[] }).otherFeatures)
+              ? (property as { otherFeatures?: string[] }).otherFeatures
+              : [],
             isFeatured: property.isFeatured,
           };
 

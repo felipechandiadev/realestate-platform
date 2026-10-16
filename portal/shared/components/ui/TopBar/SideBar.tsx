@@ -180,7 +180,11 @@ const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose,
         {logoUrl ? (
           <div className="">
             {(!logoLoaded || logoError) && (
-              <div className="h-20 w-20 bg-neutral-300 rounded-lg flex items-center justify-center mx-auto mb-2" data-test-id="side-bar-logo-skeleton">
+              <div
+                className="h-20 w-20 rounded-lg flex items-center justify-center mx-auto mb-2"
+                style={{ backgroundColor: '#d1d5db' }}
+                data-test-id="side-bar-logo-skeleton"
+              >
                 {logoError && (
                   <ImageOff className="text-neutral-400" size={32} />
                 )}

@@ -22,6 +22,7 @@ import React, { useState, useEffect } from 'react';
 import { TextField } from '@realestate/ui';
 import { Button } from '@realestate/ui';
 import { DotProgress } from "@realestate/ui";
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots';
 import MultimediaUpdater from '@/shared/components/ui/FileUploader/MultimediaUpdater';
 import { getAboutUs, updateAboutUs, createDefaultAboutUs } from '@/features/cms/actions/aboutUs.action';
 import { useAlert } from '@/shared/hooks/useAlert';
@@ -127,9 +128,7 @@ export default function AboutUsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <DotProgress />
-      </div>
+      <PageLoadingDots />
     );
   }
 
@@ -240,7 +239,7 @@ export default function AboutUsPage() {
           <Button onClick={handleSubmit} disabled={isSaving}>
             {isSaving ? (
               <>
-                <DotProgress />
+                <DotProgress size={12} count={3} variant="wave" />
                 Guardando...
               </>
             ) : (

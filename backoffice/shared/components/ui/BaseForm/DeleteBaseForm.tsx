@@ -113,7 +113,7 @@ const DeleteBaseForm: React.FC<DeleteBaseFormProps> = ({
                                 className="border border-red-500 text-red-600 bg-white"
                             >
                                 <div className="flex items-center justify-center min-h-[20px]">
-                                    <DotProgress size={12} />
+                                    <DotProgress size={12} count={3} variant="wave" />
                                 </div>
                             </Button>
                         ) : (

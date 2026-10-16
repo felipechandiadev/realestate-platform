@@ -20,11 +20,30 @@ import { Card } from "@realestate/ui";
 import { IconButton } from "@realestate/ui";
 import { Dialog } from "@realestate/ui";
 import { Switch } from "@realestate/ui";
+import { Alert, Stepper, type StepperStepItem } from '@realestate/ui';
 
 interface CreateSaleContractFormProps {
   onClose: () => void;
   onSuccess?: () => void;
 }
+
+const moneySymbol = (curr: 'CLP' | 'UF' | string = 'CLP') => (curr === 'UF' ? 'UF' : '$');
+
+const formatCurrency = (amount: number, curr: 'CLP' | 'UF' | string = 'CLP') => {
+  const safeAmount = Number.isFinite(amount) ? amount : 0;
+  return `${moneySymbol(curr)} ${safeAmount.toLocaleString('es-CL')}`;
+};
+
+const SALE_CONTRACT_STEPS: StepperStepItem[] = [
+  { id: 'property', title: 'Propiedad', description: 'Elige la propiedad y el agente' },
+  { id: 'terms', title: 'Condiciones', description: 'Precio de venta y moneda' },
+  { id: 'people', title: 'Participantes', description: 'Vendedor, comprador y otros roles' },
+  { id: 'commission', title: 'Comisiones', description: 'Porcentaje del comprador y del vendedor sobre el precio' },
+  { id: 'payments', title: 'Pagos', description: 'Comisiones y pagos programados' },
+  { id: 'close', title: 'Cierre', description: 'Documentos requeridos y observaciones' },
+];
+
+const LAST_SALE_STEP = SALE_CONTRACT_STEPS.length - 1;
 
 interface ContractPerson {
   personId: string;
@@ -62,8 +81,11 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<'CLP' | 'UF'>('CLP');
   const [ufValue, setUfValue] = useState('');
-  const [commissionPercent, setCommissionPercent] = useState('3.5');
+  const [buyerCommissionPercent, setBuyerCommissionPercent] = useState('1.75');
+  const [sellerCommissionPercent, setSellerCommissionPercent] = useState('1.75');
   const [description, setDescription] = useState('');
+  const [stepIndex, setStepIndex] = useState(0);
+  const [stepError, setStepError] = useState<string | null>(null);
 
   // Related data
   const [properties, setProperties] = useState<SalePropertyGridRow[]>([]);
@@ -255,37 +277,64 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
     setContractDocuments(contractDocuments.filter((_, i) => i !== index));
   };
 
-  const calculateCommission = () => {
+  const saleBaseClp = () => {
     const amountNum = parseFloat(amount) || 0;
     const ufValueNum = parseFloat(ufValue) || 0;
-    const commissionPercentNum = parseFloat(commissionPercent) || 0;
+    return currency === 'UF' ? amountNum * ufValueNum : amountNum;
+  };
 
-    if (currency === 'UF' && ufValueNum > 0) {
-      return Math.round(amountNum * ufValueNum * (commissionPercentNum / 100));
+  const commissionClp = (percent: string) => {
+    const percentNum = parseFloat(percent) || 0;
+    return Math.round(saleBaseClp() * (percentNum / 100));
+  };
+
+  const validateStep = (index: number): string | null => {
+    if (index === 0) {
+      if (!propertyId) return 'Selecciona una propiedad.';
+      if (!assignedAgentId) return 'Selecciona el agente asignado.';
     }
-    return Math.round(amountNum * (commissionPercentNum / 100));
+    if (index === 1) {
+      const saleAmount = parseFloat(amount);
+      if (!Number.isFinite(saleAmount) || saleAmount <= 0) return 'Ingresa el monto de venta.';
+      if (currency === 'UF' && !(parseFloat(ufValue) > 0)) return 'Ingresa el valor de la UF.';
+    }
+    if (index === 2) {
+      const hasSeller = contractPersons.some((person) => person.role === ContractRole.SELLER && person.personId);
+      const hasBuyer = contractPersons.some((person) => person.role === ContractRole.BUYER && person.personId);
+      if (!hasSeller || !hasBuyer) return 'Elige un vendedor y un comprador.';
+      if (contractPersons.some((person) => !person.personId)) return 'Completa todas las personas agregadas.';
+    }
+    if (index === 3) {
+      const buyer = parseFloat(buyerCommissionPercent);
+      const seller = parseFloat(sellerCommissionPercent);
+      if (!Number.isFinite(buyer) || buyer < 0) return 'Ingresa la comisión del comprador.';
+      if (!Number.isFinite(seller) || seller < 0) return 'Ingresa la comisión del vendedor.';
+    }
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (loading) return;
 
-    if (!propertyId || !assignedAgentId || !amount || contractPersons.some(p => !p.personId)) {
-      alert.showAlert({
-        message: 'Por favor complete todos los campos requeridos (propiedad, agente asignado, monto y participantes)',
-        type: 'error',
-        duration: 4000,
-      });
+    if (stepIndex < LAST_SALE_STEP) {
+      const error = validateStep(stepIndex);
+      if (error) {
+        setStepError(error);
+        return;
+      }
+      setStepError(null);
+      setStepIndex((current) => Math.min(current + 1, LAST_SALE_STEP));
       return;
     }
 
-    if (currency === 'UF' && !ufValue) {
-      alert.showAlert({
-        message: 'Debe especificar el valor de la UF cuando la moneda es UF',
-        type: 'error',
-        duration: 4000,
-      });
-      return;
+    for (let index = 0; index <= 3; index += 1) {
+      const error = validateStep(index);
+      if (error) {
+        setStepIndex(index);
+        setStepError(error);
+        return;
+      }
     }
 
     setLoading(true);
@@ -301,6 +350,32 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
         return;
       }
 
+      const buyerPercent = parseFloat(buyerCommissionPercent) || 0;
+      const sellerPercent = parseFloat(sellerCommissionPercent) || 0;
+      const buyerAmount = commissionClp(buyerCommissionPercent);
+      const sellerAmount = commissionClp(sellerCommissionPercent);
+      const commissionDate = new Date().toISOString().split('T')[0];
+      const commissionPayments = [
+        buyerAmount > 0
+          ? {
+              amount: buyerAmount,
+              date: commissionDate,
+              type: PaymentType.COMMISSION_INCOME,
+              description: 'Comisión comprador',
+              isAgencyRevenue: true,
+            }
+          : null,
+        sellerAmount > 0
+          ? {
+              amount: sellerAmount,
+              date: commissionDate,
+              type: PaymentType.COMMISSION_INCOME,
+              description: 'Comisión vendedor',
+              isAgencyRevenue: true,
+            }
+          : null,
+      ].filter((payment): payment is NonNullable<typeof payment> => payment !== null);
+
       const contractData = {
         operation: 'COMPRAVENTA' as ContractOperationType,
         propertyId,
@@ -308,16 +383,26 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
         amount: parseFloat(amount),
         currency,
         ufValue: currency === 'UF' ? parseFloat(ufValue) : undefined,
-        commissionPercent: parseFloat(commissionPercent),
-        description,
+        commissionPercent: buyerPercent + sellerPercent,
+        commissionAmount: buyerAmount + sellerAmount,
+        tenantCommissionPercent: buyerPercent,
+        tenantCommissionAmount: buyerAmount,
+        landlordCommissionPercent: sellerPercent,
+        landlordCommissionAmount: sellerAmount,
+        description: `${description}
+Comisión comprador: ${buyerPercent}% (${formatCurrency(buyerAmount, 'CLP')})
+Comisión vendedor: ${sellerPercent}% (${formatCurrency(sellerAmount, 'CLP')})`.trim(),
         people: contractPersons.filter(p => p.personId),
-        payments: payments.map(p => ({
-          amount: p.amount,
-          date: p.date,
-          type: p.type,
-          description: p.description,
-          isAgencyRevenue: p.isAgencyRevenue,
-        })),
+        payments: [
+          ...commissionPayments,
+          ...payments.map(p => ({
+            amount: p.amount,
+            date: p.date,
+            type: p.type,
+            description: p.description,
+            isAgencyRevenue: p.isAgencyRevenue,
+          })),
+        ],
         documents: contractDocuments.map(doc => ({
           documentTypeId: doc.documentTypeId,
           personId: doc.personId,
@@ -367,11 +452,28 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
     );
   }
 
-  const commissionAmount = calculateCommission();
+  const buyerAmount = commissionClp(buyerCommissionPercent);
+  const sellerAmount = commissionClp(sellerCommissionPercent);
+  const commissionAmount = buyerAmount + sellerAmount;
+
+  const goToStep = (index: number) => {
+    setStepError(null);
+    setStepIndex(index);
+  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Property Selection */}
+      <Stepper
+        steps={SALE_CONTRACT_STEPS}
+        activeIndex={stepIndex}
+        allowClickCompletedSteps
+        onCompletedStepClick={goToStep}
+        data-test-id="create-sale-contract-stepper"
+      >
+        {stepError ? <Alert variant="error">{stepError}</Alert> : null}
+
+        {stepIndex === 0 && (
+      <>
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-4">Propiedad</h3>
         <AutoComplete
@@ -441,17 +543,19 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
           required
         />
       </Card>
+      </>
+        )}
 
-      {/* Financial Information */}
+        {stepIndex === 1 && (
       <Card className="p-4">
         <h3 className="text-lg font-semibold mb-4">Información Financiera</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <TextField
             label="Monto de Venta"
-            type="number"
+            type="currency"
+            currencySymbol={moneySymbol(currency)}
             value={amount}
-          onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setAmount(e.target.value)}
-            startIcon="attach_money"
+            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setAmount(e.target.value)}
             required
           />
 
@@ -468,36 +572,19 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
           {currency === 'UF' && (
             <TextField
               label="Valor UF"
-              type="number"
-              step="0.01"
+              type="currency"
+              currencySymbol="$"
               value={ufValue}
               onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setUfValue(e.target.value)}
               placeholder="Ej: 38000"
               required
             />
           )}
-
-          <TextField
-            label="Comisión (%)"
-            type="number"
-            step="0.1"
-            value={commissionPercent}
-            onChange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setCommissionPercent(e.target.value)}
-            placeholder="3.5"
-            required
-          />
         </div>
-
-        {amount && commissionPercent && (
-          <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-            <div className="text-sm text-green-700 dark:text-green-300">
-              <strong>Comisión calculada:</strong> CLP {commissionAmount.toLocaleString('es-CL')}
-            </div>
-          </div>
-        )}
       </Card>
+        )}
 
-      {/* Contract Participants */}
+        {stepIndex === 2 && (
       <Card className="p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Participantes del Contrato</h3>
@@ -569,8 +656,74 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
           ))}
         </div>
       </Card>
+        )}
 
-      {/* Scheduled Payments */}
+        {stepIndex === 3 && (
+          <Card className="p-4 space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold">Comisiones</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Cada porcentaje se calcula sobre el precio de venta
+                {currency === 'UF' ? ' convertido a pesos con el valor UF' : ''}.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <TextField
+                label="Comisión comprador (%)"
+                type="number"
+                step="0.01"
+                min="0"
+                value={buyerCommissionPercent}
+                onChange={(e) => setBuyerCommissionPercent(e.target.value)}
+                required
+              />
+              <TextField
+                label="Comisión vendedor (%)"
+                type="number"
+                step="0.01"
+                min="0"
+                value={sellerCommissionPercent}
+                onChange={(e) => setSellerCommissionPercent(e.target.value)}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 rounded-lg bg-blue-50 p-3 text-sm dark:bg-blue-900/20 md:grid-cols-3">
+              <div>
+                <strong>Comprador:</strong>
+                <br />
+                $ {buyerAmount.toLocaleString('es-CL')}
+              </div>
+              <div>
+                <strong>Vendedor:</strong>
+                <br />
+                $ {sellerAmount.toLocaleString('es-CL')}
+              </div>
+              <div>
+                <strong>Total empresa:</strong>
+                <br />
+                $ {commissionAmount.toLocaleString('es-CL')}
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {stepIndex === 4 && (
+          <>
+      <Card className="p-4">
+        <h3 className="text-lg font-semibold mb-3">Comisiones de la empresa</h3>
+        {buyerAmount <= 0 && sellerAmount <= 0 ? (
+          <p className="text-sm text-muted-foreground">No hay comisiones para cobrar en este contrato.</p>
+        ) : (
+          <div className="space-y-2 text-sm">
+            {buyerAmount > 0 && (
+              <p>Comisión comprador: $ {buyerAmount.toLocaleString('es-CL')}</p>
+            )}
+            {sellerAmount > 0 && (
+              <p>Comisión vendedor: $ {sellerAmount.toLocaleString('es-CL')}</p>
+            )}
+          </div>
+        )}
+      </Card>
       <Card className="p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Pagos Programados</h3>
@@ -607,7 +760,7 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
                     type="currency"
                     value={payment.amount.toString()}
                     onChange={(e) => handlePaymentChange(index, 'amount', parseFloat(e.target.value))}
-                    currencySymbol={currency}
+                    currencySymbol={currency === 'UF' ? 'UF' : '$'}
                   />
 
                   <TextField
@@ -652,8 +805,11 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
           </div>
         )}
       </Card>
+          </>
+        )}
 
-      {/* Required Documents */}
+        {stepIndex === 5 && (
+          <>
       <Card className="p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Documentos Requeridos</h3>
@@ -784,9 +940,11 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
           placeholder="Observaciones adicionales del contrato..."
         />
       </Card>
+          </>
+        )}
+      </Stepper>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-3 pt-4 border-t">
+      <div className="flex flex-wrap items-center justify-end gap-3 border-t pt-4">
         <Button
           type="button"
           variant="outlined"
@@ -796,16 +954,26 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
           Cancelar
         </Button>
         <Button
-          type="submit"
-          variant="primary"
-          disabled={loading}
+          type="button"
+          variant="outlined"
+          onClick={() => goToStep(Math.max(stepIndex - 1, 0))}
+          disabled={loading || stepIndex <= 0}
         >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-          ) : (
-            'Crear Contrato'
-          )}
+          Atrás
         </Button>
+        {stepIndex < LAST_SALE_STEP ? (
+          <Button type="submit" variant="primary" disabled={loading}>
+            Siguiente
+          </Button>
+        ) : (
+          <Button type="submit" variant="primary" disabled={loading}>
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              'Crear Contrato'
+            )}
+          </Button>
+        )}
       </div>
     </form>
   );

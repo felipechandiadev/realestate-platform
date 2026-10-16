@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAlert } from '@/providers/AlertContext';
 import { Users } from 'lucide-react';
-import { TextField } from '@realestate/ui';
+import { TextField, DataGrid, type DataGridColumn } from '@realestate/ui';
 import { IconButton } from "@realestate/ui";
-import AgentCard from './AgentCard';
+import { downloadExcelFile, readGridExportParams } from '@/shared/lib/data-grid-export';
+import { exportGridExcel } from '@/shared/lib/fetch-grid-excel';
 import CreateAgentFormDialog from './CreateAgentFormDialog';
 import UpdateAgentDialog from './UpdateAgentDialog';
 import DeleteAgentDialog from './DeleteAgentDialog';
@@ -15,6 +16,44 @@ import type { AgentType } from './types';
 interface AgentsContentProps {
   initialAgents: AgentType[];
   initialSearch?: string;
+  totalRows?: number;
+}
+
+function agentColumns(
+  onEdit: (agent: AgentType) => void,
+  onDelete: (agent: AgentType) => void,
+): DataGridColumn[] {
+  return [
+    { field: 'email', headerName: 'Email', flex: 1.2, minWidth: 200, sortable: true, filterable: true },
+    {
+      field: 'name',
+      headerName: 'Nombre',
+      flex: 1,
+      minWidth: 160,
+      sortable: true,
+      filterable: true,
+      renderCell: ({ row }) => {
+        const first = row.personalInfo?.firstName || '';
+        const last = row.personalInfo?.lastName || '';
+        return `${first} ${last}`.trim() || row.username || row.email;
+      },
+    },
+    { field: 'status', headerName: 'Estado', width: 140, sortable: true, filterable: true },
+    { field: 'createdAt', headerName: 'Fecha creación', width: 180, sortable: true, filterable: true },
+    {
+      field: 'actions',
+      headerName: '',
+      width: 160,
+      sortable: false,
+      filterable: false,
+      renderCell: ({ row }) => (
+        <div className="flex gap-2">
+          <button type="button" className="text-sm text-primary" onClick={() => onEdit(row)}>Editar</button>
+          <button type="button" className="text-sm text-red-600" onClick={() => onDelete(row)}>Eliminar</button>
+        </div>
+      ),
+    },
+  ];
 }
 
 /**
@@ -29,7 +68,8 @@ interface AgentsContentProps {
  */
 export function AgentsContent({ 
   initialAgents, 
-  initialSearch = '' 
+  initialSearch = '',
+  totalRows,
 }: AgentsContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -212,16 +252,34 @@ export function AgentsContent({
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
-            {filteredAgents.map((agent) => (
-              <AgentCard
-                key={agent.id}
-                agent={agent}
-                onEdit={handleEditAgent}
-                onDelete={handleDeleteAgent}
-              />
-            ))}
-          </div>
+          <DataGrid
+            columns={agentColumns(handleEditAgent, handleDeleteAgent)}
+            rows={filteredAgents}
+            totalRows={totalRows ?? filteredAgents.length}
+            showSearch={false}
+            fillViewport
+            onExportExcel={async () => {
+              const params = readGridExportParams(searchParams);
+              const result = await exportGridExcel(
+                'agents',
+                {
+                  sort: params.sort,
+                  sortField: params.sortField,
+                  search: params.search || search,
+                  filters: params.filters,
+                  filtration: params.filtration ? 'true' : undefined,
+                  pagination: 'false',
+                },
+                'agentes.xlsx',
+              );
+              if (!('base64' in result)) {
+                alert.showAlert?.({ message: result.error || 'Error al exportar', type: 'error' });
+                return;
+              }
+              await downloadExcelFile(result.filename, result.base64);
+              alert.showAlert?.({ message: 'Exportado a Excel', type: 'success', duration: 3000 });
+            }}
+          />
         )}
       </div>
 

@@ -48,6 +48,15 @@ export interface Property {
     format?: string;
     width?: number | null;
     height?: number | null;
+    variants?: Array<{
+      id?: string;
+      variantType: string;
+      format?: string;
+      width?: number;
+      height?: number;
+      size?: number;
+      url: string;
+    }>;
   }>;
   mainImageUrl?: string;
   // Additional data
@@ -57,6 +66,7 @@ export interface Property {
   bathrooms?: number;
   parkingSpaces?: number;
   floors?: number;
+  otherFeatures?: string[];
   publishedAt?: string;
   // Favorites
   favorites?: Array<{ userId: string; addedAt: string }>;

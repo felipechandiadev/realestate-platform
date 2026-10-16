@@ -11,8 +11,11 @@ import {
   DefaultValuePipe,
   ParseIntPipe,
   Res,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { Response } from 'express';
+import type { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -35,11 +38,25 @@ import {
 } from '../application/dto/notification.dto';
 import { ContactDto } from '../application/dto/contact.dto';
 import { NotificationType, NotificationSenderType } from '../domain/notification.entity';
+import { UserRole } from '../../users/domain/user.entity';
+
+type AuthenticatedRequest = Request & {
+  user?: { id?: string; sub?: string; role?: UserRole };
+};
 
 @Controller('notifications')
 @ApiTags('Notifications')
 @ApiBearerAuth()
 export class NotificationsController {
+  private assertCanAccessUserNotifications(req: AuthenticatedRequest, userId: string): void {
+    const actorId = req.user?.id ?? (typeof req.user?.sub === 'string' ? req.user.sub : undefined);
+    const role = req.user?.role;
+    const isStaff = role === UserRole.ADMIN || role === UserRole.AGENT;
+    if (actorId === userId || isStaff) {
+      return;
+    }
+    throw new ForbiddenException('No puedes acceder a las notificaciones de otro usuario');
+  }
     /**
      * Endpoint de prueba para verificar envío de correos (SOLO PARA DESARROLLO)
      */
@@ -256,7 +273,8 @@ export class NotificationsController {
   })
   @ApiParam({ name: 'userId', type: String })
   @Audit(AuditAction.READ, AuditEntityType.NOTIFICATION, 'Obtener notificaciones de usuario')
-  getNotificationsForUser(@Param('userId') userId: string) {
+  getNotificationsForUser(@Param('userId') userId: string, @Req() req: AuthenticatedRequest) {
+    this.assertCanAccessUserNotifications(req, userId);
     return this.notificationsService.getNotificationsForUser(userId);
   }
 
@@ -272,7 +290,8 @@ export class NotificationsController {
   })
   @ApiParam({ name: 'userId', type: String })
   @Audit(AuditAction.READ, AuditEntityType.NOTIFICATION, 'Obtener conteo de notificaciones no leídas')
-  async countUnread(@Param('userId') userId: string): Promise<number> {
+  async countUnread(@Param('userId') userId: string, @Req() req: AuthenticatedRequest): Promise<number> {
+    this.assertCanAccessUserNotifications(req, userId);
     return this.notificationsService.countUnread(userId);
   }
 
@@ -288,7 +307,8 @@ export class NotificationsController {
   })
   @ApiParam({ name: 'userId', type: String })
   @Audit(AuditAction.UPDATE, AuditEntityType.NOTIFICATION, 'Marcar todas las notificaciones como leídas')
-  markAllAsRead(@Param('userId') userId: string) {
+  markAllAsRead(@Param('userId') userId: string, @Req() req: AuthenticatedRequest) {
+    this.assertCanAccessUserNotifications(req, userId);
     return this.notificationsService.markAllAsRead(userId);
   }
 
@@ -335,6 +355,7 @@ export class NotificationsController {
   @Audit(AuditAction.READ, AuditEntityType.NOTIFICATION, 'Obtener grid de notificaciones de usuario')
   getUserGridNotifications(
     @Param('userId') userId: string,
+    @Req() req: AuthenticatedRequest,
     @Query('fields') fields?: string,
     @Query('sort') sort?: 'asc' | 'desc',
     @Query('sortField') sortField?: string,
@@ -345,6 +366,7 @@ export class NotificationsController {
     @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
     @Query('limit', new DefaultValuePipe(25), ParseIntPipe) limit?: number,
   ) {
+    this.assertCanAccessUserNotifications(req, userId);
     const filtrationBool = filtration === 'true';
     const paginationBool = pagination !== 'false'; // Default to true
 
@@ -377,6 +399,7 @@ export class NotificationsController {
   @Audit(AuditAction.READ, AuditEntityType.NOTIFICATION, 'Exportar grid de notificaciones a Excel')
   async exportUserGridExcel(
     @Param('userId') userId: string,
+    @Req() req: AuthenticatedRequest,
     @Query('fields') fields?: string,
     @Query('sort') sort?: 'asc' | 'desc',
     @Query('sortField') sortField?: string,
@@ -385,6 +408,7 @@ export class NotificationsController {
     @Query('filters') filters?: string,
     @Res() res?: Response,
   ) {
+    this.assertCanAccessUserNotifications(req, userId);
     const buffer = await this.notificationsService.exportUserGridNotificationsExcel(userId, {
       fields,
       sort,

@@ -1,7 +1,10 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { DataGrid, type DataGridColumn } from "@realestate/ui";
+import { downloadExcelFile, readGridExportParams } from '@/shared/lib/data-grid-export';
+import { exportGridExcel } from '@/shared/lib/fetch-grid-excel';
 import { IconButton } from "@realestate/ui";
 import type { DocumentEntity } from '@/features/contracts/actions/documents.action';
 import type { DocumentType } from '@/features/contracts/actions/documentTypes.action';
@@ -24,13 +27,28 @@ type DocumentsDataGridProps = {
 export default function DocumentsDataGrid(props: DocumentsDataGridProps) {
   const { rows, totalRows, errorMessage } = props;
   const { showAlert } = useAlert();
+  const searchParams = useSearchParams();
 
   const handleExportExcel = async () => {
-    showAlert({
-      message: 'La exportación a Excel para documentos estará disponible próximamente',
-      type: 'info',
-      duration: 4000,
-    });
+    const params = readGridExportParams(searchParams);
+    const result = await exportGridExcel(
+      'documents',
+      {
+        sort: params.sort,
+        sortField: params.sortField,
+        search: params.search,
+        filters: params.filters,
+        filtration: params.filtration ? 'true' : undefined,
+        pagination: 'false',
+      },
+      'documentos.xlsx',
+    );
+    if (!('base64' in result)) {
+      showAlert({ message: result.error || 'Error al exportar', type: 'error' });
+      return;
+    }
+    await downloadExcelFile(result.filename, result.base64);
+    showAlert({ message: 'Exportado a Excel', type: 'success', duration: 3000 });
   };
 
   const columns = useMemo<DataGridColumn[]>(() => [

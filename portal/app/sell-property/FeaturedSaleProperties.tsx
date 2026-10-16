@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import RelatedPropertyCard, { type RelatedProperty } from '@/app/ui/RelatedPropertyCard';
 import { getPublishedFeaturedPropertiesPublic } from '@/features/shared/properties/actions/properties.action';
+import { PORTAL_SKELETON } from '@/shared/components/ui/PortalSkeleton/portal-skeleton';
 
 const MAX_CARDS = 6;
 
@@ -11,28 +12,43 @@ const HEADING: Record<'SALE' | 'RENT', string> = {
   RENT: 'Propiedades destacadas en arriendo',
 };
 
+function SkeletonBar({
+  className,
+  color = PORTAL_SKELETON.base,
+}: {
+  className: string;
+  color?: string;
+}) {
+  return <div className={`animate-pulse rounded ${className}`} style={{ backgroundColor: color }} />;
+}
+
 function FeaturedPropertySkeleton() {
   return (
     <div
-      className="bg-card rounded-lg border border-border shadow-sm overflow-hidden h-full flex flex-col"
+      className="rounded-lg border border-gray-200 shadow-sm overflow-hidden h-full flex flex-col bg-white"
       aria-hidden
     >
-      <div className="relative w-full aspect-[4/3] overflow-hidden bg-muted">
-        <div className="absolute inset-0 animate-pulse bg-gray-200" />
-        <div className="absolute top-2 right-2 h-6 w-16 rounded-full bg-gray-300/80 animate-pulse" />
+      <div className="relative w-full aspect-[4/3] overflow-hidden" style={{ backgroundColor: PORTAL_SKELETON.soft }}>
+        <div
+          className="absolute inset-0 animate-pulse"
+          style={{
+            background: `linear-gradient(135deg, ${PORTAL_SKELETON.base} 0%, ${PORTAL_SKELETON.soft} 50%, ${PORTAL_SKELETON.base} 100%)`,
+          }}
+        />
+        <SkeletonBar className="absolute top-2 right-2 h-6 w-16 rounded-full" color={PORTAL_SKELETON.mid} />
       </div>
       <div className="p-4 flex flex-col flex-1 gap-2">
-        <div className="h-3 w-20 rounded bg-gray-200 animate-pulse" />
-        <div className="h-4 w-4/5 rounded bg-gray-200 animate-pulse" />
-        <div className="h-4 w-3/5 rounded bg-gray-200 animate-pulse" />
-        <div className="h-3 w-1/2 rounded bg-gray-200 animate-pulse" />
+        <SkeletonBar className="h-3 w-20" />
+        <SkeletonBar className="h-4 w-4/5" color={PORTAL_SKELETON.mid} />
+        <SkeletonBar className="h-4 w-3/5" />
+        <SkeletonBar className="h-3 w-1/2" color={PORTAL_SKELETON.soft} />
         <div className="mt-1 flex items-center gap-3">
-          <div className="h-3 w-8 rounded bg-gray-200 animate-pulse" />
-          <div className="h-3 w-8 rounded bg-gray-200 animate-pulse" />
-          <div className="h-3 w-12 rounded bg-gray-200 animate-pulse" />
+          <SkeletonBar className="h-3 w-8" />
+          <SkeletonBar className="h-3 w-8" />
+          <SkeletonBar className="h-3 w-12" />
         </div>
-        <div className="mt-auto pt-2 border-t border-border">
-          <div className="h-6 w-28 rounded bg-gray-200 animate-pulse" />
+        <div className="mt-auto pt-2 border-t border-gray-100">
+          <SkeletonBar className="h-6 w-28" color={PORTAL_SKELETON.mid} />
         </div>
       </div>
     </div>

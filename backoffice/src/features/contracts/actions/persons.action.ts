@@ -92,6 +92,8 @@ export interface ListPersonsParams {
   limit?: number
   sort?: 'asc' | 'desc'
   sortField?: string
+  filters?: string
+  filtration?: boolean
   city?: string
   state?: string
   country?: string
@@ -100,21 +102,23 @@ export interface ListPersonsParams {
 /**
  * Lista todas las personas con filtros y paginación
  */
-export async function listPersons(params?: ListPersonsParams): Promise<Person[]> {
+export async function listPersonsPage(params?: ListPersonsParams): Promise<{ data: Person[]; total: number }> {
   const session = await getServerSession(authOptions)
-  
+
   if (!session?.accessToken) {
     throw new Error('No authenticated')
   }
 
   try {
     const url = new URL(`${env.backendApiUrl}/people/all`)
-    
+
     if (params?.search) url.searchParams.set('search', params.search)
     if (params?.page) url.searchParams.set('page', params.page.toString())
     if (params?.limit) url.searchParams.set('limit', params.limit.toString())
     if (params?.sort) url.searchParams.set('sort', params.sort)
     if (params?.sortField) url.searchParams.set('sortField', params.sortField)
+    if (params?.filters) url.searchParams.set('filters', params.filters)
+    if (params?.filtration) url.searchParams.set('filtration', 'true')
     if (params?.city) url.searchParams.set('city', params.city)
     if (params?.state) url.searchParams.set('state', params.state)
     if (params?.country) url.searchParams.set('country', params.country)
@@ -132,11 +136,21 @@ export async function listPersons(params?: ListPersonsParams): Promise<Person[]>
       throw new Error(`Failed to fetch persons statistics: ${response.status}`)
     }
 
-    return response.json()
+    const payload = await response.json()
+    if (Array.isArray(payload)) {
+      return { data: payload as Person[], total: payload.length }
+    }
+    const data = Array.isArray(payload?.data) ? payload.data as Person[] : []
+    return { data, total: typeof payload?.total === 'number' ? payload.total : data.length }
   } catch (error) {
     console.error('Error fetching persons statistics:', error)
     throw error
   }
+}
+
+export async function listPersons(params?: ListPersonsParams): Promise<Person[]> {
+  const result = await listPersonsPage(params)
+  return result.data
 }
 
 /**

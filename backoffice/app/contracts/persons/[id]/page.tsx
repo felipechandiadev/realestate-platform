@@ -1,4 +1,6 @@
+import { Suspense } from 'react';
 import { getPerson } from '@/features/contracts/actions/persons.action';
+import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots';
 import PersonDetailView from '../ui/PersonDetailView';
 
 interface PageProps {
@@ -12,8 +14,8 @@ export default async function PersonDetailPage({ params }: PageProps) {
   const person = await getPerson(id);
 
   return (
-    <div className="p-6">
+    <Suspense fallback={<PageLoadingDots />}>
       <PersonDetailView person={person} />
-    </div>
+    </Suspense>
   );
 }

@@ -11,6 +11,7 @@ import {
   IsDateString,
   ValidateNested,
   IsBoolean,
+  Min,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import {
@@ -119,8 +120,38 @@ export class CreateContractDto {
   ufValue?: number; // Valor de la UF al momento de crear el contrato (requerido si currency es UF)
 
   @IsNumber()
-  @IsPositive()
-  commissionPercent: number; // Porcentaje de comisión
+  @Min(0)
+  commissionPercent: number; // Porcentaje de comisión (en arriendo, suma de ambas partes)
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  monthlyRent?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  commissionAmount?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  tenantCommissionPercent?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  tenantCommissionAmount?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  landlordCommissionPercent?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  landlordCommissionAmount?: number;
 
   @IsString()
   @IsOptional()
@@ -160,14 +191,39 @@ export class UpdateContractDto {
   ufValue?: number;
 
   @IsNumber()
-  @IsPositive()
+  @Min(0)
   @IsOptional()
   commissionPercent?: number;
 
   @IsNumber()
-  @IsPositive()
+  @Min(0)
   @IsOptional()
   commissionAmount?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  monthlyRent?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  tenantCommissionPercent?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  tenantCommissionAmount?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  landlordCommissionPercent?: number;
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  landlordCommissionAmount?: number;
 
   @IsEnum(ContractStatus)
   @IsOptional()
@@ -250,9 +306,17 @@ export class UploadContractDocumentDto {
   @IsUUID()
   contractId: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsUUID()
-  uploadedById: string;
+  uploadedById?: string;
+
+  @IsOptional()
+  @IsUUID()
+  paymentId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  personId?: string;
 
   @IsOptional()
   @IsUUID()

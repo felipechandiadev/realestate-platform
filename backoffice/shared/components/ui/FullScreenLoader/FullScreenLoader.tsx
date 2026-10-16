@@ -63,7 +63,7 @@ export default function FullScreenLoader({
         Servicios Inmobiliarios
       </p>
 
-      <DotProgress className="justify-center" />
+      <DotProgress className="justify-center" count={3} variant="wave" />
     </div>
   );
 }

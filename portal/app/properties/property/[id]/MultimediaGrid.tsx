@@ -20,12 +20,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { IconButton } from '@realestate/ui';
+import { pickImageVariant } from '@/shared/lib/pick-image-variant';
 
 interface MediaItem {
   id?: string;
   url: string;
   type?: string;
   format?: string;
+  variants?: Array<{
+    variantType: string;
+    format?: string;
+    url?: string;
+  }>;
 }
 
 interface MultimediaGridProps {
@@ -68,7 +74,8 @@ function LoadableMedia({
     <>
       {!loaded && (
         <div
-          className="absolute inset-0 animate-pulse bg-gray-200"
+          className="absolute inset-0 animate-pulse"
+          style={{ backgroundColor: '#e5e7eb' }}
           data-test-id="property-image-skeleton"
           aria-hidden
         />
@@ -122,20 +129,21 @@ export default function MultimediaGrid({
     }
     if (multimedia && multimedia.length > 0) {
       items.push(
-        ...multimedia.map((m) => ({
-          id: m.id,
-          url: m.url,
-          type: getMediaType(m),
-        }))
+        ...multimedia.map((m) => {
+          const mediaType = getMediaType(m);
+          const url =
+            mediaType === 'image'
+              ? pickImageVariant(m, 'detail', m.url) || m.url
+              : m.url;
+          return {
+            id: m.id,
+            url,
+            type: mediaType,
+            variants: m.variants,
+          };
+        }),
       );
     }
-    // Debug log
-    console.log('[MultimediaGrid] Debug:', {
-      mainImageUrl,
-      multimediaCount: multimedia?.length || 0,
-      allMediaCount: items.length,
-      items: items.map(i => ({ id: i.id, url: i.url?.substring(0, 50) })),
-    });
     return items;
   }, [mainImageUrl, multimedia]);
 
@@ -178,7 +186,8 @@ export default function MultimediaGrid({
     return (
       <div
         key={media.id || index}
-        className="relative w-full h-full bg-muted flex items-center justify-center cursor-pointer group overflow-hidden"
+        className="relative w-full h-full flex items-center justify-center cursor-pointer group overflow-hidden"
+        style={{ backgroundColor: '#e5e7eb' }}
         onClick={() => {
           setSelectedIndex(index);
           setIsModalOpen(true);
@@ -226,7 +235,7 @@ export default function MultimediaGrid({
   if (layoutType === 'single') {
     return (
       <>
-        <div className="w-full rounded-lg overflow-hidden bg-muted" style={{ aspectRatio: '16/9' }}>
+        <div className="w-full rounded-lg overflow-hidden" style={{ aspectRatio: '16/9', backgroundColor: '#e5e7eb' }}>
           {renderMediaItem(gridMedia[0], 0)}
         </div>
         {/* Fullscreen Modal */}

@@ -85,47 +85,42 @@ Se agregaron campos de optimización:
 
 ## 🎨 Estrategias de Variantes
 
-### Property Images (4 variantes)
+### Property Images (3 variantes, 16:9)
 
 ```typescript
-THUMBNAIL_SM:  320x240  (webp 80%, jpeg 85%) - Cover
-THUMBNAIL_MD:  640x480  (webp 80%, jpeg 85%) - Cover
-THUMBNAIL_LG:  1280x720 (webp 85%, jpeg 90%) - Cover
-FULL:          2048xAuto (webp 85%, jpeg 90%) - Inside
+THUMBNAIL_SM:  400x225  (webp 78%, jpeg 82%) - Cover  // related / thumbs
+THUMBNAIL_MD:  960x540  (webp 80%, jpeg 85%) - Cover  // listing cards
+FULL:          1600x900 (webp 82%, jpeg 85%) - Inside // gallery / detail
 ```
 
-### Blog Images (4 variantes)
+### Blog Images (2 variantes)
 
 ```typescript
-THUMBNAIL_SM:  400x225   (webp 80%, jpeg 85%) - Cover
-THUMBNAIL_MD:  800x450   (webp 80%, jpeg 85%) - Cover
-OG_IMAGE:      1200x630  (webp 85%, jpeg 90%) - Cover
-HERO:          1920x1080 (webp 85%, jpeg 90%) - Cover
+THUMBNAIL_MD:  640x360   (webp 80%, jpeg 85%) - Cover
+OG_IMAGE:      1200x630  (webp 80%, jpeg 85%) - Cover
 ```
 
-### Avatar Images (3 variantes)
+### Avatar Images (2 variantes)
 
 ```typescript
-AVATAR_SM:  64x64   (webp 90%, jpeg 95%) - Cover - Square
+AVATAR_SM:  64x64   (webp 88%, jpeg 92%) - Cover - Square
 AVATAR_MD:  128x128 (webp 90%, jpeg 95%) - Cover - Square
-AVATAR_LG:  256x256 (webp 90%, jpeg 95%) - Cover - Square
 ```
 
-### Slider Images (4 variantes)
+### Slider Images (3 variantes)
 
 ```typescript
-SLIDE_MOBILE:  768x432   (webp 80%, jpeg 85%) - Cover
-SLIDE_TABLET:  1024x576  (webp 80%, jpeg 85%) - Cover
-SLIDE_DESKTOP: 1920x1080 (webp 85%, jpeg 90%) - Cover
-SLIDE_THUMB:   400x225   (webp 80%, jpeg 85%) - Cover
+SLIDE_MOBILE:      1080x608  (webp 78%, jpeg 82%) - Cover
+SLIDE_DESKTOP:     1920x1080 (webp 80%, jpeg 85%) - Cover
+SLIDE_THUMBNAIL:   400x225   (webp 78%, jpeg 82%) - Cover
 ```
 
 ### Testimonial Images (3 variantes)
 
 ```typescript
-AVATAR_SM:  80x80   (webp 90%, jpeg 95%) - Cover - Avatar
-AVATAR_MD:  160x160 (webp 90%, jpeg 95%) - Cover - Avatar
-PROJECT:    400x300 (webp 85%, jpeg 90%) - Cover - Proyecto
+AVATAR_SM:      80x80   (webp 85%, jpeg 90%) - Cover
+AVATAR_MD:      160x160 (webp 85%, jpeg 90%) - Cover
+PROJECT_THUMB:  400x300 (webp 85%, jpeg 90%) - Cover
 ```
 
 ## 🔧 Uso

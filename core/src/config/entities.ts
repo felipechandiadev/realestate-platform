@@ -18,6 +18,11 @@ import { Testimonial } from '../modules/testimonials/domain/testimonial.entity';
 import { TeamMember } from '../modules/team-members/domain/team-member.entity';
 import { Slide } from '../modules/slide/domain/slide.entity';
 import { PortalHeader } from '../modules/portal-header/domain/portal-header.entity';
+import { PortalFooter } from '../modules/portal-footer/domain/portal-footer.entity';
+import { PortalListingsSettings } from '../modules/portal-listings/domain/portal-listings-settings.entity';
+import { PortalFeaturedSettings } from '../modules/portal-featured/domain/portal-featured-settings.entity';
+import { Appearance } from '../modules/appearance/domain/appearance.entity';
+import { AppearanceTemplate } from '../modules/appearance/domain/appearance-template.entity';
 
 export const entities = [
   NotificationOrmEntity,
@@ -40,6 +45,11 @@ export const entities = [
   TeamMember,
   Slide,
   PortalHeader,
+  PortalFooter,
+  PortalListingsSettings,
+  PortalFeaturedSettings,
+  Appearance,
+  AppearanceTemplate,
 ];
 
 export default entities;

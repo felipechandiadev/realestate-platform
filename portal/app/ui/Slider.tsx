@@ -6,11 +6,12 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { getPublicSlides, Slide } from "@/features/cms/actions/slides.action";
 import { useSliderImagesReady } from "@/providers/SliderImagesReadyContext";
+import { pickHeroImageSources } from "@/shared/lib/pick-image-variant";
 
 const AUTOPLAY_MS = 6000;
 const CROSSFADE_MS = 800;
-const EMPTY_BACKGROUND = "#F0F0F0";
 const HEX_COLOR = /^#[0-9A-Fa-f]{6}$/;
+const SECTION_CLASS = "relative h-[380px] w-full overflow-hidden bg-white md:h-[560px]";
 
 type SlideAlign = "left" | "center" | "right";
 type SlideCtaStyle = "none" | "button" | "link";
@@ -110,6 +111,81 @@ function SlideCta({ slide }: { slide: Slide }) {
   );
 }
 
+function SlideHeroImage({
+  slide,
+  priority = false,
+  onReadyChange,
+}: {
+  slide: Slide;
+  priority?: boolean;
+  onReadyChange?: (ready: boolean) => void;
+}) {
+  const sources = pickHeroImageSources(
+    { url: slide.multimediaUrl, variants: slide.variants },
+    slide.multimediaUrl,
+  );
+  const desktopSrc = sources.desktopUrl || sources.fallbackUrl || slide.multimediaUrl || "";
+  const mobileSrc = sources.mobileUrl;
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const imgRef = useRef<HTMLImageElement | null>(null);
+  const onReadyChangeRef = useRef(onReadyChange);
+  onReadyChangeRef.current = onReadyChange;
+
+  useEffect(() => {
+    setStatus("loading");
+    onReadyChangeRef.current?.(false);
+  }, [desktopSrc]);
+
+  useEffect(() => {
+    const img = imgRef.current;
+    if (!img || !desktopSrc) return;
+    if (img.complete && img.naturalWidth > 0) {
+      setStatus("ready");
+      onReadyChangeRef.current?.(true);
+    }
+  }, [desktopSrc]);
+
+  const markReady = () => {
+    setStatus("ready");
+    onReadyChangeRef.current?.(true);
+  };
+
+  const markError = () => {
+    setStatus("error");
+    onReadyChangeRef.current?.(false);
+  };
+
+  if (!desktopSrc || status === "error") {
+    return null;
+  }
+
+  const imgClassName = `absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+    status === "ready" ? "opacity-100" : "opacity-0"
+  }`;
+  const imgProps = {
+    ref: imgRef,
+    alt: "",
+    className: imgClassName,
+    onLoad: markReady,
+    onError: markError,
+    // Hide broken-image icon / layout flash before decode
+    ...(priority
+      ? { fetchPriority: "high" as const, loading: "eager" as const, decoding: "async" as const }
+      : { loading: "lazy" as const, decoding: "async" as const }),
+  };
+
+  if (mobileSrc) {
+    return (
+      <picture>
+        <source media="(max-width: 767px)" srcSet={mobileSrc} />
+        <img src={desktopSrc} {...imgProps} />
+      </picture>
+    );
+  }
+
+  return <img src={desktopSrc} {...imgProps} />;
+}
+
 function SlideCopy({ slide }: { slide: Slide }) {
   const align = ALIGN_CLASS[slide.textAlign || "left"] ?? ALIGN_CLASS.left;
   const textColor = normalizeHex(slide.textColor);
@@ -159,17 +235,48 @@ function NavButton({
   );
 }
 
-export default function Slider() {
-  const [slides, setSlides] = useState<Slide[]>([]);
-  const [loaded, setLoaded] = useState(false);
+function HeroSkeletonLayer() {
+  return (
+    <div
+      className="hero-skeleton-shimmer absolute inset-0"
+      aria-hidden
+    />
+  );
+}
+
+function HeroPlaceholder() {
+  return (
+    <section data-hero-slider className={SECTION_CLASS} aria-hidden>
+      <HeroSkeletonLayer />
+    </section>
+  );
+}
+
+export interface SliderProps {
+  /** Slides from server — avoids client fetch delay and layout shift */
+  initialSlides?: Slide[];
+}
+
+export default function Slider({ initialSlides }: SliderProps) {
+  const hasServerData = initialSlides !== undefined;
+  const [slides, setSlides] = useState<Slide[]>(initialSlides ?? []);
+  const [loaded, setLoaded] = useState(hasServerData);
   const [index, setIndex] = useState(0);
+  /** Overlay only after media is painted — avoids gray wash on white skeleton */
+  const [mediaReadyById, setMediaReadyById] = useState<Record<string, boolean>>({});
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
   const { setSliderImagesReady } = useSliderImagesReady();
   const pathname = usePathname();
   const isMainPortalPage = pathname === "/";
   const prefersReducedMotion = usePrefersReducedMotion();
 
+  const setMediaReady = useCallback((id: string, ready: boolean) => {
+    setMediaReadyById((prev) => (prev[id] === ready ? prev : { ...prev, [id]: ready }));
+  }, []);
+
   useEffect(() => {
+    if (hasServerData) return;
+
     let ignore = false;
     async function fetchSlides() {
       try {
@@ -190,7 +297,7 @@ export default function Slider() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [hasServerData]);
 
   useEffect(() => {
     if (!isMainPortalPage) return;
@@ -269,22 +376,38 @@ export default function Slider() {
     });
   }, [index, slides]);
 
-  if (!loaded || slides.length === 0) return null;
+  // Reserve hero height while client-fetching to avoid CLS
+  if (!loaded) {
+    return <HeroPlaceholder />;
+  }
+
+  // Confirmed empty — collapse (SSR already knew; client path after fetch)
+  if (slides.length === 0) {
+    return null;
+  }
 
   const active = slides[index];
   const activeColor = normalizeHex(active?.textColor) || "#ffffff";
   const carousel = slides.length > 1;
-  const sectionClass = "relative h-[380px] w-full overflow-hidden md:h-[560px]";
 
   return (
     <section
       data-hero-slider
-      className={sectionClass}
+      className={SECTION_CLASS}
       aria-roledescription={carousel ? "carousel" : undefined}
       aria-label="Destacados"
     >
+      {/* Skeleton under media so fade-in never shows a flat gray slab */}
+      <HeroSkeletonLayer />
+
       {slides.map((slide, i) => {
         const isActive = i === index;
+        const hasVideo = !!(slide.multimediaUrl && isVideoUrl(slide.multimediaUrl));
+        const hasImage = !!(slide.multimediaUrl && !hasVideo);
+        const mediaReady = !!mediaReadyById[slide.id];
+        const showOverlay =
+          mediaReady && (hasVideo || hasImage) && (slide.overlayOpacity ?? 45) > 0;
+
         return (
           <div
             key={slide.id}
@@ -297,27 +420,33 @@ export default function Slider() {
             aria-label={slide.title || `Slide ${i + 1}`}
             aria-hidden={!isActive}
           >
-            {slide.multimediaUrl && isVideoUrl(slide.multimediaUrl) ? (
+            {hasVideo ? (
               <video
                 ref={(node) => {
                   videoRefs.current[slide.id] = node;
                 }}
                 src={slide.multimediaUrl}
-                className="absolute inset-0 h-full w-full object-cover"
+                className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-300 ${
+                  mediaReady ? "opacity-100" : "opacity-0"
+                }`}
                 autoPlay={isActive}
                 muted
                 loop
                 playsInline
-                preload="metadata"
+                preload={i === 0 ? "auto" : "metadata"}
+                onLoadedData={() => setMediaReady(slide.id, true)}
+                onError={() => setMediaReady(slide.id, false)}
               />
-            ) : slide.multimediaUrl ? (
-              <img src={slide.multimediaUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
-            ) : (
-              <div className="absolute inset-0" style={{ backgroundColor: EMPTY_BACKGROUND }} />
-            )}
-            {(slide.overlayOpacity ?? 45) > 0 ? (
+            ) : hasImage ? (
+              <SlideHeroImage
+                slide={slide}
+                priority={i === 0}
+                onReadyChange={(ready) => setMediaReady(slide.id, ready)}
+              />
+            ) : null}
+            {showOverlay ? (
               <div
-                className="absolute inset-0 bg-black"
+                className="absolute inset-0 bg-black transition-opacity duration-300"
                 style={{ opacity: Math.min(90, Math.max(0, Number(slide.overlayOpacity ?? 45))) / 100 }}
               />
             ) : null}

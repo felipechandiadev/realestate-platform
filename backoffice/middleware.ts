@@ -5,10 +5,34 @@ import { sessionCookieName } from '@/lib/auth';
 
 const STAFF_ROLES = new Set(['ADMIN', 'AGENT']);
 
+function isPublicPath(pathname: string): boolean {
+  if (
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/serwist') ||
+    pathname.startsWith('/~offline') ||
+    pathname.startsWith('/icons')
+  ) {
+    return true;
+  }
+
+  if (
+    pathname === '/favicon.ico' ||
+    pathname === '/manifest.webmanifest' ||
+    pathname === '/manifest.webmanifest/' ||
+    pathname === '/icon.png' ||
+    pathname === '/apple-icon.png'
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  if (pathname.startsWith('/api/auth') || pathname.startsWith('/login')) {
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
@@ -33,5 +57,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|fonts|public).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|fonts|public|icons|serwist|~offline|manifest\\.webmanifest).*)',
+  ],
 };

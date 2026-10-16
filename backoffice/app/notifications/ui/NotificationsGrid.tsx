@@ -8,6 +8,7 @@ import { IconButton } from "@realestate/ui";
 import { useAlert } from '@/providers/AlertContext';
 import { useSearchParams } from 'next/navigation';
 import { exportUserGridNotificationsExcel } from '@/features/notifications/actions/notifications.action';
+import { downloadExcelFile } from '@/shared/lib/data-grid-export';
 
 type NotificationRow = {
   id: string;
@@ -85,15 +86,7 @@ export default function NotificationsGrid({ rows, totalRows, title, userId }: No
       }
 
       const { filename, base64 } = result as { filename: string; base64: string };
-      const blob = await fetch(`data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${base64}`).then(r => r.blob());
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename || 'notificaciones.xlsx';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      await downloadExcelFile(filename || 'notificaciones.xlsx', base64);
 
       alert.showAlert({ message: 'Exportado a Excel', type: 'success', duration: 3000 });
     } catch (error) {

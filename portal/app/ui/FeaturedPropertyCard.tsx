@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Bed, Bath, Home, ImageOff } from 'lucide-react';
+import { Bed, Bath, Home, ImageOff, MoreHorizontal } from 'lucide-react';
+import { OtherFeaturesReadonlyDialog } from '@realestate/ui';
 
 export interface FeaturedProperty {
   id: string;
@@ -17,6 +18,7 @@ export interface FeaturedProperty {
   bathrooms?: number | null;
   description?: string | null;
   builtSquareMeters?: number | null;
+  otherFeatures?: string[] | null;
   isFeatured?: boolean;
 }
 
@@ -45,14 +47,25 @@ export default function FeaturedPropertyCard({
   priorityImage = false,
 }: FeaturedPropertyCardProps) {
   const [imageError, setImageError] = useState(false);
+  const [otherFeaturesOpen, setOtherFeaturesOpen] = useState(false);
   const locationParts = [property.city, property.state].filter(Boolean);
   const operationLabel = property.operationType === 'SALE' ? 'En Venta' : 'En Arriendo';
   const priceLabel = formatPrice(property.price, property.currencyPrice);
   const ariaLabel = `${property.title}. ${operationLabel}. ${priceLabel}`;
+  const otherFeatures = Array.isArray(property.otherFeatures) ? property.otherFeatures : [];
+  const hasOtherFeatures = otherFeatures.length > 0;
+  const hasIconRow =
+    Boolean(property.bedrooms) ||
+    Boolean(property.bathrooms) ||
+    Boolean(property.builtSquareMeters) ||
+    hasOtherFeatures;
 
   const cardInner = (
     <>
-      <div className="relative aspect-video w-full overflow-hidden bg-muted">
+      <div
+        className="relative aspect-video w-full overflow-hidden"
+        style={{ backgroundColor: '#e5e7eb' }}
+      >
         {property.mainImageUrl && !imageError ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -64,18 +77,33 @@ export default function FeaturedPropertyCard({
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+          <div className="flex h-full w-full items-center justify-center text-gray-400">
             <ImageOff size={28} aria-hidden />
           </div>
         )}
 
         {property.isFeatured ? (
-          <span
-            className="absolute left-2 top-2 z-10 rounded-md bg-success px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-sm"
+          <div
+            className="featured-ribbon"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              backgroundColor: '#16a34a',
+              color: 'white',
+              fontWeight: 'bold',
+              fontSize: '0.7rem',
+              padding: '0.25rem 2rem',
+              transformOrigin: '0% 0%',
+              transform: 'translate(-20%, 270%) rotate(-45deg)',
+              zIndex: 10,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              pointerEvents: 'none',
+            }}
             data-test-id="property-card-featured"
           >
-            Destacada
-          </span>
+            DESTACADA
+          </div>
         ) : null}
 
         <div className="absolute right-2 top-2 z-10">
@@ -91,8 +119,8 @@ export default function FeaturedPropertyCard({
       <div className="flex min-h-[7.5rem] flex-1 flex-col gap-2 bg-card p-3">
         <h3 className="line-clamp-2 text-sm font-semibold text-foreground">{property.title}</h3>
 
-        {property.bedrooms || property.bathrooms || property.builtSquareMeters ? (
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        {hasIconRow ? (
+          <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
             {property.bedrooms ? (
               <div className="flex items-center gap-1">
                 <Bed size={18} className="text-primary" aria-hidden />
@@ -110,6 +138,27 @@ export default function FeaturedPropertyCard({
                 <Home size={18} className="text-primary" aria-hidden />
                 <span>{Math.round(property.builtSquareMeters)} m²</span>
               </div>
+            ) : null}
+            {hasOtherFeatures && !inertClone ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setOtherFeaturesOpen(true);
+                }}
+                className="flex items-center gap-1 text-primary hover:opacity-80 transition-opacity"
+                title="Otras características"
+                aria-label="Ver otras características"
+                data-test-id="featured-property-card-other-features"
+              >
+                <MoreHorizontal size={18} aria-hidden />
+              </button>
+            ) : null}
+            {hasOtherFeatures && inertClone ? (
+              <span className="flex items-center gap-1 text-primary" aria-hidden>
+                <MoreHorizontal size={18} />
+              </span>
             ) : null}
           </div>
         ) : null}
@@ -136,13 +185,22 @@ export default function FeaturedPropertyCard({
   }
 
   return (
-    <Link
-      href={`/properties/property/${property.id}`}
-      className={shellClassName}
-      aria-label={ariaLabel}
-      data-test-id={`featured-property-card-${property.id}`}
-    >
-      {cardInner}
-    </Link>
+    <>
+      <Link
+        href={`/properties/property/${property.id}`}
+        className={shellClassName}
+        aria-label={ariaLabel}
+        data-test-id={`featured-property-card-${property.id}`}
+      >
+        {cardInner}
+      </Link>
+      {hasOtherFeatures ? (
+        <OtherFeaturesReadonlyDialog
+          open={otherFeaturesOpen}
+          onClose={() => setOtherFeaturesOpen(false)}
+          value={otherFeatures}
+        />
+      ) : null}
+    </>
   );
 }

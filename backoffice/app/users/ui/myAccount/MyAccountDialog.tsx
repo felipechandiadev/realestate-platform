@@ -144,7 +144,7 @@ const MyAccountDialog: React.FC<MyAccountDialogProps> = ({ open, onClose }) => {
 
         {loading && !profile ? (
           <div className="flex justify-center py-8">
-            <DotProgress />
+            <DotProgress count={3} variant="wave" />
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-[3fr_2fr]">

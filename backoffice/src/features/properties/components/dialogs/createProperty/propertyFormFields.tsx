@@ -1,6 +1,11 @@
+'use client';
+
+import React from 'react';
 import type { BaseFormField, BaseFormOption } from '@/shared/components/ui/BaseForm/StepperBaseForm';
 import { PropertyTypeOption, LocationOption } from './types';
 import type { PropertyType } from '@/features/shared/propertyTypes/actions/propertyTypes.action';
+import { OtherFeaturesField } from './OtherFeaturesField';
+import type { OtherFeatureKey } from '@realestate/ui';
 
 // Tipo extendido para opciones que pueden tener id como string o number
 export interface ExtendedOption {
@@ -236,6 +241,19 @@ export const getPropertyDetailsFields = (
       max: new Date().getFullYear(),
     }]);
   }
+
+  addRow([{
+    name: 'otherFeatures',
+    label: 'Otras características',
+    type: 'custom',
+    width: '100%',
+    renderComponent: ({ value, onChange }) => (
+      <OtherFeaturesField
+        value={value}
+        onChange={(keys: OtherFeatureKey[]) => onChange(keys)}
+      />
+    ),
+  }]);
 
   return fields;
 };

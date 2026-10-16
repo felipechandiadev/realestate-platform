@@ -39,7 +39,7 @@
 /* Contained */
 .fs-button--contained-primary {
   background-color: var(--color-primary, #1e73ae);
-  color: var(--color-background, #ffffff);
+  color: var(--color-text-on-primary, #ffffff);
 }
 .fs-button--contained-primary:hover:not(:disabled) {
   background-color: var(--color-accent, #02578b);
@@ -188,7 +188,7 @@
 
 .fs-pill--primary {
   background-color: var(--color-primary, #1e73ae);
-  color: var(--color-background, #ffffff);
+  color: var(--color-text-on-primary, #ffffff);
 }
 .fs-pill--primary:hover:not(:disabled) {
   background-color: var(--color-accent, #02578b);

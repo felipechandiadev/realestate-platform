@@ -9,15 +9,7 @@ import {
   type CommunityUserDetailHeader,
 } from '@/features/users/actions/users.action';
 import { useAlert } from '@/providers/AlertContext';
-
-function formatDate(value?: string | null) {
-  if (!value) return '—';
-  try {
-    return new Date(value).toLocaleString('es-CL');
-  } catch {
-    return value;
-  }
-}
+import { formatDate } from '../formatDate';
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (

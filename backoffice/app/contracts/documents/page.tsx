@@ -29,6 +29,10 @@ interface PageProps {
     search?: string;
     page?: string;
     limit?: string;
+    sort?: 'asc' | 'desc';
+    sortField?: string;
+    filters?: string;
+    filtration?: string;
   }>;
 }
 
@@ -62,9 +66,12 @@ export default async function DocumentsPage({ searchParams }: PageProps) {
   const search = typeof params.search === 'string' ? params.search : '';
   const page = Number.parseInt(params.page ?? '1', 10) || 1;
   const limit = Number.parseInt(params.limit ?? '25', 10) || 25;
+  const sort = params.sort === 'asc' || params.sort === 'desc' ? params.sort : undefined;
+  const sortField = typeof params.sortField === 'string' ? params.sortField : undefined;
+  const filters = typeof params.filters === 'string' ? params.filters : undefined;
 
   const [documentsResult, typesResult] = await Promise.all([
-    listDocuments({ search, page, limit }),
+    listDocuments({ search, page, limit, sort, sortField, filters }),
     getDocumentTypes(),
   ]);
 

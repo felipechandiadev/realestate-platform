@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
 import { SliderImagesReadyProvider } from '@/providers/SliderImagesReadyContext';
 import { SplashCompletedProvider } from '@/providers/SplashCompletedContext';
+import { SerwistProvider } from '@serwist/turbopack/react';
 
 import { AuthContextProvider } from "./providers";
 
@@ -27,20 +28,22 @@ export default function ClientProviders({ children, session }: Props & { session
   }));
 
   return (
-    <SessionProvider session={session} refetchOnWindowFocus={false}>
-      <QueryClientProvider client={queryClient}>
-        <AuthContextProvider>
-          <AlertProvider>
-            <NotificationProvider>
-              <SplashCompletedProvider>
-                <SliderImagesReadyProvider>
-                  {children}
-                </SliderImagesReadyProvider>
-              </SplashCompletedProvider>
-            </NotificationProvider>
-          </AlertProvider>
-        </AuthContextProvider>
-      </QueryClientProvider>
-    </SessionProvider>
+    <SerwistProvider swUrl="/serwist/sw.js">
+      <SessionProvider session={session} refetchOnWindowFocus={false}>
+        <QueryClientProvider client={queryClient}>
+          <AuthContextProvider>
+            <AlertProvider>
+              <NotificationProvider>
+                <SplashCompletedProvider>
+                  <SliderImagesReadyProvider>
+                    {children}
+                  </SliderImagesReadyProvider>
+                </SplashCompletedProvider>
+              </NotificationProvider>
+            </AlertProvider>
+          </AuthContextProvider>
+        </QueryClientProvider>
+      </SessionProvider>
+    </SerwistProvider>
   );
 }

@@ -83,21 +83,27 @@ export class PortalHeaderService {
   private async ensure(): Promise<PortalHeader> {
     const existing = await this.repository.find({ order: { createdAt: 'ASC' }, take: 1 });
     if (existing[0]) return existing[0];
-    return this.repository.save(
-      this.repository.create({
-        logoUrl: null,
-        showCompanyName: true,
-        showMail: true,
-        showPhone: true,
-        showUf: true,
-        ufLabel: 'UF hoy',
-        showLogin: true,
-        showRegister: true,
-        loginLabel: 'Ingresar',
-        registerLabel: 'Registrarse',
-        navItems: DEFAULT_NAV_ITEMS,
-        accountItems: DEFAULT_ACCOUNT_ITEMS,
-      }),
-    );
+    try {
+      return await this.repository.save(
+        this.repository.create({
+          logoUrl: null,
+          showCompanyName: true,
+          showMail: true,
+          showPhone: true,
+          showUf: true,
+          ufLabel: 'UF hoy',
+          showLogin: true,
+          showRegister: true,
+          loginLabel: 'Ingresar',
+          registerLabel: 'Registrarse',
+          navItems: DEFAULT_NAV_ITEMS,
+          accountItems: DEFAULT_ACCOUNT_ITEMS,
+        }),
+      );
+    } catch {
+      const again = await this.repository.find({ order: { createdAt: 'ASC' }, take: 1 });
+      if (again[0]) return again[0];
+      throw new Error('No se pudo inicializar portal_headers');
+    }
   }
 }

@@ -81,6 +81,9 @@ export class PropertyController {
   ) {}
 
   @Get('grid-sale/excel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Export sale properties to Excel' })
   @ApiResponse({ status: 200, description: 'Excel file exported successfully' })
   @ApiQuery({ name: 'fields', required: false, type: String, description: 'Comma-separated fields to export' })
@@ -100,6 +103,9 @@ export class PropertyController {
   }
 
   @Get('grid-rent/excel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Export rent properties to Excel' })
   @ApiResponse({ status: 200, description: 'Excel file exported successfully' })
   @ApiQuery({ name: 'fields', required: false, type: String, description: 'Comma-separated fields to export' })
@@ -508,7 +514,7 @@ export class PropertyController {
     @Query('limit') limit?: string,
   ) {
     const pageNum = page ? Math.max(1, parseInt(page, 10)) : 1;
-    const limitNum = limit ? Math.min(Math.max(1, parseInt(limit, 10)), 100) : 9;
+    const limitNum = limit ? Math.min(Math.max(1, parseInt(limit, 10)), 16) : 9;
     const data = await this.propertyService.findPublishedFeaturedPublicPaginated(pageNum, limitNum);
     return { success: true, ...data };
   }
@@ -538,7 +544,7 @@ export class PropertyController {
   @Audit(AuditAction.UPDATE, AuditEntityType.PROPERTY, 'Property basic info updated')
   async updateBasic(
     @Param('id') id: string,
-    @Body(ValidationPipe) dto: UpdatePropertyBasicDto,
+    @Body(new ValidationPipe({ transform: true })) dto: UpdatePropertyBasicDto,
     @Req() request: any,
   ): Promise<Property> {
     console.log('✅ PATCH :id/basic endpoint called with:', { id, dto });
@@ -558,7 +564,7 @@ export class PropertyController {
   @Audit(AuditAction.UPDATE, AuditEntityType.PROPERTY, 'Property updated')
   update(
     @Param('id') id: string,
-    @Body(ValidationPipe) updatePropertyDto: UpdatePropertyDto,
+    @Body(new ValidationPipe({ transform: true })) updatePropertyDto: UpdatePropertyDto,
     @Req() request: any,
   ) {
     const user = request?.user;
@@ -642,7 +648,7 @@ export class PropertyController {
   @Audit(AuditAction.UPDATE, AuditEntityType.PROPERTY, 'Property price and SEO updated')
   async updatePrice(
     @Param('id') id: string,
-    @Body(ValidationPipe) dto: UpdatePropertyPriceDto,
+    @Body(new ValidationPipe({ transform: true })) dto: UpdatePropertyPriceDto,
     @Req() req: any,
   ): Promise<Property> {
     const userId = this.extractUserId(req);
@@ -662,7 +668,7 @@ export class PropertyController {
   @Audit(AuditAction.UPDATE, AuditEntityType.PROPERTY, 'Property characteristics updated')
   async updateCharacteristics(
     @Param('id') id: string,
-    @Body(ValidationPipe) dto: UpdatePropertyCharacteristicsDto,
+    @Body(new ValidationPipe({ transform: true })) dto: UpdatePropertyCharacteristicsDto,
     @Req() req: any,
   ): Promise<Property> {
     const userId = this.extractUserId(req);
@@ -682,7 +688,7 @@ export class PropertyController {
   @Audit(AuditAction.UPDATE, AuditEntityType.PROPERTY, 'Property location updated')
   async updateLocation(
     @Param('id') id: string,
-    @Body(ValidationPipe) dto: UpdatePropertyLocationDto,
+    @Body(new ValidationPipe({ transform: true })) dto: UpdatePropertyLocationDto,
     @Req() req: any,
   ): Promise<Property> {
     const userId = this.extractUserId(req);
@@ -716,7 +722,7 @@ export class PropertyController {
   @Audit(AuditAction.UPDATE, AuditEntityType.PROPERTY, 'Property SEO data updated')
   async updateSeoData(
     @Param('id') id: string,
-    @Body(ValidationPipe) dto: UpdatePropertySeoDto,
+    @Body(new ValidationPipe({ transform: true })) dto: UpdatePropertySeoDto,
     @Req() req: any,
   ) {
     const userId = this.extractUserId(req);
@@ -762,8 +768,16 @@ export class PropertyController {
   @ApiQuery({ name: 'bathroomsOperator', required: false, enum: ['lte', 'eq', 'gte'] })
   @ApiQuery({ name: 'parkingSpacesOperator', required: false, enum: ['lte', 'eq', 'gte'] })
   @ApiQuery({ name: 'builtSquareMetersMin', required: false, type: Number })
+  @ApiQuery({ name: 'builtSquareMetersMax', required: false, type: Number })
   @ApiQuery({ name: 'landSquareMetersMin', required: false, type: Number })
+  @ApiQuery({ name: 'landSquareMetersMax', required: false, type: Number })
   @ApiQuery({ name: 'constructionYearMin', required: false, type: Number })
+  @ApiQuery({ name: 'priceMin', required: false, type: Number })
+  @ApiQuery({ name: 'priceMax', required: false, type: Number })
+  @ApiQuery({ name: 'typeIds', required: false, description: 'CSV of property type UUIDs' })
+  @ApiQuery({ name: 'types', required: false, description: 'Alias of typeIds CSV' })
+  @ApiQuery({ name: 'otherFeatures', required: false, description: 'CSV of OTHER_FEATURE_KEYS' })
+  @ApiQuery({ name: 'features', required: false, description: 'Alias of otherFeatures CSV' })
   async getPublishedPropertiesFiltered(
     @Query(new ValidationPipe({ transform: true })) filters: any,
   ) {
@@ -787,6 +801,12 @@ export class PropertyController {
   @ApiQuery({ name: 'parkingSpaces', required: false, type: Number })
   @ApiQuery({ name: 'parkingSpacesOperator', required: false, type: String, enum: ['lte', 'eq', 'gte'] })
   @ApiQuery({ name: 'typeProperty', required: false, type: String })
+  @ApiQuery({ name: 'typeIds', required: false, type: String })
+  @ApiQuery({ name: 'otherFeatures', required: false, type: String })
+  @ApiQuery({ name: 'builtSquareMetersMin', required: false, type: Number })
+  @ApiQuery({ name: 'builtSquareMetersMax', required: false, type: Number })
+  @ApiQuery({ name: 'landSquareMetersMin', required: false, type: Number })
+  @ApiQuery({ name: 'landSquareMetersMax', required: false, type: Number })
   @ApiQuery({ name: 'state', required: false, type: String })
   @ApiQuery({ name: 'city', required: false, type: String })
   @ApiQuery({ name: 'currency', required: false, type: String })
@@ -852,6 +872,12 @@ export class PropertyController {
   @ApiQuery({ name: 'parkingSpaces', required: false, type: Number })
   @ApiQuery({ name: 'parkingSpacesOperator', required: false, type: String, enum: ['lte', 'eq', 'gte'] })
   @ApiQuery({ name: 'typeProperty', required: false, type: String })
+  @ApiQuery({ name: 'typeIds', required: false, type: String })
+  @ApiQuery({ name: 'otherFeatures', required: false, type: String })
+  @ApiQuery({ name: 'builtSquareMetersMin', required: false, type: Number })
+  @ApiQuery({ name: 'builtSquareMetersMax', required: false, type: Number })
+  @ApiQuery({ name: 'landSquareMetersMin', required: false, type: Number })
+  @ApiQuery({ name: 'landSquareMetersMax', required: false, type: Number })
   @ApiQuery({ name: 'state', required: false, type: String })
   @ApiQuery({ name: 'city', required: false, type: String })
   @ApiQuery({ name: 'currency', required: false, type: String })
@@ -876,7 +902,7 @@ export class PropertyController {
   @UseGuards(JwtAuthGuard)
   @Audit(AuditAction.CREATE, AuditEntityType.PROPERTY, 'Property request created from portal')
   async createPropertyRequest(
-    @Body(ValidationPipe) dto: any,
+    @Body(new ValidationPipe({ transform: true })) dto: any,
     @Req() req: any,
   ): Promise<Property> {
     const userId = this.extractUserId(req);
@@ -1051,7 +1077,7 @@ export class PropertyController {
   @Audit(AuditAction.CREATE, AuditEntityType.PROPERTY, 'Property shared by email')
   async shareProperty(
     @Param('id') id: string,
-    @Body(ValidationPipe) dto: SharePropertyDto,
+    @Body(new ValidationPipe({ transform: true })) dto: SharePropertyDto,
     @Req() req: any,
   ) {
     const userId = this.extractUserId(req);

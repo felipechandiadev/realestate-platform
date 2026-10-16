@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -30,7 +31,7 @@ export class ParsePortalHeaderJsonInterceptor implements NestInterceptor {
         try {
           body[field] = JSON.parse(body[field]);
         } catch {
-          delete body[field];
+          throw new BadRequestException(`JSON inválido en ${field}`);
         }
       }
     }

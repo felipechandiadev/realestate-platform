@@ -27,8 +27,21 @@ interface PageProps {
 export default async function AgentsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const search = typeof params.search === 'string' ? params.search : undefined;
+  const sort = params.sort === 'asc' || params.sort === 'desc' ? params.sort : undefined;
+  const sortField = typeof params.sortField === 'string' ? params.sortField : undefined;
+  const filters = typeof params.filters === 'string' ? params.filters : undefined;
+  const page = Number.parseInt(typeof params.page === 'string' ? params.page : '1', 10) || 1;
+  const limit = Number.parseInt(typeof params.limit === 'string' ? params.limit : '25', 10) || 25;
 
-  const response = await listAgents({ search });
+  const response = await listAgents({
+    search,
+    sort,
+    sortField,
+    filters,
+    page,
+    limit,
+    pagination: true,
+  });
 
   if (!response.success || !response.data) {
     return (
@@ -70,5 +83,11 @@ export default async function AgentsPage({ searchParams }: PageProps) {
     };
   });
 
-  return <AgentsContent initialAgents={agents} initialSearch={search} />;
+  return (
+    <AgentsContent
+      initialAgents={agents}
+      initialSearch={search}
+      totalRows={response.data.total}
+    />
+  );
 }

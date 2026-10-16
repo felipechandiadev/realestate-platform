@@ -50,8 +50,8 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  // Configuración de validación global
-  app.useGlobalPipes(new ValidationPipe());
+  // Configuración de validación global (transform runs @Transform, e.g. empty constructionYear)
+  app.useGlobalPipes(new ValidationPipe({ transform: true }));
 
   // Configuración de archivos estáticos
   app.useStaticAssets(join(__dirname, '..', 'public'), {

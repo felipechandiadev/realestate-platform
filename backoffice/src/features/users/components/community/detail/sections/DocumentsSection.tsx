@@ -3,19 +3,11 @@
 import { useEffect, useState } from 'react';
 import { LoadingState } from '@realestate/ui';
 import { getPersonDocuments } from '@/features/contracts/actions/documents.action';
+import { formatDate } from '../formatDate';
 
 type DocumentsSectionProps = {
   personId?: string | null;
 };
-
-function formatDate(value?: string | Date | null) {
-  if (!value) return '—';
-  try {
-    return new Date(value).toLocaleString('es-CL');
-  } catch {
-    return String(value);
-  }
-}
 
 export function DocumentsSection({ personId }: DocumentsSectionProps) {
   const [loading, setLoading] = useState(Boolean(personId));

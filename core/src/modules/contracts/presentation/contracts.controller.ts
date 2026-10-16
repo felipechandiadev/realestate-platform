@@ -7,11 +7,13 @@ import {
   Param,
   Delete,
   Query,
+  Res,
   UseGuards,
   UseInterceptors,
   UploadedFile,
   Req,
   ValidationPipe,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -39,11 +41,18 @@ import {
 } from '../dto/contract.dto';
 import { ContractRole, PaymentType } from '../domain/contract.entity';
 import type { Express, Request } from 'express';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, Roles, RolesGuard } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
+import type { Response } from 'express';
 
-type AuthenticatedRequest = Request & { user?: { id?: string; sub?: string } };
+type AuthenticatedRequest = Request & {
+  user?: { id?: string; sub?: string; role?: UserRole };
+};
 
 @ApiTags('Contracts')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('contracts')
 export class ContractsController {
   constructor(private readonly contractsService: ContractsService) {}
@@ -54,6 +63,27 @@ export class ContractsController {
     }
 
     return req.user.id ?? (typeof req.user.sub === 'string' ? req.user.sub : undefined);
+  }
+
+  private isCommunity(req: AuthenticatedRequest): boolean {
+    return req.user?.role === UserRole.COMMUNITY;
+  }
+
+  private assertCommunitySelf(req: AuthenticatedRequest, userId: string) {
+    if (!this.isCommunity(req)) return;
+    const actorId = this.resolveActorId(req);
+    if (!actorId || actorId !== userId) {
+      throw new ForbiddenException('Solo puedes acceder a tus propios contratos');
+    }
+  }
+
+  private async assertCommunityOwnsContract(req: AuthenticatedRequest, contractId: string) {
+    if (!this.isCommunity(req)) return;
+    const actorId = this.resolveActorId(req);
+    const contract = await this.contractsService.findOne(contractId);
+    if (!actorId || contract.userId !== actorId) {
+      throw new ForbiddenException('Solo puedes acceder a tus propios contratos');
+    }
   }
 
   /**
@@ -97,16 +127,35 @@ export class ContractsController {
     return this.contractsService.findAll(query);
   }
 
+  @Get('excel')
+  @ApiOperation({ summary: 'Export contracts to Excel' })
+  async exportExcel(@Query() query: any, @Res() res: Response) {
+    const buffer = await this.contractsService.exportExcel(query);
+    const filename =
+      query?.operation === 'ARRIENDO' ? 'contratos-arriendo.xlsx' : 'contratos-compraventa.xlsx';
+    res.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+    res.send(buffer);
+  }
+
   /**
    * Get contracts for a specific user
    */
   @Get('user/:userId')
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @ApiOperation({ summary: 'Get contracts for a specific user' })
   @ApiResponse({
     status: 200,
     description: 'List of contracts for the user',
   })
-  findAllByUser(@Param('userId') userId: string, @Query() query: any) {
+  findAllByUser(
+    @Param('userId') userId: string,
+    @Query() query: any,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    this.assertCommunitySelf(req, userId);
     return this.contractsService.findAll({ ...query, userId });
   }
 
@@ -114,6 +163,7 @@ export class ContractsController {
    * Get contract by ID
    */
   @Get(':id')
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @ApiOperation({ summary: 'Get contract by ID' })
   @ApiResponse({
     status: 200,
@@ -124,7 +174,8 @@ export class ContractsController {
     description: 'Contract not found',
   })
   @ApiParam({ name: 'id', type: String })
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    await this.assertCommunityOwnsContract(req, id);
     return this.contractsService.findOne(id);
   }
 
@@ -343,7 +394,11 @@ export class ContractsController {
           type: 'string',
           format: 'uuid',
         },
-        uploadedById: {
+        paymentId: {
+          type: 'string',
+          format: 'uuid',
+        },
+        personId: {
           type: 'string',
           format: 'uuid',
         },
@@ -361,10 +416,11 @@ export class ContractsController {
     @Body() uploadContractDocumentDto: UploadContractDocumentDto,
     @Req() req: AuthenticatedRequest,
   ) {
+    const actorId = this.resolveActorId(req);
     return this.contractsService.uploadContractDocument(
       file,
-      uploadContractDocumentDto,
-      this.resolveActorId(req),
+      { ...uploadContractDocumentDto, uploadedById: actorId ?? uploadContractDocumentDto.uploadedById },
+      actorId,
     );
   }
 
@@ -418,6 +474,7 @@ export class ContractsController {
    * Get payments by type for a specific contract
    */
   @Get(':id/payments/:type')
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @ApiOperation({ summary: 'Get payments by type for a contract' })
   @ApiResponse({
     status: 200,
@@ -425,10 +482,12 @@ export class ContractsController {
   })
   @ApiParam({ name: 'id', type: String, description: 'Contract ID' })
   @ApiParam({ name: 'type', type: String, description: 'Payment type' })
-  getPaymentsByType(
+  async getPaymentsByType(
     @Param('id') id: string,
     @Param('type') type: string,
+    @Req() req: AuthenticatedRequest,
   ) {
+    await this.assertCommunityOwnsContract(req, id);
     return this.contractsService.getPaymentsByType(id, type as any);
   }
 
@@ -462,6 +521,7 @@ export class ContractsController {
    * Upload payment proof for a specific payment in a contract
    */
   @Post(':id/payments/:paymentId/proof')
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @UseInterceptors(FileInterceptor('file'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload payment proof' })
@@ -476,16 +536,15 @@ export class ContractsController {
       },
     },
   })
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  uploadPaymentProof(
+  async uploadPaymentProof(
     @Param('id') id: string,
     @Param('paymentId') paymentId: string,
     @UploadedFile() file: Express.Multer.File,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
-    const userId = req.user.id;
-    return this.contractsService.uploadPaymentProof(file, id, paymentId, userId);
+    await this.assertCommunityOwnsContract(req, id);
+    const userId = this.resolveActorId(req);
+    return this.contractsService.uploadPaymentProof(file, id, paymentId, userId!);
   }
 
   /**
@@ -500,8 +559,6 @@ export class ContractsController {
   @ApiParam({ name: 'id', type: String })
   @ApiParam({ name: 'paymentId', type: String })
   @ApiBody({ type: UpdatePaymentStatusDto })
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   updatePaymentStatus(
     @Param('id') id: string,
     @Param('paymentId') paymentId: string,

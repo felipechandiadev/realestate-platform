@@ -6,6 +6,16 @@ import { TextField } from "@realestate/ui";
 import { useAuth } from "@/app/providers";
 import { useAlert } from "@/shared/hooks/useAlert";
 import { Button } from "@realestate/ui";
+import { env } from "@/lib/env";
+
+function normalizeMediaUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const cleaned = url.trim().replace("/../", "/");
+  if (!cleaned) return undefined;
+  if (cleaned.startsWith("http://") || cleaned.startsWith("https://")) return cleaned;
+  if (cleaned.startsWith("/")) return `${env.backendApiUrl}${cleaned}`;
+  return `${env.backendApiUrl}/${cleaned}`;
+}
 
 interface LoginFormProps {
   onClose?: () => void;
@@ -123,20 +133,33 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
     }
   };
 
+  const logoUrl = normalizeMediaUrl(logoSrc);
+
   return (
     <div className="flex flex-col gap-4" data-test-id="portal-login-form">
-      {!logoSrc && (
-        <div className="logo-container">
-          <img src={logoSrc} className="logo" alt="Logo" />
-        </div>
-      )}
+      {logoUrl ? (
+        <img
+          src={logoUrl}
+          alt={companyName ? `Logo de ${companyName}` : "Logo"}
+          className="mx-auto h-16 w-auto object-contain"
+          data-test-id="portal-login-logo"
+        />
+      ) : null}
       {companyName && (
         <h2 className="text-2xl font-bold text-center mt-4">{companyName}</h2>
       )}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-4"
+        method="post"
+        autoComplete="on"
+      >
         <TextField
           label="Correo electrónico"
+          name="email"
           type="email"
+          autoComplete="username"
+          alwaysShowLabel
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
@@ -146,7 +169,10 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
         />
         <TextField
           label="Contraseña"
+          name="password"
           type="password"
+          autoComplete="current-password"
+          alwaysShowLabel
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}

@@ -1,52 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { UserRepository } from '../../domain/user.repository';
-import { User } from '../../domain/user.entity';
+import { applyUserGridQuery, applyUserSort, parseUserFilters } from './find-admin-users.usecase';
 
 @Injectable()
 export class GridCommunityUsersUseCase {
   constructor(private readonly userRepo: UserRepository) {}
 
   async execute(query: any): Promise<any> {
-    const availableFields = [
-      'id',
-      'username',
-      'email',
-      'firstName',
-      'lastName',
-      'status',
-      'createdAt',
-      'updatedAt',
-    ];
-
-    const textSearchFields = [
-      'LOWER(u.username)',
-      'LOWER(u.email)',
-      'LOWER(CAST(u.personalInfo AS CHAR))',
-    ];
-
-    // replicate service logic; for brevity we just call existing service method
-    // but to avoid circular dependency, implement minimal version
+    const filtrationOn = query?.filtration === true || query?.filtration === 'true';
+    const columnFilters = filtrationOn ? parseUserFilters(query?.filters) : {};
+    const page = Math.max(1, parseInt(query?.page, 10) || 1);
+    const limit = Math.max(1, parseInt(query?.limit, 10) || 25);
+    const exportAll = query?.pagination === false || query?.pagination === 'false';
 
     const qb = this.userRepo
-      .createQueryBuilder('u')
-      .select([
-        'u.id',
-        'u.username',
-        'u.email',
-        'u.status',
-        'u.createdAt',
-        'u.updatedAt',
-        'u.personalInfo',
-      ])
-      .where('u.role = :role', { role: 'COMMUNITY' })
-      .andWhere('u.deletedAt IS NULL');
+      .createQueryBuilder('user')
+      .where('user.role = :role', { role: 'COMMUNITY' })
+      .andWhere('user.deletedAt IS NULL');
 
-    // apply filters, text search, sort, pagination etc. (skipped for brevity)
+    applyUserGridQuery(qb, {
+      search: query?.search,
+      status: columnFilters.status,
+      columnFilters,
+    });
+    applyUserSort(qb, query?.sortField, query?.sort);
+
     const total = await qb.getCount();
-    let data = await qb.getMany();
-
-    // Extract firstName and lastName from personalInfo JSON
-    data = data.map((user: any) => {
+    const users = exportAll ? await qb.getMany() : await qb.skip((page - 1) * limit).take(limit).getMany();
+    const data = users.map((user: any) => {
+      delete user.password;
       const personalInfo = user.personalInfo || {};
       return {
         ...user,
@@ -55,8 +37,12 @@ export class GridCommunityUsersUseCase {
       };
     });
 
-    console.log('Query results:', data); // Debugging log to inspect query results
-
-    return { data, total, page: 1, limit: data.length };
+    return {
+      data,
+      total,
+      page: exportAll ? 1 : page,
+      limit: exportAll ? Math.max(total, 1) : limit,
+      totalPages: exportAll ? 1 : Math.ceil(total / limit),
+    };
   }
 }

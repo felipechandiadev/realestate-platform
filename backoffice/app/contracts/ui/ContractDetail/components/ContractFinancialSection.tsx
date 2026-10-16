@@ -16,10 +16,19 @@ export default function ContractFinancialSection({
   editLoading = false,
 }: ContractFinancialSectionProps) {
   const amountLabel = typeof contract?.currency === 'string' ? contract.currency : 'CLP';
+  const amountSymbol = amountLabel === 'UF' ? 'UF' : '$';
   const totalAmount = typeof contract?.amount === 'number' ? contract.amount : null;
   const commissionAmount = typeof contract?.commissionAmount === 'number' ? contract.commissionAmount : null;
   const commissionPercent = typeof contract?.commissionPercent === 'number' ? contract.commissionPercent : null;
   const formattedCommissionPercent = commissionPercent !== null ? Number(commissionPercent.toFixed(2)) : null;
+  const tenantPercent = typeof contract?.tenantCommissionPercent === 'number' ? contract.tenantCommissionPercent : null;
+  const landlordPercent = typeof contract?.landlordCommissionPercent === 'number' ? contract.landlordCommissionPercent : null;
+  const tenantAmount = typeof contract?.tenantCommissionAmount === 'number' ? contract.tenantCommissionAmount : null;
+  const landlordAmount = typeof contract?.landlordCommissionAmount === 'number' ? contract.landlordCommissionAmount : null;
+  const hasSplit = tenantAmount !== null || landlordAmount !== null;
+  const isSale = contract?.operation === 'COMPRAVENTA';
+  const buyerLabel = isSale ? 'Comprador' : 'Arrendatario';
+  const sellerLabel = isSale ? 'Vendedor' : 'Arrendador';
 
   return (
     <div className="space-y-4 max-w-4xl">
@@ -50,19 +59,39 @@ export default function ContractFinancialSection({
             Monto Total
           </label>
           <p className="text-2xl font-bold text-foreground">
-            {amountLabel}{' '}
+            {amountSymbol}{' '}
             {totalAmount !== null ? totalAmount.toLocaleString('es-CL') : '—'}
           </p>
         </div>
 
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Comisión ({formattedCommissionPercent !== null ? formattedCommissionPercent : '—'}%)
+            {hasSplit ? 'Comisión empresa' : `Comisión (${formattedCommissionPercent !== null ? formattedCommissionPercent : '—'}%)`}
           </label>
           <p className="text-2xl font-bold text-green-600">
-            CLP {commissionAmount !== null ? commissionAmount.toLocaleString('es-CL') : '—'}
+            $ {commissionAmount !== null ? commissionAmount.toLocaleString('es-CL') : '—'}
           </p>
         </div>
+        {hasSplit && (
+          <>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {buyerLabel} ({tenantPercent !== null ? tenantPercent : '—'}%)
+              </label>
+              <p className="text-2xl font-bold text-foreground">
+                $ {tenantAmount !== null ? tenantAmount.toLocaleString('es-CL') : '—'}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                {sellerLabel} ({landlordPercent !== null ? landlordPercent : '—'}%)
+              </label>
+              <p className="text-2xl font-bold text-foreground">
+                $ {landlordAmount !== null ? landlordAmount.toLocaleString('es-CL') : '—'}
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

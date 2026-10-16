@@ -554,6 +554,7 @@ export interface PublishPropertyPayload {
   parkingSpaces?: number;
   floors?: number;
   constructionYear?: number;
+  otherFeatures?: string[];
   price: string;
   currencyPrice: string;
   region: string;
@@ -597,6 +598,7 @@ export async function publishPropertyPublic(
       parkingSpaces: payload.parkingSpaces,
       floors: payload.floors,
       constructionYear: payload.constructionYear,
+      otherFeatures: Array.isArray(payload.otherFeatures) ? payload.otherFeatures : [],
       price: payload.price,
       currencyPrice: payload.currencyPrice,
       state: payload.region,
@@ -686,6 +688,7 @@ export async function publishProperty(
           parkingSpaces: payload.parkingSpaces,
           floors: payload.floors,
           constructionYear: payload.constructionYear,
+          otherFeatures: Array.isArray(payload.otherFeatures) ? payload.otherFeatures : [],
           price: payload.price,
           currencyPrice: payload.currencyPrice,
           region: payload.region,
@@ -2539,13 +2542,20 @@ export async function revalidatePropertyRoute(path: string): Promise<{ success: 
 /**
  * Wrapper for fetching published featured properties with pagination
  */
-export async function getPublishedFeaturedProperties(page = 1): Promise<{ success: boolean; data?: any[]; pagination?: any; error?: string }> {
+export async function getPublishedFeaturedProperties(
+  page = 1,
+  limit = 9,
+): Promise<{ success: boolean; data?: any[]; pagination?: any; error?: string }> {
   try {
-    const res = await fetch(`${env.backendApiUrl}/properties/public/featured/paginated?page=${page}`, {
+    const safeLimit = Math.min(16, Math.max(1, limit));
+    const res = await fetch(
+      `${env.backendApiUrl}/properties/public/featured/paginated?page=${page}&limit=${safeLimit}`,
+      {
       method: 'GET',
       headers: { Accept: 'application/json' },
       cache: 'no-store',
-    });
+    },
+    );
 
     if (!res.ok) {
       const err = await res.json().catch(() => null);
@@ -2574,7 +2584,25 @@ export async function getPublishedFeaturedProperties(page = 1): Promise<{ succes
       })),
     }));
 
-    return { success: true, data: normalizedData, pagination: payload?.pagination };
+    const pageNum = Number(payload?.page) || page;
+    const limitNum = Number(payload?.limit) || safeLimit;
+    const total = Number(payload?.total) || normalizedData.length;
+    const totalPages =
+      Number(payload?.totalPages) ||
+      Math.max(1, Math.ceil(total / Math.max(1, limitNum)));
+
+    return {
+      success: true,
+      data: normalizedData,
+      pagination: {
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages,
+        hasNextPage: pageNum < totalPages,
+        hasPrevPage: pageNum > 1,
+      },
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : '';
     if (message.toLowerCase().includes('fetch failed')) {

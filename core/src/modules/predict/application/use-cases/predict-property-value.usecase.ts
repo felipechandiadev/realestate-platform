@@ -84,7 +84,7 @@ export class PredictPropertyValueUseCase {
     if (precios[dto.tipo_propiedad]) confianza += 0.10;
     confianza = Math.min(0.95, confianza);
 
-    const formatCLP = (value: number) => `$${value.toLocaleString('es-CL')} CLP`;
+    const formatCLP = (value: number) => `$${value.toLocaleString('es-CL')}`;
 
     const response: PredictPropertyResponseDto = {
       valor_estimado: valorEstimado,

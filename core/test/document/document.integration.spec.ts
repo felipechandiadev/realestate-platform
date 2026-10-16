@@ -3,10 +3,10 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { DataSource } from 'typeorm';
-import { Document } from '../../src/modules/document/domain/document.entity';
 import { DocumentTypeOrmEntity as DocumentType } from '../../src/modules/document-types/infrastructure/persistence/document-type.orm-entity';
 import { User } from '../../src/modules/users/domain/user.entity';
 import { DocumentStatus } from '../../src/modules/document/domain/document.entity';
+import { loginStaff } from '../utils/auth';
 
 describe('DocumentController (integration)', () => {
   let app: INestApplication;
@@ -14,8 +14,10 @@ describe('DocumentController (integration)', () => {
   let testDocumentId: string;
   let documentTypeId: string;
   let adminUserId: string;
+  let adminToken: string;
 
   beforeAll(async () => {
+    process.env.NODE_ENV = 'test';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -25,21 +27,15 @@ describe('DocumentController (integration)', () => {
 
     dataSource = app.get(DataSource);
 
-    // Create a test user (check if exists first)
+    const login = await loginStaff(app);
+    adminToken = login.accessToken;
+
     const userRepository = dataSource.getRepository(User);
-    let testUser = await userRepository.findOne({
-      where: { username: 'testuser' },
-    });
-    if (!testUser) {
-      testUser = await userRepository.save({
-        email: 'test@example.com',
-        username: 'testuser',
-        password: 'hashedpassword', // In real scenario this would be hashed
-        role: 'ADMIN' as any,
-        status: 'ACTIVE' as any,
-      } as any);
-    }
-    adminUserId = testUser!.id;
+    const staff =
+      (login.user?.id && (await userRepository.findOne({ where: { id: login.user.id } }))) ||
+      (await userRepository.findOne({ where: { email: 'admin@realestate.com' } })) ||
+      (await userRepository.findOne({ where: { email: 'admin@re.cl' } }));
+    adminUserId = staff!.id;
 
     // Create a document type for testing
     const documentTypeRepository = dataSource.getRepository(DocumentType);
@@ -60,6 +56,14 @@ describe('DocumentController (integration)', () => {
     await app.close();
   });
 
+  it('GET /document sin token → 401', async () => {
+    await request(app.getHttpServer()).get('/document').expect(401);
+  });
+
+  it('POST /document sin token → 401', async () => {
+    await request(app.getHttpServer()).post('/document').send({}).expect(401);
+  });
+
   it('POST /document - debe crear un nuevo documento', async () => {
     const documentData = {
       title: 'Escritura de compraventa',
@@ -70,12 +74,8 @@ describe('DocumentController (integration)', () => {
 
     const response = await request(app.getHttpServer())
       .post('/document')
+      .set('Authorization', `Bearer ${adminToken}`)
       .send(documentData);
-
-    if (response.status !== 201) {
-      console.log('Response status:', response.status);
-      console.log('Response body:', response.body);
-    }
 
     expect(response.status).toBe(201);
 
@@ -89,6 +89,7 @@ describe('DocumentController (integration)', () => {
   it('GET /document - debe obtener la lista de documentos', async () => {
     const response = await request(app.getHttpServer())
       .get('/document')
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
     expect(Array.isArray(response.body)).toBe(true);
@@ -97,6 +98,7 @@ describe('DocumentController (integration)', () => {
   it('GET /document/:id - debe obtener un documento por ID', async () => {
     const response = await request(app.getHttpServer())
       .get(`/document/${testDocumentId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
     expect(response.body.id).toBe(testDocumentId);
@@ -109,8 +111,9 @@ describe('DocumentController (integration)', () => {
       notes: 'Documento actualizado para pruebas',
     };
 
-    const response = await request(app.getHttpServer())
+    await request(app.getHttpServer())
       .patch(`/document/${testDocumentId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send(updateData)
       .expect(200);
   });
@@ -118,17 +121,20 @@ describe('DocumentController (integration)', () => {
   it('DELETE /document/:id - debe eliminar un documento existente', async () => {
     await request(app.getHttpServer())
       .delete(`/document/${testDocumentId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(200);
 
     // Verificar que ya no existe
     await request(app.getHttpServer())
       .get(`/document/${testDocumentId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(404);
   });
 
   it('GET /document/:id - debe fallar al buscar un ID que no existe', async () => {
     await request(app.getHttpServer())
-      .get('/document/non-existent-id')
+      .get('/document/00000000-0000-0000-0000-000000000000')
+      .set('Authorization', `Bearer ${adminToken}`)
       .expect(404);
   });
 });

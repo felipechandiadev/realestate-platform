@@ -4,6 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { Repository, IsNull } from 'typeorm';
+import * as ExcelJS from 'exceljs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Person } from '../domain/person.entity';
 import { User } from '../../users/domain/user.entity';
@@ -98,6 +99,59 @@ export class PersonService {
     }));
 
     return [...persons, ...usersAsPersons];
+  }
+
+  async findGrid(query: any = {}): Promise<{ data: any[]; total: number; page: number; limit: number }> {
+    const merged = await this.findAllIncludingUsers();
+    const filtrationOn = query.filtration === true || query.filtration === 'true';
+    const filters = filtrationOn ? parsePeopleFilters(query.filters) : {};
+    const search = typeof query.search === 'string' ? query.search.trim().toLowerCase() : '';
+
+    let rows = merged.filter((row) => personMatches(row, filters, search));
+
+    const sortField = typeof query.sortField === 'string' ? query.sortField : 'name';
+    const direction = query.sort === 'desc' ? -1 : query.sort === 'asc' ? 1 : 1;
+    const useSort = query.sort === 'asc' || query.sort === 'desc';
+    rows = [...rows].sort((a, b) => {
+      if (!useSort) {
+        return comparePersonValues(b.createdAt, a.createdAt);
+      }
+      const field = ['name', 'userRole', 'dni', 'verified', 'verificationRequest', 'createdAt'].includes(sortField)
+        ? sortField
+        : 'createdAt';
+      return comparePersonValues(personSortValue(a, field), personSortValue(b, field)) * direction;
+    });
+
+    const exportAll = query.pagination === false || query.pagination === 'false';
+    const page = Math.max(1, parseInt(query.page, 10) || 1);
+    const limit = Math.max(1, parseInt(query.limit, 10) || 25);
+    const total = rows.length;
+    const data = exportAll ? rows : rows.slice((page - 1) * limit, page * limit);
+    return { data, total, page: exportAll ? 1 : page, limit: exportAll ? total : limit };
+  }
+
+  async exportExcel(query: any = {}): Promise<Buffer> {
+    const { data } = await this.findGrid({ ...query, pagination: 'false' });
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Personas');
+    sheet.columns = [
+      { key: 'name', header: 'Nombre', width: 28 },
+      { key: 'userRole', header: 'Rol', width: 16 },
+      { key: 'dni', header: 'DNI', width: 16 },
+      { key: 'verified', header: 'Verificado', width: 14 },
+      { key: 'createdAt', header: 'Fecha registro', width: 22 },
+    ];
+    for (const row of data) {
+      sheet.addRow({
+        name: row.name || '',
+        userRole: personRoleLabel(row),
+        dni: row.dni || '',
+        verified: row.verified ? 'Sí' : 'No',
+        createdAt: row.createdAt || '',
+      });
+    }
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
   }
 
   async findOne(id: string): Promise<Person> {
@@ -238,4 +292,78 @@ export class PersonService {
   async unlinkUser(id: string): Promise<void> {
     await this.unlinkUserUseCase.execute(id);
   }
+}
+
+function parsePeopleFilters(filters?: string): Record<string, string> {
+  if (!filters) return {};
+  const result: Record<string, string> = {};
+  for (const pair of String(filters).split(',')) {
+    const [column, ...valueParts] = pair.split('-');
+    if (!column || valueParts.length === 0) continue;
+    try {
+      result[column] = decodeURIComponent(valueParts.join('-'));
+    } catch {
+      result[column] = valueParts.join('-');
+    }
+  }
+  return result;
+}
+
+function personRoleLabel(row: any): string {
+  const role = row.userRole || row.user?.role || '';
+  const labels: Record<string, string> = {
+    ADMIN: 'Admin',
+    AGENT: 'Agente',
+    COMMUNITY: 'Comunidad',
+  };
+  return labels[role] || role || '';
+}
+
+function personSortValue(row: any, field: string): unknown {
+  if (field === 'userRole') return personRoleLabel(row);
+  if (field === 'verified') return row.verified ? 1 : 0;
+  return row[field];
+}
+
+function comparePersonValues(a: unknown, b: unknown): number {
+  if (a instanceof Date || b instanceof Date || (typeof a === 'string' && typeof b === 'string' && !Number.isNaN(Date.parse(String(a))) && String(a).includes('T'))) {
+    const da = a ? new Date(a as string).getTime() : 0;
+    const db = b ? new Date(b as string).getTime() : 0;
+    return da - db;
+  }
+  if (typeof a === 'number' && typeof b === 'number') return a - b;
+  return String(a ?? '').localeCompare(String(b ?? ''), 'es', { sensitivity: 'base' });
+}
+
+function personMatches(row: any, filters: Record<string, string>, search: string): boolean {
+  const role = personRoleLabel(row);
+  const rawRole = String(row.userRole || row.user?.role || '');
+  const haystack = [row.name, row.dni, row.email, role, rawRole].filter(Boolean).join(' ').toLowerCase();
+  if (search && !haystack.includes(search)) return false;
+
+  const text = (value: unknown, filter?: string) =>
+    !filter || String(value ?? '').toLowerCase().includes(filter.toLowerCase());
+
+  if (!text(row.name, filters.name)) return false;
+  if (filters.userRole) {
+    const needle = filters.userRole.toLowerCase();
+    if (!role.toLowerCase().includes(needle) && !rawRole.toLowerCase().includes(needle)) return false;
+  }
+  if (!text(row.dni, filters.dni)) return false;
+  if (filters.verified) {
+    const needle = filters.verified.toLowerCase();
+    const yes = ['1', 'true', 'si', 'sí', 'yes'].includes(needle);
+    const no = ['0', 'false', 'no'].includes(needle);
+    if (yes && !row.verified) return false;
+    if (no && row.verified) return false;
+    if (!yes && !no && !String(row.verified).toLowerCase().includes(needle)) return false;
+  }
+  if (filters.createdAt) {
+    const date = row.createdAt ? new Date(row.createdAt) : null;
+    const formatted = date && !Number.isNaN(date.getTime())
+      ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${date.toLocaleDateString('es-CL')}`
+      : '';
+    if (!formatted.toLowerCase().includes(filters.createdAt.toLowerCase())) return false;
+  }
+  return true;
 }

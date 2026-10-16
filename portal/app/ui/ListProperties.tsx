@@ -20,6 +20,7 @@ interface PropertyFromAPI {
   builtSquareMeters?: number | null;
   landSquareMeters?: number | null;
   parkingSpaces?: number | null;
+  otherFeatures?: string[];
   mainImageUrl: string;
   multimedia?: Array<{
     id: string;
@@ -202,6 +203,7 @@ export default function ListProperties({ properties, pagination, onPageChange, i
             builtSquareMeters: property.builtSquareMeters ?? property.totalArea ?? null,
             landSquareMeters: property.landSquareMeters ?? null,
             parkingSpaces: property.parkingSpaces ?? null,
+            otherFeatures: Array.isArray(property.otherFeatures) ? property.otherFeatures : [],
             isFeatured: property.isFeatured || false,
           };
 

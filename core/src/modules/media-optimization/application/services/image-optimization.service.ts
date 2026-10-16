@@ -62,8 +62,8 @@ export class ImageOptimizationService {
 
       // 2. Generar todas las variantes (SIN almacenar original)
       const variants: Partial<MultimediaVariant>[] = [];
-      let fullVariantUrl: string | null = null;
       let totalVariantSize = 0;
+      const primaryVariantPreference = this.getPrimaryVariantPreference(entityType);
 
       for (const config of strategy) {
         for (const format of config.formats) {
@@ -92,11 +92,6 @@ export class ImageOptimizationService {
               r2Key: key,
             });
 
-            // Usar la variante FULL como URL principal
-            if (config.type === VariantType.FULL && format === ImageFormat.WEBP) {
-              fullVariantUrl = url;
-            }
-
             totalVariantSize += processed.size;
 
             this.logger.debug(
@@ -116,10 +111,9 @@ export class ImageOptimizationService {
         throw new Error('No variants were successfully created');
       }
 
-      // Si no hay FULL en webp, usar la primera variante como fallback
+      const fullVariantUrl = this.resolvePrimaryUrl(variants, primaryVariantPreference);
       if (!fullVariantUrl) {
-        fullVariantUrl = variants[0]?.url ?? null;
-        this.logger.warn(`⚠️ Using fallback URL: ${fullVariantUrl}`);
+        throw new Error('No primary URL could be resolved from variants');
       }
 
       // 3. Calcular estadísticas (sin original almacenado)
@@ -173,6 +167,42 @@ export class ImageOptimizationService {
     await this.variantRepository.delete({ multimediaId });
 
     this.logger.log(`🗑️ Deleted ${variants.length} variants for ${multimediaId}`);
+  }
+
+  /**
+   * Preferred primary URL per entity (largest "default" display asset).
+   */
+  private getPrimaryVariantPreference(entityType: EntityType): VariantType[] {
+    const map: Record<EntityType, VariantType[]> = {
+      property: [VariantType.FULL, VariantType.THUMBNAIL_MD, VariantType.THUMBNAIL_SM],
+      blog: [VariantType.OG_IMAGE, VariantType.THUMBNAIL_MD, VariantType.HERO],
+      avatar: [VariantType.AVATAR_MD, VariantType.AVATAR_SM, VariantType.AVATAR_LG],
+      slider: [
+        VariantType.SLIDE_DESKTOP,
+        VariantType.SLIDE_TABLET,
+        VariantType.SLIDE_MOBILE,
+        VariantType.SLIDE_THUMBNAIL,
+      ],
+      testimonial: [VariantType.AVATAR_MD, VariantType.AVATAR_SM, VariantType.PROJECT_THUMB],
+    };
+    return map[entityType] || [VariantType.FULL, VariantType.THUMBNAIL_MD];
+  }
+
+  private resolvePrimaryUrl(
+    variants: Partial<MultimediaVariant>[],
+    preferredTypes: VariantType[],
+  ): string | null {
+    for (const type of preferredTypes) {
+      const webp = variants.find(
+        (v) => v.variantType === type && v.format === ImageFormat.WEBP && v.url,
+      );
+      if (webp?.url) return webp.url;
+      const jpeg = variants.find(
+        (v) => v.variantType === type && v.format === ImageFormat.JPEG && v.url,
+      );
+      if (jpeg?.url) return jpeg.url;
+    }
+    return variants.find((v) => !!v.url)?.url ?? null;
   }
 
   /**

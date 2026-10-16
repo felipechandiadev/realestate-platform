@@ -27,8 +27,21 @@ interface PageProps {
 export default async function AdministratorsPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const search = typeof params.search === 'string' ? params.search : undefined;
+  const sort = params.sort === 'asc' || params.sort === 'desc' ? params.sort : undefined;
+  const sortField = typeof params.sortField === 'string' ? params.sortField : undefined;
+  const filters = typeof params.filters === 'string' ? params.filters : undefined;
+  const page = Number.parseInt(typeof params.page === 'string' ? params.page : '1', 10) || 1;
+  const limit = Number.parseInt(typeof params.limit === 'string' ? params.limit : '25', 10) || 25;
 
-  const response = await listAdministrators({ search });
+  const response = await listAdministrators({
+    search,
+    sort,
+    sortField,
+    filters,
+    page,
+    limit,
+    pagination: true,
+  });
 
   if (!response.success || !response.data) {
     return (
@@ -63,12 +76,18 @@ export default async function AdministratorsPage({ searchParams }: PageProps) {
         avatarUrl: admin.personalInfo?.avatarUrl || null,
         firstName: admin.personalInfo?.firstName || '',
       },
-      createdAt: new Date().toISOString(),
+      createdAt: admin.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       deletedAt: null,
       lastLogin: new Date().toISOString(),
     };
   });
 
-  return <AdministratorsContent initialAdministrators={administrators} initialSearch={search} />;
+  return (
+    <AdministratorsContent
+      initialAdministrators={administrators}
+      initialSearch={search}
+      totalRows={response.data.total}
+    />
+  );
 }

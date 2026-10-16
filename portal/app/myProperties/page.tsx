@@ -123,7 +123,7 @@ export default function MyPropertiesPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {properties.map((property) => (
             <Card key={property.id} className="overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow">
-              <div className="relative aspect-video bg-muted">
+              <div className="relative aspect-video" style={{ backgroundColor: '#e5e7eb' }}>
                 {property.mainImageUrl ? (
                   <img 
                     src={normalizeImageUrl(property.mainImageUrl) || ''} 

@@ -7,6 +7,7 @@ import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 import { PropertyType } from '../../../property-types/domain/property-type.entity';
 import { User } from '../../../users/domain/user.entity';
 import { NotificationsService } from '../../../notifications/application/notifications.service';
+import { normalizeOtherFeatures } from '../../domain/other-features';
 
 @Injectable()
 export class UpdatePropertyUseCase {
@@ -27,14 +28,17 @@ export class UpdatePropertyUseCase {
     const oldAssignedAgentId = property.assignedAgentId;
     const oldStatus = property.status;
 
-    // Filter blank values
+    // Filter blank values (keep empty arrays so otherFeatures can be cleared)
     const cleanDto = Object.fromEntries(
       Object.entries(updatePropertyDto).filter(([, value]) =>
         value !== '' && value !== null && value !== undefined,
       ),
     ) as UpdatePropertyDto;
 
-    const nextStatus = cleanDto.status ?? property.status;
+    if (cleanDto.otherFeatures !== undefined) {
+      cleanDto.otherFeatures = normalizeOtherFeatures(cleanDto.otherFeatures);
+    }
+
     const nextAgentId =
       cleanDto.assignedAgentId !== undefined
         ? cleanDto.assignedAgentId
@@ -48,10 +52,13 @@ export class UpdatePropertyUseCase {
       PropertyStatus.RENTED,
     ];
 
-    if (
-      statusesRequiringAgent.includes(nextStatus as PropertyStatus) &&
-      !nextAgentId
-    ) {
+    const statusIsChanging =
+      cleanDto.status !== undefined && cleanDto.status !== oldStatus;
+    const movingToStatusRequiringAgent =
+      statusIsChanging &&
+      statusesRequiringAgent.includes(cleanDto.status as PropertyStatus);
+
+    if (movingToStatusRequiringAgent && !nextAgentId) {
       throw new BadRequestException(
         'Debes asignar un agente antes de cambiar el estado de la propiedad.',
       );

@@ -108,6 +108,9 @@ export interface DocumentListParams {
   page?: number;
   limit?: number;
   search?: string;
+  sort?: 'asc' | 'desc';
+  sortField?: string;
+  filters?: string;
 }
 
 // ===================================
@@ -303,6 +306,9 @@ export async function listDocuments(params: DocumentListParams = {}): Promise<{
     if (params.search) searchParams.set('search', params.search);
     if (params.page) searchParams.set('page', params.page.toString());
     if (params.limit) searchParams.set('limit', params.limit.toString());
+    if (params.sort) searchParams.set('sort', params.sort);
+    if (params.sortField) searchParams.set('sortField', params.sortField);
+    if (params.filters) searchParams.set('filters', params.filters);
 
     const url = `${env.backendApiUrl}/document?${searchParams.toString()}`;
     

@@ -4,6 +4,9 @@ export abstract class ContractRepository {
   abstract save(contract: Contract): Promise<Contract>;
   abstract findById(id: string): Promise<Contract | null>;
   abstract findAll(options?: any): Promise<Contract[]>;
+  abstract findForGrid(
+    query?: any,
+  ): Promise<{ data: Contract[]; total: number; page?: number; limit?: number } | Contract[]>;
   abstract update(id: string, patch: Partial<Contract>): Promise<void>;
   abstract softDelete(id: string): Promise<void>;
   // helpers used by service layer; ideally these should be replaced

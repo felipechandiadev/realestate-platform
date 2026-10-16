@@ -57,10 +57,52 @@ export class FilterSalePropertiesDto {
   @IsString()
   city?: string; // Commune/City
 
-  // Property type
+  // Property type (single name, CSV names, or typeIds CSV)
   @IsOptional()
   @IsString()
-  typeProperty?: string; // e.g., 'Casa', 'Departamento'
+  typeProperty?: string;
+
+  @IsOptional()
+  @IsString()
+  typeIds?: string;
+
+  @IsOptional()
+  @IsString()
+  types?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  builtSquareMetersMin?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  builtSquareMetersMax?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  landSquareMetersMin?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  landSquareMetersMax?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  constructionYearMin?: number;
+
+  /** CSV of OTHER_FEATURE_KEYS e.g. POOL,BBQ */
+  @IsOptional()
+  @IsString()
+  otherFeatures?: string;
+
+  @IsOptional()
+  @IsString()
+  features?: string;
 
   // Pricing
   @IsOptional()
