@@ -23,6 +23,8 @@ import {
 import { UsersService } from '../../users/application/users.service';
 import { MailService } from '../../mail/application/mail.service';
 import { NOTIFICATION_MAIL_CONFIG, shouldSendEmail } from '../notification-mail.config';
+import { NotificationsGateway } from '../presentation/notifications.gateway';
+import { PushNotificationsService } from './push-notifications.service';
 
 export interface NotificationWithUserDetails extends Notification {
   targetUsers?: Array<{ id: string; name: string }>;
@@ -259,6 +261,8 @@ export class NotificationsService {
     private readonly propertyRepository: Repository<Property>,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
+    private readonly notificationsGateway: NotificationsGateway,
+    private readonly pushNotifications: PushNotificationsService,
   ) {}
 
   async create(
@@ -297,6 +301,17 @@ export class NotificationsService {
     };
 
     const savedNotification = await (this.notificationRepository as any).save(notificationData);
+
+    const targetUserIds: string[] = Array.isArray(savedNotification.targetUserIds)
+      ? [...new Set<string>(savedNotification.targetUserIds.filter((id: unknown): id is string => typeof id === 'string'))]
+      : [];
+    const notificationId = String(savedNotification.id);
+    for (const userId of targetUserIds) {
+      this.notificationsGateway.emitNewNotification(userId, notificationId);
+    }
+    void this.pushNotifications.notifyUsers(targetUserIds, notificationId).catch((error) => {
+      console.error('[NotificationsService.create] Push delivery failed:', error);
+    });
 
     // Keep original input type in the returned payload for backward compatibility
     if (createNotificationDto.type && savedNotification) {

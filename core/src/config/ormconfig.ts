@@ -14,7 +14,7 @@ export const ormConfig = (
 		? explicitEntities
 		: [join(projectRoot, 'backend', 'src', '**', '*.entity{.ts,.js}')];
 
-	const migrationsGlob = [join(projectRoot, 'backend', 'src', 'database', 'migrations', '*{.ts,.js}')];
+	const migrationsGlob = [join(__dirname, '..', 'database', 'migrations', '*{.ts,.js}')];
 
 	return {
 		type: 'mysql',

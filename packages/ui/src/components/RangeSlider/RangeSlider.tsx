@@ -1,93 +1,155 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import "./range-slider.css";
 
-interface RangeSliderProps {
-    min?: number;
-    max?: number;
-    value?: [number, number];
-    onChange?: (values: [number, number]) => void;
+export interface RangeSliderProps {
+  min?: number;
+  max?: number;
+  step?: number;
+  value?: [number, number];
+  onChange?: (values: [number, number]) => void;
+  /** Optional label above the track. Pass empty string to hide. */
+  label?: string;
+  /** Format displayed min/max values */
+  formatValue?: (value: number) => string;
+  /** Hide the min/max value row under the track */
+  hideValues?: boolean;
+  className?: string;
+  "data-test-id"?: string;
 }
 
-const RangeSlider: React.FC<RangeSliderProps> = ({ min = 0, max = 100, value, onChange }) => {
-    const [values, setValues] = useState<[number, number]>(value || [min, max]);
-    const [dragging, setDragging] = useState<null | "min" | "max">(null);
-    const trackRef = useRef<HTMLDivElement>(null);
+function snapToStep(raw: number, min: number, max: number, step: number): number {
+  if (step <= 0) return Math.min(max, Math.max(min, raw));
+  const snapped = Math.round((raw - min) / step) * step + min;
+  return Math.min(max, Math.max(min, snapped));
+}
 
-    useEffect(() => {
-        if (value) setValues(value);
-    }, [value]);
+const RangeSlider: React.FC<RangeSliderProps> = ({
+  min = 0,
+  max = 100,
+  step = 1,
+  value,
+  onChange,
+  label = "Rango",
+  formatValue,
+  hideValues = false,
+  className = "",
+  "data-test-id": dataTestId = "range-slider-root",
+}) => {
+  const [values, setValues] = useState<[number, number]>(value || [min, max]);
+  const [dragging, setDragging] = useState<null | "min" | "max">(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const valuesRef = useRef(values);
+  valuesRef.current = values;
 
-    useEffect(() => {
-        const handleMouseUp = () => setDragging(null);
-        window.addEventListener("mouseup", handleMouseUp);
-        return () => window.removeEventListener("mouseup", handleMouseUp);
-    }, []);
+  useEffect(() => {
+    if (value) setValues(value);
+  }, [value?.[0], value?.[1]]);
 
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (!dragging || !trackRef.current) return;
-            const track = trackRef.current;
-            const rect = track.getBoundingClientRect();
-            const percent = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-            const newValue = Math.round(percent * (max - min) + min);
-            if (dragging === "min") {
-                const clamped = Math.min(newValue, values[1]);
-                setValues([clamped, values[1]]);
-                onChange?.([clamped, values[1]]);
-            } else {
-                const clamped = Math.max(newValue, values[0]);
-                setValues([values[0], clamped]);
-                onChange?.([values[0], clamped]);
-            }
-        };
-        if (dragging) {
-            window.addEventListener("mousemove", handleMouseMove);
-            return () => window.removeEventListener("mousemove", handleMouseMove);
-        }
-    }, [dragging, min, max, values, onChange]);
+  const updateFromClientX = useCallback(
+    (clientX: number, thumb: "min" | "max") => {
+      if (!trackRef.current) return;
+      const rect = trackRef.current.getBoundingClientRect();
+      if (rect.width <= 0) return;
+      const percent = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+      const raw = percent * (max - min) + min;
+      const newValue = snapToStep(raw, min, max, step);
+      const current = valuesRef.current;
 
-    const getPercent = (val: number) => ((val - min) / (max - min)) * 100;
+      if (thumb === "min") {
+        const clamped = Math.min(newValue, current[1]);
+        const next: [number, number] = [clamped, current[1]];
+        setValues(next);
+        onChange?.(next);
+      } else {
+        const clamped = Math.max(newValue, current[0]);
+        const next: [number, number] = [current[0], clamped];
+        setValues(next);
+        onChange?.(next);
+      }
+    },
+    [min, max, step, onChange],
+  );
 
-    return (
-        <div className="w-full" data-test-id="range-slider-root">
-            <div className="mb-1 flex items-center justify-between">
-                <span className="text-xs text-foreground font-light" data-test-id="range-slider-label">Rango</span>
-            </div>
-            <div className="fs-range-slider" ref={trackRef} data-test-id="range-slider-track">
-                {/* Track */}
-                <div className="fs-range-slider__track" data-test-id="range-slider-bg" />
-                {/* Filled Range */}
-                <div
-                    className="fs-range-slider__fill"
-                    style={{ left: `${getPercent(values[0])}%`, width: `${getPercent(values[1]) - getPercent(values[0])}%` }}
-                    data-test-id="range-slider-fill"
-                />
-                {/* Thumbs */}
-                <button
-                    type="button"
-                    className="fs-range-slider__thumb"
-                    style={{ left: `${getPercent(values[0])}%`, transform: "translate(-50%, -50%)" }}
-                    onMouseDown={() => setDragging("min")}
-                    aria-label="Min value"
-                    data-test-id="range-slider-thumb-min"
-                />
-                <button
-                    type="button"
-                    className="fs-range-slider__thumb"
-                    style={{ left: `${getPercent(values[1])}%`, transform: "translate(-50%, -50%)" }}
-                    onMouseDown={() => setDragging("max")}
-                    aria-label="Max value"
-                    data-test-id="range-slider-thumb-max"
-                />
-            </div>
-            <div className="flex w-full justify-between mt-2" data-test-id="range-slider-values">
-                <span className="text-xs text-foreground font-light" data-test-id="range-slider-value-min">{values[0]}</span>
-                <span className="text-xs text-foreground font-light" data-test-id="range-slider-value-max">{values[1]}</span>
-            </div>
+  useEffect(() => {
+    if (!dragging) return;
+
+    const onPointerMove = (e: PointerEvent) => {
+      updateFromClientX(e.clientX, dragging);
+    };
+    const onPointerUp = () => setDragging(null);
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [dragging, updateFromClientX]);
+
+  const span = max - min;
+  const getPercent = (val: number) => (span <= 0 ? 0 : ((val - min) / span) * 100);
+  const display = (v: number) => (formatValue ? formatValue(v) : String(v));
+
+  return (
+    <div className={`w-full ${className}`.trim()} data-test-id={dataTestId}>
+      {label ? (
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-xs text-foreground font-light" data-test-id="range-slider-label">
+            {label}
+          </span>
         </div>
-    );
+      ) : null}
+      <div className="fs-range-slider" ref={trackRef} data-test-id="range-slider-track">
+        <div className="fs-range-slider__track" data-test-id="range-slider-bg" />
+        <div
+          className="fs-range-slider__fill"
+          style={{
+            left: `${getPercent(values[0])}%`,
+            width: `${Math.max(0, getPercent(values[1]) - getPercent(values[0]))}%`,
+          }}
+          data-test-id="range-slider-fill"
+        />
+        <button
+          type="button"
+          className="fs-range-slider__thumb"
+          style={{ left: `${getPercent(values[0])}%`, transform: "translate(-50%, -50%)" }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+            setDragging("min");
+          }}
+          aria-label="Valor mínimo"
+          data-test-id="range-slider-thumb-min"
+        />
+        <button
+          type="button"
+          className="fs-range-slider__thumb"
+          style={{ left: `${getPercent(values[1])}%`, transform: "translate(-50%, -50%)" }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+            setDragging("max");
+          }}
+          aria-label="Valor máximo"
+          data-test-id="range-slider-thumb-max"
+        />
+      </div>
+      {!hideValues ? (
+        <div className="flex w-full justify-between mt-2" data-test-id="range-slider-values">
+          <span className="text-xs text-foreground font-light" data-test-id="range-slider-value-min">
+            {display(values[0])}
+          </span>
+          <span className="text-xs text-foreground font-light" data-test-id="range-slider-value-max">
+            {display(values[1])}
+          </span>
+        </div>
+      ) : null}
+    </div>
+  );
 };
 
 export default RangeSlider;

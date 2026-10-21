@@ -1,7 +1,9 @@
 "use client";
-import React, { createContext, useContext, useState, useCallback, ReactNode, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useMemo, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
 import { useAuth } from '@/app/providers';
 import { useAlert } from '@/shared/hooks/useAlert';
+import { env } from '@/lib/env';
 import {
   getUserGridNotifications,
   UserGridNotificationsParams,
@@ -37,12 +39,14 @@ type NotificationContextType = {
   markAllAsRead: () => Promise<void>;
   updateNotificationStatus: (notificationId: string, status: 'SEND' | 'OPEN') => Promise<void>;
   refreshNotifications: () => Promise<void>;
+  soundEnabled: boolean;
+  setSoundEnabled: (enabled: boolean) => void;
 };
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export function NotificationProvider({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, accessToken } = useAuth();
   const { showAlert } = useAlert();
 
   // Estado local
@@ -56,6 +60,30 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     updateStatus: false,
   });
   const [error, setError] = useState<string | null>(null);
+  const [soundEnabled, setSoundEnabledState] = useState(false);
+  const seenNotificationIds = useRef<Set<string>>(new Set());
+  const soundRef = useRef<HTMLAudioElement | null>(null);
+
+  const setSoundEnabled = useCallback((enabled: boolean) => {
+    setSoundEnabledState(enabled);
+    try {
+      localStorage.setItem(`notifications:sound:${user?.id ?? 'anonymous'}`, enabled ? 'true' : 'false');
+    } catch {
+      // Storage can be unavailable in private browsing; keep this session's preference in memory.
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setSoundEnabledState(false);
+      return;
+    }
+    try {
+      setSoundEnabledState(localStorage.getItem(`notifications:sound:${user.id}`) === 'true');
+    } catch {
+      setSoundEnabledState(false);
+    }
+  }, [user?.id]);
 
   // Método para obtener cuenta de notificaciones sin leer
   const getUnreadCount = useCallback(async () => {
@@ -253,6 +281,45 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     ]);
   }, [getUnreadCount, getNotificationGrid]);
 
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id || !accessToken) return;
+
+    const socket = io(`${env.backendApiUrl}/notifications`, {
+      auth: { token: accessToken },
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      timeout: 10000,
+    });
+
+    const onNewNotification = (event: { notificationId?: string }) => {
+      const id = event?.notificationId;
+      if (!id || seenNotificationIds.current.has(id)) return;
+      seenNotificationIds.current.add(id);
+      if (seenNotificationIds.current.size > 200) {
+        seenNotificationIds.current = new Set(Array.from(seenNotificationIds.current).slice(-100));
+      }
+      void refreshNotifications();
+      if (soundEnabled && typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        soundRef.current ??= new Audio('/sounds/notification-alert.mp3');
+        soundRef.current.currentTime = 0;
+        void soundRef.current.play().catch(() => {});
+      }
+    };
+
+    socket.on('notification:new', onNewNotification);
+    socket.on('connect', () => void refreshNotifications());
+    const fallback = window.setInterval(() => {
+      if (!socket.connected) void getUnreadCount();
+    }, 60000);
+
+    return () => {
+      window.clearInterval(fallback);
+      socket.off('notification:new', onNewNotification);
+      socket.disconnect();
+    };
+  }, [accessToken, getUnreadCount, isAuthenticated, refreshNotifications, soundEnabled, user?.id]);
+
   // Efecto para cargar datos iniciales cuando el usuario se autentica
   useEffect(() => {
     if (isAuthenticated && user?.id) {
@@ -276,6 +343,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     markAllAsRead,
     updateNotificationStatus: updateNotificationStatusMethod,
     refreshNotifications,
+    soundEnabled,
+    setSoundEnabled,
   }), [
     unreadCount,
     notifications,
@@ -287,6 +356,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     markAllAsRead,
     updateNotificationStatusMethod,
     refreshNotifications,
+    soundEnabled,
+    setSoundEnabled,
   ]);
 
   return (

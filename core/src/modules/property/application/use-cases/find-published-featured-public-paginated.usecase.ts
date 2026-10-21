@@ -19,13 +19,18 @@ export class FindPublishedFeaturedPublicPaginatedUseCase {
   }> {
     const skip = (page - 1) * limit;
 
+    // Prefer lastModifiedAt so newly featured properties surface on page 1
+    // (SEO/featured save updates lastModifiedAt). Then publishedAt / createdAt.
     const qb = this.propertyRepository.createQueryBuilder('p')
       .leftJoinAndSelect('p.propertyType', 'pt')
       .leftJoinAndSelect('p.multimedia', 'multimedia')
       .leftJoinAndSelect('multimedia.variants', 'variants')
       .where('p.status = :status', { status: PropertyStatus.PUBLISHED })
       .andWhere('p.isFeatured = :isFeatured', { isFeatured: true })
-      .orderBy('p.publishedAt', 'DESC')
+      .andWhere('p.deletedAt IS NULL')
+      .orderBy('p.lastModifiedAt', 'DESC')
+      .addOrderBy('p.publishedAt', 'DESC')
+      .addOrderBy('p.createdAt', 'DESC')
       .skip(skip)
       .take(limit);
 

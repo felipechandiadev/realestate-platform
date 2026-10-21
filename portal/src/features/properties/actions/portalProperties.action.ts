@@ -248,6 +248,79 @@ export async function getPublishedPropertiesFiltered(filters: {
   }
 }
 
+export type FilterBounds = {
+  price: { min: number; max: number };
+  builtSquareMeters: { min: number; max: number };
+  landSquareMeters: { min: number; max: number };
+  constructionYear: { min: number; max: number };
+};
+
+const DEFAULT_FILTER_BOUNDS: FilterBounds = {
+  price: { min: 0, max: 10_000_000 },
+  builtSquareMeters: { min: 0, max: 1_000 },
+  landSquareMeters: { min: 0, max: 5_000 },
+  constructionYear: { min: 1950, max: new Date().getFullYear() },
+};
+
+/**
+ * Fetch min/max bounds for sidebar range sliders.
+ */
+export async function getFilterBounds(opts?: {
+  operation?: string;
+  currency?: string;
+}): Promise<FilterBounds> {
+  try {
+    const params = new URLSearchParams();
+    if (opts?.operation) {
+      const operationMap: Record<string, string> = {
+        rent: 'RENT',
+        sale: 'SALE',
+        RENT: 'RENT',
+        SALE: 'SALE',
+      };
+      const mapped = operationMap[opts.operation] || opts.operation.toUpperCase();
+      if (mapped === 'SALE' || mapped === 'RENT') {
+        params.set('operationType', mapped);
+      }
+    }
+    if (opts?.currency && opts.currency !== 'all') {
+      params.set('currency', opts.currency);
+    }
+
+    const qs = params.toString();
+    const url = `${env.backendApiUrl}/properties/filter-bounds${qs ? `?${qs}` : ''}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+    });
+
+    if (!response.ok) return DEFAULT_FILTER_BOUNDS;
+
+    const data = await response.json();
+    return {
+      price: {
+        min: Number(data?.price?.min) || DEFAULT_FILTER_BOUNDS.price.min,
+        max: Number(data?.price?.max) || DEFAULT_FILTER_BOUNDS.price.max,
+      },
+      builtSquareMeters: {
+        min: Number(data?.builtSquareMeters?.min) || DEFAULT_FILTER_BOUNDS.builtSquareMeters.min,
+        max: Number(data?.builtSquareMeters?.max) || DEFAULT_FILTER_BOUNDS.builtSquareMeters.max,
+      },
+      landSquareMeters: {
+        min: Number(data?.landSquareMeters?.min) || DEFAULT_FILTER_BOUNDS.landSquareMeters.min,
+        max: Number(data?.landSquareMeters?.max) || DEFAULT_FILTER_BOUNDS.landSquareMeters.max,
+      },
+      constructionYear: {
+        min: Number(data?.constructionYear?.min) || DEFAULT_FILTER_BOUNDS.constructionYear.min,
+        max: Number(data?.constructionYear?.max) || DEFAULT_FILTER_BOUNDS.constructionYear.max,
+      },
+    };
+  } catch {
+    return DEFAULT_FILTER_BOUNDS;
+  }
+}
+
 export async function refreshPortalProperties() {
   'use server';
   revalidatePath('/');

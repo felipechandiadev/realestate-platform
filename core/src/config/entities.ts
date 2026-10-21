@@ -1,4 +1,5 @@
 import { NotificationOrmEntity } from '../modules/notifications/infrastructure/persistence/notification.orm-entity';
+import { PushSubscriptionOrmEntity } from '../modules/notifications/infrastructure/persistence/push-subscription.orm-entity';
 import { DocumentTypeOrmEntity } from '../modules/document-types/infrastructure/persistence/document-type.orm-entity';
 import { Identity } from '../modules/identities/domain/identity.entity';
 import { PasswordResetTokenOrmEntity } from '../modules/password-recovery/infrastructure/persistence/password-reset-token.orm-entity';
@@ -26,6 +27,7 @@ import { AppearanceTemplate } from '../modules/appearance/domain/appearance-temp
 
 export const entities = [
   NotificationOrmEntity,
+  PushSubscriptionOrmEntity,
   DocumentTypeOrmEntity,
   Identity,
   PasswordResetTokenOrmEntity,

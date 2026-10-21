@@ -43,7 +43,7 @@ interface PropertyFromAPI {
   };
 }
 
-interface PaginationData {
+export interface PaginationData {
   total: number;
   page: number;
   limit: number;
@@ -57,28 +57,30 @@ interface ListPropertiesProps {
   pagination?: PaginationData;
   onPageChange?: (page: number) => void;
   isLoading?: boolean;
+  /** When false, parent can render pagination full-width below sidebar+grid */
+  showPagination?: boolean;
 }
 
-const PaginationControls: React.FC<{
+export function PropertyPaginationControls({
+  pagination,
+  onPageChange,
+}: {
   pagination: PaginationData;
   onPageChange?: (page: number) => void;
-}> = ({ pagination, onPageChange }) => {
-  // Asegurar valores por defecto si faltan
+}) {
   const {
     page = 1,
     totalPages = 1,
     hasPrevPage = false,
-    hasNextPage = false
+    hasNextPage = false,
   } = pagination || {};
 
-  console.log('🔍 [PaginationControls] Debug:', { totalPages, page, hasPrevPage, hasNextPage });
   const getPageNumbers = () => {
     const pages: number[] = [];
     const maxVisible = 5;
     let start = Math.max(1, page - Math.floor(maxVisible / 2));
     let end = Math.min(totalPages, start + maxVisible - 1);
 
-    // Ajustar si estamos cerca del final
     if (end - start + 1 < maxVisible) {
       start = Math.max(1, end - maxVisible + 1);
     }
@@ -91,19 +93,11 @@ const PaginationControls: React.FC<{
   };
 
   const handlePageChange = (newPage: number) => {
-    if (onPageChange) {
-      onPageChange(newPage);
-    }
+    onPageChange?.(newPage);
   };
 
-  console.log('🔍 [PaginationControls] Debug:', { totalPages, page, hasPrevPage, hasNextPage });
-
-  // Siempre renderizar, incluso con 1 página (para consistencia visual)
-  const pageNumbers = getPageNumbers();
-
   return (
-    <div className="flex items-center justify-center space-x-2 mt-8 p-4 border-t border-gray-200">
-      {/* Botón Anterior */}
+    <div className="flex items-center justify-center space-x-2 p-4">
       {hasPrevPage && (
         <Button
           variant="outlined"
@@ -114,14 +108,14 @@ const PaginationControls: React.FC<{
         </Button>
       )}
 
-      {/* Números de página */}
       {getPageNumbers().map((pageNum) => (
         <button
           key={pageNum}
+          type="button"
           onClick={() => handlePageChange(pageNum)}
-          className={`px-3 py-2 text-sm rounded-md transition-colors duration-200 ${
+          className={`rounded-md px-3 py-2 text-sm transition-colors duration-200 ${
             pageNum === page
-              ? 'bg-primary text-background font-medium'
+              ? 'bg-primary font-medium text-background'
               : 'text-foreground hover:bg-accent hover:text-background'
           }`}
         >
@@ -129,7 +123,6 @@ const PaginationControls: React.FC<{
         </button>
       ))}
 
-      {/* Botón Siguiente */}
       {hasNextPage && (
         <Button
           variant="outlined"
@@ -141,9 +134,15 @@ const PaginationControls: React.FC<{
       )}
     </div>
   );
-};
+}
 
-export default function ListProperties({ properties, pagination, onPageChange, isLoading = false }: ListPropertiesProps) {
+export default function ListProperties({
+  properties,
+  pagination,
+  onPageChange,
+  isLoading = false,
+  showPagination = true,
+}: ListPropertiesProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const currentPage = pagination?.page;
   const SCROLL_OFFSET = 300;
@@ -182,10 +181,13 @@ export default function ListProperties({ properties, pagination, onPageChange, i
   }, [currentPage, isLoading]);
 
   return (
-    <div ref={containerRef} className="w-full relative z-0 scroll-mt-24">
-      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${isLoading ? 'opacity-70' : 'opacity-100'}`}>
+    <div ref={containerRef} className="relative z-0 w-full scroll-mt-24">
+      <div
+        className={`grid grid-cols-1 gap-6 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 ${
+          isLoading ? 'opacity-70' : 'opacity-100'
+        }`}
+      >
         {properties.map((property) => {
-          // Mapear los campos de la API a la interfaz que PropertyCard espera
           const mappedProperty: PortalProperty = {
             id: property.id,
             title: property.title,
@@ -211,8 +213,11 @@ export default function ListProperties({ properties, pagination, onPageChange, i
         })}
       </div>
 
-      {/* Controles de paginación minimalistas */}
-      {pagination && <PaginationControls pagination={pagination} onPageChange={onPageChange} />}
+      {showPagination && pagination ? (
+        <div className="mt-8 border-t border-border">
+          <PropertyPaginationControls pagination={pagination} onPageChange={onPageChange} />
+        </div>
+      ) : null}
     </div>
   );
 }

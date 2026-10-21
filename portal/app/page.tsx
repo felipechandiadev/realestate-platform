@@ -113,7 +113,6 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
   const properties = result?.data ?? [];
   const pagination = result?.pagination;
   const filterVariant = listings.listingsFilterVariant;
-  const isV2 = filterVariant === 'sidebar_v2';
   const initialSlides =
     slidesResult?.success && Array.isArray(slidesResult.data)
       ? slidesResult.data
@@ -177,13 +176,7 @@ export default async function PortalPage({ searchParams }: PortalPageProps) {
         </>
       ) : null}
 
-      <div
-        className={
-          isV2
-            ? 'relative z-0 py-6'
-            : 'relative z-0 mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8'
-        }
-      >
+      <div className="relative z-0 mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <PortalClient
           initialProperties={properties}
           initialPagination={pagination}

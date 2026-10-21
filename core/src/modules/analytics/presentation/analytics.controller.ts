@@ -3,10 +3,11 @@ import {
   Get,
   Param,
   Query,
+  Res,
   UseInterceptors,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { AnalyticsService } from '../application/analytics.service';
 import { AgentPerformanceDto, AnalyticsFiltersDto } from '../dto/agent-performance.dto';
 import { GeographicAnalyticsDto } from '../dto/geographic-analytics.dto';
@@ -14,14 +15,58 @@ import { DashboardSummaryDto } from '../dto/dashboard-summary.dto';
 import { Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
 import { UseGuards } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, RolesGuard, Roles } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
+import { Response } from 'express';
+import { GetAdminReportUseCase } from '../application/use-cases/get-admin-report.usecase';
+import { ReportsQueryDto } from '../dto/reports-query.dto';
 
 @ApiTags('Analytics')
 @Controller('analytics')
 @UseInterceptors(ClassSerializerInterceptor)
 export class AnalyticsController {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+  constructor(
+    private readonly analyticsService: AnalyticsService,
+    private readonly getAdminReport: GetAdminReportUseCase,
+  ) {}
+
+  @Get('reports/:reportId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Audit(AuditAction.VIEW, AuditEntityType.PROPERTY, 'Admin report viewed')
+  @ApiOperation({ summary: 'Get an administrator report' })
+  @ApiResponse({ status: 200, description: 'Report result with summary, table rows and chart series' })
+  @ApiResponse({ status: 403, description: 'Administrator role required' })
+  async getAdminReportResult(
+    @Param('reportId') reportId: string,
+    @Query() query: ReportsQueryDto,
+  ) {
+    return this.getAdminReport.execute(reportId, query);
+  }
+
+  @Get('reports/:reportId/excel')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @Audit(AuditAction.READ, AuditEntityType.PROPERTY, 'Admin report exported to Excel')
+  @ApiOperation({ summary: 'Export an administrator report to Excel' })
+  @ApiResponse({ status: 200, description: 'Excel workbook' })
+  @ApiResponse({ status: 403, description: 'Administrator role required' })
+  async exportAdminReport(
+    @Param('reportId') reportId: string,
+    @Query() query: ReportsQueryDto,
+    @Res() response: Response,
+  ) {
+    const result = await this.getAdminReport.execute(reportId, query);
+    const buffer = await this.getAdminReport.exportExcel(result);
+    const filename = `reporte-${result.reportId}.xlsx`;
+    response.set({
+      'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+    response.send(buffer);
+  }
 
   @Get('agents/:agentId')
   @Audit(AuditAction.VIEW, AuditEntityType.USER, 'Agent performance metrics viewed')

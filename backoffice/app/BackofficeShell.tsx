@@ -48,7 +48,7 @@ const menuItems = [
       { label: 'Footer', url: '/cms/footer' },
       { label: 'Listados', url: '/cms/listings' },
       { label: 'Destacadas', url: '/cms/featured' },
-      { label: 'Apariencia', url: '/cms/appearance' },
+      { label: 'Paleta de colores', url: '/cms/appearance' },
     ],
   },
   { label: 'Notificaciones', url: '/notifications' },
@@ -96,12 +96,20 @@ export default function BackofficeShell({
   }
 
   const userName = session?.user?.name || 'Invitado';
+  const aboutIndex = menuItems.findIndex((item) => item.label === 'Acerca de');
+  const visibleMenuItems = session?.user?.role === 'ADMIN'
+    ? [
+        ...menuItems.slice(0, aboutIndex),
+        { label: 'Reportes', url: '/reports' },
+        ...menuItems.slice(aboutIndex),
+      ]
+    : menuItems;
 
   return (
     <div className="flex min-h-dvh flex-1 flex-col">
       <TopBar
         title={companyName}
-        menuItems={menuItems}
+        menuItems={visibleMenuItems}
         userName={userName}
         logoSrc={logoUrl || undefined}
         showNotifications={true}

@@ -22,6 +22,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getUserGridNotifications } from '@/features/notifications/actions/notifications.action';
 import NotificationsGrid from './ui/NotificationsGrid';
+import NotificationPreferences from '@/features/notifications/components/NotificationPreferences';
 
 interface PageProps {
   searchParams: Promise<{
@@ -77,6 +78,7 @@ export default async function NotificationsPage({ searchParams }: PageProps) {
 
     return (
       <div className="p-4">
+        <NotificationPreferences />
         <NotificationsGrid rows={rows} totalRows={totalRows} userId={userId} />
       </div>
     );

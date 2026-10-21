@@ -333,26 +333,110 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     return property.mainImageUrl === multimedia.url;
   }
 
-  async getPriceRange(operationType?: PropertyOperationType) {
+  async getPriceRange(
+    operationType?: PropertyOperationType,
+    currency?: string,
+  ) {
+    const bounds = await this.getFilterBounds({ operationType, currency });
+    return {
+      minPrice: bounds.price.min,
+      maxPrice: bounds.price.max,
+    };
+  }
+
+  /**
+   * Min/max for range filters on published properties (price, surfaces, year).
+   */
+  async getFilterBounds(opts?: {
+    operationType?: PropertyOperationType;
+    currency?: string;
+  }) {
+    const fallback = {
+      price: { min: 0, max: 10_000_000 },
+      builtSquareMeters: { min: 0, max: 1_000 },
+      landSquareMeters: { min: 0, max: 5_000 },
+      constructionYear: { min: 1950, max: new Date().getFullYear() },
+    };
+
     try {
       let query = this.propertyRepository
         .createQueryBuilder('property')
-        .select('MIN(property.price)', 'minPrice')
-        .addSelect('MAX(property.price)', 'maxPrice')
+        .select('MIN(CASE WHEN property.price > 0 THEN property.price END)', 'minPrice')
+        .addSelect('MAX(CASE WHEN property.price > 0 THEN property.price END)', 'maxPrice')
+        .addSelect(
+          'MIN(CASE WHEN property.builtSquareMeters > 0 THEN property.builtSquareMeters END)',
+          'minBuilt',
+        )
+        .addSelect(
+          'MAX(CASE WHEN property.builtSquareMeters > 0 THEN property.builtSquareMeters END)',
+          'maxBuilt',
+        )
+        .addSelect(
+          'MIN(CASE WHEN property.landSquareMeters > 0 THEN property.landSquareMeters END)',
+          'minLand',
+        )
+        .addSelect(
+          'MAX(CASE WHEN property.landSquareMeters > 0 THEN property.landSquareMeters END)',
+          'maxLand',
+        )
+        .addSelect(
+          'MIN(CASE WHEN property.constructionYear > 0 THEN property.constructionYear END)',
+          'minYear',
+        )
+        .addSelect(
+          'MAX(CASE WHEN property.constructionYear > 0 THEN property.constructionYear END)',
+          'maxYear',
+        )
         .where('property.status = :status', { status: PropertyStatus.PUBLISHED })
-        .andWhere('property.deletedAt IS NULL')
-        .andWhere('property.price > 0');
-      if (operationType) {
-        query = query.andWhere('property.operationType = :operationType', { operationType });
+        .andWhere('property.deletedAt IS NULL');
+
+      if (opts?.operationType) {
+        query = query.andWhere('property.operationType = :operationType', {
+          operationType: opts.operationType,
+        });
       }
+      if (opts?.currency && opts.currency !== 'all') {
+        query = query.andWhere('property.currencyPrice = :currency', {
+          currency: opts.currency,
+        });
+      }
+
       const result: any = await query.getRawOne();
+      const num = (v: unknown, fb: number) => {
+        const n = typeof v === 'string' ? parseFloat(v) : typeof v === 'number' ? v : NaN;
+        return Number.isFinite(n) ? n : fb;
+      };
+
+      const priceMin = num(result?.minPrice, fallback.price.min);
+      const priceMax = num(result?.maxPrice, fallback.price.max);
+      const builtMin = num(result?.minBuilt, fallback.builtSquareMeters.min);
+      const builtMax = num(result?.maxBuilt, fallback.builtSquareMeters.max);
+      const landMin = num(result?.minLand, fallback.landSquareMeters.min);
+      const landMax = num(result?.maxLand, fallback.landSquareMeters.max);
+      const yearMin = Math.floor(num(result?.minYear, fallback.constructionYear.min));
+      const yearMax = Math.floor(num(result?.maxYear, fallback.constructionYear.max));
+
       return {
-        minPrice: result?.minPrice ? parseFloat(result.minPrice) : 0,
-        maxPrice: result?.maxPrice ? parseFloat(result.maxPrice) : 10000000,
+        price: {
+          min: priceMin,
+          max: priceMax > priceMin ? priceMax : priceMin + 1,
+        },
+        builtSquareMeters: {
+          min: builtMin,
+          max: builtMax > builtMin ? builtMax : builtMin + 1,
+        },
+        landSquareMeters: {
+          min: landMin,
+          max: landMax > landMin ? landMax : landMin + 1,
+        },
+        constructionYear: {
+          min: yearMin,
+          max: yearMax > yearMin ? yearMax : yearMin + 1,
+        },
       };
     } catch (e) {
-      console.error('Error getting price range', e);
-      return { minPrice: 0, maxPrice: 10000000 };
+      console.error('Error getting filter bounds', e);
+      return fallback;
     }
   }
 

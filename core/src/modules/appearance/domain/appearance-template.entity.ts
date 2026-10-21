@@ -23,6 +23,24 @@ export class AppearanceTemplate {
   @Column({ type: 'varchar', length: 7 })
   accent: string;
 
+  @Column({ type: 'varchar', length: 7, default: '#ffffff' })
+  topBarBackground: string;
+
+  @Column({ type: 'varchar', length: 7, default: '#131615' })
+  topBarForeground: string;
+
+  @Column({ type: 'varchar', length: 7, default: '#ffffff' })
+  navbarBackground: string;
+
+  @Column({ type: 'varchar', length: 7, default: '#131615' })
+  navbarForeground: string;
+
+  @Column({ type: 'varchar', length: 7, default: '#131615' })
+  footerBackground: string;
+
+  @Column({ type: 'varchar', length: 7, default: '#ffffff' })
+  footerForeground: string;
+
   @Column({ type: 'boolean', default: false })
   isSystem: boolean;
 

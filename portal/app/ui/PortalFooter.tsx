@@ -39,7 +39,6 @@ interface FAQItem {
 
 interface Identity {
   id?: string;
-  name: string;
   address: string;
   phone: string;
   mail: string;
@@ -80,9 +79,12 @@ const PortalFooter: React.FC<{
 
   if (loading) {
     return (
-      <footer className="bg-foreground text-background p-8 mt-12 border-t border-border">
+      <footer
+        className="p-8 mt-12 border-t border-border"
+        style={{ backgroundColor: 'var(--color-footer-background)', color: 'var(--color-footer-foreground)' }}
+      >
         <div className="container mx-auto text-center">
-          <div className="text-background">Cargando...</div>
+          <div className="text-inherit">Cargando...</div>
         </div>
       </footer>
     );
@@ -106,18 +108,25 @@ const PortalFooter: React.FC<{
   const showContact = Boolean(mail) || footer.showFaqs;
 
   return (
-    <footer className="bg-foreground text-background p-8 mt-12 border-t border-border">
+    <footer
+      className="p-8 mt-12 border-t border-border"
+      style={{ backgroundColor: 'var(--color-footer-background)', color: 'var(--color-footer-foreground)' }}
+    >
       <div className="container mx-auto flex flex-col gap-10">
         {showPartnerships && (
         <div className="flex flex-col gap-6">
-          <h3 className="text-lg font-semibold text-background text-center">{footer.partnershipsTitle}</h3>
+          <h3 className="text-lg font-semibold text-inherit text-center">{footer.partnershipsTitle}</h3>
           <div className="flex flex-wrap gap-6 justify-center">
               {partnerships.map((partnership, index) => {
                 const imageKey = `partnership-${index}`;
                 const imageError = failedImages.has(imageKey);
 
                 return (
-                  <div key={index} className="flex items-center gap-3 bg-white/5 rounded-lg px-4 py-3">
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 rounded-lg px-4 py-3"
+                    style={{ backgroundColor: 'color-mix(in srgb, var(--color-footer-foreground) 5%, transparent)' }}
+                  >
                     {!imageError && partnership.logoUrl && (
                       <img
                         src={partnership.logoUrl}
@@ -127,8 +136,8 @@ const PortalFooter: React.FC<{
                       />
                     )}
                     <div className="flex-1">
-                      <div className="text-base font-semibold text-background">{partnership.name}</div>
-                      <div className="text-xs text-background/80 font-light max-w-xs">
+                      <div className="text-base font-semibold text-inherit">{partnership.name}</div>
+                      <div className="text-xs text-inherit opacity-80 font-light max-w-xs">
                         {partnership.description}
                       </div>
                     </div>
@@ -139,7 +148,7 @@ const PortalFooter: React.FC<{
         </div>
         )}
 
-        {showPartnerships && <hr className="border-t border-gray-400/30" />}
+        {showPartnerships && <hr className="border-t border-current/30" />}
 
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           {showCompany ? (
@@ -155,28 +164,28 @@ const PortalFooter: React.FC<{
               ) : null}
               {companyName ? (
                 <div className="flex-1">
-                  <h4 className="text-base font-semibold text-background">{companyName}</h4>
+                  <h4 className="text-base font-semibold text-inherit">{companyName}</h4>
                 </div>
               ) : null}
             </div>
 
             {(address || phone || hours) ? (
-            <div className="space-y-2 text-xs text-background/80 flex flex-col items-center md:items-start">
+            <div className="space-y-2 text-xs text-inherit opacity-80 flex flex-col items-center md:items-start">
               {address ? (
               <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-background mt-0.5 flex-shrink-0" />
+                <MapPin size={16} className="text-inherit mt-0.5 flex-shrink-0" />
                 <p className="leading-relaxed">{address}</p>
               </div>
               ) : null}
               {phone ? (
               <div className="flex items-start gap-2">
-                <Phone size={16} className="text-background mt-0.5 flex-shrink-0" />
+                <Phone size={16} className="text-inherit mt-0.5 flex-shrink-0" />
                 <p>{phone}</p>
               </div>
               ) : null}
               {hours ? (
               <div className="flex items-start gap-2">
-                <Clock size={16} className="text-background mt-0.5 flex-shrink-0" />
+                <Clock size={16} className="text-inherit mt-0.5 flex-shrink-0" />
                 <p className="leading-relaxed whitespace-pre-line">{hours}</p>
               </div>
               ) : null}
@@ -187,13 +196,13 @@ const PortalFooter: React.FC<{
 
           {menuItems.length > 0 ? (
           <div className="md:col-span-1 text-center">
-            <h3 className="text-lg font-semibold text-background">{footer.menuTitle}</h3>
+            <h3 className="text-lg font-semibold text-inherit">{footer.menuTitle}</h3>
             <ul className="mt-4 space-y-2">
               {menuItems.map((link) => (
                 <li key={link.id}>
                   <a
                     href={link.href}
-                    className="text-sm text-background hover:text-primary transition-colors font-light"
+                    className="text-sm text-inherit hover:text-primary transition-colors font-light"
                   >
                     {link.label}
                   </a>
@@ -207,12 +216,12 @@ const PortalFooter: React.FC<{
           <div className="md:col-span-1 space-y-4 flex flex-col items-center text-center md:items-start md:text-left">
             {mail ? (
             <>
-            <h3 className="text-lg font-semibold text-background">{footer.contactTitle}</h3>
+            <h3 className="text-lg font-semibold text-inherit">{footer.contactTitle}</h3>
             <div className="flex items-center gap-3">
-              <Mail size={18} className="text-background" />
+              <Mail size={18} className="text-inherit" />
               <a
                 href={`mailto:${mail}`}
-                className="text-sm text-background/90 hover:text-primary transition-colors"
+                className="text-sm text-inherit opacity-90 hover:opacity-100 hover:text-primary transition-colors"
               >
                 {mail}
               </a>
@@ -222,7 +231,7 @@ const PortalFooter: React.FC<{
 
             {footer.showFaqs ? (
             <div className={mail ? 'mt-8' : ''}>
-              <h3 className="text-lg font-semibold text-background">
+              <h3 className="text-lg font-semibold text-inherit">
                 <button
                   type="button"
                   onClick={() => setFaqDialogOpen(true)}
@@ -238,13 +247,13 @@ const PortalFooter: React.FC<{
 
           {footer.showSocial ? (
           <div className="md:col-span-1 space-y-4 flex flex-col items-center text-center">
-            <h3 className="text-lg font-semibold text-background">{footer.socialTitle}</h3>
+            <h3 className="text-lg font-semibold text-inherit">{footer.socialTitle}</h3>
             <div className="flex flex-wrap gap-4 justify-center">
               {identity?.socialMedia?.instagram?.available && (
                 <a
                   href={identity.socialMedia.instagram.url || '#'}
                   aria-label="Instagram"
-                  className="text-background hover:text-primary text-4xl"
+                  className="text-inherit hover:text-primary text-4xl"
                 >
                   <FontAwesomeIcon icon={faInstagram} />
                 </a>
@@ -253,7 +262,7 @@ const PortalFooter: React.FC<{
                 <a
                   href={identity.socialMedia.facebook.url || '#'}
                   aria-label="Facebook"
-                  className="text-background hover:text-primary text-4xl"
+                  className="text-inherit hover:text-primary text-4xl"
                 >
                   <FontAwesomeIcon icon={faFacebook} />
                 </a>
@@ -262,7 +271,7 @@ const PortalFooter: React.FC<{
                 <a
                   href={identity.socialMedia.linkedin.url || '#'}
                   aria-label="LinkedIn"
-                  className="text-background hover:text-primary text-4xl"
+                  className="text-inherit hover:text-primary text-4xl"
                 >
                   <FontAwesomeIcon icon={faLinkedin} />
                 </a>
@@ -271,7 +280,7 @@ const PortalFooter: React.FC<{
                 <a
                   href={identity.socialMedia.youtube.url || '#'}
                   aria-label="YouTube"
-                  className="text-background hover:text-primary text-4xl"
+                  className="text-inherit hover:text-primary text-4xl"
                 >
                   <FontAwesomeIcon icon={faYoutube} />
                 </a>
@@ -281,7 +290,7 @@ const PortalFooter: React.FC<{
                   !identity.socialMedia.facebook?.available &&
                   !identity.socialMedia.linkedin?.available &&
                   !identity.socialMedia.youtube?.available)) && (
-                <p className="text-sm text-background/70">Pronto estaremos en redes sociales.</p>
+                <p className="text-sm text-inherit opacity-70">Pronto estaremos en redes sociales.</p>
               )}
             </div>
           </div>
@@ -289,7 +298,7 @@ const PortalFooter: React.FC<{
         </div>
 
         {footer.showCopyright ? (
-        <div className="text-center text-sm font-extralight text-background border-t border-gray-400/30 pt-4">
+        <div className="text-center text-sm font-extralight text-inherit border-t border-current/30 pt-4">
           &copy; {new Date().getFullYear()}{companyName ? ` ${companyName}` : ''}. {footer.copyrightSuffix}
         </div>
         ) : null}

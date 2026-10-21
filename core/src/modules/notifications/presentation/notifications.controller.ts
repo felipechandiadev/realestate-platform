@@ -39,6 +39,8 @@ import {
 import { ContactDto } from '../application/dto/contact.dto';
 import { NotificationType, NotificationSenderType } from '../domain/notification.entity';
 import { UserRole } from '../../users/domain/user.entity';
+import { PushNotificationsService } from '../application/push-notifications.service';
+import { DeletePushSubscriptionDto, SavePushSubscriptionDto } from '../application/dto/push-subscription.dto';
 
 type AuthenticatedRequest = Request & {
   user?: { id?: string; sub?: string; role?: UserRole };
@@ -139,7 +141,47 @@ export class NotificationsController {
         body.interestedUserMessage
       );
     }
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly pushNotifications: PushNotificationsService,
+  ) {}
+
+  @Get('push/public-key')
+  @ApiOperation({ summary: 'Get the configured VAPID public key for browser push' })
+  getPushPublicKey() {
+    return { publicKey: this.pushNotifications.getPublicKey() };
+  }
+
+  @Post('push/subscriptions')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Register the current user browser push subscription' })
+  async savePushSubscription(
+    @Body() body: SavePushSubscriptionDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const userId = req.user?.id ?? (typeof req.user?.sub === 'string' ? req.user.sub : undefined);
+    if (!userId) throw new ForbiddenException('Usuario no identificado');
+    const userAgent = req.headers['user-agent'];
+    await this.pushNotifications.saveSubscription(
+      userId,
+      body,
+      typeof userAgent === 'string' ? userAgent : undefined,
+    );
+    return { success: true };
+  }
+
+  @Delete('push/subscriptions')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Remove the current user browser push subscription' })
+  async deletePushSubscription(
+    @Body() body: DeletePushSubscriptionDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const userId = req.user?.id ?? (typeof req.user?.sub === 'string' ? req.user.sub : undefined);
+    if (!userId) throw new ForbiddenException('Usuario no identificado');
+    await this.pushNotifications.removeSubscription(userId, body.endpoint);
+    return { success: true };
+  }
 
   /**
    * Create a new notification

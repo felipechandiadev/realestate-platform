@@ -29,6 +29,7 @@ import { Button } from '@realestate/ui';
 import { Card } from '@realestate/ui';
 import { Alert } from '@realestate/ui';
 import { useRouter } from 'next/navigation';
+import NotificationPreferences from '@/features/notifications/components/NotificationPreferences';
 import {
   Loader2,
   RefreshCw,
@@ -144,6 +145,8 @@ export default function NotificationsPage() {
           </Button>
         </div>
       </div>
+
+      <NotificationPreferences />
 
       {error && (
         <Alert variant="error" className="mb-6">

@@ -20,29 +20,32 @@
 
 .fs-range-slider__fill {
   position: absolute;
-  top: 0;
+  top: 50%;
   height: 0.5rem;
+  transform: translateY(-50%);
   border-radius: 9999px;
-  background-color: color-mix(
-    in srgb,
-    var(--color-primary, #1e73ae) 45%,
-    transparent
-  );
+  background-color: var(--color-primary, #1e73ae);
 }
 
 .fs-range-slider__thumb {
   position: absolute;
   top: 50%;
-  width: 1rem;
-  height: 1rem;
+  width: 1.25rem;
+  height: 1.25rem;
   margin: 0;
   padding: 0;
   border: 2px solid var(--color-primary, #1e73ae);
-  background-color: var(--color-background, #fff);
+  background-color: var(--color-primary, #1e73ae);
   border-radius: 9999px;
   cursor: grab;
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.2);
   appearance: none;
+  touch-action: none;
+  z-index: 1;
+}
+
+.fs-range-slider__thumb:active {
+  cursor: grabbing;
 }
 
 .fs-range-slider__thumb:focus-visible {

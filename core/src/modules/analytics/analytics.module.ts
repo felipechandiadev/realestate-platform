@@ -10,12 +10,13 @@ import { Property } from '../property/domain/property.entity';
 import { User } from '../users/domain/user.entity';
 import { Payment } from '../contracts/domain/payment.entity';
 import { ContractsModule } from '../contracts/contracts.module';
-import { ContractRepository } from '../contracts/domain/contract.repository';
+import { ContractOrmEntity } from '../contracts/infrastructure/persistence/contract.orm-entity';
+import { GetAdminReportUseCase } from './application/use-cases/get-admin-report.usecase';
 
 @Module({
   imports: [
     // Add repositories required by analytics (contracts comes via ContractsModule)
-    TypeOrmModule.forFeature([Property, User, Payment]),
+    TypeOrmModule.forFeature([Property, User, Payment, ContractOrmEntity]),
     ContractsModule,
   ],
   controllers: [AnalyticsController],
@@ -24,6 +25,7 @@ import { ContractRepository } from '../contracts/domain/contract.repository';
     GetAgentPerformanceUseCase,
     GetAllAgentsPerformanceUseCase,
     GetGeographicAnalyticsUseCase,
+    GetAdminReportUseCase,
     AnalyticsService,
   ],
   exports: [AnalyticsService],

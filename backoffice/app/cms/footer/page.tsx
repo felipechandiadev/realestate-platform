@@ -240,7 +240,11 @@ export default function PortalFooterPage() {
           Footer
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground sm:mt-3">
-          Logo, columnas y enlaces del pie. Nombre, dirección, redes, alianzas y preguntas
+          Logo, columnas y enlaces del pie. Los colores de fondo y texto se administran en{' '}
+          <Link href="/cms/appearance" className="text-primary underline-offset-2 hover:underline">
+            Paleta de colores
+          </Link>
+          . Nombre, dirección, redes, alianzas y preguntas
           se editan en{' '}
           <Link href="/cms/identity" className="text-primary underline-offset-2 hover:underline">
             Identidad

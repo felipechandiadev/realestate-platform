@@ -510,12 +510,19 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 					<div key={field.name}>
 						<Select
 							options={field.options || []}
-							placeholder={field.label}
+							placeholder={
+								typeof commonProps.placeholder === "string"
+									? commonProps.placeholder
+									: field.label
+							}
 							value={selectValue ?? undefined}
 							onChange={(id: string | number | null) => onChange(field.name, id)}
 							required={field.required}
+							name={field.name}
 							data-test-id={`select-${field.name}`}
 							{...commonProps}
+							label={field.label}
+							alwaysShowLabel
 						/>
 					</div>
 				);
@@ -534,13 +541,14 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 					<div key={field.name}>
 						<AutoComplete
 							options={field.options || []}
-							label={field.label}
 							value={selectedOption}
 							onChange={(opt) => onChange(field.name, opt ? opt.id : null)}
 							required={field.required}
 							name={field.name}
 							data-test-id={`autocomplete-${field.name}`}
 							{...commonProps}
+							label={field.label}
+							alwaysShowLabel
 						/>
 					</div>
 				);
@@ -590,6 +598,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 							data-test-id={`currency-${field.name}`}
 							{...commonProps}
 							{...(field.props || {})}
+							alwaysShowLabel
 						/>
 					</div>
 				);
@@ -628,6 +637,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 							endIcon={field.endIcon}
 							data-test-id={`input-${field.name}`}
 							{...commonProps}
+							alwaysShowLabel
 						/>
 					</div>
 				);
@@ -665,6 +675,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 						required={field.required}
 						data-test-id={`input-${field.name}`}
 						{...commonProps}
+						alwaysShowLabel
 					/>
 				</div>
 			);

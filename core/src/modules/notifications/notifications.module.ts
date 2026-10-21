@@ -11,10 +11,13 @@ import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
 import { Property } from '../property/domain/property.entity';
 import { NotificationOrmEntity } from './infrastructure/persistence/notification.orm-entity';
+import { NotificationsGateway } from './presentation/notifications.gateway';
+import { PushSubscriptionOrmEntity } from './infrastructure/persistence/push-subscription.orm-entity';
+import { PushNotificationsService } from './application/push-notifications.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([NotificationOrmEntity, User, Property]),
+    TypeOrmModule.forFeature([NotificationOrmEntity, PushSubscriptionOrmEntity, User, Property]),
     ConfigModule,
     UsersModule,
     AuthModule,
@@ -23,11 +26,13 @@ import { NotificationOrmEntity } from './infrastructure/persistence/notification
   controllers: [NotificationsController],
   providers: [
     NotificationsService,
+    NotificationsGateway,
+    PushNotificationsService,
     {
       provide: NotificationRepository,
       useClass: TypeormNotificationRepository,
     },
   ],
-  exports: [NotificationsService],
+  exports: [NotificationsService, NotificationsGateway],
 })
 export class NotificationsModule {}

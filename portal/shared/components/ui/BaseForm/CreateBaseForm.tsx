@@ -150,12 +150,16 @@ const CreateBaseForm: React.FC<CreateBaseFormProps> = ({
 					value={values[field.name]}
 					onChange={(id: string | number | null) => onChange(field.name, id)}
 					required={field.required}
+					label={field.label}
+					alwaysShowLabel
+					name={field.name}
 					data-test-id={`select-${field.name}`}
 				/>
 			) : field.type === "autocomplete" ? (
 				<AutoComplete
 					options={field.options || []}
 					label={field.label}
+					alwaysShowLabel
 					value={field.options?.find(opt => opt.id === values[field.name]) || null}
 					onChange={opt => onChange(field.name, opt?.id || "")}
 					required={field.required}

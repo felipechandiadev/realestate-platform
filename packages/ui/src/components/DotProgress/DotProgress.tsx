@@ -1,13 +1,15 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import "./dot-progress.css";
+import { ButtonContentContext } from "../Button/ButtonContentContext";
 
 export type DotProgressVariant = "step" | "wave";
 
 interface DotProgressProps {
   size?: number;
   gap?: number;
+  /** Explicit colors override contextual defaults. Inside Button, omitted colors inherit its text color for contrast. */
   colorPrimary?: string;
   colorNeutral?: string;
   className?: string;
@@ -31,8 +33,8 @@ const WAVE_STAGGER_S = 0.16;
 const DotProgress: React.FC<DotProgressProps> = ({
   size = DEFAULT_SIZE,
   gap = DEFAULT_GAP,
-  colorPrimary = DEFAULT_PRIMARY,
-  colorNeutral = DEFAULT_NEUTRAL,
+  colorPrimary,
+  colorNeutral,
   className = "",
   interval = DEFAULT_INTERVAL,
   count,
@@ -40,9 +42,12 @@ const DotProgress: React.FC<DotProgressProps> = ({
   activeStep,
   variant = "step",
 }) => {
+  const insideButton = useContext(ButtonContentContext);
   const steps = Math.max(1, count ?? totalSteps);
   const isWave = variant === "wave";
   const [active, setActive] = useState(activeStep ?? 0);
+  const resolvedPrimary = colorPrimary ?? (insideButton ? 'currentColor' : DEFAULT_PRIMARY);
+  const resolvedNeutral = colorNeutral ?? (insideButton ? 'color-mix(in srgb, currentColor 35%, transparent)' : DEFAULT_NEUTRAL);
 
   useEffect(() => {
     if (isWave) return;
@@ -83,7 +88,7 @@ const DotProgress: React.FC<DotProgressProps> = ({
               width: size,
               height: size,
               borderRadius: "50%",
-              backgroundColor: isWave || isActive ? colorPrimary : colorNeutral,
+              backgroundColor: isWave || isActive ? resolvedPrimary : resolvedNeutral,
               display: "inline-block",
               flexShrink: 0,
               transition: isWave ? undefined : "background-color 0.2s",

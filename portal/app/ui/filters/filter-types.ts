@@ -51,9 +51,12 @@ export const EMPTY_PROPERTY_FILTERS: PropertyFiltersState = {
   page: 1,
 };
 
-export function countActiveFilters(filters: PropertyFiltersState): number {
+export function countActiveFilters(
+  filters: PropertyFiltersState,
+  opts?: { ignoreOperation?: boolean },
+): number {
   let n = 0;
-  if (filters.operation) n += 1;
+  if (filters.operation && !opts?.ignoreOperation) n += 1;
   if (filters.typeIds.length || filters.typeProperty) n += 1;
   if (filters.state) n += 1;
   if (filters.city) n += 1;

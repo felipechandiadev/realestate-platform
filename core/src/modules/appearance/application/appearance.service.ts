@@ -4,7 +4,20 @@ import { Repository } from 'typeorm';
 import { Appearance } from '../domain/appearance.entity';
 import { AppearanceTemplate } from '../domain/appearance-template.entity';
 
-const COLOR_FIELDS = ['primary', 'secondary', 'background', 'foreground', 'accent'] as const;
+const COLOR_FIELDS = [
+  'primary',
+  'secondary',
+  'background',
+  'foreground',
+  'accent',
+  'topBarBackground',
+  'topBarForeground',
+  'navbarBackground',
+  'navbarForeground',
+  'footerBackground',
+  'footerForeground',
+] as const;
+const LEGACY_COLOR_FIELDS = ['primary', 'secondary', 'background', 'foreground', 'accent'] as const;
 type ColorField = (typeof COLOR_FIELDS)[number];
 
 const DEFAULTS: Record<ColorField, string> = {
@@ -13,6 +26,12 @@ const DEFAULTS: Record<ColorField, string> = {
   background: '#ffffff',
   foreground: '#131615',
   accent: '#02578b',
+  topBarBackground: '#ffffff',
+  topBarForeground: '#131615',
+  navbarBackground: '#ffffff',
+  navbarForeground: '#131615',
+  footerBackground: '#131615',
+  footerForeground: '#ffffff',
 };
 
 const LABELS: Record<ColorField, string> = {
@@ -21,6 +40,12 @@ const LABELS: Record<ColorField, string> = {
   background: 'Fondo',
   foreground: 'Texto',
   accent: 'Acento',
+  topBarBackground: 'Fondo de la barra superior',
+  topBarForeground: 'Texto de la barra superior',
+  navbarBackground: 'Fondo de la navbar',
+  navbarForeground: 'Texto de la navbar',
+  footerBackground: 'Fondo del footer',
+  footerForeground: 'Texto del footer',
 };
 
 const SYSTEM_TEMPLATE_NAME = 'Bravo Schott';
@@ -38,9 +63,10 @@ function readColors(body: Record<string, unknown>, required: boolean): Record<Co
   const next = {} as Record<ColorField, string>;
   for (const field of COLOR_FIELDS) {
     if (!(field in body)) {
-      if (required) {
+      if (required && LEGACY_COLOR_FIELDS.includes(field as (typeof LEGACY_COLOR_FIELDS)[number])) {
         throw new BadRequestException(`${LABELS[field]} es obligatorio`);
       }
+      if (required) next[field] = DEFAULTS[field];
       continue;
     }
     const hex = normalizeHex(body[field]);

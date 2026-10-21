@@ -10,10 +10,18 @@ type Props = {
   filters: PropertyFiltersState;
   onChange: (patch: Partial<PropertyFiltersState>) => void;
   onClear: () => void;
+  lockedOperation?: 'sale' | 'rent';
 };
 
-export default function PropertyFiltersSidebar({ filters, onChange, onClear }: Props) {
-  const active = countActiveFilters(filters);
+export default function PropertyFiltersSidebar({
+  filters,
+  onChange,
+  onClear,
+  lockedOperation,
+}: Props) {
+  const active = countActiveFilters(filters, {
+    ignoreOperation: Boolean(lockedOperation),
+  });
 
   return (
     <aside
@@ -31,7 +39,11 @@ export default function PropertyFiltersSidebar({ filters, onChange, onClear }: P
           Limpiar
         </Button>
       </div>
-      <FilterFormSections filters={filters} onChange={onChange} />
+      <FilterFormSections
+        filters={filters}
+        onChange={onChange}
+        lockedOperation={lockedOperation}
+      />
     </aside>
   );
 }

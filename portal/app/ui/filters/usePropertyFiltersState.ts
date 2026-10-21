@@ -21,21 +21,33 @@ type UsePropertyFiltersStateArgs = {
   initialPagination?: Pagination;
   /** When true, fetch on every draft change after 300ms. When false, only on apply(). */
   liveFetch?: boolean;
+  /** Lock operation filter (sale/rent listing pages). */
+  lockedOperation?: 'sale' | 'rent';
 };
 
 export function usePropertyFiltersState({
   initialProperties,
   initialPagination,
   liveFetch = true,
+  lockedOperation,
 }: UsePropertyFiltersStateArgs) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  const [filters, setFilters] = useState<PropertyFiltersState>(() =>
-    filtersFromSearchParams(new URLSearchParams(searchParams.toString())),
+  const withLock = useCallback(
+    (filters: PropertyFiltersState): PropertyFiltersState =>
+      lockedOperation ? { ...filters, operation: lockedOperation } : filters,
+    [lockedOperation],
   );
+
+  const [filters, setFilters] = useState<PropertyFiltersState>(() =>
+    withLock(filtersFromSearchParams(new URLSearchParams(searchParams.toString()))),
+  );
+  const filtersRef = useRef(filters);
+  filtersRef.current = filters;
+
   const [properties, setProperties] = useState(initialProperties);
   const [pagination, setPagination] = useState<Pagination>(
     initialPagination || {
@@ -59,7 +71,7 @@ export function usePropertyFiltersState({
         router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
       });
     },
-    [pathname, router],
+    [pathname, router, startTransition],
   );
 
   const fetchResults = useCallback(async (next: PropertyFiltersState) => {
@@ -77,55 +89,58 @@ export function usePropertyFiltersState({
 
   const applyFilters = useCallback(
     (patch: Partial<PropertyFiltersState>, opts?: { immediate?: boolean; resetPage?: boolean }) => {
-      setFilters((prev) => {
-        const next: PropertyFiltersState = {
-          ...prev,
-          ...patch,
-          page: opts?.resetPage === false ? (patch.page ?? prev.page) : patch.page ?? 1,
-        };
-
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-
-        const run = () => {
-          syncUrl(next);
-          void fetchResults(next);
-        };
-
-        if (opts?.immediate || !liveFetch) {
-          if (opts?.immediate) run();
-        } else {
-          debounceRef.current = setTimeout(run, 300);
-        }
-
-        return next;
+      const prev = filtersRef.current;
+      const next = withLock({
+        ...prev,
+        ...patch,
+        page: opts?.resetPage === false ? (patch.page ?? prev.page) : patch.page ?? 1,
       });
+
+      filtersRef.current = next;
+      setFilters(next);
+
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+
+      const run = () => {
+        syncUrl(next);
+        void fetchResults(next);
+      };
+
+      if (opts?.immediate) {
+        run();
+      } else if (liveFetch) {
+        debounceRef.current = setTimeout(run, 300);
+      }
     },
-    [fetchResults, liveFetch, syncUrl],
+    [fetchResults, liveFetch, syncUrl, withLock],
   );
 
   const apply = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    syncUrl(filters);
-    void fetchResults(filters);
-  }, [fetchResults, filters, syncUrl]);
+    const next = withLock(filtersRef.current);
+    syncUrl(next);
+    void fetchResults(next);
+  }, [fetchResults, syncUrl, withLock]);
 
   const clear = useCallback(() => {
-    const next = { ...EMPTY_PROPERTY_FILTERS };
+    const next = withLock({ ...EMPTY_PROPERTY_FILTERS });
+    filtersRef.current = next;
     setFilters(next);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     syncUrl(next);
     void fetchResults(next);
-  }, [fetchResults, syncUrl]);
+  }, [fetchResults, syncUrl, withLock]);
 
   const replaceFilters = useCallback(
-    (next: PropertyFiltersState) => {
-      const normalized = { ...next, page: next.page || 1 };
+    (nextInput: PropertyFiltersState) => {
+      const normalized = withLock({ ...nextInput, page: nextInput.page || 1 });
+      filtersRef.current = normalized;
       setFilters(normalized);
       if (debounceRef.current) clearTimeout(debounceRef.current);
       syncUrl(normalized);
       void fetchResults(normalized);
     },
-    [fetchResults, syncUrl],
+    [fetchResults, syncUrl, withLock],
   );
 
   const setPage = useCallback(
@@ -141,9 +156,28 @@ export function usePropertyFiltersState({
       skipNextLive.current = false;
       return;
     }
-    const fromUrl = filtersFromSearchParams(new URLSearchParams(searchParams.toString()));
+    const fromUrl = withLock(
+      filtersFromSearchParams(new URLSearchParams(searchParams.toString())),
+    );
+    filtersRef.current = fromUrl;
     setFilters(fromUrl);
-  }, [searchParams]);
+  }, [searchParams, withLock]);
+
+  // Ensure locked operation is in state/URL on mount and when lock changes
+  useEffect(() => {
+    if (!lockedOperation) return;
+    const current = filtersRef.current;
+    if (current.operation !== lockedOperation) {
+      applyFilters({ operation: lockedOperation }, { immediate: true });
+      return;
+    }
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.get('operation') !== lockedOperation) {
+      syncUrl(current);
+    }
+    // Only re-run when the locked page changes (sale <-> rent)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lockedOperation]);
 
   useEffect(() => {
     return () => {
@@ -163,5 +197,6 @@ export function usePropertyFiltersState({
     pagination,
     isLoading: isLoading || isPending,
     total: pagination.total,
+    lockedOperation,
   };
 }

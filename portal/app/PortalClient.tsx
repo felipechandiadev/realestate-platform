@@ -157,7 +157,7 @@ function SidebarV2PortalListings({
   });
 
   return (
-    <div className="mx-auto max-w-[1400px] px-2 py-6 sm:px-3 lg:px-4">
+    <div className="w-full">
       <PropertyListingsLayout
         filters={filters}
         onFilterChange={(patch) => applyFilters(patch)}

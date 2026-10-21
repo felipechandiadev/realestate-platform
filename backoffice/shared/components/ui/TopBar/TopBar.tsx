@@ -4,9 +4,8 @@ import Image from 'next/image';
 import { IconButton } from '@realestate/ui';
 import SideBar, { SideBarMenuItem } from './SideBar';
 import { SidebarMenuStateProvider } from './SidebarMenuStateContext';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { getUnreadNotificationsCount } from '@/features/notifications/actions/notifications.action';
+import { useNotification } from '@/providers/NotificationContext';
 
 interface TopBarProps {
   title?: string;
@@ -49,36 +48,8 @@ const TopBar: React.FC<TopBarProps> = ({
   const [showSidebar, setShowSidebar] = useState(false);
   const [logoError, setLogoError] = useState(false);
   const [sidebarOpenState, setSidebarOpenState] = useState<Record<string, boolean>>({});
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-
-  const { data: session } = useSession();
   const router = useRouter();
-
-  // Fetch unread notifications count if showNotifications is true
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    const fetchCount = async () => {
-      if (showNotifications && session?.user?.id) {
-        try {
-          const count = await getUnreadNotificationsCount(session.user.id);
-          setUnreadCount(count);
-        } catch (error) {
-          console.error('Error fetching unread notifications count:', error);
-        }
-      }
-    };
-
-    if (showNotifications && session?.user?.id) {
-      fetchCount();
-      // Polling every 60 seconds
-      interval = setInterval(fetchCount, 60000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [showNotifications, session?.user?.id]);
+  const { unreadCount } = useNotification();
 
   useEffect(() => {
     try {

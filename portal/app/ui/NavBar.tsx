@@ -27,7 +27,11 @@ export default function NavBar({ navItems }: { navItems: PortalNavItem[] }) {
   };
 
   return (
-    <nav className="w-full bg-background" aria-label="Main navigation">
+    <nav
+      className="w-full"
+      aria-label="Main navigation"
+      style={{ backgroundColor: 'var(--color-navbar-background)', color: 'var(--color-navbar-foreground)' }}
+    >
       <ul className="flex items-center justify-center gap-2 md:gap-6 px-2 md:px-4 py-1.5 md:py-3">
         {items.map((item) => {
           if (item.children?.length) {
@@ -39,16 +43,19 @@ export default function NavBar({ navItems }: { navItems: PortalNavItem[] }) {
                   aria-expanded={openMenu === item.id}
                   className="flex items-center gap-0.5 md:gap-2 cursor-pointer py-1 md:py-2 px-0.5 md:px-1"
                 >
-                  <span className="text-xs md:text-sm font-medium text-neutral-900 uppercase tracking-wide">{item.label}</span>
+                  <span className="text-xs md:text-sm font-medium text-inherit uppercase tracking-wide">{item.label}</span>
                   {openMenu === item.id ? <ChevronUp size={16} className="text-primary" /> : <ChevronDown size={16} className="text-primary" />}
                 </button>
                 {openMenu === item.id && (
-                  <ul className="absolute left-0 top-full mt-1 w-56 bg-white border border-neutral-200 rounded shadow-lg z-20">
+                  <ul
+                    className="absolute left-0 top-full mt-1 w-56 border rounded shadow-lg z-20"
+                    style={{ backgroundColor: 'var(--color-navbar-background)', color: 'var(--color-navbar-foreground)', borderColor: 'var(--color-border)' }}
+                  >
                     {item.children.map((child) => (
                       <li key={child.id}>
                         <button
                           onClick={() => child.href && handleNavigation(child.href)}
-                          className="w-full text-left block px-4 py-2 text-sm text-neutral-900 hover:bg-primary/10 transition-colors"
+                          className="w-full text-left block px-4 py-2 text-sm text-inherit hover:bg-primary/10 hover:text-primary transition-colors"
                         >
                           {child.label}
                         </button>
@@ -70,7 +77,7 @@ export default function NavBar({ navItems }: { navItems: PortalNavItem[] }) {
                   }
                   if (item.href) handleNavigation(item.href);
                 }}
-                className="text-xs md:text-sm font-medium text-neutral-900 hover:text-primary uppercase tracking-wide"
+                className="text-xs md:text-sm font-medium text-inherit hover:text-primary uppercase tracking-wide"
               >
                 {item.label}
               </button>

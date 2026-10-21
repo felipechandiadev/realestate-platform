@@ -833,10 +833,27 @@ export class PropertyController {
     }
   }})
   @ApiQuery({ name: 'operationType', required: false, enum: ['SALE', 'RENT'], description: 'Filter by operation type' })
+  @ApiQuery({ name: 'currency', required: false, enum: ['CLP', 'UF'], description: 'Filter by currency' })
   async getPriceRange(
     @Query('operationType') operationType?: PropertyOperationType,
+    @Query('currency') currency?: string,
   ) {
-    return this.propertyService.getPriceRange(operationType);
+    return this.propertyService.getPriceRange(operationType, currency);
+  }
+
+  /**
+   * Min/max bounds for sidebar range filters (price, surfaces, year)
+   */
+  @Get('filter-bounds')
+  @ApiOperation({ summary: 'Get min/max bounds for published property range filters' })
+  @ApiResponse({ status: 200, description: 'Filter bounds retrieved' })
+  @ApiQuery({ name: 'operationType', required: false, enum: ['SALE', 'RENT'] })
+  @ApiQuery({ name: 'currency', required: false, enum: ['CLP', 'UF'] })
+  async getFilterBounds(
+    @Query('operationType') operationType?: PropertyOperationType,
+    @Query('currency') currency?: string,
+  ) {
+    return this.propertyService.getFilterBounds({ operationType, currency });
   }
 
   /**

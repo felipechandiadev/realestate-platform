@@ -116,10 +116,11 @@ function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, 
       />
 
       <div
-        className="fixed left-0 top-0 h-full w-64 bg-white/60 backdrop-blur backdrop-saturate-150 z-50 shadow-xl transform transition-transform duration-300 ease-in-out border border-white/20 flex flex-col"
+        className="fixed left-0 top-0 h-full w-64 backdrop-blur backdrop-saturate-150 z-50 shadow-xl transform transition-transform duration-300 ease-in-out border flex flex-col"
         id="portal-sidebar"
         role="dialog"
         aria-modal="true"
+        style={{ backgroundColor: 'var(--color-navbar-background)', color: 'var(--color-navbar-foreground)', borderColor: 'var(--color-border)' }}
       >
         <div className="flex flex-col items-center justify-center p-4 text-center gap-2 flex-shrink-0">
           {logoSrc ? (
@@ -130,7 +131,7 @@ function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, 
             />
           ) : null}
           {showCompanyName && identity?.name?.trim() ? (
-            <span className="font-medium text-foreground text-sm">
+            <span className="font-medium text-inherit text-sm">
               {identity.name.trim()}
             </span>
           ) : null}
@@ -144,7 +145,7 @@ function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, 
               </div>
               <div className="flex flex-col">
                 <span className="text-xs text-muted-foreground">Bienvenido(a)</span>
-                <span className="text-sm font-bold text-foreground truncate max-w-[140px]">
+                <span className="text-sm font-bold text-inherit truncate max-w-[140px]">
                   {userName || 'Usuario'}
                 </span>
               </div>
@@ -161,7 +162,7 @@ function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, 
                 const Icon = ACCOUNT_ICONS[item.id] ?? User;
                 return (
                   <li key={item.id}>
-                    <button onClick={() => handleNavigation(item.href)} className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
+                    <button onClick={() => handleNavigation(item.href)} className="flex items-center justify-between w-full px-3 py-3 text-sm font-medium text-inherit hover:text-primary hover:bg-primary/5 rounded-lg transition-colors">
                       <div className="flex items-center gap-3">
                         <Icon size={20} className="text-primary" />
                         <span>{item.label}</span>
@@ -182,7 +183,7 @@ function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, 
           )}
 
           <li>
-            <button onClick={() => handleNavigation('/')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
+            <button onClick={() => handleNavigation('/')} className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-inherit hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
               <Home size={20} className="text-primary" />
               <span>Inicio</span>
             </button>
@@ -192,7 +193,7 @@ function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, 
             if (item.children?.length) {
               return (
                 <li key={item.id} className="relative" onBlur={handleBlur}>
-                  <button onClick={() => toggleMenu(item.id)} className="flex items-center justify-between w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
+                  <button onClick={() => toggleMenu(item.id)} className="flex items-center justify-between w-full text-left px-3 py-3 text-sm font-medium text-inherit hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide">
                     <span>{item.label}</span>
                     {openMenu === item.id ? <ChevronUp size={16} className="text-primary" /> : <ChevronDown size={16} className="text-primary" />}
                   </button>
@@ -200,7 +201,7 @@ function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, 
                     <ul className="mt-2 ml-6 space-y-1 border-l-2 border-primary/10 pl-2">
                       {item.children.map((child) => (
                         <li key={child.id}>
-                          <button onClick={() => child.href && handleNavigation(child.href)} className="w-full text-left px-3 py-2 text-sm text-foreground hover:text-primary hover:bg-primary/5 rounded transition-colors uppercase tracking-tight text-[11px]">
+                          <button onClick={() => child.href && handleNavigation(child.href)} className="w-full text-left px-3 py-2 text-sm text-inherit hover:text-primary hover:bg-primary/5 rounded transition-colors uppercase tracking-tight text-[11px]">
                             {child.label}
                           </button>
                         </li>
@@ -221,7 +222,7 @@ function Sidebar({ open, onClose, identity, logoSrc, showCompanyName, navItems, 
                     }
                     if (item.href) handleNavigation(item.href);
                   }}
-                  className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-foreground hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide"
+                  className="flex items-center gap-3 w-full text-left px-3 py-3 text-sm font-medium text-inherit hover:text-primary hover:bg-primary/5 rounded-lg transition-colors uppercase tracking-wide"
                 >
                   <span>{item.label}</span>
                 </button>
@@ -366,8 +367,9 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, init
 
       {/* Main TopBar */}
       <div
-        className="flex items-center h-12 md:h-16 w-full bg-background sm:px-8 box-border"
+        className="flex items-center h-12 md:h-16 w-full sm:px-8 box-border"
         data-test-id="topBar"
+        style={{ backgroundColor: 'var(--color-topbar-background)', color: 'var(--color-topbar-foreground)' }}
       >
         {/* Izquierda: logo y nombre empresa, ambos al inicio */}
         <Link href="/" className="flex items-center gap-3 ml-4 hover:opacity-80 transition-opacity" data-test-id="topBarLogo">
@@ -381,7 +383,7 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, init
             />
           ) : null}
           {header.showCompanyName && companyName ? (
-            <span className="text-base md:text-lg lg:text-2xl font-medium text-foreground whitespace-nowrap">
+            <span className="text-base md:text-lg lg:text-2xl font-medium text-inherit whitespace-nowrap">
               {companyName}
             </span>
           ) : null}
@@ -394,7 +396,7 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, init
             {companyMail ? (
             <a 
               href={`mailto:${companyMail}`}
-              className="flex items-center gap-1 text-xs text-foreground whitespace-nowrap hover:text-primary transition-colors"
+              className="flex items-center gap-1 text-xs text-inherit whitespace-nowrap hover:text-primary transition-colors"
             >
               <Mail size={16} />
               {companyMail}
@@ -403,7 +405,7 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, init
             {companyPhone ? (
             <a 
               href={`tel:${companyPhone}`}
-              className="flex items-center gap-1 text-xs text-foreground whitespace-nowrap hover:text-primary transition-colors"
+              className="flex items-center gap-1 text-xs text-inherit whitespace-nowrap hover:text-primary transition-colors"
             >
               <Phone size={16} />
               {companyPhone}
@@ -416,7 +418,7 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, init
         <div className="ml-auto flex items-center gap-2 pr-4" data-test-id="topBarActions">
           {/* Hide UF on small screens (xs/sm) - will be shown in sidebar */}
           {header.showUf ? (
-          <span className="hidden md:inline text-main text-xs font-normal whitespace-nowrap">
+          <span className="hidden md:inline text-inherit text-xs font-normal whitespace-nowrap">
             {isUfLoading ? `${header.ufLabel}: ...` : `${header.ufLabel}: ${formatCLP(ufValue ?? uf)}`}
           </span>
           ) : null}
@@ -425,9 +427,9 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, init
           {session?.user ? (
             // Usuario logueado: mostrar nombre + ícono
             <div className="hidden sm:flex items-center gap-2 text-right">
-              <div className="h-6 w-px bg-foreground mx-2" />
+              <div className="h-6 w-px bg-current mx-2" />
               <User size={16} className="text-primary" />
-              <span className="text-xs text-foreground">
+              <span className="text-xs text-inherit">
                 {session.user.name?.split(' ')[0] || 'Usuario'}
               </span>
             </div>
@@ -436,16 +438,16 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, init
             <div className="hidden sm:flex items-center gap-1 text-right">
               {header.showLogin ? (
                 <>
-                  <div className="h-6 w-px bg-foreground mx-2" />
-                  <Button variant="text" className="text-xs text-foreground px-2" onClick={() => setLoginDialogOpen(true)}>
+                  <div className="h-6 w-px bg-current mx-2" />
+                  <Button variant="text" className="text-xs text-inherit px-2" onClick={() => setLoginDialogOpen(true)}>
                     {header.loginLabel}
                   </Button>
                 </>
               ) : null}
               {header.showRegister ? (
                 <>
-                  <div className="h-6 w-px bg-foreground mx-2" />
-                  <Button variant="text" className="text-xs text-foreground px-2" onClick={() => setRegisterDialogOpen(true)}>
+                  <div className="h-6 w-px bg-current mx-2" />
+                  <Button variant="text" className="text-xs text-inherit px-2" onClick={() => setRegisterDialogOpen(true)}>
                     {header.registerLabel}
                   </Button>
                 </>

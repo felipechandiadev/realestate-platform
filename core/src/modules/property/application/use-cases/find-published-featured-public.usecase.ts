@@ -13,7 +13,11 @@ export class FindPublishedFeaturedPublicUseCase {
       .leftJoinAndSelect('p.multimedia', 'multimedia')
       .leftJoinAndSelect('multimedia.variants', 'variants')
       .where('p.status = :status', { status: PropertyStatus.PUBLISHED })
-      .andWhere('p.isFeatured = :isFeatured', { isFeatured: true });
+      .andWhere('p.isFeatured = :isFeatured', { isFeatured: true })
+      .andWhere('p.deletedAt IS NULL')
+      .orderBy('p.lastModifiedAt', 'DESC')
+      .addOrderBy('p.publishedAt', 'DESC')
+      .addOrderBy('p.createdAt', 'DESC');
 
     const rows = await qb.getMany();
     return rows as Partial<Property>[];

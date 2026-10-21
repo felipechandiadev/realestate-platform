@@ -14,6 +14,7 @@ type Props = {
   onClear: () => void;
   onApply: () => void;
   onClose: () => void;
+  lockedOperation?: 'sale' | 'rent';
 };
 
 export default function MobileFilterDrawer({
@@ -24,6 +25,7 @@ export default function MobileFilterDrawer({
   onClear,
   onApply,
   onClose,
+  lockedOperation,
 }: Props) {
   useEffect(() => {
     if (!open) return;
@@ -66,7 +68,11 @@ export default function MobileFilterDrawer({
       </header>
 
       <div className="flex-1 overflow-y-auto px-4 py-2">
-        <FilterFormSections filters={filters} onChange={onChange} />
+        <FilterFormSections
+          filters={filters}
+          onChange={onChange}
+          lockedOperation={lockedOperation}
+        />
       </div>
 
       <footer className="sticky bottom-0 border-t border-border bg-background p-4">

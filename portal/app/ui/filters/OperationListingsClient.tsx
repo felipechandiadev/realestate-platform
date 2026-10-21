@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import PropertyListingsLayout from './PropertyListingsLayout';
 import { usePropertyFiltersState } from './usePropertyFiltersState';
-import { EMPTY_PROPERTY_FILTERS } from './filter-types';
 import type { PropertyData } from '@/features/properties/actions/portalProperties.action';
 import type { ListingsFilterVariant } from '@/features/cms/actions/portal-listings.action';
 
@@ -48,6 +47,7 @@ function OperationListingsV2({
     filters,
     applyFilters,
     replaceFilters,
+    clear,
     setPage,
     properties,
     pagination,
@@ -55,25 +55,20 @@ function OperationListingsV2({
   } = usePropertyFiltersState({
     initialProperties,
     liveFetch: true,
+    lockedOperation: operation,
   });
 
-  useEffect(() => {
-    if (filters.operation !== operation) {
-      applyFilters({ operation }, { immediate: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [operation]);
-
   return (
-    <div className="mx-auto max-w-[1400px] px-2 py-8 sm:px-3 lg:px-4">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <h1 className="mb-6 text-center text-3xl font-bold text-foreground">{title}</h1>
       <PropertyListingsLayout
-        filters={{ ...filters, operation }}
-        onFilterChange={(patch) => applyFilters({ ...patch, operation })}
-        onApply={() => replaceFilters({ ...filters, operation })}
-        onClear={() => replaceFilters({ ...EMPTY_PROPERTY_FILTERS, operation })}
+        filters={filters}
+        lockedOperation={operation}
+        onFilterChange={applyFilters}
+        onApply={() => replaceFilters(filters)}
+        onClear={clear}
         onPageChange={setPage}
-        onReplaceFilters={(next) => replaceFilters({ ...next, operation })}
+        onReplaceFilters={replaceFilters}
         properties={properties}
         pagination={pagination}
         isLoading={isLoading}

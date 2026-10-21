@@ -127,6 +127,7 @@ export type {
   WeekViewProps,
 } from "./components/Calendar";
 export { default as RangeSlider } from "./components/RangeSlider";
+export type { RangeSliderProps } from "./components/RangeSlider";
 export { default as LoadingState } from "./components/LoadingState";
 export type { LoadingStateProps } from "./components/LoadingState";
 export { Skeleton } from "./components/Skeleton";

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { Button, DotProgress, Switch, TextField } from '@realestate/ui'
 import { PageLoadingDots } from '@/shared/components/ui/PageLoadingDots/PageLoadingDots'
 import { useAlert } from '@/providers/AlertContext'
@@ -225,7 +226,9 @@ export default function PortalHeaderPage() {
       <div className="mb-6">
         <h1 className="mb-2 text-3xl font-bold text-foreground">Top Bar</h1>
         <p className="text-muted-foreground">
-          Logo de la barra, visibilidad y enlaces del portal. El nombre, el correo y el teléfono se editan en Identidad.
+          Logo, visibilidad y enlaces del portal. Los colores de la barra y la navbar se administran en{' '}
+          <Link href="/cms/appearance" className="font-medium text-primary underline-offset-2 hover:underline">Paleta de colores</Link>.
+          El nombre, el correo y el teléfono se editan en Identidad.
         </p>
       </div>
 

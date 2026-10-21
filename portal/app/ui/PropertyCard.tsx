@@ -518,7 +518,7 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
         </div>
 
         <div
-          className="property-icons-container justify-center flex items-center gap-3 px-4 py-1 md:py-2 bg-secondary/30 shrink-0"
+          className="property-icons-container justify-center flex items-center gap-3 px-4 py-1 md:py-2 border-t border-b border-gray-200 shrink-0"
           data-test-id="property-card-icons"
         >
           {showBedrooms && (

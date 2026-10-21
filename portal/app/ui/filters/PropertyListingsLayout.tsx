@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import ListProperties from '../ListProperties';
+import ListProperties, { PropertyPaginationControls } from '../ListProperties';
 import PropertyCardSkeleton from '@/shared/components/ui/PropertyCardSkeleton/PropertyCardSkeleton';
 import type { PropertyData } from '@/features/properties/actions/portalProperties.action';
 import PropertyFiltersSidebar from './PropertyFiltersSidebar';
@@ -30,6 +30,7 @@ type Props = {
   properties: PropertyData[];
   pagination?: Pagination;
   isLoading?: boolean;
+  lockedOperation?: 'sale' | 'rent';
 };
 
 export default function PropertyListingsLayout({
@@ -42,10 +43,13 @@ export default function PropertyListingsLayout({
   properties,
   pagination,
   isLoading = false,
+  lockedOperation,
 }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [draft, setDraft] = useState(filters);
-  const active = countActiveFilters(filters);
+  const active = countActiveFilters(filters, {
+    ignoreOperation: Boolean(lockedOperation),
+  });
 
   useEffect(() => {
     if (drawerOpen) setDraft(filters);
@@ -60,6 +64,7 @@ export default function PropertyListingsLayout({
           filters={filters}
           onChange={(patch) => onFilterChange(patch)}
           onClear={onClear}
+          lockedOperation={lockedOperation}
         />
 
         <div className="min-w-0 flex-1">
@@ -75,6 +80,7 @@ export default function PropertyListingsLayout({
               pagination={pagination}
               onPageChange={onPageChange}
               isLoading={isLoading}
+              showPagination={false}
             />
           ) : (
             <div className="py-10 text-center">
@@ -86,6 +92,13 @@ export default function PropertyListingsLayout({
         </div>
       </div>
 
+      {/* Full-width footer: divider + pagination centered across sidebar + grid */}
+      {pagination && (properties.length > 0 || isLoading) ? (
+        <div className="mt-8 w-full border-t border-border">
+          <PropertyPaginationControls pagination={pagination} onPageChange={onPageChange} />
+        </div>
+      ) : null}
+
       <StickyFilterButton
         onClick={() => setDrawerOpen(true)}
         activeCount={active}
@@ -96,15 +109,24 @@ export default function PropertyListingsLayout({
         open={drawerOpen}
         filters={draft}
         total={pagination?.total ?? 0}
-        onChange={(patch) => setDraft((prev) => ({ ...prev, ...patch, page: 1 }))}
+        lockedOperation={lockedOperation}
+        onChange={(patch) =>
+          setDraft((prev) => ({
+            ...prev,
+            ...patch,
+            ...(lockedOperation ? { operation: lockedOperation } : {}),
+            page: 1,
+          }))
+        }
         onClear={() => {
           onClear();
           setDrawerOpen(false);
         }}
         onApply={() => {
-          if (onReplaceFilters) onReplaceFilters(draft);
+          const next = lockedOperation ? { ...draft, operation: lockedOperation } : draft;
+          if (onReplaceFilters) onReplaceFilters(next);
           else {
-            onFilterChange(draft);
+            onFilterChange(next);
             onApply();
           }
         }}

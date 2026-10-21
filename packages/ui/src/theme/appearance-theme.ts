@@ -6,6 +6,12 @@ export type AppearanceColors = {
   background: string;
   foreground: string;
   accent: string;
+  topBarBackground: string;
+  topBarForeground: string;
+  navbarBackground: string;
+  navbarForeground: string;
+  footerBackground: string;
+  footerForeground: string;
 };
 
 export const DEFAULT_APPEARANCE: AppearanceColors = {
@@ -14,6 +20,12 @@ export const DEFAULT_APPEARANCE: AppearanceColors = {
   background: '#ffffff',
   foreground: '#131615',
   accent: '#02578b',
+  topBarBackground: '#ffffff',
+  topBarForeground: '#131615',
+  navbarBackground: '#ffffff',
+  navbarForeground: '#131615',
+  footerBackground: '#131615',
+  footerForeground: '#ffffff',
 };
 
 export const APPEARANCE_COLOR_KEYS = [
@@ -22,6 +34,12 @@ export const APPEARANCE_COLOR_KEYS = [
   'background',
   'foreground',
   'accent',
+  'topBarBackground',
+  'topBarForeground',
+  'navbarBackground',
+  'navbarForeground',
+  'footerBackground',
+  'footerForeground',
 ] as const;
 
 const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
@@ -73,6 +91,29 @@ export function textOnColor(hex: string): string {
   return relativeLuminance(hex) > 0.55 ? '#131615' : '#ffffff';
 }
 
+export function contrastRatio(foreground: string, background: string): number {
+  const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background));
+  const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+export function appearanceContrastWarnings(colors: AppearanceColors): {
+  label: string;
+  ratio: number;
+}[] {
+  const pairs: { label: string; foreground: string; background: string }[] = [
+    { label: 'Aplicación', foreground: colors.foreground, background: colors.background },
+    { label: 'Barra superior', foreground: colors.topBarForeground, background: colors.topBarBackground },
+    { label: 'Navbar', foreground: colors.navbarForeground, background: colors.navbarBackground },
+    { label: 'Footer', foreground: colors.footerForeground, background: colors.footerBackground },
+    { label: 'Enlaces de la navbar (hover)', foreground: colors.primary, background: colors.navbarBackground },
+    { label: 'Enlaces del footer (hover)', foreground: colors.primary, background: colors.footerBackground },
+  ];
+  return pairs
+    .map(({ label, foreground, background }) => ({ label, ratio: contrastRatio(foreground, background) }))
+    .filter(({ ratio }) => ratio < 4.5);
+}
+
 export function resolveAppearance(
   input?: Partial<AppearanceColors> | null,
 ): AppearanceColors {
@@ -87,6 +128,12 @@ export function resolveAppearance(
     background: pick('background'),
     foreground: pick('foreground'),
     accent: pick('accent'),
+    topBarBackground: pick('topBarBackground'),
+    topBarForeground: pick('topBarForeground'),
+    navbarBackground: pick('navbarBackground'),
+    navbarForeground: pick('navbarForeground'),
+    footerBackground: pick('footerBackground'),
+    footerForeground: pick('footerForeground'),
   };
 }
 
@@ -115,6 +162,12 @@ export function buildAppearanceCssVars(colors: AppearanceColors): AppearanceCssV
   set('background', colors.background);
   set('foreground', colors.foreground);
   set('accent', colors.accent);
+  set('topbar-background', colors.topBarBackground);
+  set('topbar-foreground', colors.topBarForeground);
+  set('navbar-background', colors.navbarBackground);
+  set('navbar-foreground', colors.navbarForeground);
+  set('footer-background', colors.footerBackground);
+  set('footer-foreground', colors.footerForeground);
   set('active', active);
   set('info', colors.primary);
   set('border', border);
