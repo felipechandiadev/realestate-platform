@@ -13,6 +13,7 @@ import {
   Res,
   Req,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import type { Request } from 'express';
@@ -41,6 +42,7 @@ import { NotificationType, NotificationSenderType } from '../domain/notification
 import { UserRole } from '../../users/domain/user.entity';
 import { PushNotificationsService } from '../application/push-notifications.service';
 import { DeletePushSubscriptionDto, SavePushSubscriptionDto } from '../application/dto/push-subscription.dto';
+import { actorIdOf, canAccessNotification, isStaffActor } from './notification-access.util';
 
 type AuthenticatedRequest = Request & {
   user?: { id?: string; sub?: string; role?: UserRole };
@@ -50,6 +52,16 @@ type AuthenticatedRequest = Request & {
 @ApiTags('Notifications')
 @ApiBearerAuth()
 export class NotificationsController {
+  private readonly logger = new Logger(NotificationsController.name);
+
+  /** Solo staff o destinatario (targetUserIds) puede leer/modificar una notificación. */
+  private async assertCanAccessNotification(req: AuthenticatedRequest, id: string): Promise<void> {
+    const notification = await this.notificationsService.findOne(id);
+    if (!canAccessNotification(req.user, notification)) {
+      throw new ForbiddenException('No puedes acceder a esta notificación');
+    }
+  }
+
   private assertCanAccessUserNotifications(req: AuthenticatedRequest, userId: string): void {
     const actorId = req.user?.id ?? (typeof req.user?.sub === 'string' ? req.user.sub : undefined);
     const role = req.user?.role;
@@ -83,9 +95,10 @@ export class NotificationsController {
           notificationIds: testNotification.map(n => n.id)
         };
       } catch (error) {
+        this.logger.error(`test-email falló: ${error instanceof Error ? error.message : String(error)}`);
         return {
           success: false,
-          error: error.message
+          error: 'No se pudo crear la notificación de prueba',
         };
       }
     }
@@ -192,6 +205,7 @@ export class NotificationsController {
    */
   @Post()
   @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Create new notification' })
   @ApiResponse({
     status: 201,
@@ -203,7 +217,7 @@ export class NotificationsController {
     try {
       return await this.notificationsService.create(createNotificationDto);
     } catch (error) {
-      console.error('[NotificationsController.create] Error creating notification:', error);
+      this.logger.error(`Error creando notificación: ${error instanceof Error ? error.message : String(error)}`);
       throw error;
     }
   }
@@ -213,6 +227,7 @@ export class NotificationsController {
    */
   @Get()
   @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Get all notifications' })
   @ApiResponse({
     status: 200,
@@ -246,7 +261,8 @@ export class NotificationsController {
   })
   @ApiParam({ name: 'id', type: String })
   @Audit(AuditAction.READ, AuditEntityType.NOTIFICATION, 'Obtener notificación por ID')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+    await this.assertCanAccessNotification(req, id);
     return this.notificationsService.getNotificationById(id);
   }
 
@@ -255,6 +271,7 @@ export class NotificationsController {
    */
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Update notification' })
   @ApiResponse({
     status: 200,
@@ -275,6 +292,7 @@ export class NotificationsController {
    */
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Delete notification' })
   @ApiResponse({
     status: 200,
@@ -303,8 +321,15 @@ export class NotificationsController {
     },
   })
   @Audit(AuditAction.UPDATE, AuditEntityType.NOTIFICATION, 'Marcar notificación como abierta')
-  markAsOpened(@Param('id') id: string, @Body('viewerId') viewerId: string) {
-    return this.notificationsService.markAsOpened(id, viewerId);
+  async markAsOpened(
+    @Param('id') id: string,
+    @Body('viewerId') viewerId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    await this.assertCanAccessNotification(req, id);
+    // Un no-staff solo puede registrarse a sí mismo como lector.
+    const effectiveViewer = isStaffActor(req.user) ? viewerId || actorIdOf(req.user) : actorIdOf(req.user);
+    return this.notificationsService.markAsOpened(id, effectiveViewer as string);
   }
 
   /**
@@ -371,10 +396,12 @@ export class NotificationsController {
   @ApiParam({ name: 'id', type: String })
   @ApiBody({ type: UpdateNotificationStatusDto })
   @Audit(AuditAction.UPDATE, AuditEntityType.NOTIFICATION, 'Actualizar status de notificación')
-  updateStatus(
+  async updateStatus(
     @Param('id') id: string,
     @Body() updateStatusDto: UpdateNotificationStatusDto,
+    @Req() req: AuthenticatedRequest,
   ) {
+    await this.assertCanAccessNotification(req, id);
     return this.notificationsService.updateStatus(id, updateStatusDto.status);
   }
 
