@@ -14,7 +14,7 @@ import {
   AuditEntityType,
   RequestSource,
 } from '../enums/audit.enums';
-import { JweService } from '../../modules/auth/jwe/jwe.service';
+import { JweService } from '../../modules/auth/infrastructure/jwe/jwe.service';
 
 export interface AuditMetadata {
   action: AuditAction;

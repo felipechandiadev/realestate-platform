@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JweService } from '../../jwe/jwe.service';
+import { JweService } from '../../infrastructure/jwe/jwe.service';
 
 @Injectable()
 export class SignOutUseCase {

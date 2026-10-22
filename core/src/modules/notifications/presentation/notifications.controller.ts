@@ -26,7 +26,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JweAuthGuard } from '../../auth/jwe/jwe-auth.guard';
+import { JweAuthGuard } from '../../auth/infrastructure/jwe/jwe-auth.guard';
 import { JwtAuthGuard, Public, Roles } from '../../auth/guards/jwt-auth.guard';
 import { Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';

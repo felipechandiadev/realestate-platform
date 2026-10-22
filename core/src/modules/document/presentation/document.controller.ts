@@ -38,7 +38,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import type { Express, Request, Response } from 'express';
-import { JweAuthGuard } from '../../auth/jwe/jwe-auth.guard';
+import { JweAuthGuard } from '../../auth/infrastructure/jwe/jwe-auth.guard';
 import { JwtAuthGuard, RolesGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 import { UserRole } from '../../users/domain/user.entity';

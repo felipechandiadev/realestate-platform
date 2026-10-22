@@ -4,7 +4,7 @@ import { AuditService } from './application/audit.service';
 import { AuditController } from './presentation/audit.controller';
 import { AuditLog } from './domain/audit-log.entity';
 import { AuditInterceptor } from '../../shared/interceptors/audit.interceptor';
-import { JweModule } from '../auth/jwe/jwe.module';
+import { JweModule } from '../auth/infrastructure/jwe/jwe.module';
 
 @Global()
 @Module({

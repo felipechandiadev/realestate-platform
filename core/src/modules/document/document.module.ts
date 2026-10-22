@@ -25,7 +25,7 @@ import { UploadDocumentUseCase } from './application/use-cases/upload-document.u
 import { UploadDniUseCase } from './application/use-cases/upload-dni.usecase';
 import { MultimediaModule } from '../multimedia/multimedia.module';
 import { AuthModule } from '../auth/auth.module';
-import { JweAuthGuard } from '../auth/jwe/jwe-auth.guard';
+import { JweAuthGuard } from '../auth/infrastructure/jwe/jwe-auth.guard';
 
 @Module({
   imports: [
