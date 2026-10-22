@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-custom';
 import { resolveAuthAudience } from '../../application/auth-audience.util';
@@ -7,6 +7,8 @@ import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  private readonly logger = new Logger(JwtStrategy.name);
+
   constructor(private readonly jweService: JweService) {
     super();
   }
@@ -15,34 +17,18 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
-      console.error('[JwtStrategy] No token provided in request headers:', {
-        hasAuthHeader: !!request.headers?.authorization,
-      });
       throw new UnauthorizedException('No token provided');
     }
 
     try {
-      // Mask token for safe logging (show first and last 8 chars)
-      const masked = `${token.slice(0, 8)}...${token.slice(-8)}`;
-        console.log('[JwtStrategy] Validating token:', masked, 'len:', token.length);
       let decryptedPayload: any;
 
-      if (process.env.NODE_ENV === 'test') {
-        // In test environment, use plain JWT
-        decryptedPayload = jwt.verify(
-          token,
-          process.env.JWT_SECRET || 'test-secret',
-        );
+      if (process.env.NODE_ENV === 'test' && process.env.JWT_SECRET) {
+        // Solo en tests: JWT plano firmado con JWT_SECRET (sin secreto por defecto)
+        decryptedPayload = jwt.verify(token, process.env.JWT_SECRET);
       } else {
         // Decrypt the JWE token
-        try {
-          decryptedPayload = await this.jweService.decrypt(token);
-          // Log minimal payload info for diagnostics
-          console.log('[JwtStrategy] Token decrypted. sub:', decryptedPayload?.sub ? String(decryptedPayload.sub).slice(0, 8) + '...' : 'none', 'exp:', !!decryptedPayload?.exp);
-        } catch (err) {
-          console.error('[JwtStrategy] Decrypt failed:', err instanceof Error ? err.message : err);
-          throw err;
-        }
+        decryptedPayload = await this.jweService.decrypt(token);
       }
       if (!decryptedPayload) {
         throw new UnauthorizedException('Invalid token');
@@ -61,7 +47,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         authAudience: resolveAuthAudience(decryptedPayload),
       };
     } catch (error) {
-      console.error('[JwtStrategy] Token validation error:', error instanceof Error ? error.message : error);
+      this.logger.debug(
+        `Token inválido: ${error instanceof Error ? error.message : 'error desconocido'}`,
+      );
       throw new UnauthorizedException('Invalid token');
     }
   }
