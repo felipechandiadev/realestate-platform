@@ -23,6 +23,7 @@ import { NotificationsService } from '../../notifications/application/notificati
 
 // application use-cases
 import { CreatePropertyUseCase } from '../application/use-cases/create-property.usecase';
+import { isPubliclyVisible, toPublicPropertyDetail } from './public-property.mapper';
 import { FindPropertiesUseCase } from '../application/use-cases/find-properties.usecase';
 import { FindOnePropertyUseCase } from '../application/use-cases/find-one-property.usecase';
 import { CountPropertiesUseCase } from '../application/use-cases/count-properties.usecase';
@@ -229,6 +230,18 @@ export class PropertyService {
   async getFullProperty(id: string): Promise<GetFullPropertyDto> {
     // delegate to findOne but cast to dto
     return (await this.findOne(id)) as any;
+  }
+
+  /**
+   * Variante pública de getFullProperty: solo propiedades publicadas y campos
+   * seguros (sin datos del creador, leads, visitas, historial ni notas internas).
+   */
+  async getPublicFullProperty(id: string): Promise<Record<string, unknown>> {
+    const property = await this.findOne(id);
+    if (!isPubliclyVisible(property as any)) {
+      throw new NotFoundException(`Property ${id} not found`);
+    }
+    return toPublicPropertyDetail(property);
   }
 
   async shareByEmail(id: string, dto: SharePropertyDto, senderUserId: string) {

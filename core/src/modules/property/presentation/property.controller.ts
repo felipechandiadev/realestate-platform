@@ -16,6 +16,8 @@ import {
   BadRequestException,
   UnauthorizedException,
   ForbiddenException,
+  Logger,
+  HttpException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { Response, Request } from 'express';
@@ -80,6 +82,8 @@ const propertyUploadStorage = diskStorage({
 @Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('properties')
 export class PropertyController {
+  private readonly logger = new Logger(PropertyController.name);
+
   constructor(
     private readonly propertyService: PropertyService,
     private readonly fileUploadService: FileUploadService,
@@ -190,8 +194,6 @@ export class PropertyController {
     @Req() request: any,
     @UploadedFiles() files?: Express.Multer.File[]
   ) {
-    console.log('🏠 [PropertyController] PUBLIC PUBLISH - STARTING PROPERTY CREATION');
-    
     let createPropertyDto: CreatePropertyPayloadDto;
     try {
       if (body.data) {
@@ -211,24 +213,8 @@ export class PropertyController {
       transformOptions: { enableImplicitConversion: true }
     }).transform(createPropertyDto, { type: 'body', metatype: CreatePropertyPayloadDto });
 
-    console.log('✅ [PropertyController] DTO validated successfully');
-
-    // Call the service using createPropertyWithFiles
-    // We check for an optional token to associate the property with a logged-in user
-    let creatorId = 'anonymous';
-    const authHeader = request.headers.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      try {
-        const payload = await this.jweService.decrypt(token);
-        if (payload && payload.sub) {
-          creatorId = payload.sub;
-          console.log(`👤 [PropertyController] PUBLIC PUBLISH - Authenticated user detected: ${creatorId}`);
-        }
-      } catch (error) {
-        console.warn('⚠️ [PropertyController] PUBLIC PUBLISH - Token provided but invalid/expired');
-      }
-    }
+    // Ruta @Public: el guard global valida un Bearer opcional y deja req.user si es válido.
+    const creatorId: string = request?.user?.id ?? 'anonymous';
 
     return this.propertyService.createPropertyWithFiles(validatedDto, creatorId, files || []);
   }
@@ -295,39 +281,6 @@ export class PropertyController {
     @Req() request: any,
     @UploadedFiles() files?: Express.Multer.File[]
   ) {
-    console.log('🏠 [PropertyController] ===== STARTING PROPERTY CREATION =====');
-    console.log('📄 [PropertyController] Raw body received:', Object.keys(body));
-    console.log('📄 [PropertyController] Raw body content:', body);
-    console.log('📄 [PropertyController] Request headers:', {
-      'content-type': request.headers['content-type'],
-      'content-length': request.headers['content-length']
-    });
-    console.log('📸 [PropertyController] Files received count:', files?.length || 0);
-    console.log('📋 [PropertyController] Files received details:', files?.map(f => ({
-      fieldname: f.fieldname,
-      originalName: f.originalname,
-      filename: f.filename,
-      size: f.size,
-      mimetype: f.mimetype,
-      buffer: f.buffer ? 'HAS_BUFFER' : 'NO_BUFFER',  // ← VERIFICA QUE TENGAN BUFFER
-      path: f.path || 'NO_PATH'
-    })) || []);
-
-    // Log masked authentication info for diagnostics
-    try {
-      const authHeader = request.headers['authorization'] || request.headers['Authorization'];
-      const cookieHeader = request.headers['cookie'];
-      const mask = (s: string | undefined | null) => {
-        if (!s) return 'none';
-        const str = String(s);
-        return str.length > 24 ? `${str.substring(0, 8)}...${str.slice(-8)}` : str;
-      };
-      console.log('🔐 [PropertyController] Auth header:', mask(authHeader));
-      console.log('🍪 [PropertyController] Cookie header:', mask(cookieHeader));
-    } catch (err) {
-      console.warn('[PropertyController] Failed to log auth cookie/header', err);
-    }
-
     // Parse the 'data' field from FormData which contains the JSON string
     let createPropertyDto: CreatePropertyPayloadDto;
     try {
@@ -341,93 +294,30 @@ export class PropertyController {
         createPropertyDto = body;
       }
 
-      console.log('📊 [PropertyController] Parsed property data:', {
-        title: createPropertyDto.title,
-        price: createPropertyDto.price,
-        currencyPrice: createPropertyDto.currencyPrice,
-        operationType: createPropertyDto.operationType,
-        status: createPropertyDto.status
-      });
-
       // Validate the DTO (sin agregar archivos que pueden ser filtrados)
       const validatedDto = await new ValidationPipe({
         transform: true,
         transformOptions: { enableImplicitConversion: true }
       }).transform(createPropertyDto, { type: 'body', metatype: CreatePropertyPayloadDto });
 
-      console.log('✅ [PropertyController] DTO validated successfully');
-
-      // Obtener el ID del usuario creador del request
-      let creatorId = request.user?.id;
-
-      // Fallback: if request.user is missing (guard didn't set it), try to decrypt the token directly
+      // El guard global (JwtAuthGuard) ya autenticó la petición y dejó req.user.
+      const creatorId: string | undefined = request.user?.id;
       if (!creatorId) {
-        try {
-          const authHeader = request.headers['authorization'] || request.headers['Authorization'];
-          const token = authHeader ? String(authHeader).replace(/^Bearer\s+/i, '').trim() : null;
-          if (token) {
-            const payload = await this.jweService.decrypt(token);
-            if (payload?.sub) {
-              creatorId = payload.sub;
-              console.log('👤 [PropertyController] Resolved creatorId from token fallback:', creatorId);
-            }
-          }
-        } catch (err) {
-          console.warn('[PropertyController] Token decrypt fallback failed:', err?.message ?? err);
-        }
+        throw new UnauthorizedException('Autenticación requerida');
       }
-
-      // Additional test-environment fallback: verify plain JWT signed with JWT_SECRET
-      if (!creatorId && process.env.NODE_ENV === 'test') {
-        try {
-          const authHeader = request.headers['authorization'] || request.headers['Authorization'];
-          const token = authHeader ? String(authHeader).replace(/^Bearer\s+/i, '').trim() : null;
-          if (token) {
-            // lazy import to avoid adding runtime dependency in prod flow
-            const jwt = await import('jsonwebtoken');
-            const secret = process.env.JWT_SECRET || 'test-secret';
-            const decoded: any = jwt.verify(token, secret);
-            if (decoded && decoded.sub) {
-              creatorId = decoded.sub;
-              console.log('👤 [PropertyController] TEST-FALLBACK resolved creatorId via jwt.verify:', creatorId);
-            }
-          }
-        } catch (err) {
-          console.warn('[PropertyController] TEST-FALLBACK jwt.verify failed:', err?.message ?? err);
-        }
-      }
-
-      if (!creatorId) {
-        console.error('❌ [PropertyController] No user ID found in request');
-        throw new Error('User ID not found in request. Authentication required.');
-      }
-
-      console.log('👤 [PropertyController] Creator user ID:', creatorId);
-      console.log('🚀 [PropertyController] About to call service with:', {
-        filesCount: files?.length || 0,
-        filesDetails: files?.map(f => ({
-          originalname: f.originalname,
-          filename: f.filename,
-          size: f.size,
-          path: f.path
-        })) || []
-      });
 
       // Pasar archivos como parámetro separado en lugar de dentro del DTO
       const result = await this.propertyService.createPropertyWithFiles(validatedDto, creatorId, files || []);
 
-      console.log('🎉 [PropertyController] Property created successfully:', {
-        id: result?.id,
-        title: result?.title,
-        multimediaCount: result?.multimedia?.length || 0
-      });
-
       return result;
     } catch (error) {
-      console.error('[PropertyController] Error creating property:', error);
+      this.logger.error(
+        `Error creando propiedad: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
 
       // Re-throw known Nest exceptions
-      if (error instanceof BadRequestException) {
+      if (error instanceof HttpException) {
         throw error;
       }
 
@@ -435,18 +325,18 @@ export class PropertyController {
       const msg = error?.message || '';
       if (msg.includes('Authentication required') || msg.includes('User ID not found') || msg.toLowerCase().includes('token')) {
         // Use UnauthorizedException to return 401
-        throw new UnauthorizedException(msg || 'Authentication failed');
+        throw new UnauthorizedException('Autenticación requerida');
       }
 
       if (msg.includes('validation')) {
-        throw new BadRequestException(`Validation error: ${msg}`);
+        throw new BadRequestException('Datos de la propiedad inválidos');
       }
 
       if (msg.includes('multimedia') || msg.includes('upload')) {
-        throw new BadRequestException(`File upload error: ${msg}`);
+        throw new BadRequestException('Error al subir archivos de la propiedad');
       }
 
-      throw new BadRequestException(`Failed to create property: ${msg}`);
+      throw new BadRequestException('No se pudo crear la propiedad');
     }
   }
 
@@ -538,8 +428,16 @@ export class PropertyController {
   @ApiResponse({ status: 200, description: 'Complete property details', type: GetFullPropertyDto })
   @ApiParam({ name: 'id', type: String, description: 'Property ID' })
   @Audit(AuditAction.READ, AuditEntityType.PROPERTY, 'Full property details viewed')
-  async getFullProperty(@Param('id') id: string): Promise<GetFullPropertyDto> {
-    return await this.propertyService.getFullProperty(id);
+  async getFullProperty(
+    @Param('id') id: string,
+    @Req() req?: any,
+  ): Promise<GetFullPropertyDto | Record<string, unknown>> {
+    // Staff (ADMIN/AGENT) ve el detalle completo; el resto solo propiedades
+    // publicadas y campos seguros.
+    if (isStaffRole(req?.user?.role)) {
+      return await this.propertyService.getFullProperty(id);
+    }
+    return await this.propertyService.getPublicFullProperty(id);
   }
 
   /**
@@ -558,7 +456,6 @@ export class PropertyController {
     @Body(new ValidationPipe({ transform: true })) dto: UpdatePropertyBasicDto,
     @Req() request: any,
   ): Promise<Property> {
-    console.log('✅ PATCH :id/basic endpoint called with:', { id, dto });
     const user = request?.user;
     const userId = user?.id || user?.sub || (typeof user === 'string' ? user : undefined);
     return await this.propertyService.update(id, dto as UpdatePropertyDto, userId);
@@ -1025,12 +922,7 @@ export class PropertyController {
     @UploadedFiles() files: Express.Multer.File[],
     @Req() req: any,
   ) {
-    console.log(`✅ Endpoint llamado: POST /properties/${propertyId}/multimedia`);
-    console.log(`👤 Usuario: ${req.user?.id}`);
-    console.log(`📁 Archivos recibidos: ${files?.length || 0}`);
-    
     if (!files || files.length === 0) {
-      console.error('❌ No se recibieron archivos');
       throw new BadRequestException('No se recibieron archivos');
     }
 
