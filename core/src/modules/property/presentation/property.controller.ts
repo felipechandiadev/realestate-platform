@@ -15,6 +15,7 @@ import {
   UseGuards,
   BadRequestException,
   UnauthorizedException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { Response, Request } from 'express';
@@ -48,13 +49,17 @@ import { FilterSalePropertiesDto } from '../dto/filter-sale-properties.dto';
 import { ListAvailableRentPropertiesDto } from '../dto/list-available-rent-properties.dto';
 import { Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
-import { JwtAuthGuard, RolesGuard, Roles } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, RolesGuard, Roles, Public } from '../../auth/guards/jwt-auth.guard';
 import { UserRole } from '../../users/domain/user.entity';
 import { PropertyOperationType } from '../../../shared/enums/property-operation-type.enum';
 import { UploadPropertyMultimediaDto } from '../dto/upload-property-multimedia.dto';
 import { FileUploadService } from '../../../shared/services/file-upload.service';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { promises as fsPromises } from 'fs';
+
+const isStaffRole = (role?: string): boolean =>
+  role === UserRole.ADMIN || role === UserRole.AGENT;
 
 // Configuración de storage para uploads de propiedades
 const propertyUploadStorage = diskStorage({
@@ -72,6 +77,7 @@ const propertyUploadStorage = diskStorage({
 });
 
 @ApiTags('Properties')
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('properties')
 export class PropertyController {
   constructor(
@@ -127,6 +133,7 @@ export class PropertyController {
   /**
    * Public endpoint to publish property with multimedia (no authentication required)
    */
+  @Public()
   @Post('public/publish')
   @ApiTags('Properties')
   @ApiOperation({ summary: 'Publish a property with multimedia (public - no auth required)' })
@@ -488,6 +495,7 @@ export class PropertyController {
   /**
    * Endpoint público (sin token) para listar propiedades publicadas visibles en el portal.
    */
+  @Public()
   @Get('public')
   @ApiOperation({ summary: 'Get published properties for portal (public)' })
   @ApiResponse({ status: 200, description: 'List of published properties' })
@@ -496,6 +504,7 @@ export class PropertyController {
     return await this.propertyService.listPublishedPublic();
   }
 
+  @Public()
   @Get('public/featured')
   @ApiOperation({ summary: 'Get featured properties (public)' })
   @ApiResponse({ status: 200, description: 'List of featured properties' })
@@ -504,6 +513,7 @@ export class PropertyController {
     return { success: true, data };
   }
 
+  @Public()
   @Get('public/featured/paginated')
   @ApiOperation({ summary: 'Get featured properties with pagination (public)' })
   @ApiResponse({ status: 200, description: 'Paginated list of featured properties' })
@@ -522,6 +532,7 @@ export class PropertyController {
   /**
    * Devuelve todos los detalles de la propiedad, incluyendo relaciones y datos agregados.
    */
+  @Public()
   @Get(':id/full')
   @ApiOperation({ summary: 'Get full property details with all relations' })
   @ApiResponse({ status: 200, description: 'Complete property details', type: GetFullPropertyDto })
@@ -752,6 +763,7 @@ export class PropertyController {
    * Get published properties with filters and pagination (9 per page)
    * Query params: currency, state, city, typeProperty, operation, page, bedrooms, bathrooms, parkingSpaces, bedroomsOperator, bathroomsOperator, parkingSpacesOperator, builtSquareMetersMin, landSquareMetersMin, constructionYearMin
    */
+  @Public()
   @Get('published/filtered')
   @ApiOperation({ summary: 'Get published properties with filters' })
   @ApiResponse({ status: 200, description: 'Filtered properties list' })
@@ -788,6 +800,7 @@ export class PropertyController {
    * Get published rent properties with filters and pagination
    * Automatically filters by operationType = 'RENT'
    */
+  @Public()
   @Get('rent')
   @ApiOperation({ summary: 'Get published rent properties with filters' })
   @ApiResponse({ status: 200, description: 'Filtered rent properties list' })
@@ -844,6 +857,7 @@ export class PropertyController {
   /**
    * Min/max bounds for sidebar range filters (price, surfaces, year)
    */
+  @Public()
   @Get('filter-bounds')
   @ApiOperation({ summary: 'Get min/max bounds for published property range filters' })
   @ApiResponse({ status: 200, description: 'Filter bounds retrieved' })
@@ -859,6 +873,7 @@ export class PropertyController {
   /**
    * Get related properties based on similarity algorithm
    */
+  @Public()
   @Get('related/:id')
   @ApiOperation({ summary: 'Get related properties for a specific property' })
   @ApiResponse({ status: 200, description: 'Related properties retrieved', type: [Property] })
@@ -876,6 +891,7 @@ export class PropertyController {
    * Get published sale properties with filters and pagination
    * Automatically filters by operationType = 'SALE'
    */
+  @Public()
   @Get('sale')
   @ApiOperation({ summary: 'Get published sale properties with filters' })
   @ApiResponse({ status: 200, description: 'Filtered sale properties list' })
@@ -911,6 +927,7 @@ export class PropertyController {
   /**
    * Crear una solicitud de publicación de propiedad desde el portal
    */
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Post('request')
   @ApiOperation({ summary: 'Create property request from portal' })
   @ApiResponse({ status: 201, description: 'Property request created', type: Property })
@@ -953,6 +970,7 @@ export class PropertyController {
     return this.propertyService.getPropertyCharacteristics(propertyId);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Post(':id/multimedia')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FilesInterceptor('files', 20, {
@@ -1016,6 +1034,8 @@ export class PropertyController {
       throw new BadRequestException('No se recibieron archivos');
     }
 
+    await this.assertCanManagePropertyMedia(propertyId, req.user, files);
+
     const userId = this.extractUserId(req);
     const uploadedMultimedia = await this.propertyService.uploadMultimedia(propertyId, files, dto, userId);
 
@@ -1047,23 +1067,25 @@ export class PropertyController {
     return { data: history };
   }
 
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Patch(':id/toggle-favorite')
   @ApiOperation({ summary: 'Toggle property favorite for user' })
   @ApiResponse({ status: 200, description: 'Favorite toggled', schema: { example: { isFavorited: true } } })
   @ApiParam({ name: 'id', type: String, description: 'Property ID' })
-  @ApiBody({ schema: { example: { userId: 'user-id-or-anonymous' } } })
+  @ApiBearerAuth()
   @Audit(AuditAction.UPDATE, AuditEntityType.PROPERTY, 'Property favorite toggled')
   async toggleFavorite(
     @Param('id') propertyId: string,
-    @Body('userId') userId: string,
     @Req() req: any,
   ) {
-    const result = await this.propertyService.toggleFavorite(propertyId, userId || 'anonymous');
+    // El usuario sale SIEMPRE del token; un `userId` en el body se ignora.
+    const result = await this.propertyService.toggleFavorite(propertyId, req.user.id);
     return {
       isFavorited: result.isFavorited,
     };
   }
 
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Get(':id/favorite-status')
   @ApiOperation({ summary: 'Check if property is favorited by user' })
   @ApiResponse({ status: 200, description: 'Favorite status', schema: { example: { isFavorited: true } } })
@@ -1111,6 +1133,7 @@ export class PropertyController {
     return this.propertyService.findOne(id);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Get('user/:userId/grid')
   @ApiOperation({ summary: 'Get properties grid for a specific user' })
   @ApiResponse({ status: 200, description: 'Grid of user properties' })
@@ -1123,8 +1146,34 @@ export class PropertyController {
   gridByUser(
     @Param('userId') userId: string,
     @Query(ValidationPipe) query: GridSaleQueryDto & { operationType?: PropertyOperationType },
+    @Req() req: any,
   ) {
+    if (!isStaffRole(req.user?.role) && req.user?.id !== userId) {
+      throw new ForbiddenException('No puedes ver las propiedades de otro usuario');
+    }
     return this.propertyService.gridByUser(userId, query);
+  }
+
+  /**
+   * ADMIN/AGENT pueden subir multimedia a cualquier propiedad; COMMUNITY solo a las
+   * propiedades que creó (flujo "publicar/arrendar" del portal). Si se rechaza, se
+   * eliminan los archivos que multer ya escribió en disco.
+   */
+  private async assertCanManagePropertyMedia(
+    propertyId: string,
+    user: { id?: string; role?: UserRole } | undefined,
+    files: Express.Multer.File[] = [],
+  ): Promise<void> {
+    if (isStaffRole(user?.role)) return;
+    const property = await this.propertyService.findOne(propertyId, false);
+    if (!user?.id || property?.creatorUserId !== user.id) {
+      await Promise.all(
+        files
+          .filter((file) => file?.path)
+          .map((file) => fsPromises.unlink(file.path).catch(() => undefined)),
+      );
+      throw new ForbiddenException('No puedes modificar una propiedad que no es tuya');
+    }
   }
 
   private extractUserId(req: any): string {
