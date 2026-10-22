@@ -1,4 +1,5 @@
 import { AppDataSource, initializeDataSource } from './seeder.config';
+import { assertSafeToSeed } from './seed-guard';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { DeepPartial } from 'typeorm';
@@ -45,6 +46,7 @@ import {
 } from './seed-media.uploader';
 
 async function seedDatabase() {
+  assertSafeToSeed(AppDataSource.options as { host?: string; database?: string }, 'seed');
   try {
     await initializeDataSource();
 

@@ -3,6 +3,7 @@
  * Usage: npm run seed:minimal
  */
 import { AppDataSource, initializeDataSource } from './seeder.config';
+import { assertSafeToSeed } from './seed-guard';
 import * as bcrypt from 'bcrypt';
 import { DeepPartial } from 'typeorm';
 import {
@@ -22,6 +23,7 @@ import { RegionEnum } from '../../src/shared/regions/regions.enum';
 import { ComunaEnum } from '../../src/shared/regions/comunas.enum';
 
 async function seedMinimal() {
+  assertSafeToSeed(AppDataSource.options as { host?: string; database?: string }, 'seed-minimal');
   try {
     await initializeDataSource();
 
@@ -233,4 +235,7 @@ seedMinimal()
     console.log('Done.');
     process.exit(0);
   })
-  .catch(() => process.exit(1));
+  .catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  });

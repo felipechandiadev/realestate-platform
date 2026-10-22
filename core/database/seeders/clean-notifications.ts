@@ -1,6 +1,8 @@
 import { AppDataSource, initializeDataSource } from './seeder.config';
+import { assertSafeToSeed } from './seed-guard';
 
 async function cleanInvalidNotificationTypes() {
+  assertSafeToSeed(AppDataSource.options as { host?: string; database?: string }, 'clean-notifications');
   await initializeDataSource();
   const queryRunner = AppDataSource.createQueryRunner();
   await queryRunner.connect();
@@ -15,6 +17,11 @@ async function cleanInvalidNotificationTypes() {
   }
 }
 
-cleanInvalidNotificationTypes().then(() => {
-  process.exit(0);
-});
+cleanInvalidNotificationTypes()
+  .then(() => {
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  });
