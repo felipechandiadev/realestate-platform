@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start -p 8001",
     "lint": "eslint",
-    "test": "jest --passWithNoTests",
-    "typecheck": "tsc --noEmit"
+    "test": "node --test tests/smoke.node.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:jest": "jest --passWithNoTests"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

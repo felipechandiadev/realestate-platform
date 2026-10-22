@@ -25,12 +25,39 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
+      // Core API (local + prod host already used in deploy/nginx)
       {
         protocol: "http",
         hostname: "localhost",
         port: "8000",
         pathname: "/public/**",
       },
+      {
+        protocol: "https",
+        hostname: "localhost",
+        port: "8000",
+        pathname: "/public/**",
+      },
+      {
+        protocol: "https",
+        hostname: "core.bravoshottpropiedades.cl",
+        pathname: "/public/**",
+      },
+      // R2 public hosts referenciados en core/scripts/update-r2-urls.ts
+      {
+        protocol: "https",
+        hostname: "pub-f23df7eb40cc418aac080ce07e60c1a8.r2.dev",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "pub-5ebfb00e2816441a8e34c1ccc36e6195.r2.dev",
+        pathname: "/**",
+      },
+      // Si R2_PUBLIC_URL usa otro host, añadirlo aquí (sin wildcards **)
+    ],
+  },
+
       {
         protocol: "http",
         hostname: "localhost",
