@@ -206,7 +206,7 @@ export class PropertyController {
         createPropertyDto = body;
       }
     } catch (error) {
-      throw new BadRequestException(`Invalid JSON in data field: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new BadRequestException('JSON inválido en el campo data');
     }
 
     // Validate the DTO

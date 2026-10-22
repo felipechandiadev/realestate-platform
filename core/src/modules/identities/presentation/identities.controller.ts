@@ -15,6 +15,7 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -40,6 +41,8 @@ import { UserRole } from '../../users/domain/user.entity';
 // Interceptor para transformar campos JSON stringified antes de validación
 @Injectable()
 export class TransformJsonFieldsInterceptor implements NestInterceptor {
+  private readonly logger = new Logger(TransformJsonFieldsInterceptor.name);
+
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest();
     const body = request.body;
@@ -50,12 +53,9 @@ export class TransformJsonFieldsInterceptor implements NestInterceptor {
       if (body[field] && typeof body[field] === 'string') {
         try {
           body[field] = JSON.parse(body[field]);
-          console.log(`Parsed ${field} in interceptor:`, body[field]);
-        } catch (error) {
-          console.warn(`Failed to parse JSON field ${field} in interceptor:`, error);
+        } catch {
+          this.logger.warn(`No se pudo parsear el campo JSON "${field}"`);
         }
-      } else {
-        console.log(`${field} not parsed - value:`, body[field], 'type:', typeof body[field]);
       }
     });
 

@@ -45,13 +45,7 @@ export class AboutUsController {
       return result;
     } catch (error) {
       this.logger.error('Error fetching AboutUs:', error);
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: error instanceof Error ? error.message : 'Error fetching AboutUs',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw this.toClientError(error, 'Error fetching AboutUs');
     }
   }
 
@@ -67,13 +61,7 @@ export class AboutUsController {
       return result;
     } catch (error) {
       this.logger.error('Error creating AboutUs:', error);
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: error instanceof Error ? error.message : 'Error creating AboutUs',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw this.toClientError(error, 'Error creating AboutUs');
     }
   }
 
@@ -92,13 +80,7 @@ export class AboutUsController {
       return result;
     } catch (error) {
       this.logger.error('Error updating AboutUs:', error);
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: error instanceof Error ? error.message : 'Error updating AboutUs',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw this.toClientError(error, 'Error updating AboutUs');
     }
   }
 
@@ -113,13 +95,7 @@ export class AboutUsController {
       return { statusCode: 200, message: 'About us deleted successfully' };
     } catch (error) {
       this.logger.error('Error deleting AboutUs:', error);
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: error instanceof Error ? error.message : 'Error deleting AboutUs',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw this.toClientError(error, 'Error deleting AboutUs');
     }
   }
 
@@ -135,13 +111,16 @@ export class AboutUsController {
       return result;
     } catch (error) {
       this.logger.error('Error fetching AboutUs by id:', error);
-      throw new HttpException(
-        {
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: error instanceof Error ? error.message : 'Error fetching AboutUs',
-        },
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      throw this.toClientError(error, 'Error fetching AboutUs');
     }
+  }
+
+  /** Conserva errores HTTP conocidos (404, 400…) y oculta detalles internos. */
+  private toClientError(error: unknown, fallback: string): HttpException {
+    if (error instanceof HttpException) return error;
+    return new HttpException(
+      { statusCode: HttpStatus.INTERNAL_SERVER_ERROR, message: fallback },
+      HttpStatus.INTERNAL_SERVER_ERROR,
+    );
   }
 }
