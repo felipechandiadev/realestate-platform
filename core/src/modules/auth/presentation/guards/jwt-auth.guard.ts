@@ -1,34 +1,52 @@
 import { Injectable, ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { resolveAuthAudience } from '../../application/auth-audience.util';
 import { JweService } from '../../infrastructure/jwe/jwe.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly jweService: JweService) {
+  constructor(
+    private readonly jweService: JweService,
+    private readonly reflector: Reflector,
+  ) {
     super();
   }
 
   async canActivate(context: ExecutionContext) {
-    // Write a debug line for each invocation to a temp log so we can inspect behavior across requests
-    try {
-      const req = context.switchToHttp().getRequest();
-      const fs = await new Function('fs', 'return fs')((await import('fs')));
-      const method = req?.method || 'UNKNOWN';
-      const url = req?.originalUrl || req?.url || 'UNKNOWN';
-      fs.appendFileSync('/tmp/jwt-guard-debug.log', `[${new Date().toISOString()}] canActivate invoked for ${method} ${url}\n`);
-    } catch (e) {
-      // non-fatal
+    // Solo aplica a HTTP (los gateways WebSocket tienen su propia autenticación)
+    if (context.getType() !== 'http') {
+      return true;
     }
+
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      // Ruta pública: si viene un token se intenta poblar req.user, pero nunca se rechaza.
+      const req = context.switchToHttp().getRequest();
+      const authHeader = req?.headers?.authorization;
+      if (authHeader && String(authHeader).startsWith('Bearer ')) {
+        try {
+          await this.authenticate(context);
+        } catch {
+          // token inválido en ruta pública: se ignora
+        }
+      }
+      return true;
+    }
+
+    return this.authenticate(context);
+  }
+
+  private async authenticate(context: ExecutionContext): Promise<boolean> {
     // First attempt normal passport jwt flow
     try {
       const result = (await super.canActivate(context)) as boolean;
       return result;
     } catch (err) {
-      try {
-        const fs = await new Function('fs', 'return fs')((await import('fs')));
-        fs.appendFileSync('/tmp/jwt-guard-debug.log', `[${new Date().toISOString()}] super.canActivate threw: ${err instanceof Error ? err.message : String(err)}\n`);
-      } catch {}
       // If passport flow fails with Unauthorized, try a manual decrypt fallback
       try {
         const req = context.switchToHttp().getRequest();
@@ -47,12 +65,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         }
 
         if (token) {
-          try {
-            const fs = await new Function('fs', 'return fs')((await import('fs')));
-            const masked = token.length > 24 ? `${token.substring(0,8)}...${token.slice(-8)}` : token;
-            fs.appendFileSync('/tmp/jwt-guard-debug.log', `[${new Date().toISOString()}] Manual decrypt fallback token mask: ${masked}\n`);
-          } catch {}
-
           const payload = await this.jweService.decrypt(token);
           if (payload && payload.sub) {
             // attach user-like object to request so controllers can use it
@@ -62,13 +74,11 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
               role: payload.role,
               authAudience: resolveAuthAudience(payload),
             };
-            try { const fs = await new Function('fs', 'return fs')((await import('fs'))); fs.appendFileSync('/tmp/jwt-guard-debug.log', `[${new Date().toISOString()}] Manual decrypt succeeded, sub=${payload.sub}\n`); } catch {}
             return true;
           }
         }
       } catch (fallbackErr) {
         console.warn('[JwtAuthGuard] Manual decrypt fallback failed:', fallbackErr instanceof Error ? fallbackErr.message : fallbackErr);
-        try { const fs = await new Function('fs', 'return fs')((await import('fs'))); fs.appendFileSync('/tmp/jwt-guard-debug.log', `[${new Date().toISOString()}] Manual decrypt fallback error: ${fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)}\n`); } catch {}
       }
 
       // Re-throw original error so the framework returns 401

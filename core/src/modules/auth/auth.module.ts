@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
@@ -33,6 +34,10 @@ import { ResendVerificationEmailUseCase } from './application/use-cases/resend-v
     JwtStrategy,
     JwtAuthGuard,
     RolesGuard,
+    // Guards globales, deny-by-default: todo endpoint exige token salvo @Public().
+    // El orden importa: primero autenticación (req.user), luego roles.
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
     JweService,
     AuthService,
     SignInUseCase,
