@@ -3,6 +3,8 @@ import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
 export class AddEmailVerificationToUsers1700000000000
   implements MigrationInterface
 {
+  name = 'AddEmailVerificationToUsers1700000000000';
+
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Check if columns already exist to make migration idempotent
     const table = await queryRunner.getTable('users');

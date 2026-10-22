@@ -1,9 +1,14 @@
 import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey, TableIndex } from 'typeorm';
 
 export class AddMultimediaOptimization1735000000000 implements MigrationInterface {
+  name = 'AddMultimediaOptimization1735000000000';
+
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // 1. Agregar nuevas columnas a la tabla multimedia
-    await queryRunner.addColumns('multimedia', [
+    // Idempotente: si la tabla de variantes ya existe (creada por synchronize), no hacer nada.
+    if (await queryRunner.hasTable('multimedia_variants')) return;
+
+    // 1. Agregar nuevas columnas a la tabla multimedia (solo las que falten)
+    const newColumns = [
       new TableColumn({
         name: 'originalSize',
         type: 'int',
@@ -36,7 +41,12 @@ export class AddMultimediaOptimization1735000000000 implements MigrationInterfac
         isNullable: true,
         comment: 'Alto de la imagen original en píxeles',
       }),
-    ]);
+    ];
+    for (const column of newColumns) {
+      if (!(await queryRunner.hasColumn('multimedia', column.name))) {
+        await queryRunner.addColumn('multimedia', column);
+      }
+    }
 
     // 2. Crear tabla multimedia_variants
     await queryRunner.createTable(
@@ -44,15 +54,16 @@ export class AddMultimediaOptimization1735000000000 implements MigrationInterfac
         name: 'multimedia_variants',
         columns: [
           {
+            // MySQL: uuid = varchar(36), generado por TypeORM (sin default de Postgres)
             name: 'id',
-            type: 'uuid',
+            type: 'varchar',
+            length: '36',
             isPrimary: true,
-            generationStrategy: 'uuid',
-            default: 'uuid_generate_v4()',
           },
           {
             name: 'multimediaId',
-            type: 'uuid',
+            type: 'varchar',
+            length: '36',
             comment: 'Referencia al multimedia original',
           },
           {
