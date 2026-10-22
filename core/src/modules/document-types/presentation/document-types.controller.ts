@@ -10,6 +10,7 @@ import {
   UploadedFile,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import { DocumentTypesService } from '../application/document-types.service';
 import {
   CreateDocumentTypeDto,
@@ -140,7 +141,7 @@ export class DocumentTypesController {
     status: 201,
     description: 'File uploaded successfully',
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', DEFAULT_UPLOAD_OPTIONS))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -182,7 +183,7 @@ export class DocumentTypesController {
     status: 201,
     description: 'Document uploaded successfully',
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', DEFAULT_UPLOAD_OPTIONS))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

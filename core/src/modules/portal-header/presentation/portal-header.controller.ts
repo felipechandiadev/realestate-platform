@@ -13,6 +13,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import { Observable } from 'rxjs';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, RolesGuard, Public } from '../../auth/guards/jwt-auth.guard';
@@ -61,7 +62,7 @@ export class PortalHeaderController {
   @Roles(UserRole.ADMIN)
   @Audit(AuditAction.UPDATE, AuditEntityType.PORTAL_HEADER, 'Portal header updated')
   @UseInterceptors(
-    FileFieldsInterceptor([{ name: 'logo', maxCount: 1 }]),
+    FileFieldsInterceptor([{ name: 'logo', maxCount: 1 }], DEFAULT_UPLOAD_OPTIONS),
     ParsePortalHeaderJsonInterceptor,
   )
   update(

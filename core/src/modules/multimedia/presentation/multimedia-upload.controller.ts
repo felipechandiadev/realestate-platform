@@ -1,18 +1,14 @@
 import {
   Controller,
   Post,
-  Get,
-  Delete,
-  Param,
   UploadedFile,
   UseInterceptors,
   Body,
   Res,
   HttpStatus,
+  HttpException,
   Logger,
-  BadRequestException,
   ForbiddenException,
-  InternalServerErrorException,
   Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -25,6 +21,13 @@ import {
   MultimediaResponse,
 } from '../interfaces/multimedia.interface';
 import type { Express } from 'express';
+import { VIDEO_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
+import {
+  DNI_UPLOAD_KINDS,
+  MULTIMEDIA_UPLOAD_KINDS,
+  assertAllowedFileSignature,
+  assertNonVideoSizeLimit,
+} from '../../../shared/upload/file-signature';
 import { Roles } from '../../auth/guards/jwt-auth.guard';
 import { UserRole } from '../../users/domain/user.entity';
 
@@ -33,34 +36,6 @@ const COMMUNITY_UPLOAD_TYPES: MultimediaType[] = [
   MultimediaType.DNI_FRONT,
   MultimediaType.DNI_REAR,
 ];
-
-/**
- * Normaliza la ruta pedida y rechaza `..`, rutas absolutas y bytes nulos,
- * para impedir path traversal fuera del almacenamiento.
- */
-export function normalizeRelativeFilePath(raw: string | string[]): string {
-  const joined = Array.isArray(raw) ? raw.join('/') : String(raw ?? '');
-  let decoded: string;
-  try {
-    decoded = decodeURIComponent(joined);
-  } catch {
-    throw new BadRequestException('Ruta de archivo inválida');
-  }
-  const unified = decoded.replace(/\\/g, '/');
-  if (
-    !unified ||
-    unified.includes('\0') ||
-    unified.startsWith('/') ||
-    /^[a-zA-Z]:/.test(unified) ||
-    unified.split('/').some((segment) => segment === '..')
-  ) {
-    throw new BadRequestException('Ruta de archivo inválida');
-  }
-  return unified
-    .split('/')
-    .filter((segment) => segment !== '' && segment !== '.')
-    .join('/');
-}
 
 @ApiTags('multimedia')
 @Roles(UserRole.ADMIN, UserRole.AGENT)
@@ -73,7 +48,7 @@ export class MultimediaUploadController {
   // Cualquier usuario autenticado; COMMUNITY solo puede subir su DNI (portal).
   @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', VIDEO_UPLOAD_OPTIONS))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -108,37 +83,31 @@ export class MultimediaUploadController {
     ) {
       throw new ForbiddenException('Tipo de archivo no permitido para este usuario');
     }
+    if (!file) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'No file provided' });
+      return;
+    }
+
+    if (!metadata?.type) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Type is required' });
+      return;
+    }
+
+    // Firma real del archivo (magic bytes) + 20 MB para lo que no es video.
+    const kind = assertAllowedFileSignature(
+      file,
+      req?.user?.role === UserRole.COMMUNITY
+        ? DNI_UPLOAD_KINDS
+        : MULTIMEDIA_UPLOAD_KINDS,
+    );
+    assertNonVideoSizeLimit(file, kind);
+
     try {
-      this.logger.log('=== MULTIMEDIA UPLOAD START ===');
-      this.logger.log('File received:', file?.originalname, file?.size);
-      this.logger.log('Metadata received:', metadata);
-      this.logger.log('userId from res.locals:', res.locals?.userId);
-
-      if (!file) {
-        this.logger.error('No file uploaded');
-        res
-          .status(HttpStatus.BAD_REQUEST)
-          .json({ message: 'No file provided' });
-        return;
-      }
-
-      if (!metadata?.type) {
-        this.logger.error('No type provided in metadata');
-        res
-          .status(HttpStatus.BAD_REQUEST)
-          .json({ message: 'Type is required' });
-        return;
-      }
-
-      this.logger.log('Calling uploadFile service...');
       const multimedia = await this.multimediaService.uploadFile(
         file,
         metadata,
-        res.locals?.userId,
+        req?.user?.id,
       );
-
-      this.logger.log('File saved successfully:', multimedia.filename);
-      this.logger.log('=== MULTIMEDIA UPLOAD END ===');
 
       res.status(HttpStatus.CREATED).json({
         id: multimedia.id,
@@ -148,36 +117,16 @@ export class MultimediaUploadController {
         type: multimedia.type,
       });
     } catch (error) {
-      this.logger.error('=== MULTIMEDIA UPLOAD ERROR ===');
-      this.logger.error('Error message:', error?.message);
-      this.logger.error('Error stack:', error?.stack);
-      this.logger.error('Full error:', error);
-
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      this.logger.error(
+        `Error subiendo multimedia: ${error instanceof Error ? error.message : String(error)}`,
+        error instanceof Error ? error.stack : undefined,
+      );
       res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({
-          message: error?.message || 'Error uploading file',
-          error: error?.toString(),
-        });
+        .json({ message: 'Error al subir el archivo' });
     }
-  }
-
-  // Fase 1: solo ADMIN (no lo usa ningún frontend). Candidato a eliminar en Fase 2.
-  @Roles(UserRole.ADMIN)
-  @Get('*filepath')
-  async serveFile(
-    @Param('filepath') filepath: string | string[],
-    @Res() res: Response,
-  ) {
-    const file = await this.multimediaService.serveFile(
-      normalizeRelativeFilePath(filepath),
-    );
-    res.end(file);
-  }
-
-  @Delete(':id')
-  async deleteFile(@Param('id') id: string) {
-    await this.multimediaService.deleteFile(id);
-    return { statusCode: HttpStatus.OK, message: 'File deleted successfully' };
   }
 }

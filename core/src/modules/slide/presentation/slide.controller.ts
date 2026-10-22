@@ -24,6 +24,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { VIDEO_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import { SlideService } from '../application/slide.service';
 import { CreateSlideDto } from '../dto/create-slide.dto';
 import { CreateSlideWithMultimediaDto } from '../dto/create-slide-with-multimedia.dto';
@@ -111,6 +112,7 @@ export class SlideController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('multimedia', {
+    limits: VIDEO_UPLOAD_OPTIONS.limits,
     fileFilter: (req, file, cb) => {
       // Aceptar archivos válidos o ningún archivo
       if (!file) {
@@ -253,6 +255,7 @@ export class SlideController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('multimedia', {
+    limits: VIDEO_UPLOAD_OPTIONS.limits,
     fileFilter: (req, file, cb) => {
       // Aceptar archivos válidos o ningún archivo
       if (!file) {

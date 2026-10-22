@@ -28,6 +28,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import type { Response } from 'express';
 import { UsersService } from '../application/users.service';
 import {
@@ -469,7 +470,7 @@ export class UsersController {
     })
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
-    @UseInterceptors(FileInterceptor('file'))
+    @UseInterceptors(FileInterceptor('file', DEFAULT_UPLOAD_OPTIONS))
     async updateUserAvatar(
       @Param('id') id: string,
       @UploadedFile() file: Express.Multer.File,

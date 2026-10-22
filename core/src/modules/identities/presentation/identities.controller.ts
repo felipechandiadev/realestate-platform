@@ -26,6 +26,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { IdentitiesService } from '../application/identities.service';
@@ -99,7 +100,7 @@ export class IdentitiesController {
     FileFieldsInterceptor([
       { name: 'logo', maxCount: 1 },
       { name: 'partnershipLogos', maxCount: 10 },
-    ]),
+    ], DEFAULT_UPLOAD_OPTIONS),
     TransformJsonFieldsInterceptor,
   )
   create(
@@ -142,7 +143,7 @@ export class IdentitiesController {
     FileFieldsInterceptor([
       { name: 'logo', maxCount: 1 },
       { name: 'partnershipLogos', maxCount: 10 },
-    ]),
+    ], DEFAULT_UPLOAD_OPTIONS),
     TransformJsonFieldsInterceptor,
   )
   update(

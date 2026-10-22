@@ -16,6 +16,12 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
+import {
+  DNI_UPLOAD_KINDS,
+  DOCUMENT_UPLOAD_KINDS,
+  assertAllowedFileSignature,
+} from '../../../shared/upload/file-signature';
 import { DocumentService } from '../application/document.service';
 import {
   CreateDocumentDto,
@@ -70,7 +76,7 @@ export class DocumentController {
     description: 'Document uploaded successfully',
   })
   @UseGuards(JweAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', DEFAULT_UPLOAD_OPTIONS))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -116,6 +122,7 @@ export class DocumentController {
     @Body(ValidationPipe) uploadDocumentDto: UploadDocumentDto,
     @Req() req: AuthenticatedRequest,
   ) {
+    assertAllowedFileSignature(file, DOCUMENT_UPLOAD_KINDS);
     const userId = req.user?.id;
     uploadDocumentDto.uploadedById ??= userId;
     if (!uploadDocumentDto.uploadedById) {
@@ -138,7 +145,7 @@ export class DocumentController {
     description: 'DNI uploaded successfully',
   })
   @UseGuards(JweAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', DEFAULT_UPLOAD_OPTIONS))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -172,6 +179,7 @@ export class DocumentController {
     @Body(ValidationPipe) uploadDNIDto: UploadDNIDto,
     @Req() req: AuthenticatedRequest,
   ) {
+    assertAllowedFileSignature(file, DNI_UPLOAD_KINDS);
     const userId = req.user?.id;
     uploadDNIDto.uploadedById ??= userId;
     if (!uploadDNIDto.uploadedById) {

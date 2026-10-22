@@ -26,6 +26,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import { ContractsService } from '../application/contracts.service';
 import {
   CreateContractDto,
@@ -373,7 +374,7 @@ export class ContractsController {
     status: 201,
     description: 'Document uploaded successfully',
   })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', DEFAULT_UPLOAD_OPTIONS))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -522,7 +523,7 @@ export class ContractsController {
    */
   @Post(':id/payments/:paymentId/proof')
   @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', DEFAULT_UPLOAD_OPTIONS))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload payment proof' })
   @ApiBody({

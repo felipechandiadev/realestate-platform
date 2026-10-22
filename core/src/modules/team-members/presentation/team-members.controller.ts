@@ -21,6 +21,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import { TeamMembersService } from '../application/team-members.service';
 import {
   CreateTeamMemberDto,
@@ -71,7 +72,7 @@ export class TeamMembersController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('photo'))
+  @UseInterceptors(FileInterceptor('photo', DEFAULT_UPLOAD_OPTIONS))
   @Audit(AuditAction.CREATE, AuditEntityType.TEAM_MEMBER, 'Team member created')
   async create(
     @Body(ValidationPipe) createTeamMemberDto: CreateTeamMemberDto,
@@ -159,7 +160,7 @@ export class TeamMembersController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('photo'))
+  @UseInterceptors(FileInterceptor('photo', DEFAULT_UPLOAD_OPTIONS))
   @Audit(AuditAction.UPDATE, AuditEntityType.TEAM_MEMBER, 'Team member updated')
   async update(
     @Param('id') id: string,

@@ -3,6 +3,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
+import { MAX_VIDEO_UPLOAD_BYTES } from './shared/upload/upload-limits';
 import { memoryStorage } from 'multer';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -55,7 +56,10 @@ import { TestAdminModule } from './shared/init/test-admin.module';
       useFactory: ormConfig,
       inject: [ConfigService],
     }),
-    MulterModule.register({ storage: memoryStorage() }),
+    MulterModule.register({
+      storage: memoryStorage(),
+      limits: { fileSize: MAX_VIDEO_UPLOAD_BYTES },
+    }),
     TeamMembersModule,
     ArticlesModule,
     TestimonialsModule,

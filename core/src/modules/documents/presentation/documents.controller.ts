@@ -10,6 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import { DocumentsService } from '../application/documents.service';
 import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { DocumentUploadDto } from '../domain/document.interface';
@@ -23,7 +24,7 @@ export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', DEFAULT_UPLOAD_OPTIONS))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

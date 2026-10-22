@@ -19,6 +19,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import { TestimonialsService } from '../application/testimonials.service';
 import {
   CreateTestimonialDto,
@@ -73,7 +74,7 @@ export class TestimonialsController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', DEFAULT_UPLOAD_OPTIONS))
   create(
     @Body(ValidationPipe) createTestimonialDto: CreateTestimonialDto,
     @UploadedFile() image?: Express.Multer.File,
@@ -139,7 +140,7 @@ export class TestimonialsController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', DEFAULT_UPLOAD_OPTIONS))
   update(
     @Param('id') id: string,
     @Body(ValidationPipe) updateTestimonialDto: UpdateTestimonialDto,
