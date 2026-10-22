@@ -41,7 +41,7 @@ export const ForgotPasswordForm: React.FC = () => {
     const validation = PasswordResetRequestSchema.safeParse({ email });
     
     if (!validation.success) {
-      const error = validation.error.errors[0];
+      const error = validation.error.issues[0];
       if (error) {
         setFieldError(error.message);
       }

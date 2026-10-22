@@ -33,7 +33,7 @@ export const DocumentSchema = z.object({
   relatedPropertyId: z.string().uuid().optional(),
   relatedContractId: z.string().uuid().optional(),
   tags: z.array(z.string().min(1).max(50)),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const CreateDocumentSchema = z.object({
@@ -48,7 +48,7 @@ export const CreateDocumentSchema = z.object({
   relatedPropertyId: z.string().uuid().optional(),
   relatedContractId: z.string().uuid().optional(),
   tags: z.array(z.string().min(1).max(50)).default([]),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const UpdateDocumentSchema = z.object({
@@ -57,7 +57,7 @@ export const UpdateDocumentSchema = z.object({
   type: DocumentTypeSchema.optional(),
   status: DocumentStatusSchema.optional(),
   tags: z.array(z.string().min(1).max(50)).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const DocumentFilterSchema = z.object({

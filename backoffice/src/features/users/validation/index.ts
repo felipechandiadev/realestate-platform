@@ -8,7 +8,7 @@ import { z } from 'zod';
  * User role schema
  */
 export const UserRoleSchema = z.enum(['ADMIN', 'AGENT', 'MANAGER', 'COMMUNITY', 'CUSTOMER'], {
-  errorMap: () => ({ message: 'Rol de usuario inválido' }),
+  error: 'Rol de usuario inválido',
 });
 
 /**
@@ -17,7 +17,7 @@ export const UserRoleSchema = z.enum(['ADMIN', 'AGENT', 'MANAGER', 'COMMUNITY', 
 export const UserStatusSchema = z.enum(
   ['ACTIVE', 'INACTIVE', 'SUSPENDED', 'PENDING_VERIFICATION'],
   {
-    errorMap: () => ({ message: 'Estado de usuario inválido' }),
+    error: 'Estado de usuario inválido',
   }
 );
 

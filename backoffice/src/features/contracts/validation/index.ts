@@ -9,7 +9,7 @@ import { z } from 'zod';
  * Contract operation type schema
  */
 export const ContractOperationSchema = z.enum(['COMPRAVENTA', 'ARRIENDO'], {
-  errorMap: () => ({ message: 'La operación debe ser COMPRAVENTA o ARRIENDO' }),
+  error: 'La operación debe ser COMPRAVENTA o ARRIENDO',
 });
 
 /**
@@ -18,7 +18,7 @@ export const ContractOperationSchema = z.enum(['COMPRAVENTA', 'ARRIENDO'], {
 export const ContractStatusSchema = z.enum(
   ['DRAFT', 'ACTIVE', 'COMPLETED', 'CANCELLED', 'SUSPENDED'],
   {
-    errorMap: () => ({ message: 'Estado de contrato inválido' }),
+    error: 'Estado de contrato inválido',
   }
 );
 
@@ -28,7 +28,7 @@ export const ContractStatusSchema = z.enum(
 export const ContractRoleSchema = z.enum(
   ['BUYER', 'SELLER', 'TENANT', 'LANDLORD', 'WITNESS', 'AGENCY'],
   {
-    errorMap: () => ({ message: 'Rol en contrato inválido' }),
+    error: 'Rol en contrato inválido',
   }
 );
 
@@ -36,7 +36,7 @@ export const ContractRoleSchema = z.enum(
  * Currency schema
  */
 export const CurrencySchema = z.enum(['CLP', 'USD', 'UF'], {
-  errorMap: () => ({ message: 'Moneda debe ser CLP, USD o UF' }),
+  error: 'Moneda debe ser CLP, USD o UF',
 });
 
 /**
@@ -45,7 +45,7 @@ export const CurrencySchema = z.enum(['CLP', 'USD', 'UF'], {
 export const PaymentTypeSchema = z.enum(
   ['CASH', 'BANK_TRANSFER', 'CHECK', 'INSTALLMENT'],
   {
-    errorMap: () => ({ message: 'Tipo de pago inválido' }),
+    error: 'Tipo de pago inválido',
   }
 );
 
@@ -55,7 +55,7 @@ export const PaymentTypeSchema = z.enum(
 export const PaymentStatusSchema = z.enum(
   ['PENDING', 'COMPLETED', 'FAILED', 'CANCELLED'],
   {
-    errorMap: () => ({ message: 'Estado de pago inválido' }),
+    error: 'Estado de pago inválido',
   }
 );
 

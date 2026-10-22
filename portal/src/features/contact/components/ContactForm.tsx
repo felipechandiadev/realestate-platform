@@ -88,7 +88,7 @@ export default function ContactForm({
       
       if (!validated.success) {
         const fieldErrors: Record<string, string> = {};
-        validated.error.errors.forEach((err) => {
+        validated.error.issues.forEach((err) => {
           if (err.path[0]) {
             fieldErrors[err.path[0] as string] = err.message;
           }

@@ -38,7 +38,7 @@ export const PropertySchema = z.object({
     .min(2, 'El tipo de propiedad es requerido')
     .max(50, 'El tipo de propiedad es demasiado largo'),
   operation: z.enum(['SALE', 'RENT'], {
-    errorMap: () => ({ message: 'La operación debe ser SALE o RENT' }),
+    error: 'La operación debe ser SALE o RENT',
   }),
   coordinates: z
     .object({
@@ -47,7 +47,7 @@ export const PropertySchema = z.object({
     })
     .optional(),
   images: z.array(z.string().url(), {
-    errorMap: () => ({ message: 'Las imágenes deben ser URLs válidas' }),
+    error: 'Las imágenes deben ser URLs válidas',
   }),
   agentId: z.string().uuid().optional(),
 });

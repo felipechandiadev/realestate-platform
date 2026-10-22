@@ -19,7 +19,7 @@ export const CreateContactSchema = z.object({
   subject: ContactSubjectSchema,
   message: z.string().min(10).max(5000),
   attachmentUrl: z.string().url().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const ContactMessageSchema = z.object({
@@ -37,7 +37,7 @@ export const ContactMessageSchema = z.object({
   respondedAt: z.coerce.date().optional(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const ContactResponseSchema = z.object({

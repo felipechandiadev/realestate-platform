@@ -10,7 +10,7 @@ export const NotificationSchema = z.object({
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
   actionUrl: z.string().url().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const CreateNotificationSchema = z.object({
@@ -18,7 +18,7 @@ export const CreateNotificationSchema = z.object({
   message: z.string().min(1).max(5000),
   type: z.enum(["info", "success", "warning", "error"]),
   actionUrl: z.string().url().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const UpdateNotificationSchema = z.object({
@@ -27,7 +27,7 @@ export const UpdateNotificationSchema = z.object({
   type: z.enum(["info", "success", "warning", "error"]).optional(),
   isRead: z.boolean().optional(),
   actionUrl: z.string().url().optional().nullable(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 export const NotificationPreferencesSchema = z.object({

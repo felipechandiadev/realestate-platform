@@ -8,7 +8,7 @@ import { z } from 'zod';
  * Multimedia type schema
  */
 export const MediaTypeSchema = z.enum(['IMAGE', 'VIDEO', 'DOCUMENT', 'AUDIO'], {
-  errorMap: () => ({ message: 'Tipo de media inválido' }),
+  error: 'Tipo de media inválido',
 });
 
 /**
