@@ -17,56 +17,65 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
-import * as express from 'express';
+import helmet from 'helmet';
+import {
+  JSON_BODY_LIMIT,
+  buildHelmetOptions,
+  isSwaggerEnabled,
+  resolveCorsOrigins,
+} from './config/http-security.config';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Configuración para archivos grandes (especialmente videos de 60MB)
-  app.use(express.json({ limit: '70mb' }));
-  app.use(express.urlencoded({ 
-    limit: '70mb', 
-    extended: true,
-    parameterLimit: 50000 
-  }));
+  // Detrás de nginx: confiar en el primer proxy para obtener la IP real
+  // (rate limiting por IP, logs).
+  app.set('trust proxy', 1);
 
-  // Configuración de CORS
+  // Cabeceras de seguridad. CORP cross-origin para que el portal cargue imágenes.
+  app.use(helmet(buildHelmetOptions()));
+
+  // Cuerpos JSON/urlencoded hasta 1 MB. Las subidas de archivos usan multipart
+  // (multer) y tienen sus propios límites por endpoint.
+  app.useBodyParser('json', { limit: JSON_BODY_LIMIT });
+  app.useBodyParser('urlencoded', { limit: JSON_BODY_LIMIT, extended: true });
+
+  // CORS: CORS_ORIGINS (coma) o dominios de producción; localhost solo fuera de producción.
   app.enableCors({
-    origin: [
-      process.env.PORTAL_URL || 'http://localhost:8001',
-      process.env.BACKOFFICE_URL || 'http://localhost:8002',
-      'https://bravoshottpropiedades.cl',
-      'https://www.bravoshottpropiedades.cl',
-      'https://admin.bravoshottpropiedades.cl',
-      'http://localhost:8000',
-      'http://localhost:8001',
-      'http://localhost:8002',
-      'http://localhost:3001',
-      'http://localhost:3000',
-      'http://localhost:3002',
-    ],
+    origin: resolveCorsOrigins(),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
-  // Configuración de validación global (transform runs @Transform, e.g. empty constructionYear)
-  app.useGlobalPipes(new ValidationPipe({ transform: true }));
+  // Validación global. whitelist elimina propiedades no declaradas en los DTO
+  // (evita mass assignment). forbidNonWhitelisted queda en false: no se pudo
+  // verificar que portal/backoffice no envíen campos extra en todos los DTO,
+  // y rechazar con 400 rompería formularios existentes.
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: false,
+      transform: true,
+    }),
+  );
 
   // Configuración de archivos estáticos
   app.useStaticAssets(join(__dirname, '..', 'public'), {
     prefix: '/public/',
   });
 
-  // Configuración de Swagger
-  const config = new DocumentBuilder()
-    .setTitle('Real Estate Platform API')
-    .setDescription('API documentation for Real Estate Platform')
-    .setVersion('1.0')
-    .addTag('multimedia')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  // Swagger solo fuera de producción.
+  if (isSwaggerEnabled()) {
+    const config = new DocumentBuilder()
+      .setTitle('Real Estate Platform API')
+      .setDescription('API documentation for Real Estate Platform')
+      .setVersion('1.0')
+      .addTag('multimedia')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+  }
 
   const port = process.env.PORT || 8000;
   await app.listen(port);

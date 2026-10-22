@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional } from 'class-validator';
 import { AgentPerformanceMetrics } from '../domain/analytics.interface';
 
 export class AgentPerformanceMetricsDto implements AgentPerformanceMetrics {
@@ -49,6 +50,7 @@ export class AgentPerformanceDto {
 }
 
 export class AnalyticsFiltersDto {
+  @IsOptional()
   @ApiProperty({
     description: 'Analysis period',
     enum: ['month', 'quarter', 'year', 'all'],
@@ -56,6 +58,7 @@ export class AnalyticsFiltersDto {
   })
   period?: 'month' | 'quarter' | 'year' | 'all';
 
+  @IsOptional()
   @ApiProperty({
     description: 'Start date for analysis',
     type: Date,
@@ -63,6 +66,7 @@ export class AnalyticsFiltersDto {
   })
   startDate?: Date;
 
+  @IsOptional()
   @ApiProperty({
     description: 'End date for analysis',
     type: Date,
@@ -70,6 +74,7 @@ export class AnalyticsFiltersDto {
   })
   endDate?: Date;
 
+  @IsOptional()
   @ApiProperty({
     description: 'Operation type filter',
     enum: ['SALE', 'RENT'],
@@ -77,12 +82,14 @@ export class AnalyticsFiltersDto {
   })
   operationType?: 'SALE' | 'RENT';
 
+  @IsOptional()
   @ApiProperty({
     description: 'Maximum number of agents to return (pagination)',
     required: false,
   })
   limit?: number;
 
+  @IsOptional()
   @ApiProperty({
     description: 'Offset for pagination',
     required: false,
