@@ -1,10 +1,16 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
 import { MAX_VIDEO_UPLOAD_BYTES } from './shared/upload/upload-limits';
 import { memoryStorage } from 'multer';
+import { AppThrottlerGuard } from './shared/security/app-throttler.guard';
+import {
+  DEFAULT_THROTTLE_LIMIT,
+  DEFAULT_THROTTLE_TTL_MS,
+} from './shared/security/throttle';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ormConfig } from './config/ormconfig';
@@ -51,6 +57,10 @@ import { TestAdminModule } from './shared/init/test-admin.module';
       // En NODE_ENV=test carga .env.test (obligatorio, sin respaldo en .env)
       envFilePath: resolveEnvFilePath(),
     }),
+    // Rate limiting global por IP (rutas sensibles usan @AuthThrottle/@StrictThrottle).
+    ThrottlerModule.forRoot([
+      { name: 'default', ttl: DEFAULT_THROTTLE_TTL_MS, limit: DEFAULT_THROTTLE_LIMIT },
+    ]),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: ormConfig,
@@ -99,6 +109,7 @@ import { TestAdminModule } from './shared/init/test-admin.module';
     FileUploadService,
     // Aplica @Exclude() (p. ej. User.password) a todas las respuestas.
     { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
   ],
 })
 export class AppModule {}

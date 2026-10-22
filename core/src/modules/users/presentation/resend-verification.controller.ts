@@ -3,6 +3,7 @@ import { UserRepository } from '../domain/user.repository';
 import { MailService } from '../../mail/application/mail.service';
 import { ResendVerificationEmailUseCase } from '../application/use-cases/resend-verification-email.usecase';
 import { Public } from '../../auth/guards/jwt-auth.guard';
+import { StrictThrottle } from '../../../shared/security/throttle';
 
 @Public()
 @Controller('auth')
@@ -13,6 +14,7 @@ export class ResendVerificationController {
     private readonly resendVerificationEmailUseCase: ResendVerificationEmailUseCase,
   ) {}
 
+  @StrictThrottle()
   @Post('resend-verification')
   async resendVerification(@Body('email') email: string): Promise<{ success: boolean; message: string }> {
     if (!email) {

@@ -43,6 +43,7 @@ import { UserRole } from '../../users/domain/user.entity';
 import { PushNotificationsService } from '../application/push-notifications.service';
 import { DeletePushSubscriptionDto, SavePushSubscriptionDto } from '../application/dto/push-subscription.dto';
 import { actorIdOf, canAccessNotification, isStaffActor } from './notification-access.util';
+import { StrictThrottle } from '../../../shared/security/throttle';
 
 type AuthenticatedRequest = Request & {
   user?: { id?: string; sub?: string; role?: UserRole };
@@ -107,6 +108,7 @@ export class NotificationsController {
      * Notifica interés en propiedad desde portal público (sin autenticación)
      */
     @Public()
+    @StrictThrottle()
     @Post('public/property-interest')
     @ApiOperation({ summary: 'Enviar notificación de interés en propiedad desde portal público' })
     @ApiBody({ type: PropertyInterestDto })
@@ -126,6 +128,7 @@ export class NotificationsController {
      * Notifica contacto general desde portal público (sin autenticación)
      */
     @Public()
+    @StrictThrottle()
     @Post('public/contact')
     @ApiOperation({ summary: 'Enviar notificación de contacto general desde portal público' })
     @ApiBody({ type: ContactDto })

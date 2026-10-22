@@ -19,6 +19,7 @@ import {
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
 import { Request } from 'express';
 import { Public } from '../../auth/guards/jwt-auth.guard';
+import { StrictThrottle } from '../../../shared/security/throttle';
 
 @Public()
 @Controller('auth/password-recovery')
@@ -28,6 +29,7 @@ export class PasswordRecoveryController {
     private readonly passwordRecoveryService: PasswordRecoveryService,
   ) {}
 
+  @StrictThrottle()
   @Post('request')
   @HttpCode(HttpStatus.ACCEPTED)
   @Audit(
@@ -50,6 +52,7 @@ export class PasswordRecoveryController {
     };
   }
 
+  @StrictThrottle()
   @Post('validate')
   @Audit(
     AuditAction.SYSTEM_EVENT,
@@ -60,6 +63,7 @@ export class PasswordRecoveryController {
     return await this.passwordRecoveryService.validateToken(validateDto.token);
   }
 
+  @StrictThrottle()
   @Post('reset')
   @Audit(
     AuditAction.PASSWORD_RESET_COMPLETED,

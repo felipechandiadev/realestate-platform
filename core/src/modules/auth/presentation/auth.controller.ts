@@ -19,6 +19,7 @@ import { CreateUserCommunityDto } from '../../users/dto/create-user-community.dt
 import { AuditInterceptor, Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
 import { Public } from './decorators/public.decorator';
+import { AuthThrottle, StrictThrottle } from '../../../shared/security/throttle';
 
 @Public()
 @Controller('auth')
@@ -27,6 +28,7 @@ import { Public } from './decorators/public.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @AuthThrottle()
   @Post('sign-in')
   @ApiOperation({
     summary: 'Sign in (legacy) — audience derived from role',
@@ -39,6 +41,7 @@ export class AuthController {
     return this.authService.signIn(loginDto);
   }
 
+  @AuthThrottle()
   @Post('staff/sign-in')
   @ApiOperation({ summary: 'Staff sign-in (ADMIN / AGENT) for backoffice' })
   @ApiBody({ type: LoginDto })
@@ -47,6 +50,7 @@ export class AuthController {
     return this.authService.signInStaff(loginDto);
   }
 
+  @AuthThrottle()
   @Post('community/sign-in')
   @ApiOperation({ summary: 'Community sign-in for portal' })
   @ApiBody({ type: LoginDto })
@@ -73,6 +77,7 @@ export class AuthController {
     return await this.authService.refresh(authorization);
   }
 
+  @StrictThrottle()
   @Post('register')
   @ApiOperation({
     summary: 'Register new community user (legacy alias)',
@@ -86,6 +91,7 @@ export class AuthController {
     return this.authService.register(createUserCommunityDto);
   }
 
+  @StrictThrottle()
   @Post('community/register')
   @ApiOperation({ summary: 'Register new community user (portal)' })
   @ApiBody({ type: CreateUserCommunityDto })
@@ -96,12 +102,14 @@ export class AuthController {
     return this.authService.register(createUserCommunityDto);
   }
 
+  @AuthThrottle()
   @Post('verify-email')
   @ApiOperation({ summary: 'Verify user email with token' })
   async verifyEmail(@Body('token') token: string) {
     return this.authService.verifyEmail(token);
   }
 
+  @StrictThrottle()
   @Post('resend-verification-email')
   @ApiOperation({ summary: 'Resend verification email' })
   async resendVerificationEmail(@Body('email') email: string) {

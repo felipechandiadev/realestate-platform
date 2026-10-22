@@ -59,6 +59,7 @@ import { FileUploadService } from '../../../shared/services/file-upload.service'
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { promises as fsPromises } from 'fs';
+import { StrictThrottle } from '../../../shared/security/throttle';
 
 const isStaffRole = (role?: string): boolean =>
   role === UserRole.ADMIN || role === UserRole.AGENT;
@@ -138,6 +139,7 @@ export class PropertyController {
    * Public endpoint to publish property with multimedia (no authentication required)
    */
   @Public()
+  @StrictThrottle()
   @Post('public/publish')
   @ApiTags('Properties')
   @ApiOperation({ summary: 'Publish a property with multimedia (public - no auth required)' })
