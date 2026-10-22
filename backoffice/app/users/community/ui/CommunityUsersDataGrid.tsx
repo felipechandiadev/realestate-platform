@@ -11,6 +11,7 @@ import DeleteCommunityUserButton from './DeleteCommunityUserButton';
 import CommunityUserMoreButton from './CommunityUserMoreButton';
 import { IconButton } from '@realestate/ui';
 import ResetPasswordDialog from '../../ui/ResetPasswordDialog';
+import { useUserManagementPermissions } from '@/features/users/hooks/useUserManagementPermissions';
 
 type CommunityUsersDataGridProps = {
   rows: CommunityUserGridRow[];
@@ -39,6 +40,8 @@ function CommunityUsersDataGridInner({
   const router = useRouter();
   const searchParams = useSearchParams();
   const alert = useAlert();
+  // Solo ADMIN restablece contraseñas o elimina usuarios (core responde 403 al resto).
+  const { canManageUsers } = useUserManagementPermissions();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [resetUser, setResetUser] = useState<{ id: string; name: string } | null>(null);
 
@@ -116,6 +119,7 @@ function CommunityUsersDataGridInner({
       filterable: false,
       actionComponent: ({ row }) => (
         <div className="flex h-full flex-shrink-0 items-center justify-center gap-1">
+          {canManageUsers && (
           <IconButton
             icon="vpn_key"
             variant="text"
@@ -133,7 +137,9 @@ function CommunityUsersDataGridInner({
               })
             }
           />
+          )}
           <CommunityUserMoreButton user={{ id: row.id }} />
+          {canManageUsers && (
           <DeleteCommunityUserButton
             userId={row.id}
             username={row.username}
@@ -142,6 +148,7 @@ function CommunityUsersDataGridInner({
             buttonText=""
             variant="text"
           />
+          )}
         </div>
       ),
     },

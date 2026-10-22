@@ -5,6 +5,7 @@ import { Mail, Phone } from 'lucide-react';
 import { AgentType } from './types';
 import { IconButton } from '@realestate/ui';
 import { UserAvatarField } from '@/shared/components/ui/Multimedia/UserAvatarField';
+import { useUserManagementPermissions } from '@/features/users/hooks/useUserManagementPermissions';
 
 interface AgentCardProps {
   agent: AgentType;
@@ -42,6 +43,9 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onEdit, onDelete, onResetP
   const fullName = agent.personalInfo
     ? `${agent.personalInfo.firstName || ''} ${agent.personalInfo.lastName || ''}`.trim()
     : agent.username;
+
+  // Editar / eliminar / restablecer contraseña de otros: solo ADMIN.
+  const { canManageUsers } = useUserManagementPermissions();
 
   return (
     <article className="border border-neutral-200 bg-white rounded-lg shadow-sm p-4 flex flex-col justify-between min-w-[260px] overflow-visible">
@@ -83,6 +87,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onEdit, onDelete, onResetP
         </div>
       </div>
 
+      {canManageUsers && (
       <div className="flex justify-end gap-2 mt-4">
         <IconButton
           icon="vpn_key"
@@ -112,6 +117,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onEdit, onDelete, onResetP
           className="text-secondary"
         />
       </div>
+      )}
     </article>
   );
 };

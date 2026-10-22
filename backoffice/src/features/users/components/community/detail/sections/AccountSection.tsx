@@ -10,6 +10,7 @@ import {
 } from '@/features/users/actions/users.action';
 import { useAlert } from '@/providers/AlertContext';
 import { formatDate } from '../formatDate';
+import { useUserManagementPermissions } from '@/features/users/hooks/useUserManagementPermissions';
 
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -36,6 +37,8 @@ export function AccountSection({
   const { showAlert } = useAlert();
   const [busy, setBusy] = useState<'status' | 'resend' | null>(null);
   const [resetOpen, setResetOpen] = useState(false);
+  // Activar/desactivar y restablecer contraseña: solo ADMIN (core responde 403 al resto).
+  const { canManageUsers } = useUserManagementPermissions();
 
   const isActive = header.status === 'ACTIVE';
 
@@ -120,15 +123,17 @@ export function AccountSection({
       </dl>
 
       <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-        <Button
-          type="button"
-          variant={isActive ? 'outlined' : 'primary'}
-          onClick={toggleStatus}
-          disabled={busy !== null}
-          data-test-id="community-user-toggle-status"
-        >
-          {isActive ? 'Desactivar cuenta' : 'Activar cuenta'}
-        </Button>
+        {canManageUsers ? (
+          <Button
+            type="button"
+            variant={isActive ? 'outlined' : 'primary'}
+            onClick={toggleStatus}
+            disabled={busy !== null}
+            data-test-id="community-user-toggle-status"
+          >
+            {isActive ? 'Desactivar cuenta' : 'Activar cuenta'}
+          </Button>
+        ) : null}
         {!header.emailVerified ? (
           <Button
             type="button"
@@ -142,6 +147,7 @@ export function AccountSection({
         ) : null}
       </div>
 
+      {canManageUsers ? (
       <div className="flex items-center justify-between rounded-lg border border-border p-4">
         <div>
           <p className="text-sm font-medium text-foreground">Contraseña</p>
@@ -156,6 +162,7 @@ export function AccountSection({
           onClick={() => setResetOpen(true)}
         />
       </div>
+      ) : null}
 
       <ResetPasswordDialog
         open={resetOpen}

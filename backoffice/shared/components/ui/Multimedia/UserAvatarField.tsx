@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Alert, LoadingState } from '@realestate/ui';
 import MultimediaUpdater from '@/shared/components/ui/FileUploader/MultimediaUpdater';
 import { updateUserAvatar } from '@/features/users/actions/users.action';
+import { useUserManagementPermissions } from '@/features/users/hooks/useUserManagementPermissions';
 import { env } from '@/lib/env';
 import type { MultimediaAvatarSize } from '@/shared/components/ui/Multimedia/MultimediaSingleSlot';
 
@@ -30,18 +31,21 @@ function resolveAvatarUrl(url?: string | null): string | null {
  * Avatar editable de usuario (admin/agente).
  * UI: MultimediaSingleSlot edge vía MultimediaUpdater.
  * Persistencia: PUT /users/:id/avatar.
+ * Solo editable por ADMIN o por el propio usuario (core responde 403 al resto).
  */
 export function UserAvatarField({
   userId,
   currentAvatarUrl,
   onChanged,
-  disabled = false,
+  disabled: disabledProp = false,
   className = '',
   size = 'md',
   'data-test-id': testId = 'user-avatar-field',
 }: UserAvatarFieldProps) {
   const router = useRouter();
   const id = userId?.trim() ?? '';
+  const { canManageUser } = useUserManagementPermissions();
+  const disabled = disabledProp || !canManageUser(id);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localUrl, setLocalUrl] = useState<string | null>(null);

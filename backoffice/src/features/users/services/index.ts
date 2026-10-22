@@ -5,6 +5,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { env } from '@/lib/env';
+import { assertUserManagementAllowed } from '../actions/user-management.guard';
 import type {
   User,
   UserProfile,
@@ -106,6 +107,7 @@ export async function updateUserService(
   id: string,
   data: UpdateUserDto
 ): Promise<User> {
+  await assertUserManagementAllowed(id);
   return apiFetch<User>(`/users/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
@@ -119,6 +121,7 @@ export async function updateUserStatusService(
   id: string,
   data: UpdateUserStatusDto
 ): Promise<User> {
+  await assertUserManagementAllowed();
   return apiFetch<User>(`/users/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify(data),
@@ -132,6 +135,7 @@ export async function updateUserRoleService(
   id: string,
   data: UpdateUserRoleDto
 ): Promise<User> {
+  await assertUserManagementAllowed();
   return apiFetch<User>(`/users/${id}/role`, {
     method: 'PATCH',
     body: JSON.stringify(data),
@@ -157,6 +161,7 @@ export async function updateUserAvatarService(
   id: string,
   file: File
 ): Promise<User> {
+  await assertUserManagementAllowed(id);
   const accessToken = await getAccessToken();
   const url = new URL(`/users/${id}/avatar`, env.backendApiUrl).toString();
 
@@ -196,6 +201,7 @@ export async function getTeamByIdService(id: string): Promise<Team> {
  * Delete user
  */
 export async function deleteUserService(id: string): Promise<void> {
+  await assertUserManagementAllowed();
   await apiFetch(`/users/${id}`, { method: 'DELETE' });
 }
 

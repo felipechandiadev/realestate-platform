@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { env } from '@/lib/env'
 import { revalidatePath } from 'next/cache'
+import { userManagementDenial } from './user-management.guard'
 import { UsersRequest } from '../infrastructure/users.request'
 
 export interface ListAgentsResponse {
@@ -163,6 +164,8 @@ export async function updateAgent(
     if (!session?.accessToken) {
       return { success: false, error: 'No autenticado' }
     }
+    const denial = await userManagementDenial(id)
+    if (denial) return denial
 
     let avatarUrl: string | undefined = undefined
 
@@ -220,8 +223,8 @@ export async function updateAgent(
 
     const user = await response.json()
 
-    // Cambiar estado si es necesario
-    if (data.status && data.status !== 'ACTIVE') {
+    // Cambiar estado si es necesario (solo ADMIN; core responde 403 al resto)
+    if (data.status && data.status !== 'ACTIVE' && !(await userManagementDenial())) {
       await fetch(`${env.backendApiUrl}/users/${id}/status`, {
         method: 'PATCH',
         headers: {
@@ -255,6 +258,8 @@ export async function deleteAgent(id: string): Promise<{
     if (!session?.accessToken) {
       return { success: false, error: 'No autenticado' }
     }
+    const denial = await userManagementDenial()
+    if (denial) return denial
 
     const response = await fetch(`${env.backendApiUrl}/users/${id}`, {
       method: 'DELETE',
@@ -291,6 +296,8 @@ export async function setAgentStatus(id: string, status: 'ACTIVE' | 'INACTIVE' |
     if (!session?.accessToken) {
       return { success: false, error: 'No autenticado' }
     }
+    const denial = await userManagementDenial()
+    if (denial) return denial
 
     const response = await fetch(`${env.backendApiUrl}/users/${id}/status`, {
       method: 'PATCH',

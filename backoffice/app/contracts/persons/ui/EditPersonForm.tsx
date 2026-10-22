@@ -7,6 +7,8 @@ import { updatePerson } from '@/features/contracts/actions/persons.action';
 import { updateUser } from '@/features/users/actions/users.action';
 import { useRouter } from 'next/navigation';
 import { useAlert } from '@/shared/hooks/useAlert';
+import { useUserManagementPermissions } from '@/features/users/hooks/useUserManagementPermissions';
+import { USER_MANAGEMENT_FORBIDDEN_MESSAGE } from '@/features/users/permissions';
 
 interface EditPersonFormProps {
   person: Person;
@@ -45,6 +47,9 @@ const formatPhone = (phone: string): string => {
 
 export default function EditPersonForm({ person, onClose, onSuccess }: EditPersonFormProps) {
   const router = useRouter();
+  const { canManageUser } = useUserManagementPermissions();
+  // Si la persona es un usuario del sistema, solo ADMIN (o el propio usuario) puede editarlo.
+  const isUserEditBlocked = Boolean(person.isFromUser) && !canManageUser(person.id);
   const { showAlert } = useAlert();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -233,7 +238,7 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
         const [firstName, ...rest] = fullName.split(' ');
         const lastName = rest.join(' ');
 
-        await updateUser(person.id, {
+        const userResult = await updateUser(person.id, {
           email: values.email.trim() || undefined,
           personalInfo: {
             firstName: firstName || undefined,
@@ -249,6 +254,10 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
             maritalStatus: values.maritalStatus.trim() || undefined,
           },
         });
+
+        if (!userResult.success) {
+          throw new Error(userResult.error || 'No se pudo actualizar el usuario');
+        }
 
         // Show the updated values locally (the API will already have the latest data)
         updatedPerson = { ...person, ...payload } as Person;
@@ -276,6 +285,22 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
       setIsSubmitting(false);
     }
   };
+
+  if (isUserEditBlocked) {
+    return (
+      <div className="space-y-4 p-4" data-test-id="edit-person-user-forbidden">
+        <p className="text-sm text-foreground">{USER_MANAGEMENT_FORBIDDEN_MESSAGE}</p>
+        <p className="text-xs text-muted-foreground">
+          Esta persona corresponde a un usuario del sistema; sus datos solo pueden ser editados por un administrador o por el propio usuario.
+        </p>
+        <div className="flex justify-end">
+          <button type="button" className="text-sm text-primary" onClick={onClose}>
+            Cerrar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <UpdateBaseForm

@@ -12,6 +12,7 @@ import CreateAgentFormDialog from './CreateAgentFormDialog';
 import UpdateAgentDialog from './UpdateAgentDialog';
 import DeleteAgentDialog from './DeleteAgentDialog';
 import type { AgentType } from './types';
+import { useUserManagementPermissions } from '../../hooks/useUserManagementPermissions';
 
 interface AgentsContentProps {
   initialAgents: AgentType[];
@@ -22,8 +23,9 @@ interface AgentsContentProps {
 function agentColumns(
   onEdit: (agent: AgentType) => void,
   onDelete: (agent: AgentType) => void,
+  canManageUsers: boolean,
 ): DataGridColumn[] {
-  return [
+  const columns: DataGridColumn[] = [
     { field: 'email', headerName: 'Email', flex: 1.2, minWidth: 200, sortable: true, filterable: true },
     {
       field: 'name',
@@ -40,6 +42,11 @@ function agentColumns(
     },
     { field: 'status', headerName: 'Estado', width: 140, sortable: true, filterable: true },
     { field: 'createdAt', headerName: 'Fecha creación', width: 180, sortable: true, filterable: true },
+  ];
+  // Editar / eliminar otros usuarios: solo ADMIN (core responde 403 al resto).
+  if (!canManageUsers) return columns;
+  return [
+    ...columns,
     {
       field: 'actions',
       headerName: '',
@@ -73,6 +80,7 @@ export function AgentsContent({
 }: AgentsContentProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { canManageUsers } = useUserManagementPermissions();
   
   // Safely get alert context
   let alert: any = { success: () => {}, error: () => {}, info: () => {}, warning: () => {} };
@@ -253,7 +261,7 @@ export function AgentsContent({
           </div>
         ) : (
           <DataGrid
-            columns={agentColumns(handleEditAgent, handleDeleteAgent)}
+            columns={agentColumns(handleEditAgent, handleDeleteAgent, canManageUsers)}
             rows={filteredAgents}
             totalRows={totalRows ?? filteredAgents.length}
             showSearch={false}

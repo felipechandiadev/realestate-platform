@@ -103,7 +103,12 @@ export default function BackofficeShell({
         { label: 'Reportes', url: '/reports' },
         ...menuItems.slice(aboutIndex),
       ]
-    : menuItems;
+    : // Administradores (GET /users/admins) es solo ADMIN en core: se oculta al resto.
+      menuItems.map((item) =>
+        item.children
+          ? { ...item, children: item.children.filter((child) => child.url !== '/users/administrators') }
+          : item,
+      );
 
   return (
     <div className="flex min-h-dvh flex-1 flex-col">

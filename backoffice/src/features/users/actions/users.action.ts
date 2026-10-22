@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { revalidatePath } from 'next/cache';
+import { userManagementDenial } from './user-management.guard';
 
 export type GridSort = 'asc' | 'desc';
 
@@ -375,6 +376,8 @@ export async function createAdmin(data: {
 			console.error('[createAdmin] No access token found');
 			return { success: false, error: 'No autenticado' };
 		}
+		const denial = await userManagementDenial();
+		if (denial) return denial;
 
 		console.log('[createAdmin] Starting admin creation with:', {
 			username: data.username,
@@ -540,6 +543,8 @@ export async function updateUser(id: string, data: UpdateUserDto): Promise<{
 		if (!session?.accessToken) {
 			return { success: false, error: 'No authenticated' };
 		}
+		const denial = await userManagementDenial(id);
+		if (denial) return denial;
 
 		const response = await fetch(`${env.backendApiUrl}/users/${id}`, {
 			method: 'PATCH',
@@ -582,6 +587,8 @@ export async function deleteUser(id: string): Promise<{
 		if (!session?.accessToken) {
 			return { success: false, error: 'No authenticated' };
 		}
+		const denial = await userManagementDenial();
+		if (denial) return denial;
 
 		const response = await fetch(`${env.backendApiUrl}/users/${id}`, {
 			method: 'DELETE',
@@ -622,6 +629,8 @@ export async function changeUserPassword(id: string, passwordData: ChangePasswor
 		if (!session?.accessToken) {
 			return { success: false, error: 'No authenticated' };
 		}
+		const denial = await userManagementDenial(id);
+		if (denial) return denial;
 
 		const response = await fetch(`${env.backendApiUrl}/users/${id}/change-password`, {
 			method: 'POST',
@@ -662,6 +671,8 @@ export async function resetUserPassword(id: string, newPassword: string): Promis
 		if (!session?.accessToken) {
 			return { success: false, error: 'No autenticado' };
 		}
+		const denial = await userManagementDenial();
+		if (denial) return denial;
 
 		const response = await fetch(`${env.backendApiUrl}/users/${id}/reset-password`, {
 			method: 'PATCH',
@@ -706,6 +717,8 @@ export async function assignUserRole(id: string, role: 'ADMIN' | 'AGENT'): Promi
 		if (!session?.accessToken) {
 			return { success: false, error: 'No authenticated' };
 		}
+		const denial = await userManagementDenial();
+		if (denial) return denial;
 
 		const response = await fetch(`${env.backendApiUrl}/users/${id}/role`, {
 			method: 'PATCH',
@@ -749,6 +762,8 @@ export async function setUserStatus(id: string, status: 'ACTIVE' | 'INACTIVE'): 
 		if (!session?.accessToken) {
 			return { success: false, error: 'No authenticated' };
 		}
+		const denial = await userManagementDenial();
+		if (denial) return denial;
 
 		const response = await fetch(`${env.backendApiUrl}/users/${id}/status`, {
 			method: 'PATCH',
@@ -816,6 +831,8 @@ export async function updateUserAvatar(id: string, formData: FormData): Promise<
 		if (!session?.accessToken) {
 			return { success: false, error: 'No authenticated' };
 		}
+		const denial = await userManagementDenial(id);
+		if (denial) return denial;
 
 		const response = await fetch(`${env.backendApiUrl}/users/${id}/avatar`, {
 			method: 'PUT',
@@ -1106,6 +1123,8 @@ export async function deleteCommunityUser(userId: string): Promise<{
     if (!session?.accessToken) {
       return { success: false, error: 'No authenticated' };
     }
+    const denial = await userManagementDenial();
+    if (denial) return denial;
 
     const response = await fetch(`${env.backendApiUrl}/users/${userId}`, {
       method: 'DELETE',
