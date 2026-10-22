@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { DataSource } from 'typeorm';
+import { assertScriptTargetIsSafe } from './script-guard';
 import { AwsS3StorageService } from '../src/modules/multimedia/infrastructure/storage/aws-s3-storage.service';
 import { UploadConfigService } from '../src/config/upload.config';
 import { promises as fs } from 'fs';
@@ -32,6 +33,7 @@ function guessContentType(filename: string): string {
 }
 
 async function migrate() {
+  assertScriptTargetIsSafe('migrate-local-to-s3');
   const app = await NestFactory.createApplicationContext(AppModule);
   const dataSource = app.get(DataSource);
   const s3 = app.get(AwsS3StorageService);

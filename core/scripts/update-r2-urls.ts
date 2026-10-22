@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
 import { DataSource } from 'typeorm';
+import { assertScriptTargetIsSafe } from './script-guard';
 
 const OLD_URL = 'https://pub-f23df7eb40cc418aac080ce07e60c1a8.r2.dev';
 const NEW_URL = 'https://pub-5ebfb00e2816441a8e34c1ccc36e6195.r2.dev';
 
 async function updateR2Urls() {
+  assertScriptTargetIsSafe('update-r2-urls');
   console.log('🔄 Actualizando URLs de R2 en la base de datos...\n');
 
   const app = await NestFactory.createApplicationContext(AppModule);
