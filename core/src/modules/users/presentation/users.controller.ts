@@ -15,6 +15,7 @@ import {
   UseInterceptors,
   Req,
   UploadedFile,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -44,6 +45,12 @@ import { UserProfileResponseDto } from '../dto/user-profile-response.dto';
 import { GridCommunityUsersQueryDto } from '../dto/grid-community-users.dto';
 import { UserStatus, UserRole, Permission } from '../domain/user.entity';
 import { JwtAuthGuard, RolesGuard, Roles } from '../../auth/guards/jwt-auth.guard';
+import {
+  assertSelfOrRoles,
+  sanitizeUserUpdateForActor,
+} from './user-access.util';
+
+const STAFF = [UserRole.ADMIN, UserRole.AGENT];
 
 @Controller('users')
 @ApiTags('Users')
@@ -68,7 +75,13 @@ export class UsersController {
       description: 'Validation error - invalid email or missing required fields',
     })
     @ApiBody({ type: CreateUserDto })
-    async create(@Body(ValidationPipe) createUserDto: CreateUserDto) {
+    async create(
+      @Body(ValidationPipe) createUserDto: CreateUserDto,
+      @Req() req?: any,
+    ) {
+      if (createUserDto.role === UserRole.ADMIN && req?.user?.role !== UserRole.ADMIN) {
+        throw new ForbiddenException('Solo un ADMIN puede crear administradores');
+      }
       const user = await this.usersService.create(createUserDto);
       const { password, setPassword, validatePassword, ...userResponse } =
         user as any;
@@ -272,7 +285,8 @@ export class UsersController {
     @ApiParam({ name: 'id', type: String })
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
-    async getFavoriteProperties(@Param('id') id: string) {
+    async getFavoriteProperties(@Param('id') id: string, @Req() req: any) {
+      assertSelfOrRoles(req.user, id, STAFF);
       return this.usersService.getUserFavoriteProperties(id);
     }
 
@@ -284,7 +298,9 @@ export class UsersController {
     @ApiResponse({ status: 200, description: 'User details' })
     @ApiResponse({ status: 404, description: 'User not found' })
     @ApiParam({ name: 'id', type: String })
-    findOne(@Param('id') id: string) {
+    @ApiBearerAuth()
+    findOne(@Param('id') id: string, @Req() req: any) {
+      assertSelfOrRoles(req.user, id, STAFF);
       return this.usersService.findOne(id);
     }
 
@@ -296,7 +312,9 @@ export class UsersController {
     @ApiResponse({ status: 200, description: 'User profile details', type: UserProfileResponseDto })
     @ApiResponse({ status: 404, description: 'User not found' })
     @ApiParam({ name: 'id', type: String })
-    getUserProfileById(@Param('id') id: string) {
+    @ApiBearerAuth()
+    getUserProfileById(@Param('id') id: string, @Req() req: any) {
+      assertSelfOrRoles(req.user, id, STAFF);
       return this.usersService.getUserProfile(id);
     }
 
@@ -308,14 +326,22 @@ export class UsersController {
     @ApiBody({ type: UpdateUserDto })
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
-    update(
+    async update(
       @Param('id') id: string,
       @Body(ValidationPipe) updateUserDto: UpdateUserDto,
+      @Req() req: any,
     ) {
-      return this.usersService.update(id, updateUserDto);
+      // Dueño o ADMIN. Un no-ADMIN no puede cambiar rol/estado/permisos.
+      assertSelfOrRoles(req.user, id, [UserRole.ADMIN]);
+      const dto = sanitizeUserUpdateForActor(req.user, updateUserDto);
+      if (req.user?.role !== UserRole.ADMIN && dto.personId) {
+        await this.usersService.assertPersonLinkableByUser(dto.personId, id);
+      }
+      return this.usersService.update(id, dto);
     }
 
     @Patch(':id/status')
+    @Roles(UserRole.ADMIN)
     @ApiOperation({ summary: 'Update user account status' })
     @ApiResponse({ status: 200, description: 'Status updated' })
     @ApiParam({ name: 'id', type: String })
@@ -333,6 +359,7 @@ export class UsersController {
      * Assign role to user (USER, AGENT, ADMIN, SUPERADMIN)
      */
     @Patch(':id/role')
+    @Roles(UserRole.ADMIN)
     @ApiOperation({ summary: 'Assign role to user' })
     @ApiResponse({ status: 200, description: 'Role assigned successfully' })
     @ApiParam({ name: 'id', type: String })
@@ -350,6 +377,7 @@ export class UsersController {
      * Update user permissions
      */
     @Patch(':id/permissions')
+    @Roles(UserRole.ADMIN)
     @ApiOperation({ summary: 'Update user permissions' })
     @ApiResponse({ status: 200, description: 'Permissions updated successfully' })
     @ApiParam({ name: 'id', type: String })
@@ -381,7 +409,9 @@ export class UsersController {
     async changePassword(
       @Param('id') id: string,
       @Body() changePasswordDto: ChangePasswordDto,
+      @Req() req: any,
     ): Promise<void> {
+      assertSelfOrRoles(req.user, id, [UserRole.ADMIN]);
       await this.usersService.changePassword(id, changePasswordDto);
     }
 
@@ -405,6 +435,7 @@ export class UsersController {
      * Soft delete user (marks as deleted without removing from DB)
      */
     @Delete(':id')
+    @Roles(UserRole.ADMIN)
     @ApiOperation({ summary: 'Delete user account' })
     @ApiResponse({ status: 200, description: 'User deleted successfully' })
     @ApiResponse({ status: 404, description: 'User not found' })
@@ -442,7 +473,9 @@ export class UsersController {
     async updateUserAvatar(
       @Param('id') id: string,
       @UploadedFile() file: Express.Multer.File,
+      @Req() req: any,
     ): Promise<UpdateAvatarDto> {
+      assertSelfOrRoles(req.user, id, [UserRole.ADMIN]);
       const user = await this.usersService.updateUserAvatar(id, file);
       return { avatarUrl: user.personalInfo?.avatarUrl };
     }

@@ -4,6 +4,7 @@ import {
   ConflictException,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
   Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -114,6 +115,22 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     return this.updateUserUseCase.execute(id, updateUserDto);
+  }
+
+  /**
+   * Un usuario no-ADMIN solo puede vincularse a una ficha de persona que ya le
+   * pertenece (person.userId === userId) o a la que ya tiene vinculada.
+   */
+  async assertPersonLinkableByUser(personId: string, userId: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (user?.personId === personId) return;
+    const person = await this.personRepository.findOne({ where: { id: personId } });
+    if (!person) {
+      throw new NotFoundException('Persona no encontrada');
+    }
+    if (person.userId !== userId) {
+      throw new ForbiddenException('No puedes vincular una persona que no te pertenece');
+    }
   }
 
   async softDelete(id: string): Promise<void> {
