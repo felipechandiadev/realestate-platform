@@ -9,6 +9,8 @@ import {
   Query,
   Res,
   UseGuards,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { RolesGuard } from '../../auth/presentation/guards/roles.guard';
@@ -19,15 +21,36 @@ import { CreatePersonDto, UpdatePersonDto } from '../dto/person.dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+const isCommunity = (user?: { role?: string }): boolean =>
+  user?.role === UserRole.COMMUNITY;
+
+/** Campos que un usuario COMMUNITY no puede fijar sobre su ficha. */
+function stripCommunityPersonFields<T extends object>(dto: T): Partial<T> {
+  const clean = { ...dto } as Record<string, unknown>;
+  delete clean.verified;
+  delete clean.verificationRequest;
+  delete clean.userId;
+  return clean as Partial<T>;
+}
+
 @ApiTags('people')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('people')
 export class PersonController {
   constructor(private readonly personService: PersonService) {}
 
+  // COMMUNITY (portal) puede crear SU ficha: userId forzado al token.
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Post()
-  create(@Body() createPersonDto: CreatePersonDto) {
+  create(@Body() createPersonDto: CreatePersonDto, @Req() req: any) {
+    if (isCommunity(req.user)) {
+      return this.personService.create({
+        ...stripCommunityPersonFields(createPersonDto),
+        userId: req.user.id,
+      } as CreatePersonDto);
+    }
     return this.personService.create(createPersonDto);
   }
 
@@ -90,14 +113,41 @@ export class PersonController {
     return this.personService.unlinkUser(id);
   }
 
+  // COMMUNITY solo su propia ficha.
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    await this.assertCommunityOwnsPerson(id, req.user);
     return this.personService.findOne(id);
   }
 
+  // COMMUNITY solo su propia ficha y sin tocar verificación/vínculo.
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updatePersonDto: UpdatePersonDto) {
+  async update(
+    @Param('id') id: string,
+    @Body() updatePersonDto: UpdatePersonDto,
+    @Req() req: any,
+  ) {
+    if (isCommunity(req.user)) {
+      await this.assertCommunityOwnsPerson(id, req.user);
+      return this.personService.update(
+        id,
+        stripCommunityPersonFields(updatePersonDto) as UpdatePersonDto,
+      );
+    }
     return this.personService.update(id, updatePersonDto);
+  }
+
+  private async assertCommunityOwnsPerson(
+    id: string,
+    user: { id?: string; role?: string } | undefined,
+  ): Promise<void> {
+    if (!isCommunity(user)) return;
+    const owned = await this.personService.isOwnedByUser(id, user!.id as string);
+    if (!owned) {
+      throw new ForbiddenException('No puedes acceder a la ficha de otra persona');
+    }
   }
 
   @Delete(':id')

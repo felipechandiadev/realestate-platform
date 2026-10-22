@@ -285,6 +285,27 @@ export class PersonService {
     return this.findPersonUseCase.execute(user.personId);
   }
 
+  /**
+   * true si la ficha `idOrUserId` (id de persona, o id de usuario resuelto a su
+   * persona como en findOne) pertenece a `userId`: person.userId === userId o
+   * el usuario tiene esa persona vinculada (user.personId).
+   */
+  async isOwnedByUser(idOrUserId: string, userId: string): Promise<boolean> {
+    if (!userId) return false;
+    let person: Person | null = null;
+    try {
+      person = await this.findOne(idOrUserId);
+    } catch {
+      return false;
+    }
+    if (!person) return false;
+    if (person.userId && person.userId === userId) return true;
+    const user = await this.userRepository.findOne({
+      where: { id: userId, deletedAt: IsNull() },
+    });
+    return !!user?.personId && user.personId === person.id;
+  }
+
   async linkUser(id: string, userId: string): Promise<void> {
     await this.linkUserUseCase.execute(id, userId);
   }
