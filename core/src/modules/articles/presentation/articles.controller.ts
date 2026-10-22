@@ -10,6 +10,8 @@ import {
   UseInterceptors,
   UploadedFile,
   Query,
+  Req,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,10 +23,23 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { DEFAULT_UPLOAD_OPTIONS } from '../../../shared/upload/upload-limits';
 import { ArticlesService } from '../application/articles.service';
 import { CreateArticleDto, UpdateArticleDto } from '../dto/article.dto';
 import { Roles, Public } from '../../auth/guards/jwt-auth.guard';
 import { UserRole } from '../../users/domain/user.entity';
+
+const isStaffRequest = (req?: { user?: { role?: string } }): boolean =>
+  req?.user?.role === UserRole.ADMIN || req?.user?.role === UserRole.AGENT;
+
+/** Para visitantes (no staff) solo se muestran artículos activos. */
+export function filterArticlesForAudience<T extends { isActive?: boolean }>(
+  articles: T[],
+  isStaff: boolean,
+): T[] {
+  if (isStaff || !Array.isArray(articles)) return articles;
+  return articles.filter((a) => Boolean(a?.isActive));
+}
 
 @Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('articles')
@@ -57,7 +72,7 @@ export class ArticlesController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', DEFAULT_UPLOAD_OPTIONS))
   create(
     @Body(ValidationPipe) createArticleDto: CreateArticleDto,
     @UploadedFile() image?: Express.Multer.File,
@@ -77,8 +92,13 @@ export class ArticlesController {
   })
   @ApiQuery({ name: 'search', required: false })
   @ApiQuery({ name: 'category', required: false })
-  findAll(@Query('search') search?: string, @Query('category') category?: string) {
-    return this.articlesService.findAll(search, category);
+  async findAll(
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Req() req?: any,
+  ) {
+    const articles = await this.articlesService.findAll(search, category);
+    return filterArticlesForAudience(articles, isStaffRequest(req));
   }
 
   /**
@@ -96,9 +116,16 @@ export class ArticlesController {
     description: 'Article not found',
   })
   @ApiParam({ name: 'id', type: String })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string, @Req() req?: any) {
+    const isStaff = isStaffRequest(req);
     const article = await this.articlesService.findOne(id);
-    const relatedArticles = await this.articlesService.findRelated(id, 4);
+    if (!isStaff && !article?.isActive) {
+      throw new NotFoundException('Artículo no encontrado');
+    }
+    const relatedArticles = filterArticlesForAudience(
+      await this.articlesService.findRelated(id, 4),
+      isStaff,
+    );
 
     return {
       ...article,
@@ -132,7 +159,7 @@ export class ArticlesController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileInterceptor('image', DEFAULT_UPLOAD_OPTIONS))
   update(
     @Param('id') id: string,
     @Body(ValidationPipe) updateArticleDto: UpdateArticleDto,
