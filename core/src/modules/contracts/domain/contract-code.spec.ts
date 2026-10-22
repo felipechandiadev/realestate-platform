@@ -1,5 +1,6 @@
 /** Tests unitarios de la generación de código de contrato (reemplaza el monkey-patch). */
 import { ensureContractCode, generateContractCode } from './contract-code';
+import { ContractOrmEntity } from '../infrastructure/persistence/contract.orm-entity';
 
 describe('generateContractCode', () => {
   it('formato C-<epoch>-<6 hex> y cabe en varchar(64)', () => {
@@ -36,10 +37,6 @@ describe('ensureContractCode', () => {
 
 describe('ContractOrmEntity @BeforeInsert', () => {
   it('genera código al insertar si no viene', () => {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const {
-      ContractOrmEntity,
-    } = require('../infrastructure/persistence/contract.orm-entity');
     const orm = new ContractOrmEntity();
     orm.ensureCode();
     expect(orm.code).toMatch(/^C-\d+-[0-9a-f]{6}$/);
