@@ -1,3 +1,4 @@
+import { EntityManager } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { ContractRepository } from '../../domain/contract.repository';
 import { UpdateContractDto } from '../../dto/contract.dto';
@@ -6,7 +7,7 @@ import { UpdateContractDto } from '../../dto/contract.dto';
 export class UpdateContractUseCase {
   constructor(private readonly contractRepository: ContractRepository) {}
 
-  async execute(id: string, dto: UpdateContractDto): Promise<void> {
+  async execute(id: string, dto: UpdateContractDto, manager?: EntityManager): Promise<void> {
     const patch: Record<string, unknown> = { ...(dto as any) };
 
     const hasSplit =
@@ -25,6 +26,7 @@ export class UpdateContractUseCase {
       patch.commissionAmount = Math.round(amt * pct * 100) / 100;
     }
 
-    await this.contractRepository.update(id, patch as any);
+    const repository = manager ? this.contractRepository.withManager(manager) : this.contractRepository;
+    await repository.update(id, patch as any);
   }
 }

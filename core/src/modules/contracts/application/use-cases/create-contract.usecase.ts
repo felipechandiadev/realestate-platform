@@ -1,3 +1,4 @@
+import { EntityManager } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { ContractRepository } from '../../domain/contract.repository';
 import { Contract } from '../../domain/contract.entity';
@@ -9,7 +10,7 @@ export class CreateContractUseCase {
     private readonly contractRepository: ContractRepository,
   ) {}
 
-  async execute(contract: Contract): Promise<Contract> {
+  async execute(contract: Contract, manager?: EntityManager): Promise<Contract> {
     try {
       const hasSplit =
         contract.tenantCommissionAmount != null || contract.landlordCommissionAmount != null;
@@ -31,6 +32,7 @@ export class CreateContractUseCase {
       // swallow and continue to save
     }
     ensureContractCode(contract);
-    return await this.contractRepository.save(contract);
+    const repository = manager ? this.contractRepository.withManager(manager) : this.contractRepository;
+    return await repository.save(contract);
   }
 }

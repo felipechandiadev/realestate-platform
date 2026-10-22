@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import { ContractRepository } from '../../domain/contract.repository';
 import { Contract } from '../../domain/contract.entity';
 import { ContractOrmEntity } from './contract.orm-entity';
@@ -41,6 +41,13 @@ export class TypeormContractRepository extends ContractRepository {
   // expose typeorm manager to callers that need advanced operations
   get manager() {
     return this.repository.manager;
+  }
+
+  withManager(manager: EntityManager): TypeormContractRepository {
+    return new TypeormContractRepository(
+      manager.getRepository(ContractOrmEntity),
+      manager.getRepository(Property),
+    );
   }
 
   private toDomain(entity: ContractOrmEntity): Contract {

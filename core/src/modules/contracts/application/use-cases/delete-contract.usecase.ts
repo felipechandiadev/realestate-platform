@@ -1,3 +1,4 @@
+import { EntityManager } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { ContractRepository } from '../../domain/contract.repository';
 
@@ -5,7 +6,8 @@ import { ContractRepository } from '../../domain/contract.repository';
 export class DeleteContractUseCase {
   constructor(private readonly contractRepository: ContractRepository) {}
 
-  async execute(id: string): Promise<void> {
-    await this.contractRepository.softDelete(id);
+  async execute(id: string, manager?: EntityManager): Promise<void> {
+    const repository = manager ? this.contractRepository.withManager(manager) : this.contractRepository;
+    await repository.softDelete(id);
   }
 }

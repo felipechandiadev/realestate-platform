@@ -1,3 +1,4 @@
+import { EntityManager } from 'typeorm';
 import { Contract } from './contract.entity';
 
 export abstract class ContractRepository {
@@ -15,4 +16,9 @@ export abstract class ContractRepository {
   abstract create(entity: Partial<Contract>): Contract;
   abstract findOne(options: any): Promise<Contract | null>;
   abstract get manager(): any;
+  /**
+   * Devuelve una instancia que opera con el EntityManager indicado (p. ej. el de
+   * una transacción), para que lecturas y escrituras participen en ella.
+   */
+  abstract withManager(manager: EntityManager): ContractRepository;
 }

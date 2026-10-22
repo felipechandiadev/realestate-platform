@@ -1,7 +1,12 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
+import { runInTransaction } from '../../../shared/database/run-in-transaction';
 import { ContractRepository } from '../domain/contract.repository';
 import { Contract } from '../domain/contract.entity';
 import { CreateContractUseCase } from './use-cases/create-contract.usecase';
@@ -17,20 +22,36 @@ import { AddPersonUseCase } from './use-cases/add-person.usecase';
 import { GetPeopleByRoleUseCase } from './use-cases/get-people-by-role.usecase';
 import { ValidateRequiredRolesUseCase } from './use-cases/validate-required-roles.usecase';
 import { Payment, PaymentStatus, PaymentType } from '../domain/payment.entity';
-import { AddPaymentDto, AddPersonDto, CloseContractDto, CreateContractDto, UpdateContractAgentDto, UpdateContractDto, UploadContractDocumentDto, UploadPaymentDocumentDto } from '../dto/contract.dto';
+import {
+  AddPaymentDto,
+  AddPersonDto,
+  CloseContractDto,
+  CreateContractDto,
+  UpdateContractAgentDto,
+  UpdateContractDto,
+  UploadContractDocumentDto,
+  UploadPaymentDocumentDto,
+} from '../dto/contract.dto';
 import { Person } from '../../person/domain/person.entity';
 import { PersonOrmEntity } from '../../person/infrastructure/persistence/person.orm-entity';
 import { User } from '../../users/domain/user.entity';
 import { Property } from '../../property/domain/property.entity';
 import { NotificationsService } from '../../notifications/application/notifications.service';
-import { Document as DocumentEntity, DocumentStatus } from '../../document/domain/document.entity';
+import {
+  Document as DocumentEntity,
+  DocumentStatus,
+} from '../../document/domain/document.entity';
 import { MultimediaService } from '../../multimedia/application/multimedia.service';
 import { MultimediaType } from '../../multimedia/domain/multimedia.entity';
 import { DocumentTypeOrmEntity } from '../../document-types/infrastructure/persistence/document-type.orm-entity';
 import { ContractRole } from '../domain/contract.entity';
 import { ContractPerson } from '../domain/contract.entity';
 import { AuditService } from '../../audit/application/audit.service';
-import { AuditAction, AuditEntityType, RequestSource } from '../../../shared/enums/audit.enums';
+import {
+  AuditAction,
+  AuditEntityType,
+  RequestSource,
+} from '../../../shared/enums/audit.enums';
 
 @Injectable()
 export class ContractsService {
@@ -61,32 +82,45 @@ export class ContractsService {
     private readonly notificationsService: NotificationsService,
     private readonly auditService: AuditService,
     private readonly multimediaService: MultimediaService,
+    private readonly dataSource: DataSource,
   ) {}
 
+  /** Escritura de contrato + auditoría en una sola transacción. */
+  private transaction<T>(
+    work: (manager: EntityManager) => Promise<T>,
+  ): Promise<T> {
+    return runInTransaction(this.dataSource, work);
+  }
+
   async create(dto: CreateContractDto, actorId?: string): Promise<Contract> {
-    const contract = await this.createContract.execute(dto as any);
-    
-    // Create audit log
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.CREATE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: contract.id,
-      description: 'Contrato creado',
-      newValues: {
-        code: contract.code,
-        operation: contract.operation,
-        propertyId: contract.property?.id,
-        endDate: contract.endDate,
-        amount: contract.amount,
-        commissionPercent: contract.commissionPercent,
-        commissionAmount: contract.commissionAmount,
-        status: contract.status,
-      },
-      source: RequestSource.USER,
+    return this.transaction(async (manager) => {
+      const contract = await this.createContract.execute(dto as any, manager);
+
+      // Create audit log
+      await this.auditService.createAuditLog(
+        {
+          userId: actorId,
+          action: AuditAction.CREATE,
+          entityType: AuditEntityType.CONTRACT,
+          entityId: contract.id,
+          description: 'Contrato creado',
+          newValues: {
+            code: contract.code,
+            operation: contract.operation,
+            propertyId: contract.property?.id,
+            endDate: contract.endDate,
+            amount: contract.amount,
+            commissionPercent: contract.commissionPercent,
+            commissionAmount: contract.commissionAmount,
+            status: contract.status,
+          },
+          source: RequestSource.USER,
+        },
+        manager,
+      );
+
+      return contract;
     });
-    
-    return contract;
   }
 
   async findAll(query?: any): Promise<any> {
@@ -94,8 +128,11 @@ export class ContractsService {
   }
 
   async exportExcel(query?: any): Promise<Buffer> {
-    const result = await this.findAll({ ...(query ?? {}), pagination: 'false' });
-    const rows = Array.isArray(result) ? result : result.data ?? [];
+    const result = await this.findAll({
+      ...(query ?? {}),
+      pagination: 'false',
+    });
+    const rows = Array.isArray(result) ? result : (result.data ?? []);
 
     const columns = [
       { key: 'code', header: 'Código' },
@@ -111,18 +148,25 @@ export class ContractsService {
 
     const workbook = new ExcelJS.Workbook();
     const sheet = workbook.addWorksheet('Contratos');
-    sheet.columns = columns.map((col) => ({ key: col.key, header: col.header, width: 22 }));
+    sheet.columns = columns.map((col) => ({
+      key: col.key,
+      header: col.header,
+      width: 22,
+    }));
 
     for (const contract of rows) {
       const people = Array.isArray(contract.people) ? contract.people : [];
-      const client = people.find((person: { role?: string }) =>
-        person?.role === 'BUYER' || person?.role === 'TENANT',
+      const client = people.find(
+        (person: { role?: string }) =>
+          person?.role === 'BUYER' || person?.role === 'TENANT',
       );
-      const agent = contract.user as {
-        personalInfo?: { firstName?: string; lastName?: string };
-        username?: string;
-        email?: string;
-      } | undefined;
+      const agent = contract.user as
+        | {
+            personalInfo?: { firstName?: string; lastName?: string };
+            username?: string;
+            email?: string;
+          }
+        | undefined;
       const agentName = agent
         ? `${agent.personalInfo?.firstName || ''} ${agent.personalInfo?.lastName || ''}`.trim() ||
           agent.username ||
@@ -177,7 +221,9 @@ export class ContractsService {
         documentId: doc.id,
         title: doc.title,
         status: doc.status,
-        uploaded: doc.status === DocumentStatus.UPLOADED || doc.status === DocumentStatus.RECIBIDO,
+        uploaded:
+          doc.status === DocumentStatus.UPLOADED ||
+          doc.status === DocumentStatus.RECIBIDO,
         multimedia: doc.multimedia,
         url: doc.multimedia?.url,
         documentTypeId: doc.documentTypeId,
@@ -200,189 +246,250 @@ export class ContractsService {
     return contract;
   }
 
-  async update(id: string, dto: UpdateContractDto, actorId?: string): Promise<Contract> {
-    // Get old contract state for audit
-    const oldContract = await this.contractRepository.findById(id);
-    if (!oldContract) {
-      throw new NotFoundException();
-    }
-    
-    await this.updateContract.execute(id, dto);
-    const updated = await this.contractRepository.findById(id);
-    if (!updated) {
-      throw new NotFoundException();
-    }
-    
-    // Create audit log with old and new values
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.UPDATE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: id,
-      description: 'Contrato actualizado',
-      oldValues: {
-        endDate: oldContract.endDate,
-        amount: oldContract.amount,
-        commissionPercent: oldContract.commissionPercent,
-        commissionAmount: oldContract.commissionAmount,
-        status: oldContract.status,
-        description: oldContract.description,
-      },
-      newValues: {
-        endDate: updated.endDate,
-        amount: updated.amount,
-        commissionPercent: updated.commissionPercent,
-        commissionAmount: updated.commissionAmount,
-        status: updated.status,
-        description: updated.description,
-      },
-      source: RequestSource.USER,
+  async update(
+    id: string,
+    dto: UpdateContractDto,
+    actorId?: string,
+  ): Promise<Contract> {
+    return this.transaction(async (manager) => {
+      const contracts = this.contractRepository.withManager(manager);
+      // Get old contract state for audit
+      const oldContract = await contracts.findById(id);
+      if (!oldContract) {
+        throw new NotFoundException();
+      }
+
+      await this.updateContract.execute(id, dto, manager);
+      const updated = await contracts.findById(id);
+      if (!updated) {
+        throw new NotFoundException();
+      }
+
+      // Create audit log with old and new values
+      await this.auditService.createAuditLog(
+        {
+          userId: actorId,
+          action: AuditAction.UPDATE,
+          entityType: AuditEntityType.CONTRACT,
+          entityId: id,
+          description: 'Contrato actualizado',
+          oldValues: {
+            endDate: oldContract.endDate,
+            amount: oldContract.amount,
+            commissionPercent: oldContract.commissionPercent,
+            commissionAmount: oldContract.commissionAmount,
+            status: oldContract.status,
+            description: oldContract.description,
+          },
+          newValues: {
+            endDate: updated.endDate,
+            amount: updated.amount,
+            commissionPercent: updated.commissionPercent,
+            commissionAmount: updated.commissionAmount,
+            status: updated.status,
+            description: updated.description,
+          },
+          source: RequestSource.USER,
+        },
+        manager,
+      );
+
+      return updated;
     });
-    
-    return updated;
   }
 
-  async updateAgent(id: string, dto: UpdateContractAgentDto, actorId?: string): Promise<Contract> {
-    const oldContract = await this.contractRepository.findById(id);
-    if (!oldContract) {
-      throw new NotFoundException();
-    }
+  async updateAgent(
+    id: string,
+    dto: UpdateContractAgentDto,
+    actorId?: string,
+  ): Promise<Contract> {
+    return this.transaction(async (manager) => {
+      const contracts = this.contractRepository.withManager(manager);
+      const oldContract = await contracts.findById(id);
+      if (!oldContract) {
+        throw new NotFoundException();
+      }
 
-    await this.contractRepository.update(id, { userId: dto.userId } as any);
+      await contracts.update(id, { userId: dto.userId } as any);
 
-    const updated = await this.contractRepository.findById(id);
-    if (!updated) {
-      throw new NotFoundException();
-    }
+      const updated = await contracts.findById(id);
+      if (!updated) {
+        throw new NotFoundException();
+      }
 
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.UPDATE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: id,
-      description: 'Agente del contrato actualizado',
-      oldValues: { userId: oldContract.userId ?? null },
-      newValues: { userId: updated.userId ?? null },
-      source: RequestSource.USER,
+      await this.auditService.createAuditLog(
+        {
+          userId: actorId,
+          action: AuditAction.UPDATE,
+          entityType: AuditEntityType.CONTRACT,
+          entityId: id,
+          description: 'Agente del contrato actualizado',
+          oldValues: { userId: oldContract.userId ?? null },
+          newValues: { userId: updated.userId ?? null },
+          source: RequestSource.USER,
+        },
+        manager,
+      );
+
+      return updated;
     });
-
-    return updated;
   }
 
   async softDelete(id: string, actorId?: string): Promise<void> {
-    await this.deleteContract.execute(id);
-    
-    // Create audit log
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.DELETE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: id,
-      description: 'Contrato eliminado (soft delete)',
-      source: RequestSource.USER,
+    return this.transaction(async (manager) => {
+      await this.deleteContract.execute(id, manager);
+
+      // Create audit log
+      await this.auditService.createAuditLog(
+        {
+          userId: actorId,
+          action: AuditAction.DELETE,
+          entityType: AuditEntityType.CONTRACT,
+          entityId: id,
+          description: 'Contrato eliminado (soft delete)',
+          source: RequestSource.USER,
+        },
+        manager,
+      );
     });
   }
 
-  async close(id: string, dto: CloseContractDto, actorId?: string): Promise<Contract> {
-    // Get old status for audit
-    const oldContract = await this.contractRepository.findById(id);
-    if (!oldContract) {
-      throw new NotFoundException();
-    }
-    const oldStatus = oldContract.status;
-    
-    await this.closeContract.execute(id, dto);
-    const updated = await this.contractRepository.findById(id);
-    if (!updated) {
-      throw new NotFoundException();
-    }
-    
-    // Create audit log
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.UPDATE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: id,
-      description: 'Contrato cerrado',
-      oldValues: { status: oldStatus },
-      newValues: { status: updated.status, endDate: updated.endDate },
-      source: RequestSource.USER,
+  async close(
+    id: string,
+    dto: CloseContractDto,
+    actorId?: string,
+  ): Promise<Contract> {
+    return this.transaction(async (manager) => {
+      const contracts = this.contractRepository.withManager(manager);
+      // Get old status for audit
+      const oldContract = await contracts.findById(id);
+      if (!oldContract) {
+        throw new NotFoundException();
+      }
+      const oldStatus = oldContract.status;
+
+      await this.closeContract.execute(id, dto, manager);
+      const updated = await contracts.findById(id);
+      if (!updated) {
+        throw new NotFoundException();
+      }
+
+      // Create audit log
+      await this.auditService.createAuditLog(
+        {
+          userId: actorId,
+          action: AuditAction.UPDATE,
+          entityType: AuditEntityType.CONTRACT,
+          entityId: id,
+          description: 'Contrato cerrado',
+          oldValues: { status: oldStatus },
+          newValues: { status: updated.status, endDate: updated.endDate },
+          source: RequestSource.USER,
+        },
+        manager,
+      );
+
+      return updated;
     });
-    
-    return updated;
   }
 
   async fail(id: string, endDate: Date, actorId?: string): Promise<Contract> {
-    // Get old status for audit
-    const oldContract = await this.contractRepository.findById(id);
-    if (!oldContract) {
-      throw new NotFoundException();
-    }
-    const oldStatus = oldContract.status;
-    
-    await this.failContract.execute(id, endDate);
-    const updated = await this.contractRepository.findById(id);
-    if (!updated) {
-      throw new NotFoundException();
-    }
-    
-    // Create audit log
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.UPDATE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: id,
-      description: 'Contrato marcado como fallido',
-      oldValues: { status: oldStatus },
-      newValues: { status: updated.status, endDate: updated.endDate },
-      source: RequestSource.USER,
+    return this.transaction(async (manager) => {
+      const contracts = this.contractRepository.withManager(manager);
+      // Get old status for audit
+      const oldContract = await contracts.findById(id);
+      if (!oldContract) {
+        throw new NotFoundException();
+      }
+      const oldStatus = oldContract.status;
+
+      await this.failContract.execute(id, endDate, manager);
+      const updated = await contracts.findById(id);
+      if (!updated) {
+        throw new NotFoundException();
+      }
+
+      // Create audit log
+      await this.auditService.createAuditLog(
+        {
+          userId: actorId,
+          action: AuditAction.UPDATE,
+          entityType: AuditEntityType.CONTRACT,
+          entityId: id,
+          description: 'Contrato marcado como fallido',
+          oldValues: { status: oldStatus },
+          newValues: { status: updated.status, endDate: updated.endDate },
+          source: RequestSource.USER,
+        },
+        manager,
+      );
+
+      return updated;
     });
-    
-    return updated;
   }
 
   // stubs for endpoints still in controller
-  async addPayment(id: string, dto: AddPaymentDto, actorId?: string): Promise<any> {
-    const payment = await this.addPaymentUseCase.execute(id, dto);
-    
-    // Create audit log
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.UPDATE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: id,
-      description: 'Pago agregado al contrato',
-      metadata: {
-        paymentId: payment?.id,
-        paymentAmount: dto.amount,
-        paymentType: dto.type,
-        paymentDate: dto.date,
-      },
-      source: RequestSource.USER,
+  async addPayment(
+    id: string,
+    dto: AddPaymentDto,
+    actorId?: string,
+  ): Promise<any> {
+    return this.transaction(async (manager) => {
+      const payment = await this.addPaymentUseCase.execute(id, dto, manager);
+
+      // Create audit log
+      await this.auditService.createAuditLog(
+        {
+          userId: actorId,
+          action: AuditAction.UPDATE,
+          entityType: AuditEntityType.CONTRACT,
+          entityId: id,
+          description: 'Pago agregado al contrato',
+          metadata: {
+            paymentId: payment?.id,
+            paymentAmount: dto.amount,
+            paymentType: dto.type,
+            paymentDate: dto.date,
+          },
+          source: RequestSource.USER,
+        },
+        manager,
+      );
+
+      return payment;
     });
-    
-    return payment;
   }
-  async addPerson(id: string, dto: AddPersonDto, actorId?: string): Promise<any> {
-    await this.addPersonUseCase.execute(id, dto);
-    const contract = await this.contractRepository.findById(id);
-    if (!contract) throw new NotFoundException();
-    
-    // Create audit log
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.UPDATE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: id,
-      description: 'Participante agregado al contrato',
-      metadata: {
-        personId: dto.personId,
-        role: dto.role,
-      },
-      source: RequestSource.USER,
+  async addPerson(
+    id: string,
+    dto: AddPersonDto,
+    actorId?: string,
+  ): Promise<any> {
+    return this.transaction(async (manager) => {
+      await this.addPersonUseCase.execute(id, dto, manager);
+      const contract = await this.contractRepository
+        .withManager(manager)
+        .findById(id);
+      if (!contract) throw new NotFoundException();
+
+      // Create audit log
+      await this.auditService.createAuditLog(
+        {
+          userId: actorId,
+          action: AuditAction.UPDATE,
+          entityType: AuditEntityType.CONTRACT,
+          entityId: id,
+          description: 'Participante agregado al contrato',
+          metadata: {
+            personId: dto.personId,
+            role: dto.role,
+          },
+          source: RequestSource.USER,
+        },
+        manager,
+      );
+
+      return contract;
     });
-    
-    return contract;
   }
   async getPeopleByRole(id: string, role: ContractRole): Promise<any[]> {
     return this.getPeopleByRoleUseCase.execute(id, role);
@@ -390,7 +497,11 @@ export class ContractsService {
   async validateRequiredRoles(contract: Contract): Promise<any> {
     return this.validateRequiredRolesUseCase.execute(contract);
   }
-  async uploadContractDocument(file: Express.Multer.File, dto: UploadContractDocumentDto, actorId?: string): Promise<any> {
+  async uploadContractDocument(
+    file: Express.Multer.File,
+    dto: UploadContractDocumentDto,
+    actorId?: string,
+  ): Promise<any> {
     if (!file) {
       throw new BadRequestException('Selecciona un archivo para adjuntar.');
     }
@@ -402,7 +513,9 @@ export class ContractsService {
 
     let paymentId = dto.paymentId;
     if (paymentId) {
-      const payment = await this.paymentRepository.findOne({ where: { id: paymentId } });
+      const payment = await this.paymentRepository.findOne({
+        where: { id: paymentId },
+      });
       if (!payment) {
         throw new NotFoundException('payment not found');
       }
@@ -411,8 +524,12 @@ export class ContractsService {
       }
     }
 
-    const docTypeRepo = this.documentRepository.manager.getRepository(DocumentTypeOrmEntity as any);
-    const docType = await docTypeRepo.findOne({ where: { id: dto.documentTypeId } });
+    const docTypeRepo = this.documentRepository.manager.getRepository(
+      DocumentTypeOrmEntity as any,
+    );
+    const docType = await docTypeRepo.findOne({
+      where: { id: dto.documentTypeId },
+    });
     if (!docType) {
       throw new NotFoundException('document type not found');
     }
@@ -431,92 +548,123 @@ export class ContractsService {
       uploadedById,
     );
 
-    let documentId = dto.documentId;
-    if (documentId) {
-      const existing = await this.documentRepository.findOne({ where: { id: documentId } });
-      if (!existing) {
-        throw new NotFoundException('document not found');
-      }
-      existing.title = dto.title;
-      existing.documentTypeId = dto.documentTypeId;
-      existing.notes = dto.notes ?? existing.notes ?? '';
-      existing.status = DocumentStatus.UPLOADED;
-      existing.multimedia = multimedia;
-      existing.multimediaId = multimedia.id;
-      existing.contractId = dto.contractId;
-      existing.uploadedById = uploadedById;
-      if (paymentId) existing.paymentId = paymentId;
-      if (dto.personId) existing.personId = dto.personId;
-      await this.documentRepository.save(existing);
-    } else {
-      const created = await this.documentRepository.save(
-        this.documentRepository.create({
-          title: dto.title,
+    // La subida del archivo queda FUERA de la transacción (el storage no se puede
+    // revertir). Documento + resumen JSON del contrato + auditoría van juntos.
+    const { document, documentId, existingDocuments, txContract } =
+      await this.transaction(async (manager) => {
+        const documents = manager.getRepository(DocumentEntity);
+        const contracts = this.contractRepository.withManager(manager);
+        // Bloquea la fila del contrato: read-modify-write del JSON `documents`.
+        const txContract =
+          (await contracts.findOne({
+            where: { id: dto.contractId },
+            lock: { mode: 'pessimistic_write' },
+          })) ?? contract;
+        let documentId = dto.documentId;
+        if (documentId) {
+          const existing = await documents.findOne({
+            where: { id: documentId },
+          });
+          if (!existing) {
+            throw new NotFoundException('document not found');
+          }
+          existing.title = dto.title;
+          existing.documentTypeId = dto.documentTypeId;
+          existing.notes = dto.notes ?? existing.notes ?? '';
+          existing.status = DocumentStatus.UPLOADED;
+          existing.multimedia = multimedia;
+          existing.multimediaId = multimedia.id;
+          existing.contractId = dto.contractId;
+          existing.uploadedById = uploadedById;
+          if (paymentId) existing.paymentId = paymentId;
+          if (dto.personId) existing.personId = dto.personId;
+          await documents.save(existing);
+        } else {
+          const created = await documents.save(
+            documents.create({
+              title: dto.title,
+              documentTypeId: dto.documentTypeId,
+              uploadedById,
+              contractId: dto.contractId,
+              ...(paymentId ? { paymentId } : {}),
+              personId: dto.personId,
+              status: DocumentStatus.UPLOADED,
+              required: false,
+              notes: dto.notes || '',
+              multimedia,
+              multimediaId: multimedia.id,
+            }),
+          );
+          documentId = created.id;
+        }
+
+        const document = await documents.findOne({
+          where: { id: documentId },
+          relations: ['multimedia', 'documentType'],
+        });
+
+        const existingDocuments = Array.isArray((txContract as any).documents)
+          ? [...(txContract as any).documents]
+          : [];
+        const summary = {
           documentTypeId: dto.documentTypeId,
+          documentId,
+          id: documentId,
+          title: document?.title ?? dto.title,
+          required: document?.required ?? false,
+          uploaded: true,
+          status: document?.status ?? DocumentStatus.UPLOADED,
           uploadedById,
-          contractId: dto.contractId,
-          ...(paymentId ? { paymentId } : {}),
-          personId: dto.personId,
-          status: DocumentStatus.UPLOADED,
-          required: false,
-          notes: dto.notes || '',
-          multimedia,
-          multimediaId: multimedia.id,
-        }),
-      );
-      documentId = created.id;
-    }
+          paymentId: paymentId ?? null,
+          createdAt: document?.createdAt,
+          multimedia: document?.multimedia ?? multimedia,
+          url: document?.multimedia?.url ?? multimedia.url,
+        };
+        const summaryIndex = existingDocuments.findIndex(
+          (row: any) =>
+            row?.documentId === documentId || row?.id === documentId,
+        );
+        if (summaryIndex >= 0) {
+          existingDocuments[summaryIndex] = {
+            ...existingDocuments[summaryIndex],
+            ...summary,
+          };
+        } else {
+          existingDocuments.push(summary);
+        }
+        await contracts.update(dto.contractId, {
+          documents: existingDocuments,
+        } as any);
 
-    const document = await this.documentRepository.findOne({
-      where: { id: documentId },
-      relations: ['multimedia', 'documentType'],
+        await this.auditService.createAuditLog(
+          {
+            userId: actorId,
+            action: AuditAction.UPDATE,
+            entityType: AuditEntityType.CONTRACT,
+            entityId: dto.contractId,
+            description: paymentId
+              ? 'Comprobante cargado al pago'
+              : 'Documento cargado al contrato',
+            metadata: {
+              documentId,
+              documentTitle: dto.title,
+              documentTypeId: dto.documentTypeId,
+              paymentId: paymentId ?? null,
+              fileName: file.originalname,
+              multimediaId: multimedia.id,
+            },
+            source: RequestSource.USER,
+          },
+          manager,
+        );
+
+        return { document, documentId, existingDocuments, txContract };
+      });
+
+    const hydrated = await this.hydratePayments({
+      ...(txContract as any),
+      documents: existingDocuments,
     });
-
-    const existingDocuments = Array.isArray((contract as any).documents)
-      ? [...(contract as any).documents]
-      : [];
-    const summary = {
-      documentTypeId: dto.documentTypeId,
-      documentId,
-      id: documentId,
-      title: document?.title ?? dto.title,
-      required: document?.required ?? false,
-      uploaded: true,
-      status: document?.status ?? DocumentStatus.UPLOADED,
-      uploadedById,
-      paymentId: paymentId ?? null,
-      createdAt: document?.createdAt,
-      multimedia: document?.multimedia ?? multimedia,
-      url: document?.multimedia?.url ?? multimedia.url,
-    };
-    const summaryIndex = existingDocuments.findIndex(
-      (row: any) => row?.documentId === documentId || row?.id === documentId,
-    );
-    if (summaryIndex >= 0) {
-      existingDocuments[summaryIndex] = { ...existingDocuments[summaryIndex], ...summary };
-    } else {
-      existingDocuments.push(summary);
-    }
-    await this.contractRepository.update(dto.contractId, { documents: existingDocuments } as any);
-
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.UPDATE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: dto.contractId,
-      description: paymentId ? 'Comprobante cargado al pago' : 'Documento cargado al contrato',
-      metadata: {
-        documentId,
-        documentTitle: dto.title,
-        documentTypeId: dto.documentTypeId,
-        paymentId: paymentId ?? null,
-        fileName: file.originalname,
-        multimediaId: multimedia.id,
-      },
-      source: RequestSource.USER,
-    });
-
-    const hydrated = await this.hydratePayments({ ...(contract as any), documents: existingDocuments });
     return {
       contract: hydrated,
       document: document ?? { id: documentId, multimedia },
@@ -524,10 +672,17 @@ export class ContractsService {
     };
   }
 
-  async associateDocumentToPayment(paymentId: string, documentId: string): Promise<any> {
-    const payment = await this.paymentRepository.findOne({ where: { id: paymentId } });
+  async associateDocumentToPayment(
+    paymentId: string,
+    documentId: string,
+  ): Promise<any> {
+    const payment = await this.paymentRepository.findOne({
+      where: { id: paymentId },
+    });
     if (!payment) throw new NotFoundException('payment not found');
-    const document = await this.documentRepository.findOne({ where: { id: documentId } });
+    const document = await this.documentRepository.findOne({
+      where: { id: documentId },
+    });
     if (!document) throw new NotFoundException('document not found');
     document.paymentId = paymentId;
     document.contractId = payment.contractId;
@@ -536,7 +691,9 @@ export class ContractsService {
   }
 
   async getPaymentDocuments(paymentId: string): Promise<any> {
-    const payment = await this.paymentRepository.findOne({ where: { id: paymentId } });
+    const payment = await this.paymentRepository.findOne({
+      where: { id: paymentId },
+    });
     if (!payment) throw new NotFoundException('payment not found');
     return this.documentRepository.find({
       where: { paymentId },
@@ -548,7 +705,9 @@ export class ContractsService {
   async validatePaymentWithDocuments(paymentId: string): Promise<any> {
     const docs = await this.getPaymentDocuments(paymentId);
     const accepted = (docs as DocumentEntity[]).filter(
-      (d) => d.status === DocumentStatus.UPLOADED || d.status === DocumentStatus.RECIBIDO,
+      (d) =>
+        d.status === DocumentStatus.UPLOADED ||
+        d.status === DocumentStatus.RECIBIDO,
     );
     return {
       paymentId,
@@ -558,7 +717,10 @@ export class ContractsService {
     };
   }
 
-  async getPaymentsByType(id: string, type: PaymentType | string): Promise<any> {
+  async getPaymentsByType(
+    id: string,
+    type: PaymentType | string,
+  ): Promise<any> {
     return this.paymentRepository.find({
       where: { contractId: id, type: type as PaymentType },
       order: { date: 'ASC' },
@@ -579,16 +741,28 @@ export class ContractsService {
     });
   }
 
-  async uploadPaymentProof(file: Express.Multer.File, id: string, paymentId: string, userId: string): Promise<any> {
-    const payment = await this.paymentRepository.findOne({ where: { id: paymentId, contractId: id } });
+  async uploadPaymentProof(
+    file: Express.Multer.File,
+    id: string,
+    paymentId: string,
+    userId: string,
+  ): Promise<any> {
+    const payment = await this.paymentRepository.findOne({
+      where: { id: paymentId, contractId: id },
+    });
     if (!payment) throw new NotFoundException('payment not found');
 
-    const docTypeRepo = this.documentRepository.manager.getRepository(DocumentTypeOrmEntity as any);
+    const docTypeRepo = this.documentRepository.manager.getRepository(
+      DocumentTypeOrmEntity as any,
+    );
     const docType =
-      (await docTypeRepo.findOne({ where: { name: 'Comprobante de pago' } as any })) ||
-      (await docTypeRepo.find({ take: 1 }))[0];
+      (await docTypeRepo.findOne({
+        where: { name: 'Comprobante de pago' } as any,
+      })) || (await docTypeRepo.find({ take: 1 }))[0];
     if (!docType) {
-      throw new BadRequestException('No hay tipo de documento configurado para comprobantes.');
+      throw new BadRequestException(
+        'No hay tipo de documento configurado para comprobantes.',
+      );
     }
 
     return this.uploadContractDocument(
@@ -604,27 +778,37 @@ export class ContractsService {
     );
   }
 
-  async updatePaymentStatus(paymentId: string, status: PaymentStatus, actorId?: string): Promise<any> {
-    const payment = await this.paymentRepository.findOne({ where: { id: paymentId } });
-    if (!payment) throw new NotFoundException('payment not found');
+  async updatePaymentStatus(
+    paymentId: string,
+    status: PaymentStatus,
+    actorId?: string,
+  ): Promise<any> {
+    return this.transaction(async (manager) => {
+      const payments = manager.getRepository(Payment);
+      const payment = await payments.findOne({ where: { id: paymentId } });
+      if (!payment) throw new NotFoundException('payment not found');
 
-    const oldStatus = payment.status;
-    payment.status = status;
-    payment.paidAt = status === PaymentStatus.PAID ? new Date() : null;
-    await this.paymentRepository.save(payment);
+      const oldStatus = payment.status;
+      payment.status = status;
+      payment.paidAt = status === PaymentStatus.PAID ? new Date() : null;
+      await payments.save(payment);
 
-    await this.auditService.createAuditLog({
-      userId: actorId,
-      action: AuditAction.UPDATE,
-      entityType: AuditEntityType.CONTRACT,
-      entityId: payment.contractId,
-      description: 'Estado de pago actualizado',
-      oldValues: { status: oldStatus },
-      newValues: { status: payment.status, paidAt: payment.paidAt },
-      metadata: { paymentId },
-      source: RequestSource.USER,
+      await this.auditService.createAuditLog(
+        {
+          userId: actorId,
+          action: AuditAction.UPDATE,
+          entityType: AuditEntityType.CONTRACT,
+          entityId: payment.contractId,
+          description: 'Estado de pago actualizado',
+          oldValues: { status: oldStatus },
+          newValues: { status: payment.status, paidAt: payment.paidAt },
+          metadata: { paymentId },
+          source: RequestSource.USER,
+        },
+        manager,
+      );
+
+      return payment;
     });
-
-    return payment;
   }
 }

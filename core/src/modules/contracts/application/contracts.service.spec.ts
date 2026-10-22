@@ -14,6 +14,7 @@ import { GetPeopleByRoleUseCase } from './use-cases/get-people-by-role.usecase';
 import { ValidateRequiredRolesUseCase } from './use-cases/validate-required-roles.usecase';
 import { ContractRepository } from '../domain/contract.repository';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { Payment, PaymentStatus } from '../domain/payment.entity';
 import { Document, DocumentStatus } from '../../document/domain/document.entity';
 import { PersonOrmEntity } from '../../person/infrastructure/persistence/person.orm-entity';
@@ -38,10 +39,12 @@ describe('ContractsService', () => {
   const mockAddPerson = { execute: jest.fn() };
   const mockGetPeople = { execute: jest.fn() };
   const mockValidateRoles = { execute: jest.fn() };
-  const mockContractRepo = {
+  const mockContractRepo: any = {
     findById: jest.fn(),
+    findOne: jest.fn(),
     findForGrid: jest.fn(),
     update: jest.fn(),
+    withManager: jest.fn(() => mockContractRepo),
   };
   const mockPaymentRepo = {
     find: jest.fn().mockResolvedValue([]),
@@ -61,10 +64,38 @@ describe('ContractsService', () => {
   };
   const mockAudit = { createAuditLog: jest.fn() };
 
+  // QueryRunner simulado: el manager de la transacción devuelve los mismos mocks.
+  const txManager = {
+    getRepository: jest.fn((entity: unknown) => {
+      if (entity === Payment) return mockPaymentRepo;
+      if (entity === Document) return mockDocumentRepo;
+      return {};
+    }),
+  };
+  const queryRunner = {
+    manager: txManager,
+    isTransactionActive: false,
+    connect: jest.fn(async () => undefined),
+    startTransaction: jest.fn(async () => {
+      queryRunner.isTransactionActive = true;
+    }),
+    commitTransaction: jest.fn(async () => {
+      queryRunner.isTransactionActive = false;
+    }),
+    rollbackTransaction: jest.fn(async () => {
+      queryRunner.isTransactionActive = false;
+    }),
+    release: jest.fn(async () => undefined),
+  };
+  const mockDataSource = { createQueryRunner: jest.fn(() => queryRunner) };
+
   beforeEach(async () => {
     jest.clearAllMocks();
     mockPaymentRepo.find.mockResolvedValue([]);
     mockDocumentRepo.find.mockResolvedValue([]);
+    mockContractRepo.withManager.mockImplementation(() => mockContractRepo);
+    mockContractRepo.findOne.mockResolvedValue(null);
+    queryRunner.isTransactionActive = false;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ContractsService,
@@ -89,6 +120,7 @@ describe('ContractsService', () => {
         { provide: NotificationsService, useValue: {} },
         { provide: MultimediaService, useValue: mockMultimedia },
         { provide: AuditService, useValue: mockAudit },
+        { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();
 
@@ -103,7 +135,10 @@ describe('ContractsService', () => {
     const dto = {} as any;
     mockCreate.execute.mockResolvedValue({ id: '1' });
     await service.create(dto, 'actor');
-    expect(mockCreate.execute).toHaveBeenCalledWith(dto);
+    expect(mockCreate.execute).toHaveBeenCalledWith(dto, txManager);
+    expect(mockAudit.createAuditLog).toHaveBeenCalledWith(expect.any(Object), txManager);
+    expect(queryRunner.commitTransaction).toHaveBeenCalledTimes(1);
+    expect(queryRunner.release).toHaveBeenCalledTimes(1);
   });
 
   it('findAll uses repository grid', async () => {
@@ -196,5 +231,86 @@ describe('ContractsService', () => {
     );
     expect(mockContractRepo.update).toHaveBeenCalled();
     expect(result.document).toBeDefined();
+  });
+
+  describe('transacciones (rollback ante fallos)', () => {
+    const expectRolledBack = () => {
+      expect(queryRunner.startTransaction).toHaveBeenCalledTimes(1);
+      expect(queryRunner.rollbackTransaction).toHaveBeenCalledTimes(1);
+      expect(queryRunner.commitTransaction).not.toHaveBeenCalled();
+      expect(queryRunner.release).toHaveBeenCalledTimes(1);
+    };
+
+    it('create: si falla la auditoría se revierte el contrato creado', async () => {
+      mockCreate.execute.mockResolvedValue({ id: 'c1' });
+      mockAudit.createAuditLog.mockRejectedValueOnce(new Error('audit down'));
+
+      await expect(service.create({} as any, 'actor')).rejects.toThrow('audit down');
+      expect(mockCreate.execute).toHaveBeenCalledWith({}, txManager);
+      expectRolledBack();
+    });
+
+    it('update: la escritura y las lecturas usan el manager de la transacción', async () => {
+      mockContractRepo.findById.mockResolvedValue({ id: 'c1', status: 'IN_PROCESS' });
+      mockUpdate.execute.mockRejectedValueOnce(new Error('db error'));
+
+      await expect(service.update('c1', { amount: 1 } as any, 'actor')).rejects.toThrow('db error');
+      expect(mockContractRepo.withManager).toHaveBeenCalledWith(txManager);
+      expect(mockUpdate.execute).toHaveBeenCalledWith('c1', { amount: 1 }, txManager);
+      expect(mockAudit.createAuditLog).not.toHaveBeenCalled();
+      expectRolledBack();
+    });
+
+    it('addPayment: si falla la auditoría se revierte el pago', async () => {
+      mockAddPayment.execute.mockResolvedValue({ id: 'p1' });
+      mockAudit.createAuditLog.mockRejectedValueOnce(new Error('audit down'));
+
+      await expect(
+        service.addPayment('c1', { amount: 10, type: 'RENT_PAYMENT', date: '2026-01-01' } as any, 'actor'),
+      ).rejects.toThrow('audit down');
+      expect(mockAddPayment.execute).toHaveBeenCalledWith('c1', expect.any(Object), txManager);
+      expectRolledBack();
+    });
+
+    it('updatePaymentStatus: si falla la auditoría se revierte el cambio de estado', async () => {
+      mockPaymentRepo.findOne.mockResolvedValue({ id: 'p1', contractId: 'c1', status: PaymentStatus.PENDING });
+      mockPaymentRepo.save.mockImplementation(async (row) => row);
+      mockAudit.createAuditLog.mockRejectedValueOnce(new Error('audit down'));
+
+      await expect(service.updatePaymentStatus('p1', PaymentStatus.PAID, 'actor')).rejects.toThrow('audit down');
+      expect(txManager.getRepository).toHaveBeenCalledWith(Payment);
+      expect(mockPaymentRepo.save).toHaveBeenCalled();
+      expectRolledBack();
+    });
+
+    it('uploadContractDocument: si falla actualizar el contrato se revierte el documento', async () => {
+      mockContractRepo.findById.mockResolvedValue({ id: 'c1', documents: [] });
+      mockDocTypeRepo.findOne.mockResolvedValue({ id: 't1' });
+      mockDocumentRepo.save.mockImplementation(async (row) => ({ ...row, id: 'd1' }));
+      mockDocumentRepo.findOne.mockResolvedValue({ id: 'd1', title: 'Doc', status: DocumentStatus.UPLOADED });
+      mockContractRepo.update.mockRejectedValueOnce(new Error('update failed'));
+
+      await expect(
+        service.uploadContractDocument(
+          { originalname: 'a.pdf', buffer: Buffer.from('x') } as Express.Multer.File,
+          { title: 'Doc', documentTypeId: 't1', contractId: 'c1', uploadedById: 'u1' } as any,
+          'u1',
+        ),
+      ).rejects.toThrow('update failed');
+      // Se bloquea la fila del contrato dentro de la transacción.
+      expect(mockContractRepo.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({ lock: { mode: 'pessimistic_write' } }),
+      );
+      expect(mockDocumentRepo.save).toHaveBeenCalled();
+      expect(mockAudit.createAuditLog).not.toHaveBeenCalled();
+      expectRolledBack();
+    });
+
+    it('softDelete: si falla la auditoría se revierte el borrado', async () => {
+      mockAudit.createAuditLog.mockRejectedValueOnce(new Error('audit down'));
+      await expect(service.softDelete('c1', 'actor')).rejects.toThrow('audit down');
+      expect(mockDelete.execute).toHaveBeenCalledWith('c1', txManager);
+      expectRolledBack();
+    });
   });
 });
