@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Ejemplo de deploy en VPS (PM2 + nginx). SIN secretos hardcodeados.
+# Uso típico (en el servidor, tras git pull de la rama deseada):
+#   CONFIRM_MIGRATION=yes bash deploy/deploy.sh.example
+#
+# Variables esperadas en el entorno del servidor / .env de cada app:
+#   (ver envs/*.env.example — NO pegar valores aquí)
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
+
+echo "==> Repo: $ROOT_DIR"
+echo "==> Node: $(node -v)"
+
+if [[ "${CONFIRM_MIGRATION:-}" != "yes" ]]; then
+  echo "ABORT: exporta CONFIRM_MIGRATION=yes para permitir migraciones."
+  echo "       (protección anti-accidente; las migraciones tocan la BD)"
+  exit 1
+fi
+
+echo "==> Install workspaces"
+npm ci
+
+echo "==> Install core"
+npm ci --prefix core
+
+echo "==> Build packages / apps"
+npm run ui:typecheck || true
+npm run build -w portal
+npm run build -w backoffice
+npm run core:build
+
+echo "==> Migraciones core (requiere env de producción ya cargado en el shell)"
+# Ajusta el script real según package.json de core (migration:run / typeorm / knex…).
+# Ejemplo:
+#   npm run migration:run --prefix core
+echo "TODO: descomenta y apunta al comando real de migraciones de core."
+
+echo "==> PM2 reload (nombres de proceso a completar)"
+# pm2 reload ecosystem.config.js --only portal,backoffice,core
+# o:
+# pm2 reload portal
+# pm2 reload backoffice
+# pm2 reload core
+echo "TODO: completa nombres PM2 / ecosystem del servidor."
+
+echo "==> Listo. Revisa nginx -t && systemctl reload nginx si cambiaste conf."
