@@ -33,7 +33,6 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { PropertyService } from '../application/property.service';
-import { JweService } from '../../auth/jwe/jwe.service';
 import { Property } from '../domain/property.entity';
 import { CreatePropertyDto, UpdatePropertyDto, UpdatePropertyCharacteristicsDto } from '../dto/property.dto';
 import { UpdatePropertyLocationDto } from '../dto/update-property-location.dto';
@@ -88,7 +87,6 @@ export class PropertyController {
   constructor(
     private readonly propertyService: PropertyService,
     private readonly fileUploadService: FileUploadService,
-    private readonly jweService: JweService,
   ) {}
 
   @Get('grid-sale/excel')
