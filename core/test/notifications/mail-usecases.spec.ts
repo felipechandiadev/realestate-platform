@@ -10,10 +10,16 @@ const createMailAdapterMock = () => ({
   sendMail: jest.fn().mockResolvedValue(undefined),
 });
 
+const createConfigServiceMock = () =>
+  ({
+    get: jest.fn().mockReturnValue('http://localhost:8001'),
+  }) as any;
+
 describe('Mail use case unit tests', () => {
   it('SendWelcomeEmailUseCase calls mailAdapter with welcome template', async () => {
     const mailAdapter = createMailAdapterMock();
-    const useCase = new SendWelcomeEmailUseCase(mailAdapter as any);
+    const configService = createConfigServiceMock();
+    const useCase = new SendWelcomeEmailUseCase(mailAdapter as any, configService);
 
     await useCase.execute('user@example.com', 'Felipe');
 
@@ -24,7 +30,7 @@ describe('Mail use case unit tests', () => {
         template: 'welcome',
         context: expect.objectContaining({
           firstName: 'Felipe',
-          companyName: expect.any(String),
+          frontendUrl: expect.any(String),
         }),
       }),
     );
