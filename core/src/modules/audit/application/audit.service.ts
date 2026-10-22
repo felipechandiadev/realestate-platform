@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, LessThan, MoreThan } from 'typeorm';
+import { Repository, Between, LessThan, MoreThan, EntityManager } from 'typeorm';
 import { AuditLog } from '../domain/audit-log.entity';
 import {
   AuditAction,
@@ -44,8 +44,13 @@ export class AuditService {
     private readonly auditLogRepository: Repository<AuditLog>,
   ) {}
 
-  async createAuditLog(input: CreateAuditLogInput): Promise<AuditLog> {
-    const auditLog = this.auditLogRepository.create({
+  /**
+   * @param manager opcional: EntityManager de una transacción en curso para que
+   *   el registro de auditoría se confirme o revierta junto con el cambio.
+   */
+  async createAuditLog(input: CreateAuditLogInput, manager?: EntityManager): Promise<AuditLog> {
+    const repository = manager ? manager.getRepository(AuditLog) : this.auditLogRepository;
+    const auditLog = repository.create({
       userId: input.userId || null,
       ipAddress: this.sanitizeIpAddress(input.ipAddress),
       userAgent: this.sanitizeUserAgent(input.userAgent),
@@ -61,7 +66,7 @@ export class AuditService {
       source: input.source || RequestSource.USER,
     });
 
-    return await this.auditLogRepository.save(auditLog);
+    return await repository.save(auditLog);
   }
 
   async findAuditLogs(
