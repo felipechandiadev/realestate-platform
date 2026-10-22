@@ -1,12 +1,17 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import * as mysql from 'mysql2';
 import { join } from 'path';
 import { entities as explicitEntities } from './entities';
+import { buildMysqlBaseOptions, EnvGetter, resolveSynchronize } from './database-options';
 
 export const ormConfig = (
 	configService: ConfigService,
 ): TypeOrmModuleOptions => {
+	const get: EnvGetter = (key) => {
+		const value = configService.get<string | number>(key);
+		return value === undefined || value === null ? undefined : String(value);
+	};
+
 	// Use an absolute glob based on cwd so Jest/ts-jest can resolve entity files
 	const projectRoot = process.cwd();
 	// Prefer an explicit entities list when available (more robust for tests)
@@ -14,38 +19,18 @@ export const ormConfig = (
 		? explicitEntities
 		: [join(projectRoot, 'backend', 'src', '**', '*.entity{.ts,.js}')];
 
+	// Única carpeta de migraciones: src/database/migrations (dist/database/migrations en build).
 	const migrationsGlob = [join(__dirname, '..', 'database', 'migrations', '*{.ts,.js}')];
 
 	return {
-		type: 'mysql',
-		connectorPackage: 'mysql2',
-		host:
-			configService.get<string>('DB_HOST') === 'localhost'
-				? '127.0.0.1'
-				: configService.get<string>('DB_HOST'),
-		port: configService.get<number>('DB_PORT'),
-		username: configService.get<string>('DB_USERNAME'),
-		password: configService.get<string>('DB_PASSWORD'),
-		database: configService.get<string>('DB_DATABASE'),
+		...buildMysqlBaseOptions(get),
 		entities: entitiesGlob,
-		// Enable schema synchronization in development and test environments
-		synchronize: ['development', 'test'].includes(
-			(configService.get<string>('NODE_ENV') || '') as string,
-		),
-		logging: configService.get<string>('NODE_ENV') === 'development',
+		// synchronize: solo test (por defecto) o development con DB_SYNCHRONIZE=true.
+		// En producción lanza error si DB_SYNCHRONIZE=true (fail-fast). Ver database-options.ts.
+		synchronize: resolveSynchronize(get),
+		logging: get('NODE_ENV') === 'development',
 		migrations: migrationsGlob,
+		// Las migraciones se ejecutan solo de forma explícita (npm run migration:run).
 		migrationsRun: false,
-		driver: mysql,
-		extra: {
-			connectionLimit: 30,
-			// Aiven/cloud MySQL closes idle sockets; keepalive + short idle recycle
-			// reduces QueryFailedError: read ECONNRESET on first request after idle.
-			enableKeepAlive: true,
-			keepAliveInitialDelayMs: 10_000,
-			idleTimeout: 60_000,
-			maxIdle: 10,
-			decimalNumbers: true,
-			supportBigNumbers: true,
-		},
 	};
 };

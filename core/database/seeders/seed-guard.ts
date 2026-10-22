@@ -13,7 +13,9 @@
  * Nunca imprime credenciales; solo informa qué condición falló.
  */
 
-export const SEED_LOCAL_HOSTS = ['localhost', '127.0.0.1', '::1', 'mysql', 'db'];
+import { LOCAL_DB_HOSTS } from '../../src/config/database-options';
+
+export const SEED_LOCAL_HOSTS = LOCAL_DB_HOSTS;
 export const SEED_SAFE_DB_SUFFIXES = ['_dev', '_test', '_local'];
 const OVERRIDE_VALUE = 'yes-i-know';
 
