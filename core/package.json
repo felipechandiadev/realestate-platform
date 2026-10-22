@@ -48,7 +48,9 @@
     "test:notification": "npm run seed:reset && npm run test test/notification/notification.integration.spec.ts",
     "test:article": "npm run seed:reset && npm run test test/article/article.integration.spec.ts",
     "test:audit-log": "npm run seed:reset && npm run test test/audit-log/audit-log.integration.spec.ts",
-    "test:users": "npm run seed:reset && npm run test test/users/users.integration.spec.ts"
+    "test:users": "npm run seed:reset && npm run test test/users/users.integration.spec.ts",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "STORAGE_PROVIDER=local NODE_OPTIONS='--experimental-vm-modules' jest --selectProjects unit --runInBand --detectOpenHandles"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.982.0",
