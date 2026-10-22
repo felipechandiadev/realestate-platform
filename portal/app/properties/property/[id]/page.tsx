@@ -23,6 +23,7 @@ import type { Metadata } from 'next';
 import { getPublishedPropertyPublic } from './actions';
 import PropertyDetailClient from './PropertyDetailClient';
 import { buildPropertyShareMetadata } from './share-metadata';
+import { PropertyJsonLd } from './json-ld';
 
 interface PropertyDetailPageProps {
   params: Promise<{ id: string }>;
@@ -66,5 +67,10 @@ export default async function PropertyDetailPage({
   }
 
   // Pass data to client component for interactivity
-  return <PropertyDetailClient property={propertyResult.data} />;
+  return (
+    <>
+      <PropertyJsonLd property={propertyResult.data} id={id} />
+      <PropertyDetailClient property={propertyResult.data} />
+    </>
+  );
 }
