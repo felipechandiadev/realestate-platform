@@ -347,12 +347,18 @@ Authorization: Bearer <access_token>
 
 ### Migraciones
 
-Para crear migraciones cuando cambies las entidades:
+`synchronize` está apagado salvo en tests (y en development solo con
+`DB_SYNCHRONIZE=true`). Todo cambio de esquema va en una migración en
+`src/database/migrations/`:
 
 ```bash
-npm run typeorm:generate-migration -- --name=NombreDeLaMigracion
-npm run typeorm:run-migrations
+npm run migration:generate -- src/database/migrations/NombreDeLaMigracion
+npm run migration:show
+npm run migration:run      # producción: CONFIRM_MIGRATION=yes NODE_ENV=production npm run migration:run:prod
+npm run migration:revert
 ```
+
+Detalle, política de `synchronize` y procedimiento de línea base: `database/BASELINE.md`.
 
 ## Licencia
 
