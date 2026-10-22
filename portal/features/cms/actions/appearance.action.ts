@@ -7,7 +7,9 @@ import {
 
 export async function getAppearance(): Promise<AppearanceColors> {
   try {
-    const res = await fetch(`${env.backendApiUrl}/appearance`, { cache: 'no-store' });
+    const res = await fetch(`${env.backendApiUrl}/appearance`, {
+      next: { revalidate: 300, tags: ['appearance'] },
+    });
     if (!res.ok) return DEFAULT_APPEARANCE;
     const data = (await res.json()) as Partial<AppearanceColors>;
     return resolveAppearance(data);

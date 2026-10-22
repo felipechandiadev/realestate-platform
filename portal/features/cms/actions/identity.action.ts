@@ -54,7 +54,7 @@ function ensureFormData(payload: IdentityPayload): FormData {
 export async function getIdentityLogoUrl(): Promise<string | null> {
   try {
     const res = await fetch(`${env.backendApiUrl}/identities/logo-url`, {
-      cache: 'no-store',
+      next: { revalidate: 300, tags: ['identity'] },
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -77,7 +77,7 @@ export async function getIdentity() {
   try {
     const res = await fetch(`${env.backendApiUrl}/identities/last`, {
       headers,
-      cache: 'no-store',
+      next: { revalidate: 300, tags: ['identity'] },
     })
 
     if (!res.ok) {

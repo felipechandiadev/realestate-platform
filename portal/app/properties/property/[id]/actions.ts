@@ -89,8 +89,7 @@ export async function getPublishedPropertyPublic(id: string): Promise<{
       headers: {
         Accept: 'application/json',
       },
-      cache: 'no-store',
-      next: { revalidate: 0 },
+      next: { revalidate: 60, tags: ['public-listings', `property-${id}`] },
     });
 
     if (!res.ok) {

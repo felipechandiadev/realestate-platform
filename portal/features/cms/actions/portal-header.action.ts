@@ -3,7 +3,9 @@ import { FALLBACK_PORTAL_HEADER, type PortalHeaderConfig } from '@/app/ui/portal
 
 export async function getPortalHeader(): Promise<PortalHeaderConfig> {
   try {
-    const res = await fetch(`${env.backendApiUrl}/portal-header`, { cache: 'no-store' });
+    const res = await fetch(`${env.backendApiUrl}/portal-header`, {
+      next: { revalidate: 300, tags: ['portal-header'] },
+    });
     if (!res.ok) return FALLBACK_PORTAL_HEADER;
     const data = (await res.json()) as Partial<PortalHeaderConfig>;
     return {

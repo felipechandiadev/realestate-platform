@@ -11,8 +11,7 @@ export type PortalListingsSettings = {
 export async function getPortalListingsSettings(): Promise<PortalListingsSettings> {
   try {
     const res = await fetch(`${env.backendApiUrl}/portal-listings-settings`, {
-      cache: 'no-store',
-      next: { revalidate: 0 },
+      next: { revalidate: 300, tags: ['portal-listings-settings'] },
     })
     if (!res.ok) {
       return { listingsFilterVariant: 'classic' }

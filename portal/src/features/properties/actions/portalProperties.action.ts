@@ -152,7 +152,7 @@ export async function getPublishedPropertiesFiltered(filters: {
       headers: {
         'Content-Type': 'application/json',
       },
-      cache: 'no-store',
+      next: { revalidate: 60, tags: ['public-listings'] },
     });
 
     if (!response.ok) {

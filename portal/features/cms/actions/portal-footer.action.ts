@@ -3,7 +3,9 @@ import { FALLBACK_PORTAL_FOOTER, type PortalFooterConfig } from '@/app/ui/portal
 
 export async function getPortalFooter(): Promise<PortalFooterConfig> {
   try {
-    const res = await fetch(`${env.backendApiUrl}/portal-footer`, { cache: 'no-store' });
+    const res = await fetch(`${env.backendApiUrl}/portal-footer`, {
+      next: { revalidate: 300, tags: ['portal-footer'] },
+    });
     if (!res.ok) return FALLBACK_PORTAL_FOOTER;
     const data = (await res.json()) as Partial<PortalFooterConfig>;
     return {

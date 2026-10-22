@@ -1703,8 +1703,7 @@ export async function getPublishedPropertiesPublic(): Promise<{
       headers: {
         Accept: 'application/json',
       },
-      cache: 'no-store',
-      next: { revalidate: 0 },
+      next: { revalidate: 60, tags: ['public-listings'] },
     });
 
     if (!res.ok) {
@@ -1742,8 +1741,7 @@ export async function getPublishedFeaturedPropertiesPublic(): Promise<{
       headers: {
         Accept: 'application/json',
       },
-      cache: 'no-store',
-      next: { revalidate: 0 },
+      next: { revalidate: 60, tags: ['public-listings', 'public-featured'] },
     });
 
     if (!res.ok) {
