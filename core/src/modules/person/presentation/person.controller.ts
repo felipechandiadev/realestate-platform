@@ -44,8 +44,9 @@ export class PersonController {
   // COMMUNITY (portal) puede crear SU ficha: userId forzado al token.
   @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Post()
-  create(@Body() createPersonDto: CreatePersonDto, @Req() req: any) {
+  async create(@Body() createPersonDto: CreatePersonDto, @Req() req: any) {
     if (isCommunity(req.user)) {
+      await this.assertCommunityOwnsDniMedia(createPersonDto, req.user);
       return this.personService.create({
         ...stripCommunityPersonFields(createPersonDto),
         userId: req.user.id,
@@ -131,6 +132,7 @@ export class PersonController {
   ) {
     if (isCommunity(req.user)) {
       await this.assertCommunityOwnsPerson(id, req.user);
+      await this.assertCommunityOwnsDniMedia(updatePersonDto, req.user);
       return this.personService.update(
         id,
         stripCommunityPersonFields(updatePersonDto) as UpdatePersonDto,
@@ -147,6 +149,30 @@ export class PersonController {
     const owned = await this.personService.isOwnedByUser(id, user!.id as string);
     if (!owned) {
       throw new ForbiddenException('No puedes acceder a la ficha de otra persona');
+    }
+  }
+
+  /**
+   * Un usuario COMMUNITY solo puede asociar a su ficha imágenes de carnet
+   * (dniCardFrontId / dniCardRearId) que él mismo subió.
+   */
+  private async assertCommunityOwnsDniMedia(
+    dto: { dniCardFrontId?: string; dniCardRearId?: string },
+    user: { id?: string; role?: string } | undefined,
+  ): Promise<void> {
+    if (!isCommunity(user)) return;
+    const ids = [dto?.dniCardFrontId, dto?.dniCardRearId].filter(
+      (value): value is string => typeof value === 'string' && value.length > 0,
+    );
+    if (ids.length === 0) return;
+    const owned = await this.personService.areMultimediaOwnedByUser(
+      ids,
+      user!.id as string,
+    );
+    if (!owned) {
+      throw new ForbiddenException(
+        'Las imágenes del carnet deben haber sido subidas por tu usuario',
+      );
     }
   }
 

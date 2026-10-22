@@ -3,11 +3,12 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
-import { Repository, IsNull } from 'typeorm';
+import { Repository, IsNull, In } from 'typeorm';
 import * as ExcelJS from 'exceljs';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Person } from '../domain/person.entity';
 import { User } from '../../users/domain/user.entity';
+import { Multimedia } from '../../multimedia/domain/multimedia.entity';
 import { CreatePersonDto, UpdatePersonDto } from '../dto/person.dto';
 import { CreatePersonUseCase } from './use-cases/create-person.usecase';
 import { FindAllPersonsUseCase } from './use-cases/find-all-persons.usecase';
@@ -290,6 +291,19 @@ export class PersonService {
    * persona como en findOne) pertenece a `userId`: person.userId === userId o
    * el usuario tiene esa persona vinculada (user.personId).
    */
+  /**
+   * Verifica que todos los multimedia indicados existan y hayan sido subidos
+   * por el usuario dado (multimedia.userId).
+   */
+  async areMultimediaOwnedByUser(ids: string[], userId: string): Promise<boolean> {
+    const unique = Array.from(new Set(ids.filter(Boolean)));
+    if (!userId || unique.length === 0) return false;
+    const count = await this.userRepository.manager.count(Multimedia, {
+      where: { id: In(unique), userId },
+    });
+    return count === unique.length;
+  }
+
   async isOwnedByUser(idOrUserId: string, userId: string): Promise<boolean> {
     if (!userId) return false;
     let person: Person | null = null;
