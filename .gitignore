@@ -17,11 +17,19 @@ coverage/
 **/coverage/
 jest-results.json
 
+# TypeScript incremental build info (all packages)
+*.tsbuildinfo
+
+# Compiled JS next to TS under core/src/shared (emit belongs in core/dist)
+core/src/shared/**/*.js
+core/src/**/*.js.map
+
 # ==========================================
 # SECRETS & ENV (never commit real credentials)
 # ==========================================
 .env
 .env.*
+# Includes portal/.env.dev and backoffice/.env.dev (never re-commit)
 !**/.env.example
 !envs/*.env.example
 !**/*.env.example
