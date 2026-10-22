@@ -59,3 +59,12 @@ CI ejecuta `tsc --noEmit` también en backoffice y **falla** a propósito hasta 
 
 - `nodemailer` v10 (estamos en 7.0.13)
 - `@nestjs/*` v12 (estamos en 11.2.7 / cli 11.0.24)
+
+## Lint (eslint)
+
+Medición local 2026-10-22:
+
+- portal: ~328 problemas (214 errors)
+- core: ~3707 problemas (3124 errors)
+
+Scripts `lint*` están en root/paquetes; **no** se gatean en CI aún (deuda previa, fuera de alcance de bajar tsc).
