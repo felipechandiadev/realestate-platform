@@ -15,6 +15,7 @@ import { Property } from '../../../property/domain/property.entity';
 import { Document, DocumentStatus } from '../../../document/domain/document.entity';
 import { PaymentStatus } from '../../domain/payment.entity';
 import { User } from '../../../users/domain/user.entity';
+import { ensureContractCode } from '../../domain/contract-code';
 
 @Entity('contracts')
 export class ContractOrmEntity {
@@ -22,9 +23,7 @@ export class ContractOrmEntity {
   id: string;
   @BeforeInsert()
   ensureCode() {
-    if (!('code' in this) || !(this as any).code) {
-      (this as any).code = `C-${Date.now()}`;
-    }
+    ensureContractCode(this);
   }
   @Column({ type: 'varchar', length: 64, nullable: true })
   code?: string | null;

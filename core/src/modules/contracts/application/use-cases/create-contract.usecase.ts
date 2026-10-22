@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ContractRepository } from '../../domain/contract.repository';
 import { Contract } from '../../domain/contract.entity';
+import { ensureContractCode } from '../../domain/contract-code';
 
 @Injectable()
 export class CreateContractUseCase {
@@ -29,6 +30,7 @@ export class CreateContractUseCase {
     } catch {
       // swallow and continue to save
     }
+    ensureContractCode(contract);
     return await this.contractRepository.save(contract);
   }
 }

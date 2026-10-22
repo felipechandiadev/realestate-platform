@@ -4,6 +4,7 @@ import { In, Repository } from 'typeorm';
 import { ContractRepository } from '../../domain/contract.repository';
 import { Contract } from '../../domain/contract.entity';
 import { ContractOrmEntity } from './contract.orm-entity';
+import { ensureContractCode } from '../../domain/contract-code';
 import { Property } from '../../../property/domain/property.entity';
 import { User } from '../../../users/domain/user.entity';
 
@@ -121,9 +122,7 @@ export class TypeormContractRepository extends ContractRepository {
   async save(contract: Contract): Promise<Contract> {
     const orm = this.toOrm(contract);
     // Ensure a contract code is present to satisfy DB non-null constraint
-    if (!orm['code']) {
-      orm['code'] = `C-${Date.now()}`;
-    }
+    ensureContractCode(orm);
     const saved = await this.repository.save(orm);
     return this.toDomain(saved);
   }

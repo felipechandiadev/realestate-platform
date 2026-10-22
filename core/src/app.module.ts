@@ -38,9 +38,6 @@ import { MailModule } from './modules/mail/mail.module';
 import { PasswordRecoveryModule } from './modules/password-recovery/password-recovery.module';
 import { PredictModule } from './modules/predict/predict.module';
 import { MediaOptimizationModule } from './modules/media-optimization/media-optimization.module';
-// Apply startup runtime patches (monkey-patches) before modules initialize
-import './shared/init/repository-patch';
-import './shared/init/datasource-patch';
 // SchemaFixModule: runtime schema ALTERs were converted to migrations. The
 // module is kept in the codebase for now but not imported here.
 // import { SchemaFixModule } from './shared/init/schema-fix.module';
@@ -88,7 +85,8 @@ import { TestAdminModule } from './shared/init/test-admin.module';
     PredictModule,
     MediaOptimizationModule,
     // SchemaFixModule removed from imports: prefer running DB migrations instead
-    TestAdminModule,
+    // Solo activo con NODE_ENV=test y ENABLE_TEST_ADMIN=true (ver test-admin.module.ts)
+    TestAdminModule.register(),
     // CustomConfigModule,
   ],
   controllers: [AppController],
