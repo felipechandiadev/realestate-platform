@@ -152,7 +152,8 @@ export function AlertProvider({ children }: { children: ReactNode }) {
     (alert: Omit<AppAlert, "id" | "exiting">) => {
       const type = alert.type ?? "info";
       const duration = alert.duration ?? DEFAULT_DURATION[type];
-      let scheduled: { id: string; duration: number } | null = null;
+      let scheduledId: string | null = null;
+      let scheduledDuration = 0;
 
       setAlerts((prev) => {
         const isDuplicate = prev.some(
@@ -181,12 +182,13 @@ export function AlertProvider({ children }: { children: ReactNode }) {
           base = prev.filter((a) => !dropIds.has(a.id));
         }
 
-        scheduled = { id, duration };
+        scheduledId = id;
+        scheduledDuration = duration;
         return [...base, next];
       });
 
-      if (scheduled) {
-        scheduleDismiss(scheduled.id, scheduled.duration);
+      if (scheduledId) {
+        scheduleDismiss(scheduledId, scheduledDuration);
       }
     },
     [dropAlert, scheduleDismiss],

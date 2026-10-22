@@ -79,7 +79,7 @@ const ListTestimonials: React.FC<ListTestimonialsProps> = ({
         <div className="flex items-center justify-between mb-6 gap-4">
           <IconButton
             aria-label="Agregar testimonio"
-            variant="containedPrimary"
+            variant="primary"
             onClick={handleCreateTestimonial}
             icon="add"
           />

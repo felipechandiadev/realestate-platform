@@ -209,7 +209,7 @@ export function NotificationsGrid({ onRefresh }: NotificationsGridProps) {
                 <div className="flex gap-2">
                   {item.status === 'No leído' && (
                     <Button
-                      variant="outline"
+                      variant="outlined"
                       size="sm"
                       onClick={() => handleMarkAsRead(item)}
                       disabled={isMarkingRead}
@@ -218,7 +218,7 @@ export function NotificationsGrid({ onRefresh }: NotificationsGridProps) {
                     </Button>
                   )}
                   <Button
-                    variant="destructive"
+                    variant="danger"
                     size="sm"
                     onClick={() => handleDeleteClick(item)}
                     disabled={isDeleting}
@@ -252,14 +252,14 @@ export function NotificationsGrid({ onRefresh }: NotificationsGridProps) {
       >
         <div className="flex gap-3 justify-end">
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={() => setOpenDeleteDialog(false)}
             disabled={isDeleting}
           >
             Cancelar
           </Button>
           <Button
-            variant="destructive"
+            variant="danger"
             onClick={handleConfirmDelete}
             disabled={isDeleting}
           >

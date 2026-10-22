@@ -216,7 +216,7 @@ export function UploadMediaDialog({
         {/* Actions */}
         <div className="flex gap-3 justify-end">
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={handleCancel}
             disabled={isPending || isUploading}
           >

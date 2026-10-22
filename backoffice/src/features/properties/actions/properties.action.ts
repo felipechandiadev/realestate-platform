@@ -1056,7 +1056,7 @@ export async function createProperty(data: CreatePropertyPayload): Promise<{
     // Revalidate both sales and rent property paths
     revalidatePath('/properties/sales');
     revalidatePath('/properties/rent');
-    revalidateTag('properties-grid');
+    revalidateTag('properties-grid', "max");
     
     return { success: true, data: result };
   } catch (error) {

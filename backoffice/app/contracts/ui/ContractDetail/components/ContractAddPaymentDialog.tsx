@@ -148,7 +148,7 @@ export default function ContractAddPaymentDialog({
           </Button>
           <Button
             type="submit"
-            variant="containedPrimary"
+            variant="primary"
             disabled={loading || paymentTypeOptions.length === 0}
           >
             {loading ? 'Guardando...' : 'Guardar Pago'}

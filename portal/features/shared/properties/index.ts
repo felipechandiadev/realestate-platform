@@ -59,44 +59,6 @@ export {
   assignPropertyAgent,
 } from './actions/properties.action';
 
-// ============================================================================
-// React Query Hooks (recommended for client-side data fetching)
-// ============================================================================
-/**
- * Query hooks for fetching property data with automatic caching
- *
- * ```tsx
- * // Fetch sale properties with filters
- * const { data, isLoading } = useSalePropertiesGrid({
- *   page: 1,
- *   limit: 10,
- *   search: 'apartment',
- * });
- *
- * // Create property mutation
- * const { mutate, isPending } = useCreateProperty();
- *
- * // Toggle published status
- * const { mutate: togglePublished } = useTogglePublished(propertyId);
- * ```
- */
-export {
-  // Query hooks (read)
-  useSalePropertiesGrid,
-  useRentPropertiesGrid,
-  usePropertyCounts,
-  usePropertyTypes,
-  usePropertyTypeCharacteristics,
-  propertyKeys, // Use for manual cache management
-  // Mutation hooks (write)
-  useCreateProperty,
-  useUpdateProperty,
-  useUpdatePropertyBasic,
-  useDeleteProperty,
-  useTogglePublished,
-  useToggleFeatured,
-  useAssignAgent,
-} from './hooks';
 
 // ============================================================================
 // HTTP Service Layer (advanced: use hooks instead in most cases)

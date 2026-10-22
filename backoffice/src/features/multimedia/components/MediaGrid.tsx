@@ -161,7 +161,7 @@ export function MediaGrid({ onRefresh }: MediaGridProps) {
               renderCell: (item) => (
                 <div className="flex gap-2">
                   <Button
-                    variant="destructive"
+                    variant="danger"
                     size="sm"
                     onClick={() => handleDeleteClick(item)}
                     disabled={isDeleting}
@@ -195,14 +195,14 @@ export function MediaGrid({ onRefresh }: MediaGridProps) {
       >
         <div className="flex gap-3 justify-end">
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={() => setOpenDeleteDialog(false)}
             disabled={isDeleting}
           >
             Cancelar
           </Button>
           <Button
-            variant="destructive"
+            variant="danger"
             onClick={handleConfirmDelete}
             disabled={isDeleting}
           >

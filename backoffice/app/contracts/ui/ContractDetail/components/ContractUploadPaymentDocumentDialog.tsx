@@ -77,7 +77,7 @@ export default function ContractUploadPaymentDocumentDialog({
   const [notes, setNotes] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [formError, setFormError] = useState<string>('');
-  const [selectedParticipant, setSelectedParticipant] = useState<AutoCompleteOption | null>(null);
+  const [selectedParticipant, setSelectedParticipant] = useState<Option | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -141,12 +141,12 @@ export default function ContractUploadPaymentDocumentDialog({
     [documentTypes],
   );
 
-  const participantOptions = useMemo<AutoCompleteOption[]>(() => {
+  const participantOptions = useMemo<Option[]>(() => {
     if (!participants || participants.length === 0) {
       return [];
     }
 
-    const unique = new Map<string, AutoCompleteOption>();
+    const unique = new Map<string, Option>();
 
     participants.forEach((participant) => {
       const participantId = participant?.personId;
@@ -245,7 +245,7 @@ export default function ContractUploadPaymentDocumentDialog({
             disabled={loadingDocumentTypes || submitting || documentTypeOptions.length === 0}
           />
 
-          <AutoComplete<AutoCompleteOption>
+          <AutoComplete<Option>
             label="Persona asociada (opcional)"
             placeholder={participantOptions.length > 0 ? 'Selecciona participante' : 'Sin participantes disponibles'}
             options={participantOptions}
@@ -308,7 +308,7 @@ export default function ContractUploadPaymentDocumentDialog({
             Cancelar
           </Button>
           <Button
-            variant="containedPrimary"
+            variant="primary"
             onClick={handleSubmit}
             disabled={!canSubmit}
           >

@@ -300,7 +300,7 @@ export default function ContractEditFinancialDialog({
           </Button>
           <Button
             type="submit"
-            variant="containedPrimary"
+            variant="primary"
             disabled={loading}
           >
             {loading ? 'Guardando...' : 'Guardar cambios'}

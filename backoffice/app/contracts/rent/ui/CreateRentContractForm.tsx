@@ -712,7 +712,7 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
       <Card className="p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Participantes del Contrato</h3>
-          <IconButton icon="add" variant="containedPrimary" onClick={handleAddPerson} title="Agregar Persona" />
+          <IconButton icon="add" variant="primary" onClick={handleAddPerson} title="Agregar Persona" />
         </div>
 
         <div className="space-y-3">
@@ -858,7 +858,7 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
               Desactivar seguimiento
             </Button>
           ) : (
-            <Button type="button" variant="containedPrimary" onClick={enableMonthlyPayments}>
+            <Button type="button" variant="primary" onClick={enableMonthlyPayments}>
               Volver a generar
             </Button>
           )}
@@ -905,7 +905,7 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
           <h3 className="text-lg font-semibold">Pagos Programados</h3>
           <IconButton
             icon="add"
-            variant="containedPrimary"
+            variant="primary"
             onClick={handleAddScheduledPayment}
             title="Agregar Pago"
           />
@@ -991,7 +991,7 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
       <Card className="p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Documentos Requeridos</h3>
-          <IconButton icon="add" variant="containedPrimary" onClick={handleOpenDocumentDialog} title="Agregar documento" />
+          <IconButton icon="add" variant="primary" onClick={handleOpenDocumentDialog} title="Agregar documento" />
         </div>
 
         {contractDocuments.length === 0 ? (

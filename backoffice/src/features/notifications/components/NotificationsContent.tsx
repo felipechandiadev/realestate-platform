@@ -55,7 +55,7 @@ export function NotificationsContent() {
         <Button
           onClick={handleMarkAllAsRead}
           disabled={isMarkingAllRead}
-          variant="outline"
+          variant="outlined"
         >
           {isMarkingAllRead ? 'Marcando...' : 'Marcar Todas como Leídas'}
         </Button>

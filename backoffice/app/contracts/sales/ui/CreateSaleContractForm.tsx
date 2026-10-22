@@ -590,7 +590,7 @@ Comisión vendedor: ${sellerPercent}% (${formatCurrency(sellerAmount, 'CLP')})`.
           <h3 className="text-lg font-semibold">Participantes del Contrato</h3>
           <IconButton
             icon="add"
-            variant="containedPrimary"
+            variant="primary"
             onClick={handleAddPerson}
             title="Agregar Persona"
           />
@@ -729,7 +729,7 @@ Comisión vendedor: ${sellerPercent}% (${formatCurrency(sellerAmount, 'CLP')})`.
           <h3 className="text-lg font-semibold">Pagos Programados</h3>
           <IconButton
             icon="add"
-            variant="containedPrimary"
+            variant="primary"
             onClick={handleAddPayment}
             title="Agregar Pago"
           />
@@ -815,7 +815,7 @@ Comisión vendedor: ${sellerPercent}% (${formatCurrency(sellerAmount, 'CLP')})`.
           <h3 className="text-lg font-semibold">Documentos Requeridos</h3>
           <IconButton
             icon="add"
-            variant="containedPrimary"
+            variant="primary"
             onClick={handleOpenDocumentDialog}
             title="Agregar documento"
           />

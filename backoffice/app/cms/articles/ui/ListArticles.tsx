@@ -99,7 +99,7 @@ const ListArticles: React.FC<ListArticlesProps> = ({
       <div className="flex items-center w-full">
         <IconButton
           icon="add"
-          variant="containedPrimary"
+          variant="primary"
           onClick={handleCreateClick}
           ariaLabel="Crear artículo"
         />

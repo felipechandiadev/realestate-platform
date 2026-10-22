@@ -103,6 +103,9 @@ export interface BaseUpdateFormField {
 	buttonText?: string;
 	labelText?: string;
 	labelClassName?: string;
+	previewSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+	currencySymbol?: string;
+	allowDecimalComma?: boolean;
 }
 
 export interface UpdateBaseFormProps {
@@ -313,6 +316,7 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 				subtitle: group.subtitle,
 				columns: Math.max(1, group.columns ?? columns ?? 1),
 				gap: group.gap ?? 4,
+				className: group.className,
 				fields: group.fields,
 			}));
 		}
@@ -323,6 +327,7 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 			subtitle: undefined,
 			columns: Math.max(1, columns ?? 1),
 			gap: 4,
+			className: undefined as string | undefined,
 			fields: fields as BaseUpdateFormField[],
 		}];
 	}, [fields, columns]);

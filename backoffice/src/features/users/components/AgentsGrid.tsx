@@ -169,14 +169,14 @@ export function AgentsGrid({ onEdit, onRefresh }: AgentsGridProps) {
               renderCell: (item) => (
                 <div className="flex gap-2">
                   <Button
-                    variant="outline"
+                    variant="outlined"
                     size="sm"
                     onClick={() => handleEditClick(item)}
                   >
                     Editar
                   </Button>
                   <Button
-                    variant="destructive"
+                    variant="danger"
                     size="sm"
                     onClick={() => handleDeleteClick(item)}
                     disabled={isDeleting}
@@ -210,14 +210,14 @@ export function AgentsGrid({ onEdit, onRefresh }: AgentsGridProps) {
       >
         <div className="flex gap-3 justify-end">
           <Button
-            variant="outline"
+            variant="outlined"
             onClick={() => setOpenDeleteDialog(false)}
             disabled={isDeleting}
           >
             Cancelar
           </Button>
           <Button
-            variant="destructive"
+            variant="danger"
             onClick={handleConfirmDelete}
             disabled={isDeleting}
           >

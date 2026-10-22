@@ -68,7 +68,7 @@ export default function NotificationPreferences() {
       }
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: decodeVapidKey(publicKey),
+        applicationServerKey: decodeVapidKey(publicKey) as BufferSource,
       });
       const serialized = serializeSubscription(subscription);
       if (!serialized) throw new Error('El navegador no devolvió las claves de suscripción.');

@@ -12,9 +12,7 @@ const uiPackageEntryRelative = "packages/ui/src/index.ts";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
   transpilePackages: ["@realestate/ui"],
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+
   output: "standalone",
   experimental: {
     serverActions: {

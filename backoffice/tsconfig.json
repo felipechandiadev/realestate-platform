@@ -61,6 +61,10 @@
     "**/*.test.tsx",
     "**/*.spec.ts",
     "**/*.spec.tsx",
-    "../core/**"
+    "../core/**",
+    "playwright.config.ts",
+    "playwright.config.js",
+    "e2e",
+    "tests/e2e"
   ]
 }

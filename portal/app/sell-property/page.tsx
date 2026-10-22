@@ -274,13 +274,14 @@ export default function SellPropertyPage() {
 
   // Pre-fill contact info if session exists
   useEffect(() => {
-    if (session?.user) {
+    const user = session?.user;
+    if (user) {
       setValues(prev => ({
         ...prev,
-        contactName: session.user.name || prev.contactName,
-        contactEmail: session.user.email || prev.contactEmail,
+        contactName: user.name || prev.contactName,
+        contactEmail: user.email || prev.contactEmail,
         // Assuming phone might be available in user object if your custom session includes it
-        contactPhone: (session.user as any).phone || prev.contactPhone || '',
+        contactPhone: (user as { phone?: string }).phone || prev.contactPhone || '',
       }));
     }
   }, [session]);

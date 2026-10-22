@@ -37,7 +37,7 @@ export interface MultimediaWithVariants {
   variants?: MultimediaVariant[];
 }
 
-interface LazyImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'srcSet' | 'sizes'> {
+export interface LazyImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'srcSet' | 'sizes'> {
   /**
    * Multimedia object con variantes. Si no tiene variantes, usa la URL original
    */

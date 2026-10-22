@@ -230,7 +230,7 @@ export default function ContractPaymentsSection({
           <p className="text-sm text-muted-foreground">Gestiona los pagos asociados al contrato</p>
         </div>
         <Button
-          variant="containedPrimary"
+          variant="primary"
           size="sm"
           onClick={() => {
             if (canAddPayment) {

@@ -39,6 +39,7 @@ interface FAQItem {
 
 interface Identity {
   id?: string;
+  name?: string;
   address: string;
   phone: string;
   mail: string;

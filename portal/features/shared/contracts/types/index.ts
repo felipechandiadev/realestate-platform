@@ -219,14 +219,12 @@ export interface ContractQueryParams {
   limit?: number;
   search?: string;
   sort?: 'asc' | 'desc';
-  sortField?: string;
+  sortField?: 'createdAt' | 'value' | 'startDate' | string;
   sortOrder?: 'asc' | 'desc';
   pagination?: boolean;
   filtration?: boolean;
   operation?: ContractOperationType;
   status?: ContractStatus;
-  sortField?: 'createdAt' | 'value' | 'startDate';
-  sortOrder?: 'asc' | 'desc';
   userId?: string;
   propertyId?: string;
 }

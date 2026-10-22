@@ -105,7 +105,7 @@ const AdminList: React.FC<AdminListProps> = ({
                     <div>
                         <IconButton
                             aria-label="Agregar administrador"
-                            variant="containedPrimary"
+                            variant="primary"
                             onClick={() => setOpenCreateDialog(true)}
                             icon="add"
                             size={'sm'}
