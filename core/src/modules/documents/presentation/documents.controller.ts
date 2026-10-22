@@ -13,8 +13,11 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentsService } from '../application/documents.service';
 import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { DocumentUploadDto } from '../domain/document.interface';
+import { Roles } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 
 @ApiTags('documents')
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('documents')
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}

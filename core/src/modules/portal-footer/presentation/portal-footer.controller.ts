@@ -15,7 +15,7 @@ import {
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Observable } from 'rxjs';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard, RolesGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, RolesGuard, Public } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 import { UserRole } from '../../users/domain/user.entity';
 import { Audit, AuditInterceptor } from '../../../shared/interceptors/audit.interceptor';
@@ -43,6 +43,7 @@ export class ParsePortalFooterJsonInterceptor implements NestInterceptor {
 export class PortalFooterController {
   constructor(private readonly portalFooterService: PortalFooterService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Public portal footer configuration' })
   @Audit(AuditAction.READ, AuditEntityType.PORTAL_FOOTER, 'Portal footer retrieved')

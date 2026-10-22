@@ -22,6 +22,7 @@ import { GetAdminReportUseCase } from '../application/use-cases/get-admin-report
 import { ReportsQueryDto } from '../dto/reports-query.dto';
 
 @ApiTags('Analytics')
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('analytics')
 @UseInterceptors(ClassSerializerInterceptor)
 export class AnalyticsController {

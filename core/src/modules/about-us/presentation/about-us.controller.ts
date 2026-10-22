@@ -22,7 +22,10 @@ import { AboutUsService } from '../application/about-us.service';
 import { CreateAboutUsDto, UpdateAboutUsDto } from '../dto/about-us.dto';
 import { Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
+import { Roles, Public } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('about-us')
 @ApiTags('About Us')
 export class AboutUsController {
@@ -30,6 +33,7 @@ export class AboutUsController {
 
   constructor(private readonly aboutUsService: AboutUsService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get about us entries' })
   @ApiResponse({ status: 200, description: 'List of about us entries' })
@@ -119,6 +123,7 @@ export class AboutUsController {
     }
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get about us by id' })
   @ApiResponse({ status: 200, description: 'About us content' })

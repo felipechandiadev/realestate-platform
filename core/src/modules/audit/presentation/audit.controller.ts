@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param, ParseEnumPipe } from '@nestjs/common';
+import { Controller, Get, Query, Param, ParseEnumPipe, Req, ForbiddenException } from '@nestjs/common';
 import { AuditService, AuditLogFilters } from '../application/audit.service';
 import { AuditLog } from '../domain/audit-log.entity';
 import {
@@ -7,7 +7,9 @@ import {
   RequestSource,
 } from '../../../shared/enums/audit.enums';
 import { UserRole } from '../../users/domain/user.entity';
+import { Roles } from '../../auth/guards/jwt-auth.guard';
 
+@Roles(UserRole.ADMIN)
 @Controller('audit')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
@@ -51,13 +53,22 @@ export class AuditController {
     return await this.auditService.getUserAuditLogs(userId, limit || 50);
   }
 
+  /**
+   * Excepción al ADMIN-only: AGENT puede leer el historial de un CONTRATO
+   * (lo usa el detalle de contrato del backoffice). Cualquier otro tipo, solo ADMIN.
+   */
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @Get('logs/entity/:entityType/:entityId')
   async getEntityAuditLogs(
     @Param('entityType', new ParseEnumPipe(AuditEntityType))
     entityType: AuditEntityType,
     @Param('entityId') entityId: string,
     @Query('limit') limit?: number,
+    @Req() req?: any,
   ): Promise<AuditLog[]> {
+    if (req?.user?.role !== UserRole.ADMIN && entityType !== AuditEntityType.CONTRACT) {
+      throw new ForbiddenException('Solo un ADMIN puede ver este historial');
+    }
     return await this.auditService.getEntityAuditLogs(
       entityType,
       entityId,

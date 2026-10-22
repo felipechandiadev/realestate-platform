@@ -1,6 +1,8 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ConfigService } from '../application/config.service';
+import { Public } from '../../auth/guards/jwt-auth.guard';
 
+@Public()
 @Controller('config')
 export class ConfigController {
   constructor(private readonly configService: ConfigService) {}

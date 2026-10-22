@@ -24,7 +24,10 @@ import {
   CreateTestimonialDto,
   UpdateTestimonialDto,
 } from '../dto/testimonial.dto';
+import { Roles, Public } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('testimonials')
 @ApiTags('Testimonials')
 export class TestimonialsController {
@@ -33,6 +36,7 @@ export class TestimonialsController {
   /**
    * Get public testimonials (published and active)
    */
+  @Public()
   @Get('public')
   @ApiOperation({ summary: 'Get public testimonials' })
   @ApiResponse({

@@ -31,7 +31,10 @@ import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums'
 import { MultimediaService } from '../../multimedia/application/multimedia.service';
 import { StaticFilesService } from '../../multimedia/infrastructure/storage/static-files.service';
 import { ImageOptimizationService } from '../../media-optimization/application/services/image-optimization.service';
+import { Roles, Public } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('team-members')
 @ApiTags('Team Members')
 export class TeamMembersController {
@@ -96,6 +99,7 @@ export class TeamMembersController {
   /**
    * Get all team members with optional search
    */
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all team members' })
   @ApiResponse({
@@ -111,6 +115,7 @@ export class TeamMembersController {
   /**
    * Get team member by ID
    */
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get team member by ID' })
   @ApiResponse({

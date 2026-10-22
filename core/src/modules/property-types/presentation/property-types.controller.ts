@@ -23,7 +23,10 @@ import {
   UpdatePropertyTypeDto,
   UpdatePropertyTypeFeaturesDto,
 } from '../dto/property-type.dto';
+import { Roles, Public } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('property-types')
 @ApiTags('Property Types')
 export class PropertyTypesController {
@@ -64,6 +67,7 @@ export class PropertyTypesController {
   /**
    * Get all property types (public endpoint - no authentication required)
    */
+  @Public()
   @Get('public/list')
   @ApiOperation({ summary: 'Get property types (public - no auth required)' })
   @ApiResponse({
@@ -77,6 +81,7 @@ export class PropertyTypesController {
   /**
    * Get property type by ID (public endpoint - no authentication required)
    */
+  @Public()
   @Get('public/:id')
   @ApiOperation({ summary: 'Get property type by ID (public - no auth required)' })
   @ApiResponse({
@@ -108,6 +113,7 @@ export class PropertyTypesController {
   /**
    * Get all property types with features
    */
+  @Public()
   @Get('features')
   @ApiOperation({ summary: 'Get property types with features' })
   @ApiResponse({
@@ -121,6 +127,7 @@ export class PropertyTypesController {
   /**
    * Get property type by ID
    */
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get property type by ID' })
   @ApiResponse({

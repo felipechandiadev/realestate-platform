@@ -26,8 +26,11 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import type { Express } from 'express';
+import { Roles } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 
 @ApiTags('Document Types')
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('document-types')
 export class DocumentTypesController {
   constructor(private readonly documentTypesService: DocumentTypesService) {}

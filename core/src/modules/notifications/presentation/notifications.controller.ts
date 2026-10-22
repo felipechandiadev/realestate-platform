@@ -26,7 +26,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JweAuthGuard } from '../../auth/jwe/jwe-auth.guard';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, Public, Roles } from '../../auth/guards/jwt-auth.guard';
 import { Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
 import { NotificationsService } from '../application/notifications.service';
@@ -62,6 +62,7 @@ export class NotificationsController {
     /**
      * Endpoint de prueba para verificar envío de correos (SOLO PARA DESARROLLO)
      */
+    @Roles(UserRole.ADMIN)
     @Post('test-email')
     @ApiOperation({ summary: 'Test email sending (development only)' })
     async testEmail(@Body() body: { email: string; name: string }) {
@@ -92,6 +93,7 @@ export class NotificationsController {
     /**
      * Notifica interés en propiedad desde portal público (sin autenticación)
      */
+    @Public()
     @Post('public/property-interest')
     @ApiOperation({ summary: 'Enviar notificación de interés en propiedad desde portal público' })
     @ApiBody({ type: PropertyInterestDto })
@@ -110,6 +112,7 @@ export class NotificationsController {
     /**
      * Notifica contacto general desde portal público (sin autenticación)
      */
+    @Public()
     @Post('public/contact')
     @ApiOperation({ summary: 'Enviar notificación de contacto general desde portal público' })
     @ApiBody({ type: ContactDto })
@@ -146,6 +149,7 @@ export class NotificationsController {
     private readonly pushNotifications: PushNotificationsService,
   ) {}
 
+  @Public()
   @Get('push/public-key')
   @ApiOperation({ summary: 'Get the configured VAPID public key for browser push' })
   getPushPublicKey() {

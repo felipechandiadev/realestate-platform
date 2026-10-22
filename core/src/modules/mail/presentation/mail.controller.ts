@@ -6,8 +6,11 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { MailService } from '../application/mail.service';
+import { Roles } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 
 @ApiTags('Mail')
+@Roles(UserRole.ADMIN)
 @Controller('mail')
 export class MailController {
   constructor(private readonly mailService: MailService) {}

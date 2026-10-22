@@ -30,10 +30,11 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { IdentitiesService } from '../application/identities.service';
 import { CreateIdentityDto, UpdateIdentityDto } from '../dto/identity.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, Roles, Public } from '../../auth/guards/jwt-auth.guard';
 import { AuditInterceptor } from '../../../shared/interceptors/audit.interceptor';
 import { Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
+import { UserRole } from '../../users/domain/user.entity';
 
 // Interceptor para transformar campos JSON stringified antes de validación
 @Injectable()
@@ -63,6 +64,7 @@ export class TransformJsonFieldsInterceptor implements NestInterceptor {
   }
 }
 
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('identities')
 @ApiTags('Identities')
 @UseInterceptors(AuditInterceptor)
@@ -174,6 +176,7 @@ export class IdentitiesController {
   /**
    * Get the most recent identity
    */
+  @Public()
   @Get('last')
   @ApiOperation({ summary: 'Get last identity' })
   @ApiResponse({
@@ -192,6 +195,7 @@ export class IdentitiesController {
   /**
    * Get logo URL from current identity
    */
+  @Public()
   @Get('logo-url')
   @ApiOperation({ summary: 'Get logo URL' })
   @ApiResponse({

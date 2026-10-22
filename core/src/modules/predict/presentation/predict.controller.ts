@@ -5,8 +5,10 @@ import {
   PredictPropertyDto,
   PredictPropertyResponseDto,
 } from '../dto/predict-property.dto';
+import { Public } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('Predicción')
+@Public()
 @Controller('predict')
 export class PredictController {
   constructor(private readonly predictService: PredictService) {}

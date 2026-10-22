@@ -18,7 +18,10 @@ import {
 } from '@nestjs/swagger';
 import { MultimediaService } from '../application/multimedia.service';
 import { CreateMultimediaDto, UpdateMultimediaDto } from '../dto/multimedia.dto';
+import { Roles } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('multimedia')
 @ApiTags('Multimedia')
 export class MultimediaController {
@@ -40,6 +43,7 @@ export class MultimediaController {
     return this.multimediaService.findAll();
   }
 
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Get(':id')
   @ApiOperation({ summary: 'Get multimedia by ID' })
   @ApiResponse({ status: 200, description: 'Multimedia record details' })
@@ -71,6 +75,7 @@ export class MultimediaController {
     return this.multimediaService.hardDelete(id);
   }
 
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Get(':id/url')
   @ApiOperation({ summary: 'Get multimedia file URL' })
   @ApiResponse({

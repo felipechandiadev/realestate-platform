@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard, RolesGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, RolesGuard, Public } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 import { UserRole } from '../../users/domain/user.entity';
 import { Audit, AuditInterceptor } from '../../../shared/interceptors/audit.interceptor';
@@ -13,6 +13,7 @@ import { AppearanceService } from '../application/appearance.service';
 export class AppearanceController {
   constructor(private readonly appearanceService: AppearanceService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Public brand appearance colors' })
   @Audit(AuditAction.READ, AuditEntityType.APPEARANCE, 'Appearance retrieved')

@@ -23,7 +23,10 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ArticlesService } from '../application/articles.service';
 import { CreateArticleDto, UpdateArticleDto } from '../dto/article.dto';
+import { Roles, Public } from '../../auth/guards/jwt-auth.guard';
+import { UserRole } from '../../users/domain/user.entity';
 
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('articles')
 @ApiTags('Articles')
 export class ArticlesController {
@@ -65,6 +68,7 @@ export class ArticlesController {
   /**
    * Get all articles with optional filters
    */
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Get all articles' })
   @ApiResponse({
@@ -80,6 +84,7 @@ export class ArticlesController {
   /**
    * Get article by ID with related articles
    */
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get article by ID with related articles' })
   @ApiResponse({

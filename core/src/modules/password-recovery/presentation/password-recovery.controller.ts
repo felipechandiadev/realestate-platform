@@ -18,7 +18,9 @@ import {
 } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
 import { Request } from 'express';
+import { Public } from '../../auth/guards/jwt-auth.guard';
 
+@Public()
 @Controller('auth/password-recovery')
 @UseInterceptors(AuditInterceptor)
 export class PasswordRecoveryController {

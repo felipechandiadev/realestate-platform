@@ -29,10 +29,12 @@ import { CreateSlideDto } from '../dto/create-slide.dto';
 import { CreateSlideWithMultimediaDto } from '../dto/create-slide-with-multimedia.dto';
 import { UpdateSlideDto } from '../dto/update-slide.dto';
 import { UpdateSlideWithMultimediaDto } from '../dto/update-slide-with-multimedia.dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, Roles, Public } from '../../auth/guards/jwt-auth.guard';
 import { Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
+import { UserRole } from '../../users/domain/user.entity';
 
+@Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('slide')
 @ApiTags('Slides')
 export class SlideController {
@@ -178,6 +180,7 @@ export class SlideController {
   /**
    * Get publicly available active slides
    */
+  @Public()
   @Get('public/active')
   @ApiOperation({ summary: 'Get public active slides' })
   @ApiResponse({

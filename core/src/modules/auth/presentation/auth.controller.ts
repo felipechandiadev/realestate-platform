@@ -18,7 +18,9 @@ import { LoginDto } from '../../users/dto/user.dto';
 import { CreateUserCommunityDto } from '../../users/dto/create-user-community.dto';
 import { AuditInterceptor, Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
+import { Public } from './decorators/public.decorator';
 
+@Public()
 @Controller('auth')
 @ApiTags('Authentication')
 @UseInterceptors(AuditInterceptor)

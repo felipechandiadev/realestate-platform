@@ -2,7 +2,9 @@ import { Controller, Post, Body, BadRequestException, NotFoundException } from '
 import { UserRepository } from '../domain/user.repository';
 import { MailService } from '../../mail/application/mail.service';
 import { ResendVerificationEmailUseCase } from '../application/use-cases/resend-verification-email.usecase';
+import { Public } from '../../auth/guards/jwt-auth.guard';
 
+@Public()
 @Controller('auth')
 export class ResendVerificationController {
   constructor(

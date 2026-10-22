@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Patch, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { JwtAuthGuard, RolesGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, RolesGuard, Public } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 import { UserRole } from '../../users/domain/user.entity';
 import { Audit, AuditInterceptor } from '../../../shared/interceptors/audit.interceptor';
@@ -13,6 +13,7 @@ import { PortalListingsSettingsService } from '../application/portal-listings-se
 export class PortalListingsSettingsController {
   constructor(private readonly service: PortalListingsSettingsService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'Public portal listings filter variant' })
   @Audit(AuditAction.READ, AuditEntityType.PORTAL_LISTINGS, 'Portal listings settings retrieved')
