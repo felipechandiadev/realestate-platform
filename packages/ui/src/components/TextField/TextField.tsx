@@ -28,7 +28,7 @@ function selectAllFieldContents(el: HTMLInputElement | HTMLTextAreaElement) {
 }
 
 interface TextFieldProps {
-  label: string;
+  label?: string;
   required?: boolean;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;

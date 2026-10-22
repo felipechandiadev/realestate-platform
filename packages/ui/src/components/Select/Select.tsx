@@ -7,8 +7,16 @@ import IconButton from "../IconButton/IconButton";
 import { TextField } from "../TextField/TextField";
 
 export interface Option {
-  id: string | number;
+  id?: string | number;
+  /** Alias compatible con APIs que usan `value` en lugar de `id`. */
+  value?: string | number;
   label: string;
+}
+
+function optionKey(option: Option): string | number | null {
+  if (option.id !== undefined && option.id !== null) return option.id;
+  if (option.value !== undefined && option.value !== null) return option.value;
+  return null;
 }
 
 interface SelectProps {
@@ -58,7 +66,7 @@ const Select: React.FC<SelectProps> = ({
   const [isSelecting, setIsSelecting] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const selected =
-    value === null || value === undefined ? undefined : options.find((opt) => String(opt.id) === String(value));
+    value === null || value === undefined ? undefined : options.find((opt) => String(optionKey(opt)) === String(value));
   const onChangeRef = useRef(onChange);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -100,7 +108,7 @@ const Select: React.FC<SelectProps> = ({
         setHighlightedIndex((i) => (i > 0 ? i - 1 : options.length - 1));
       } else if (e.key === "Enter" && highlightedIndex >= 0) {
         e.preventDefault();
-        onChangeRef.current?.(options[highlightedIndex].id);
+        onChangeRef.current?.(optionKey(options[highlightedIndex]));
         setOpen(false);
         setHighlightedIndex(-1);
       } else if (e.key === "Escape") {
@@ -277,7 +285,7 @@ const Select: React.FC<SelectProps> = ({
         >
           {options.map((opt, idx) => (
             <li
-              key={opt.id}
+              key={String(optionKey(opt))}
               title={String(opt.label)}
               ref={(el) => {
                 optionRefs.current[idx] = el;
@@ -285,7 +293,7 @@ const Select: React.FC<SelectProps> = ({
               className={dropdownOptionClass}
               onMouseDown={() => {
                 setIsSelecting(true);
-                onChange?.(opt.id);
+                onChange?.(optionKey(opt));
                 setOpen(false);
                 setTimeout(() => setIsSelecting(false), 200);
 
@@ -305,7 +313,7 @@ const Select: React.FC<SelectProps> = ({
               onMouseEnter={() => {
                 setHighlightedIndex(idx);
               }}
-              data-test-id={`select-option-${opt.id}`}
+              data-test-id={`select-option-${optionKey(opt)}`}
             >
               {opt.label}
             </li>
@@ -415,7 +423,7 @@ const Select: React.FC<SelectProps> = ({
             >
               {options.map((opt, idx) => (
                 <li
-                  key={opt.id}
+                  key={String(optionKey(opt))}
                   title={String(opt.label)}
                   ref={(el) => {
                     optionRefs.current[idx] = el;
@@ -423,7 +431,7 @@ const Select: React.FC<SelectProps> = ({
                   className={dropdownOptionClass}
                   onMouseDown={() => {
                     setIsSelecting(true);
-                    onChange?.(opt.id);
+                    onChange?.(optionKey(opt));
                     setOpen(false);
                     setTimeout(() => setIsSelecting(false), 200);
 
@@ -443,7 +451,7 @@ const Select: React.FC<SelectProps> = ({
                   onMouseEnter={() => {
                     setHighlightedIndex(idx);
                   }}
-                  data-test-id={`select-option-${opt.id}`}
+                  data-test-id={`select-option-${optionKey(opt)}`}
                 >
                   {opt.label}
                 </li>

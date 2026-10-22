@@ -6,7 +6,8 @@ import { TextField } from "../TextField/TextField";
 
 
 export interface Option {
-  id: string | number;
+  id?: string | number;
+  value?: string | number;
   label: string;
 }
 

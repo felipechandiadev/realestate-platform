@@ -19,6 +19,7 @@ interface NumberStepperProps {
   className?: string;
   disabled?: boolean;
   ["data-test-id"]?: string;
+  hideInput?: boolean;
 }
 
 export const NumberStepper: React.FC<NumberStepperProps> = ({
@@ -36,6 +37,7 @@ export const NumberStepper: React.FC<NumberStepperProps> = ({
   placeholder,
   className = "",
   disabled = false,
+  hideInput = false,
   ...props
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -261,21 +263,27 @@ export const NumberStepper: React.FC<NumberStepperProps> = ({
         <div
           className={`flex flex-col items-center justify-center flex-1 gap-0 min-w-0 ${singleRowChrome ? 'min-h-0 self-stretch' : ''}`}
         >
-          {/* Input numérico */}
-          <input
-            ref={inputRef}
-            type="number"
-            value={displayValue}
-            onChange={handleInputChange}
-            min={min}
-            max={max}
-            step={allowFloat ? step : step}
-            required={required}
-            placeholder={placeholder}
-            disabled={disabled}
-            className={`${baseInputClasses} rounded-none text-center w-full`}
-            data-test-id={props['data-test-id']}
-          />
+          {/* Input numérico (ocultable vía hideInput) */}
+          {hideInput ? (
+            <span className={`${baseInputClasses} rounded-none text-center w-full inline-flex items-center justify-center`}>
+              {displayValue}
+            </span>
+          ) : (
+            <input
+              ref={inputRef}
+              type="number"
+              value={displayValue}
+              onChange={handleInputChange}
+              min={min}
+              max={max}
+              step={allowFloat ? step : step}
+              required={required}
+              placeholder={placeholder}
+              disabled={disabled}
+              className={`${baseInputClasses} rounded-none text-center w-full`}
+              data-test-id={props['data-test-id']}
+            />
+          )}
 
           {/* Label/Icono dinámico */}
           {renderLabelIcon()}
