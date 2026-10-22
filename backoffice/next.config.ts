@@ -12,7 +12,7 @@ const uiPackageEntryRelative = "packages/ui/src/index.ts";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
-  transpilePackages: ["@realestate/ui"],
+  transpilePackages: ["@realestate/ui", "@realestate/api-client"],
   typescript: {
     ignoreBuildErrors: true,
   },

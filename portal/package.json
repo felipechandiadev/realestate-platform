@@ -35,7 +35,8 @@
     "socket.io-client": "^4.8.4",
     "stream-browserify": "^3.0.0",
     "util": "^0.12.5",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@realestate/api-client": "*"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
