@@ -54,42 +54,6 @@ const nextConfig: NextConfig = {
       // Si R2_PUBLIC_URL usa otro host, añadirlo aquí (sin wildcards **)
     ],
   },
-
-      {
-        protocol: "http",
-        hostname: "localhost",
-        port: "8001",
-        pathname: "/public/**",
-      },
-      {
-        protocol: "http",
-        hostname: "72.61.6.232",
-        port: "8000",
-        pathname: "/public/**",
-      },
-      {
-        protocol: "http",
-        hostname: "72.61.6.232",
-        port: "8001",
-        pathname: "/public/**",
-      },
-      {
-        protocol: "https",
-        hostname: "**",
-        pathname: "/public/**",
-      },
-      {
-        protocol: "https",
-        hostname: "*.r2.dev",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "*.s3.amazonaws.com",
-        pathname: "/**",
-      },
-    ],
-  },
   turbopack: {
     root: monorepoRoot,
     ...(process.env.NODE_ENV === "development"
