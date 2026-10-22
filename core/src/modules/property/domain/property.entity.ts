@@ -8,6 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import {
   IsNotEmpty,
@@ -43,6 +44,16 @@ export enum CurrencyPriceEnum {
   UF = 'UF',
 }
 
+// Índices para los filtros/orden públicos del portal (nombres explícitos para
+// que coincidan con la migración 1792180000000-AddPublicPropertyIndexes).
+@Index('IDX_properties_status_operation_deleted', ['status', 'operationType', 'deletedAt'])
+@Index('IDX_properties_status_featured_deleted', ['status', 'isFeatured', 'deletedAt'])
+@Index('IDX_properties_state_city', ['state', 'city'])
+@Index('IDX_properties_city', ['city'])
+@Index('IDX_properties_currency_price', ['currencyPrice', 'price'])
+@Index('IDX_properties_price', ['price'])
+@Index('IDX_properties_published_at', ['publishedAt'])
+@Index('IDX_properties_created_at', ['createdAt'])
 @Entity('properties')
 export class Property {
   @PrimaryGeneratedColumn('uuid')
