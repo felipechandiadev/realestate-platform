@@ -8,7 +8,8 @@ export class ChangePasswordUseCase {
   constructor(private readonly userRepo: UserRepository) {}
 
   async execute(id: string, dto: ChangePasswordDto): Promise<void> {
-    const user = await this.userRepo.findOne({ where: { id } });
+    // password es select:false: hay que pedirlo explícitamente para compararlo.
+    const user = await this.userRepo.findOneWithPassword({ id });
     if (!user) throw new NotFoundException('Usuario no encontrado');
     const isValid = await bcrypt.compare(dto.currentPassword, user.password);
     if (!isValid) {

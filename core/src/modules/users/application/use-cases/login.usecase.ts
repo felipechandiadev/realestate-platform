@@ -8,18 +8,14 @@ export class LoginUseCase {
   constructor(private readonly userRepo: UserRepository) {}
 
   async execute(dto: LoginDto): Promise<any> {
-    const user = await this.userRepo.findOne({
-      where: { email: dto.email, deletedAt: null },
-    });
-
-    console.log('LoginUseCase - found user:', user); // Debugging log to inspect the user found by email
+    // password es select:false: hay que pedirlo explícitamente para validarlo.
+    const user = await this.userRepo.findOneWithPassword({ email: dto.email });
 
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas.');
     }
     const isStaff = user.role === UserRole.ADMIN || user.role === UserRole.AGENT;
     if (!isStaff && user.emailVerified === false) {
-      console.log('LoginUseCase - email not verified for user:', user.email); // Log for unverified email case
       throw new HttpException({
         error: 'EMAIL_NOT_VERIFIED',
         message: 'Tu correo electrónico no ha sido verificado. Por favor, verifica tu correo.',

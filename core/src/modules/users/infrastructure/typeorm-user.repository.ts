@@ -36,6 +36,18 @@ export class TypeormUserRepository extends UserRepository {
     return found || null;
   }
 
+  async findOneWithPassword(where: { id?: string; email?: string }): Promise<User | null> {
+    if (!where?.id && !where?.email) return null;
+    const qb = this.repository
+      .createQueryBuilder('user')
+      .addSelect('user.password')
+      .where('user.deletedAt IS NULL');
+    if (where.id) qb.andWhere('user.id = :id', { id: where.id });
+    if (where.email) qb.andWhere('user.email = :email', { email: where.email });
+    const found = await qb.getOne();
+    return found || null;
+  }
+
   async update(id: string, patch: Partial<User>): Promise<void> {
     await this.repository.update(id, patch as any);
   }

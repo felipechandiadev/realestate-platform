@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { ClassSerializerInterceptor, Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
@@ -91,6 +92,11 @@ import { TestAdminModule } from './shared/init/test-admin.module';
     // CustomConfigModule,
   ],
   controllers: [AppController],
-  providers: [AppService, FileUploadService],
+  providers: [
+    AppService,
+    FileUploadService,
+    // Aplica @Exclude() (p. ej. User.password) a todas las respuestas.
+    { provide: APP_INTERCEPTOR, useClass: ClassSerializerInterceptor },
+  ],
 })
 export class AppModule {}

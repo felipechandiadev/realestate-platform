@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import {
   Entity,
   Column,
@@ -72,7 +73,10 @@ export class User {
   @IsEmail()
   email: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  // Nunca se selecciona por defecto ni se serializa en respuestas.
+  // Para validar credenciales usar UserRepository.findOneWithPassword().
+  @Column({ type: 'varchar', length: 255, select: false })
+  @Exclude({ toPlainOnly: true })
   @IsNotEmpty()
   @IsString()
   password: string;
