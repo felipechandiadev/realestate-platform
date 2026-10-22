@@ -14,7 +14,7 @@ import { AuditLog } from '../../src/modules/audit/domain/audit-log.entity';
 import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AuditModule } from '../../src/modules/audit/audit.module';
-import { JweService } from '../../src/modules/auth/jwe/jwe.service';
+import { JweService } from '../../src/modules/auth/infrastructure/jwe/jwe.service';
 import { UserRole, UserStatus } from '../../src/modules/users/domain/user.entity';
 
 const mockJose = {

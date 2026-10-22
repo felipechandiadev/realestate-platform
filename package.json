@@ -1,7 +1,7 @@
 {
   "name": "realestate-platform",
   "private": true,
-  "description": "Real Estate Platform monorepo \u2014 portal, backoffice, shared UI",
+  "description": "Real Estate Platform monorepo — portal, backoffice, shared UI",
   "packageManager": "npm@10.9.2",
   "engines": {
     "node": ">=20"
@@ -27,7 +27,7 @@
     "typecheck": "npm run typecheck:portal && npm run typecheck:backoffice && npm run typecheck:core",
     "typecheck:portal": "npm exec -w portal -- tsc --noEmit",
     "typecheck:backoffice": "npm exec -w backoffice -- tsc --noEmit",
-    "typecheck:core": "npm exec --prefix core -- tsc --noEmit",
+    "typecheck:core": "npm run typecheck --prefix core",
     "lint": "npm run lint:portal && npm run lint:backoffice && npm run lint:core",
     "lint:portal": "npm run lint -w portal",
     "lint:backoffice": "npm run lint -w backoffice",
