@@ -54,3 +54,8 @@ CI ejecuta `tsc --noEmit` también en backoffice y **falla** a propósito hasta 
 ## Tests frontend
 
 `portal` y `backoffice` tienen `jest.config.cjs` y specs bajo `tests/`, pero **no** declaran `jest` / `ts-jest` / `@testing-library/*` en `package.json`. CI no los ejecuta hasta añadir esas deps.
+
+## Dependencias omitidas (majors)
+
+- `nodemailer` v10 (estamos en 7.0.13)
+- `@nestjs/*` v12 (estamos en 11.2.7 / cli 11.0.24)
