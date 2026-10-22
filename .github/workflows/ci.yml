@@ -51,11 +51,8 @@ jobs:
       - name: Lint core
         run: npm run lint:core
 
-      - name: Test portal (jest, sin browser)
-        run: npm run test:portal
-
-      - name: Test backoffice (jest, sin browser)
-        run: npm run test:backoffice
-
       - name: Test core unit (sin BD)
         run: npm run test:core:unit
+
+      # portal/backoffice: scripts `test` existen pero jest/ts-jest/testing-library
+      # no están en package.json (brecha previa). No se ejecutan aquí hasta añadir deps.

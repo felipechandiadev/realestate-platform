@@ -32,10 +32,11 @@
     "lint:portal": "npm run lint -w portal",
     "lint:backoffice": "npm run lint -w backoffice",
     "lint:core": "npm run lint --prefix core",
-    "test": "npm run test:portal && npm run test:backoffice && npm run test:core:unit",
+    "test": "npm run test:core:unit",
     "test:portal": "npm run test -w portal",
     "test:backoffice": "npm run test -w backoffice",
-    "test:core:unit": "npm test --prefix core -- --selectProjects unit --runInBand"
+    "test:core:unit": "npm test --prefix core -- --selectProjects unit --runInBand",
+    "test:frontend": "npm run test:portal && npm run test:backoffice"
   },
   "devDependencies": {
     "concurrently": "^9.2.1"

@@ -50,3 +50,7 @@ CI ejecuta `tsc --noEmit` también en backoffice y **falla** a propósito hasta 
 1. Alinear diálogos CMS/contratos/usuarios a las props reales de `@realestate/ui` (Dialog, TextField, Select).
 2. Unificar BadgeVariant y columnas DataGrid.
 3. Cuando backoffice llegue a 0 errores: quitar `typescript.ignoreBuildErrors` de `backoffice/next.config.ts`.
+
+## Tests frontend
+
+`portal` y `backoffice` tienen `jest.config.cjs` y specs bajo `tests/`, pero **no** declaran `jest` / `ts-jest` / `@testing-library/*` en `package.json`. CI no los ejecuta hasta añadir esas deps.
