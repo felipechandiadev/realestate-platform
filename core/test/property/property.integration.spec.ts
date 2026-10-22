@@ -62,7 +62,7 @@ describe('PropertyController (integration)', () => {
 
       const moduleBuilder = Test.createTestingModule({
         imports: [
-          ConfigModule.forRoot(),
+          ConfigModule.forRoot({ envFilePath: '.env.test' }),
           TypeOrmModule.forRoot({
             type: 'mysql',
             host: process.env.DB_HOST,

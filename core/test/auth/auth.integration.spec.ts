@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
@@ -27,7 +26,7 @@ describe('AuthController (integration)', () => {
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
-        ConfigModule.forRoot(),
+        ConfigModule.forRoot({ envFilePath: '.env.test' }),
         TypeOrmModule.forRoot({
           type: 'mysql',
           connectorPackage: 'mysql2',

@@ -17,6 +17,7 @@ describe('EmailService (test transport)', () => {
       imports: [
         ConfigModule.forRoot({
           isGlobal: true,
+          envFilePath: '.env.test',
         }),
       ],
       providers: [EmailService],

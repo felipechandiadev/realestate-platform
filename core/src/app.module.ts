@@ -6,6 +6,7 @@ import { memoryStorage } from 'multer';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ormConfig } from './config/ormconfig';
+import { resolveEnvFilePath } from './config/env-file';
 import { TeamMembersModule } from './modules/team-members/team-members.module';
 import { ArticlesModule } from './modules/articles/articles.module';
 import { TestimonialsModule } from './modules/testimonials/testimonials.module';
@@ -48,7 +49,8 @@ import { TestAdminModule } from './shared/init/test-admin.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      // En NODE_ENV=test carga .env.test (obligatorio, sin respaldo en .env)
+      envFilePath: resolveEnvFilePath(),
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
