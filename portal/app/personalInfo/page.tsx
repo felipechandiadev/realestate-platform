@@ -228,12 +228,6 @@ export default function PersonalInfoPage() {
           startIcon: 'badge',
         },
         {
-          name: 'nationality',
-          label: 'Nacionalidad',
-          type: 'text',
-          startIcon: 'public',
-        },
-        {
           name: 'gender',
           label: 'Género',
           type: 'select',
@@ -243,18 +237,6 @@ export default function PersonalInfoPage() {
             { id: 'OTHER', label: 'Otro' },
           ],
           startIcon: 'person',
-        },
-        {
-          name: 'maritalStatus',
-          label: 'Estado Civil',
-          type: 'select',
-          options: [
-            { id: 'SINGLE', label: 'Soltero(a)' },
-            { id: 'MARRIED', label: 'Casado(a)' },
-            { id: 'DIVORCED', label: 'Divorciado(a)' },
-            { id: 'WIDOWED', label: 'Viudo(a)' },
-          ],
-          startIcon: 'people',
         },
       ] as BaseUpdateFormField[],
     },
@@ -336,9 +318,7 @@ export default function PersonalInfoPage() {
       city: text('city'),
       state: text('state'),
       country: text('country'),
-      nationality: text('nationality'),
       gender: text('gender'),
-      maritalStatus: text('maritalStatus'),
       dni: text('dni'),
       avatarFile: rawValues.avatarFile,
       dniCardFrontFile: rawValues.dniCardFrontFile,
@@ -422,9 +402,10 @@ export default function PersonalInfoPage() {
           state: values.state || userProfile.personalInfo?.state,
           country: values.country || userProfile.personalInfo?.country,
           avatarUrl: avatarUrl,
-          nationality: values.nationality || userProfile.personalInfo?.nationality,
+          // Ya no se editan en el portal; se reenvían para no perder lo guardado.
+          nationality: userProfile.personalInfo?.nationality,
           gender: values.gender || userProfile.personalInfo?.gender,
-          maritalStatus: values.maritalStatus || userProfile.personalInfo?.maritalStatus,
+          maritalStatus: userProfile.personalInfo?.maritalStatus,
         },
       };
 
@@ -537,9 +518,7 @@ export default function PersonalInfoPage() {
     country: userProfile.personalInfo?.country || '',
     // Person data
     dni: userProfile.person?.dni || '',
-    nationality: userProfile.personalInfo?.nationality || '',
     gender: userProfile.personalInfo?.gender || '',
-    maritalStatus: userProfile.personalInfo?.maritalStatus || '',
     // DNI documents
     dniCardFront: userProfile.person?.dniCardFrontUrl || null,
     dniCardRear: userProfile.person?.dniCardRearUrl || null,

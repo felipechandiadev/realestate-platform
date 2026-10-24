@@ -48,9 +48,6 @@ const UpdateAgentForm: React.FC<UpdateAgentFormProps> = ({
       firstName: agent.personalInfo?.firstName || '',
       lastName: agent.personalInfo?.lastName || '',
       phone: agent.personalInfo?.phone || '',
-      company: agent.personalInfo?.company || '',
-      nationality: agent.personalInfo?.nationality || '',
-      maritalStatus: agent.personalInfo?.maritalStatus || '',
       status: statusMap[agent.status] || 1,
       avatar: avatarUrl,
       avatarFile: null,
@@ -90,9 +87,10 @@ const UpdateAgentForm: React.FC<UpdateAgentFormProps> = ({
         firstName: values.firstName?.trim(),
         lastName: values.lastName?.trim(),
         phone: values.phone?.trim(),
-        company: values.company?.trim(),
-        nationality: values.nationality?.trim(),
-        maritalStatus: values.maritalStatus?.trim(),
+        // Ya no se editan aquí; se reenvían para no perder lo guardado.
+        company: agent.personalInfo?.company,
+        nationality: agent.personalInfo?.nationality,
+        maritalStatus: agent.personalInfo?.maritalStatus,
       }
 
       // Siempre enviar avatarFile (null si no hay)
@@ -151,27 +149,6 @@ const UpdateAgentForm: React.FC<UpdateAgentFormProps> = ({
       name: 'phone',
       label: 'Teléfono',
       type: 'text',
-    },
-    {
-      name: 'company',
-      label: 'Empresa',
-      type: 'text',
-    },
-    {
-      name: 'nationality',
-      label: 'Nacionalidad',
-      type: 'text',
-    },
-    {
-      name: 'maritalStatus',
-      label: 'Estado Civil',
-      type: 'select',
-      options: [
-        { id: 'SINGLE', label: 'Soltero(a)' },
-        { id: 'MARRIED', label: 'Casado(a)' },
-        { id: 'DIVORCED', label: 'Divorciado(a)' },
-        { id: 'WIDOWED', label: 'Viudo(a)' },
-      ],
     },
     {
       name: 'avatar',

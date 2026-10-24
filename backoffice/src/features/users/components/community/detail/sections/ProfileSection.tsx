@@ -63,9 +63,7 @@ export function ProfileSection({ header }: ProfileSectionProps) {
         <Field label="Comuna" value={info?.city} />
         <Field label="Región" value={info?.state} />
         <Field label="País" value={info?.country} />
-        <Field label="Nacionalidad" value={info?.nationality} />
         <Field label="Género" value={info?.gender} />
-        <Field label="Estado civil" value={info?.maritalStatus} />
       </dl>
     </section>
   );

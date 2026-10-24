@@ -20,7 +20,17 @@ export class UpdateUserUseCase {
       if (exists) throw new ConflictException('El correo ya está registrado.');
     }
 
-    Object.assign(user, dto);
+    // personalInfo es un JSON: se combina con lo guardado para que un update
+    // parcial (p. ej. sin avatarUrl) no borre los campos que no vienen.
+    const { personalInfo, ...rest } = dto;
+    Object.assign(user, rest);
+    if (personalInfo) {
+      // El ValidationPipe puede dejar en `undefined` las claves no enviadas: no deben pisar lo guardado.
+      const provided = Object.fromEntries(
+        Object.entries(personalInfo).filter(([, value]) => value !== undefined),
+      );
+      user.personalInfo = { ...(user.personalInfo ?? {}), ...provided } as User['personalInfo'];
+    }
     return this.userRepo.save(user);
   }
 }

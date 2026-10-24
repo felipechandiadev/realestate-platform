@@ -24,11 +24,7 @@ interface EditPersonFormValues {
   address: string;
   city: string;
   state: string;
-  nationality: string;
   gender: string;
-  maritalStatus: string;
-  profession: string;
-  company: string;
 }
 
 const formatDniForValidation = (dni: string): string => {
@@ -63,11 +59,7 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
     address: person.address ?? '',
     city: person.city ?? '',
     state: person.state ?? '',
-    nationality: person.nationality ?? '',
     gender: person.gender ?? '',
-    maritalStatus: person.maritalStatus ?? '',
-    profession: person.profession ?? '',
-    company: person.company ?? '',
   }), [person]);
 
   const fields: BaseUpdateFormField[] = useMemo(() => ([
@@ -109,11 +101,6 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
       type: 'text',
     },
     {
-      name: 'nationality',
-      label: 'Nacionalidad',
-      type: 'text',
-    },
-    {
       name: 'gender',
       label: 'Género',
       type: 'select',
@@ -122,27 +109,6 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
         { value: 'FEMALE', label: 'Femenino' },
         { value: 'OTHER', label: 'Otro' },
       ],
-    },
-    {
-      name: 'maritalStatus',
-      label: 'Estado Civil',
-      type: 'select',
-      options: [
-        { value: 'SINGLE', label: 'Soltero(a)' },
-        { value: 'MARRIED', label: 'Casado(a)' },
-        { value: 'DIVORCED', label: 'Divorciado(a)' },
-        { value: 'WIDOWED', label: 'Viudo(a)' },
-      ],
-    },
-    {
-      name: 'profession',
-      label: 'Profesión',
-      type: 'text',
-    },
-    {
-      name: 'company',
-      label: 'Empresa',
-      type: 'text',
     },
   ]), []);
 
@@ -189,11 +155,7 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
       address: typeof formValues.address === 'string' ? formValues.address : '',
       city: typeof formValues.city === 'string' ? formValues.city : '',
       state: typeof formValues.state === 'string' ? formValues.state : '',
-      nationality: typeof formValues.nationality === 'string' ? formValues.nationality : '',
       gender: typeof formValues.gender === 'string' ? formValues.gender : '',
-      maritalStatus: typeof formValues.maritalStatus === 'string' ? formValues.maritalStatus : '',
-      profession: typeof formValues.profession === 'string' ? formValues.profession : '',
-      company: typeof formValues.company === 'string' ? formValues.company : '',
     };
 
     if (isSubmitting) return;
@@ -222,11 +184,7 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
         address: values.address.trim() || undefined,
         city: values.city.trim() || undefined,
         state: values.state.trim() || undefined,
-        nationality: values.nationality.trim() || undefined,
         gender: values.gender.trim() || undefined,
-        maritalStatus: values.maritalStatus.trim() || undefined,
-        profession: values.profession.trim() || undefined,
-        company: values.company.trim() || undefined,
       };
 
       let updatedPerson: Person;
@@ -247,11 +205,12 @@ export default function EditPersonForm({ person, onClose, onSuccess }: EditPerso
             address: values.address.trim() || undefined,
             city: values.city.trim() || undefined,
             state: values.state.trim() || undefined,
-            profession: values.profession.trim() || undefined,
-            company: values.company.trim() || undefined,
-            nationality: values.nationality.trim() || undefined,
+            // Ya no se editan aquí; se reenvían para no perder lo guardado.
+            profession: person.profession || undefined,
+            company: person.company || undefined,
+            nationality: person.nationality || undefined,
             gender: values.gender.trim() || undefined,
-            maritalStatus: values.maritalStatus.trim() || undefined,
+            maritalStatus: person.maritalStatus || undefined,
           },
         });
 
