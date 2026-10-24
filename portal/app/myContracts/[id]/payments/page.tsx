@@ -108,10 +108,14 @@ export default function ContractPaymentsPage() {
   };
 
   const formatDate = (date: string | Date) => {
+    // Las columnas DATE llegan como 'YYYY-MM-DD' (medianoche UTC): formatear en UTC
+    // para no mostrar el día anterior en zonas horarias negativas como Chile.
+    const isDateOnly = typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date);
     return new Intl.DateTimeFormat('es-CL', {
       day: '2-digit',
       month: 'long',
-      year: 'numeric'
+      year: 'numeric',
+      ...(isDateOnly ? { timeZone: 'UTC' } : {}),
     }).format(new Date(date));
   };
 

@@ -51,6 +51,8 @@ export class SignInUseCase {
         email: user.email,
         role: user.role,
         name: user.name,
+        phone: user.personalInfo?.phone,
+        personId: user.personId,
       },
       access_token,
       audience: resolvedAudience,
