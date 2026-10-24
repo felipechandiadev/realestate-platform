@@ -32,6 +32,7 @@ export interface Property {
     personalInfo?: {
       firstName?: string;
       lastName?: string;
+      avatarUrl?: string;
     };
   };
   // Location fields - exactly as backend returns them

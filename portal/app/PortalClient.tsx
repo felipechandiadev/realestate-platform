@@ -4,14 +4,16 @@ import { useState, useCallback, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PropertyFilter from './ui/PropertyFilter';
 import ListProperties from './ui/ListProperties';
-import { PropertyData, getPublishedPropertiesFiltered } from '@/features/properties/actions/portalProperties.action';
+import { PropertyData, getPublishedPropertiesFiltered, type PublishedPropertiesResponse } from '@/features/properties/actions/portalProperties.action';
+
+type ListingsPagination = PublishedPropertiesResponse['pagination'];
 import { getIdentity } from '@/features/cms/actions/identity.action';
 import type { ListingsFilterVariant } from '@/features/cms/actions/portal-listings.action';
 import PropertyListingsLayout from './ui/filters/PropertyListingsLayout';
 import { usePropertyFiltersState } from './ui/filters/usePropertyFiltersState';
 interface PortalClientProps {
   initialProperties: PropertyData[];
-  initialPagination?: any;
+  initialPagination?: ListingsPagination;
   initialCompanyName?: string;
   filterVariant?: ListingsFilterVariant;
 }
@@ -21,7 +23,7 @@ function ClassicPortalListings({
   initialPagination,
 }: {
   initialProperties: PropertyData[];
-  initialPagination?: any;
+  initialPagination?: ListingsPagination;
 }) {
   const searchParams = useSearchParams();
   const [properties, setProperties] = useState<PropertyData[]>(initialProperties);
@@ -33,7 +35,7 @@ function ClassicPortalListings({
     hasNextPage: false,
     hasPrevPage: false,
   };
-  const [pagination, setPagination] = useState<any>(initialPagination || defaultPagination);
+  const [pagination, setPagination] = useState<ListingsPagination>(initialPagination || defaultPagination);
   const [currentFilters, setCurrentFilters] = useState({
     operation: '',
     typeProperty: '',
@@ -138,7 +140,7 @@ function SidebarV2PortalListings({
   initialPagination,
 }: {
   initialProperties: PropertyData[];
-  initialPagination?: any;
+  initialPagination?: ListingsPagination;
 }) {
   const {
     filters,
@@ -179,7 +181,7 @@ export default function PortalClient({
   initialCompanyName = '',
   filterVariant = 'classic',
 }: PortalClientProps) {
-  const [identity, setIdentity] = useState<any | null>(
+  const [identity, setIdentity] = useState<Awaited<ReturnType<typeof getIdentity>> | { name: string } | null>(
     initialCompanyName ? { name: initialCompanyName } : null,
   );
 

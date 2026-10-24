@@ -82,14 +82,7 @@ export function AgentsContent({
   const searchParams = useSearchParams();
   const { canManageUsers } = useUserManagementPermissions();
   
-  // Safely get alert context
-  let alert: any = { success: () => {}, error: () => {}, info: () => {}, warning: () => {} };
-  try {
-    alert = useAlert();
-  } catch (error) {
-    // Alert context not available yet, use no-op functions
-    console.warn('Alert context not available:', error);
-  }
+  const alert = useAlert();
 
   const [search, setSearch] = useState(initialSearch);
   const [agents, setAgents] = useState<AgentType[]>(initialAgents);

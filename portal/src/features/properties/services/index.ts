@@ -16,7 +16,7 @@ export const propertiesService = {
       const endpoint = params.filters.listingType === 'rent' ? `${BASE_URL}/rent` : `${BASE_URL}/sale`;
       
       // Build query params from filters
-      const queryParams: any = {
+      const queryParams: Record<string, unknown> = {
         page: params.page || 1,
         limit: params.pageSize || 24,
         currency: params.filters.currency || 'CLP',
@@ -44,13 +44,19 @@ export const propertiesService = {
         queryParams.typeProperty = params.filters.typeProperty;
       }
       
-      const response = await apiClient.get<any>(endpoint, { params: queryParams });
+      const response = await apiClient.get<
+        Property[] | { data: Property[]; total?: number; page?: number; limit?: number }
+      >(endpoint, { params: queryParams });
       // Convert response format if needed
+      const body = response.data;
+      if (Array.isArray(body)) {
+        return { items: body, total: 0, page: 1, pageSize: params.pageSize || 24 };
+      }
       return {
-        items: response.data.data || response.data,
-        total: response.data.total || 0,
-        page: response.data.page || 1,
-        pageSize: response.data.limit || params.pageSize || 24,
+        items: body.data,
+        total: body.total || 0,
+        page: body.page || 1,
+        pageSize: body.limit || params.pageSize || 24,
       };
     }
     

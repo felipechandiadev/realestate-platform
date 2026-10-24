@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Dialog } from "@realestate/ui";
 import { Button } from '@realestate/ui';
 import { deleteTestimonial } from '@/features/cms/actions/testimonials.action';
+import { useAlert } from '@/providers/AlertContext';
 
 export interface Testimonial {
   id: string;
@@ -30,7 +31,7 @@ const DeleteTestimonialDialog: React.FC<DeleteTestimonialDialogProps> = ({
   testimonial,
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { success, error } = require('@/providers/AlertContext').useAlert();
+  const { success, error } = useAlert();
 
   useEffect(() => {
     if (open) {

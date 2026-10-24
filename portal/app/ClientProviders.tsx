@@ -1,6 +1,7 @@
 "use client";
 
 import { SessionProvider } from 'next-auth/react';
+import type { Session } from 'next-auth';
 import { ReactNode } from 'react';
 import { AlertProvider } from '@/providers/AlertContext';
 import { NotificationProvider } from '@/providers/NotificationContext';
@@ -15,7 +16,7 @@ type Props = {
   children: ReactNode;
 };
 
-export default function ClientProviders({ children, session }: Props & { session?: any }) {
+export default function ClientProviders({ children, session }: Props & { session?: Session | null }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {

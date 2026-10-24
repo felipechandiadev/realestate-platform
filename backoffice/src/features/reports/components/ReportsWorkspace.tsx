@@ -61,7 +61,7 @@ export default function ReportsWorkspace() {
 
   const loadReport = useCallback(async () => {
     const requestId = ++requestIdRef.current;
-    if (datePreset === 'custom' && (!dateRange.startDate || !dateRange.endDate)) {
+    if (datePreset === 'custom' && (!dateRange?.startDate || !dateRange?.endDate)) {
       setError('Indica ambas fechas para el período personalizado.');
       setResult(null);
       setLoading(false);
@@ -78,7 +78,7 @@ export default function ReportsWorkspace() {
     const response = await getAdminReport(reportId, query);
     if (requestId !== requestIdRef.current) return;
     if (response.success) setResult(response.data);
-    else { setResult(null); setError(response.error); }
+    else { setResult(null); setError(response.error ?? 'No se pudo cargar el reporte.'); }
     setLoading(false);
   }, [datePreset, dateRange, query, reportId]);
 
@@ -88,7 +88,7 @@ export default function ReportsWorkspace() {
     setExporting(true);
     const response = await exportAdminReport(reportId, query);
     setExporting(false);
-    if (!response.success) { setError(response.error); return; }
+    if (!response.success) { setError(response.error ?? 'No se pudo exportar el reporte.'); return; }
     const blob = await fetch(`data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${response.base64}`).then((res) => res.blob());
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');

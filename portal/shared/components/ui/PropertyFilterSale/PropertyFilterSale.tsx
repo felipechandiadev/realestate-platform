@@ -96,11 +96,11 @@ export default function PropertyFilterSale({
   }, [router]);
 
   // Handle filter changes
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = <K extends keyof FilterSalePropertiesDto>(key: K, value: FilterSalePropertiesDto[K] | null) => {
     const newFilters = { ...filters };
 
     // Directly set the property on the filters object
-    (newFilters as any)[key] = value;
+    newFilters[key] = value ?? undefined;
 
     // Reset page to 1 when filters change
     newFilters.page = 1;
@@ -361,7 +361,7 @@ export default function PropertyFilterSale({
         <Select
           placeholder="Tipo de propiedad"
           value={filters.typeProperty || ''}
-          onChange={(value) => handleFilterChange('typeProperty', value)}
+          onChange={(value) => handleFilterChange('typeProperty', value == null ? null : String(value))}
           options={propertyTypes}
         />
 
@@ -390,7 +390,7 @@ export default function PropertyFilterSale({
         <Select
           placeholder="Comuna"
           value={filters.city || ''}
-          onChange={(value) => handleFilterChange('city', value)}
+          onChange={(value) => handleFilterChange('city', value == null ? null : String(value))}
           options={getCommunesForRegion(filters.state || '')}
         />
 
@@ -398,7 +398,7 @@ export default function PropertyFilterSale({
         <Select
           placeholder="Ordenar por"
           value={filters.sort || 'created_desc'}
-          onChange={(value) => handleFilterChange('sort', value)}
+          onChange={(value) => handleFilterChange('sort', value == null ? null : String(value))}
           options={sortOptions}
         />
 
@@ -406,7 +406,7 @@ export default function PropertyFilterSale({
         <Select
           placeholder="Moneda"
           value={filters.currency || 'CLP'}
-          onChange={(value) => handleFilterChange('currency', value)}
+          onChange={(value) => handleFilterChange('currency', value == null ? null : String(value))}
           options={[
             { id: 'CLP', label: 'CLP' },
             { id: 'UF', label: 'UF' },

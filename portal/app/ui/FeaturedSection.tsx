@@ -47,7 +47,7 @@ export default function FeaturedSection({
           {/* Narrower than listings (max-w-7xl) so featured cards keep carousel scale */}
           <div className="mx-auto max-w-5xl">
             <FeaturedPropertiesList
-              properties={gridProperties as any}
+              properties={gridProperties}
               pagination={pagination}
               columns={gridColumns}
             />

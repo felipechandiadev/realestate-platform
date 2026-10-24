@@ -59,7 +59,7 @@ const DeleteArticleDialog: React.FC<DeleteArticleDialogProps> = ({
     >
       <div className="space-y-4">
         <p className="text-foreground">
-          ¿Estás seguro de que quieres eliminar el artículo <strong>"{article?.title}"</strong>?
+          ¿Estás seguro de que quieres eliminar el artículo <strong>&quot;{article?.title}&quot;</strong>?
         </p>
         <p className="text-sm text-muted-foreground">
           Esta acción no se puede deshacer.

@@ -515,7 +515,7 @@ export default function IdentityPage() {
             ))}
             {(!identity.partnerships || identity.partnerships.length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
-                No hay alianzas registradas. Haz clic en "Agregar Alianza" para comenzar.
+                No hay alianzas registradas. Haz clic en &quot;Agregar Alianza&quot; para comenzar.
               </div>
             )}
           </div>
@@ -568,7 +568,7 @@ export default function IdentityPage() {
             ))}
             {(!identity.faqs || identity.faqs.length === 0) && (
               <div className="text-center py-8 text-muted-foreground">
-                No hay preguntas frecuentes registradas. Haz clic en "Agregar Pregunta Frecuente" para comenzar.
+                No hay preguntas frecuentes registradas. Haz clic en &quot;Agregar Pregunta Frecuente&quot; para comenzar.
               </div>
             )}
           </div>

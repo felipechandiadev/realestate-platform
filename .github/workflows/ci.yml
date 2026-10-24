@@ -42,9 +42,14 @@ jobs:
       - name: Typecheck core
         run: npm run typecheck:core
 
+      - name: Lint portal
+        run: npm run lint:portal
+
+      - name: Lint backoffice
+        run: npm run lint:backoffice
+
       - name: Test core unit (sin BD)
         run: npm run test:core:unit
 
-      # Lint y jest frontend: scripts existen pero con deuda previa masiva
-      # (eslint miles de findings; jest no declarado en package.json).
-      # Ver doc/tsc-debt.md. No se gatean aquí para no bloquear typecheck/unit.
+      # Lint de core (miles de findings: prettier + no-unsafe-*) y jest frontend
+      # aún no se gatean. Ver doc/ROADMAP_MEJORAS.md (fases 4 y 5).

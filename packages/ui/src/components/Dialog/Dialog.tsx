@@ -8,6 +8,8 @@ interface DialogProps {
   open: boolean;
   onClose: () => void;
   title?: string;
+  /** Texto secundario bajo el título. */
+  description?: string;
   children: React.ReactNode;
   // Preset sizes. 'custom' allows using maxWidth prop.
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl' | 'custom';
@@ -116,6 +118,7 @@ const Dialog: React.FC<DialogProps> = ({
   open,
   onClose,
   title,
+  description,
   children,
   size = 'md',
   customSize,
@@ -289,12 +292,19 @@ const Dialog: React.FC<DialogProps> = ({
               headerTransparent ? ' fs-dialog__header--transparent' : ''
             }`}
           >
-            <h2
-              className="title m-0 flex-1 text-left text-lg font-semibold text-foreground"
-              data-test-id="dialog-title"
-            >
-              {title}
-            </h2>
+            <div className="min-w-0 flex-1">
+              <h2
+                className="title m-0 text-left text-lg font-semibold text-foreground"
+                data-test-id="dialog-title"
+              >
+                {title}
+              </h2>
+              {description ? (
+                <p className="m-0 mt-0.5 text-left text-sm text-muted-foreground" data-test-id="dialog-description">
+                  {description}
+                </p>
+              ) : null}
+            </div>
             {showCloseButton && (
               <div className="flex justify-end w-auto">
                 <IconButton

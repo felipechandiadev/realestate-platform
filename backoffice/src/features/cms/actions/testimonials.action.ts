@@ -21,6 +21,7 @@ import { revalidatePath } from 'next/cache'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { env } from '@/lib/env'
+import type { MultimediaWithVariants } from '@/shared/components/ui/LazyImage';
 
 // Types
 export interface Testimonial {
@@ -29,6 +30,8 @@ export interface Testimonial {
   content: string;
   position?: string;
   imageUrl?: string;
+  /** Relación con variantes optimizadas, cuando el API la incluye. */
+  multimedia?: MultimediaWithVariants;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

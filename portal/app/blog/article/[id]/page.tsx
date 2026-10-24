@@ -35,7 +35,7 @@ export default function ArticleDetailPage() {
         if (data) {
           setArticle(data)
           // Los artículos relacionados vienen del backend
-          setRelatedArticles((data as any).relatedArticles || [])
+          setRelatedArticles(data.relatedArticles || [])
         }
       } catch (error) {
         console.error('Error loading article:', error)

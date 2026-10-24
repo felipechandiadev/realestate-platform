@@ -23,7 +23,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/app/providers';
-import { getUserContracts } from '@/features/shared/contracts/actions/contracts.action';
+import { getUserContracts, type UserContract } from '@/features/shared/contracts/actions/contracts.action';
 import { Alert } from "@realestate/ui";
 import { Card } from "@realestate/ui";
 import { Button } from '@realestate/ui';
@@ -32,7 +32,7 @@ import { BarChart3, Calendar, FileSignature, FileText, Loader2, Receipt, Wallet 
 
 export default function MyContractsPage() {
   const { user, status } = useAuth();
-  const [contracts, setContracts] = useState<any[]>([]);
+  const [contracts, setContracts] = useState<UserContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,9 +109,6 @@ export default function MyContractsPage() {
             // Un usuario puede ver "Mis pagos de arriendo" si el contrato es de ARRIENDO
             // y su rol en el contrato es TENANT (Arrendatario)
             const isArriendo = contract.operation === 'ARRIENDO';
-            const userIsTenant = contract.people?.some((p: any) => 
-               p.role === 'TENANT' && (p.personId === user?.personId || p.person?.userId === user?.id)
-            );
 
             return (
               <Card key={contract.id} className="p-4 flex flex-col md:flex-row md:items-center gap-4 hover:shadow-md transition-shadow">

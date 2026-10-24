@@ -27,7 +27,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import UpdateBaseForm, { BaseUpdateFormField, BaseUpdateFormFieldGroup } from '@/shared/components/ui/BaseForm/UpdateBaseForm';
-import { getCurrentUserProfile, updateUserProfile, updateUserAvatar, updatePerson, createPerson, uploadMultimediaDni } from '@/features/shared/users/actions/users.action';
+import { getCurrentUserProfile, updateUserProfile, updateUserAvatar, updatePerson, createPerson, uploadMultimediaDni, type UpdateUserDto } from '@/features/shared/users/actions/users.action';
 import { getRegiones, getComunasByRegion } from '@/features/shared/common/actions/commons.action';
 import { useAlert } from '@/shared/hooks/useAlert';
 
@@ -323,7 +323,27 @@ export default function PersonalInfoPage() {
     },
   ], [regions, comunas, selectedRegion, userProfile?.person?.dniCardFrontUrl, userProfile?.person?.dniCardRearUrl]);
 
-  const handleSubmit = async (values: Record<string, any>) => {
+  const handleSubmit = async (rawValues: Record<string, unknown>) => {
+    const text = (key: string): string | undefined => {
+      const value = rawValues[key];
+      return typeof value === 'string' && value !== '' ? value : undefined;
+    };
+    const values = {
+      firstName: text('firstName'),
+      lastName: text('lastName'),
+      phone: text('phone'),
+      address: text('address'),
+      city: text('city'),
+      state: text('state'),
+      country: text('country'),
+      nationality: text('nationality'),
+      gender: text('gender'),
+      maritalStatus: text('maritalStatus'),
+      dni: text('dni'),
+      avatarFile: rawValues.avatarFile,
+      dniCardFrontFile: rawValues.dniCardFrontFile,
+      dniCardRearFile: rawValues.dniCardRearFile,
+    };
     setSubmitting(true);
     try {
       if (!userProfile) {
@@ -392,7 +412,7 @@ export default function PersonalInfoPage() {
       }
 
       // Prepare User (personalInfo) update data
-      const userUpdateData: any = {
+      const userUpdateData: Partial<UpdateUserDto> = {
         personalInfo: {
           firstName: values.firstName || userProfile.personalInfo?.firstName,
           lastName: values.lastName || userProfile.personalInfo?.lastName,
@@ -409,7 +429,7 @@ export default function PersonalInfoPage() {
       };
 
       // Prepare Person update data
-      let personResult: any = null;
+      let personResult: Awaited<ReturnType<typeof updatePerson>> | null = null;
       const personData = {
         name: `${values.firstName || userProfile.personalInfo?.firstName || ''} ${values.lastName || userProfile.personalInfo?.lastName || ''}`.trim(),
         dni: values.dni || userProfile.person?.dni,

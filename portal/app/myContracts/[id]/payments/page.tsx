@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/app/providers';
-import { getContractRentPayments, getContractDetails, uploadPaymentProof } from '@/features/shared/contracts/actions/contracts.action';
+import { getContractRentPayments, getContractDetails, uploadPaymentProof, type ContractDetails, type RentPayment } from '@/features/shared/contracts/actions/contracts.action';
 import { Alert } from "@realestate/ui";
 import { Card } from "@realestate/ui";
 import { Button } from '@realestate/ui';
@@ -20,13 +20,13 @@ export default function ContractPaymentsPage() {
   const router = useRouter();
   const { showAlert } = useAlert();
 
-  const [contract, setContract] = useState<any>(null);
-  const [payments, setPayments] = useState<any[]>([]);
+  const [contract, setContract] = useState<ContractDetails | null>(null);
+  const [payments, setPayments] = useState<RentPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<any>(null);
+  const [selectedPayment, setSelectedPayment] = useState<RentPayment | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File | null>(null);
 
@@ -57,7 +57,7 @@ export default function ContractPaymentsPage() {
     }
   }, [status, loadData, router]);
 
-  const handleOpenUploadModal = (payment: any) => {
+  const handleOpenUploadModal = (payment: RentPayment) => {
     setSelectedPayment(payment);
     setUploadedFiles(null);
     setIsModalOpen(true);

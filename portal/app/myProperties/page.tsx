@@ -23,7 +23,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/app/providers';
-import { getUserProperties } from '@/features/shared/properties/actions/properties.action';
+import { getUserProperties, type SalePropertyGridRow } from '@/features/shared/properties/actions/properties.action';
 import { Alert } from "@realestate/ui";
 import { Card } from "@realestate/ui";
 import { Button } from '@realestate/ui';
@@ -34,7 +34,7 @@ import { House, ImageIcon, Loader2, LogIn, MapPin } from 'lucide-react';
 
 export default function MyPropertiesPage() {
   const { user, status } = useAuth();
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<SalePropertyGridRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +60,7 @@ export default function MyPropertiesPage() {
       if (user?.id) {
         try {
           const result = await getUserProperties(user.id, { limit: 50 });
-          setProperties(Array.isArray(result) ? result : (result as any).data || []);
+          setProperties(Array.isArray(result) ? result : result.data || []);
         } catch (err) {
           setError('No pudimos cargar tus propiedades. Por favor, intenta de nuevo más tarde.');
           console.error(err);
@@ -136,8 +136,8 @@ export default function MyPropertiesPage() {
                   </div>
                 )}
                 <div className="absolute top-2 right-2 flex gap-1">
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${getStatusChipClasses(property.status)}`}>
-                    {getStatusInSpanish(property.status)}
+                  <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${getStatusChipClasses(property.status ?? "")}`}>
+                    {getStatusInSpanish(property.status ?? "")}
                   </span>
                   <span className="text-[10px] font-bold bg-primary/10 text-primary px-2 py-1 rounded-full uppercase">
                     {property.operationType === 'SALE' ? 'Venta' : 'Arriendo'}

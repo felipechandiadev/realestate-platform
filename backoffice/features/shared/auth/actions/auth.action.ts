@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { env } from '@/lib/env';
-import type { UserGridNotificationsParams, UserGridNotificationsResponse } from './notifications';
+import type { UserGridNotificationsResponse } from '@/features/notifications/actions/notifications.action';
 
 // ===================================
 // Auth Types and Interfaces
@@ -410,7 +410,7 @@ export async function refreshAccessToken(): Promise<{
     }
 
     // Try using session token first
-    let tokenToUse = session.accessToken;
+    const tokenToUse = session.accessToken;
     let response = await fetch(`${env.backendApiUrl}/auth/refresh`, {
       method: 'POST',
       headers: {

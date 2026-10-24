@@ -183,7 +183,7 @@ export default function RentGrid({ rows, totalRows, page = 1, limit = 25, title 
               title: row.p_title ?? row.title,
               status: row.p_status ?? row.status,
               typeName: row.typeName ?? row.propertyType?.name ?? row.propertyTypeName ?? '',
-              assignedAgentName: row.assignedAgentName ?? resolveUserDisplayName(row.assignedAgent),
+              assignedAgentName: row.assignedAgentName ?? resolveUserDisplayName(row.assignedAgent) ?? undefined,
               city: row.p_city ?? row.city,
               price: row.p_price ?? row.price,
               currencyPrice: row.p_currencyPrice ?? row.currencyPrice,

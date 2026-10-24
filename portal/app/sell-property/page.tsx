@@ -458,7 +458,7 @@ export default function SellPropertyPage() {
       }
 
       // Éxito: mostrar loading y luego mensaje de éxito
-      console.log('✅ Solicitud de venta enviada:', result.data.id);
+      console.log('✅ Solicitud de venta enviada:', result.data?.id);
       
       // Scroll hacia arriba para mostrar el mensaje
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -715,7 +715,7 @@ export default function SellPropertyPage() {
       required: true,
       props: { 
         placeholder: 'Teléfono',
-        disabled: !!session?.user && !!(session.user as any).phone
+        disabled: !!session?.user && !!session.user.phone
       }
     },
     {

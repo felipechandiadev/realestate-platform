@@ -48,7 +48,7 @@ export default function PortalLayout({
   return (
       <div className="min-h-screen flex flex-col relative">
         {/* Header sticky (TopBar + NavBar) */}
-        <div className="sticky top-0 z-50">
+        <div id="portal-sticky-header" className="sticky top-0 z-50">
           <PortalTopBar initialIdentity={initialIdentity} initialHeader={header} />
           
           {/* NavBar */}

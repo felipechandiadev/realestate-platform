@@ -113,7 +113,7 @@ export interface UpdateBaseFormProps {
 	initialState: FormValues;
 	onSubmit: (values: FormValues) => void;
 	/** Optional patch returned is merged into form values (e.g. clear dependent fields). */
-	onChange?: (field: string, value: any) => void | Record<string, unknown>;
+	onChange?: (field: string, value: unknown) => void | Record<string, unknown>;
 	isSubmitting?: boolean;
 	errors?: string[];
 	title?: string;

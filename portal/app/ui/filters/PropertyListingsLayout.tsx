@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import ListProperties, { PropertyPaginationControls } from '../ListProperties';
 import PropertyCardSkeleton from '@/shared/components/ui/PropertyCardSkeleton/PropertyCardSkeleton';
 import type { PropertyData } from '@/features/properties/actions/portalProperties.action';
 import PropertyFiltersSidebar from './PropertyFiltersSidebar';
-import MobileFilterChips from './MobileFilterChips';
 import MobileFilterDrawer from './MobileFilterDrawer';
 import StickyFilterButton from './StickyFilterButton';
 import { countActiveFilters, type PropertyFiltersState } from './filter-types';
@@ -50,14 +49,52 @@ export default function PropertyListingsLayout({
   const active = countActiveFilters(filters, {
     ignoreOperation: Boolean(lockedOperation),
   });
+  const previousPageRef = useRef<number | null>(null);
+  const paginationReadyRef = useRef(false);
 
   useEffect(() => {
     if (drawerOpen) setDraft(filters);
   }, [drawerOpen, filters]);
 
+  // Al cambiar de página, subir hasta la primera fila del listado (tras cargar).
+  // ListProperties también hace scroll, pero aquí se desmonta mientras isLoading
+  // muestra skeletons, así que el efecto de allá no corre.
+  useEffect(() => {
+    const page = pagination?.page;
+    if (typeof page !== 'number') return;
+
+    if (!paginationReadyRef.current) {
+      previousPageRef.current = page;
+      paginationReadyRef.current = true;
+      return;
+    }
+
+    if (isLoading || previousPageRef.current === page) return;
+
+    previousPageRef.current = page;
+
+    if (typeof window === 'undefined') return;
+    window.requestAnimationFrame(() => {
+      const el = document.getElementById('properties-container');
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const offset = 160; // sticky header + un poco más arriba
+      const target = Math.max(rect.top + window.scrollY - offset, 0);
+      window.scrollTo({ top: target, behavior: 'smooth' });
+    });
+  }, [pagination?.page, isLoading]);
+
   return (
-    <div id="properties-container" className="w-full" data-test-id="properties-container">
-      <MobileFilterChips filters={filters} onOpen={() => setDrawerOpen(true)} />
+    <div
+      id="properties-container"
+      className="w-full scroll-mt-24"
+      data-test-id="properties-container"
+    >
+      <StickyFilterButton
+        onClick={() => setDrawerOpen(true)}
+        activeCount={active}
+        containerId="properties-container"
+      />
 
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:gap-4">
         <PropertyFiltersSidebar
@@ -76,7 +113,7 @@ export default function PropertyListingsLayout({
             </div>
           ) : properties.length > 0 ? (
             <ListProperties
-              properties={properties as any}
+              properties={properties}
               pagination={pagination}
               onPageChange={onPageChange}
               isLoading={isLoading}
@@ -98,12 +135,6 @@ export default function PropertyListingsLayout({
           <PropertyPaginationControls pagination={pagination} onPageChange={onPageChange} />
         </div>
       ) : null}
-
-      <StickyFilterButton
-        onClick={() => setDrawerOpen(true)}
-        activeCount={active}
-        containerId="properties-container"
-      />
 
       <MobileFilterDrawer
         open={drawerOpen}

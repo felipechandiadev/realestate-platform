@@ -249,7 +249,7 @@ export default function ContractPaymentsSection({
           <CreditCard className="mx-auto mb-2 size-10" aria-hidden />
           <p>No hay pagos programados</p>
           {canAddPayment && (
-            <p className="text-xs mt-2">Usa el botón "Agregar Pago" para programar un nuevo cobro.</p>
+            <p className="text-xs mt-2">Usa el botón &quot;Agregar Pago&quot; para programar un nuevo cobro.</p>
           )}
         </div>
       )}

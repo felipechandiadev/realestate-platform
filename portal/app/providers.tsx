@@ -19,6 +19,7 @@ type AuthContextUser = {
   email?: string | null;
   role?: string;
   personId?: string;
+  phone?: string;
 };
 
 type LoginResult =
@@ -175,15 +176,10 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
   const value = useMemo<AuthContextValue>(() => {
     const authUser = session?.user
       ? {
-          id: "id" in session.user ? (session.user as { id?: string }).id : undefined,
-          role:
-            "role" in session.user
-              ? (session.user as { role?: string }).role
-              : undefined,
-          personId:
-            "personId" in session.user
-              ? (session.user as { personId?: string }).personId
-              : undefined,
+          id: session.user.id,
+          role: session.user.role,
+          personId: session.user.personId,
+          phone: session.user.phone,
           name: session.user.name,
           email: session.user.email,
         }

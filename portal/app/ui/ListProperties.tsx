@@ -79,7 +79,7 @@ export function PropertyPaginationControls({
     const pages: number[] = [];
     const maxVisible = 5;
     let start = Math.max(1, page - Math.floor(maxVisible / 2));
-    let end = Math.min(totalPages, start + maxVisible - 1);
+    const end = Math.min(totalPages, start + maxVisible - 1);
 
     if (end - start + 1 < maxVisible) {
       start = Math.max(1, end - maxVisible + 1);
@@ -192,7 +192,7 @@ export default function ListProperties({
             id: property.id,
             title: property.title,
             description: property.description || null,
-            operationType: (property.operationType === 'SALE' ? 'SALE' : 'RENT') as any,
+            operationType: property.operationType === 'SALE' ? 'SALE' : 'RENT',
             price: property.price,
             currencyPrice: (property.currency as 'CLP' | 'UF') || 'CLP',
             state: property.state,

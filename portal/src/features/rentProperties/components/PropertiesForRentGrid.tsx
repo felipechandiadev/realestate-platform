@@ -24,7 +24,7 @@ interface PropertyMultimediaItem {
   variants?: PropertyVariant[];
 }
 
-interface PropertyForRent {
+export interface PropertyForRent {
   id: string;
   title: string;
   description?: string;
@@ -181,7 +181,7 @@ export default function PropertiesForRentGrid({
             const pageNum = i + 1;
             const maxVisible = 5;
             let start = Math.max(1, page - Math.floor(maxVisible / 2));
-            let end = Math.min(totalPages, start + maxVisible - 1);
+            const end = Math.min(totalPages, start + maxVisible - 1);
 
             // Ajustar si estamos cerca del final
             if (end - start + 1 < maxVisible) {

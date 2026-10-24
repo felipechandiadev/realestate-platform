@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { env } from '@/lib/env'
 import { ArticleCategory } from '@/shared/types/article'
+import type { MultimediaWithVariants } from '@/shared/components/ui/LazyImage';
 
 // Types
 export interface Article {
@@ -13,6 +14,8 @@ export interface Article {
   subtitle?: string;
   text: string;
   multimediaUrl?: string;
+  /** Relación con variantes optimizadas, cuando el API la incluye. */
+  multimedia?: MultimediaWithVariants;
   category: ArticleCategory;
   isActive: boolean;
   createdAt: string;

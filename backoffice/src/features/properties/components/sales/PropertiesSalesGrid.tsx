@@ -225,7 +225,6 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
           contentGridColumns={{ default: 1, sm: 2, md: 3, lg: 4, xl: 5 }}
           contentGridItemsAlign="stretch"
           contentEmptyMessage="No hay propiedades en venta"
-          searchPlaceholder="Buscar propiedades..."
           data-test-id="properties-sales-collection-grid"
         />
       ) : (
@@ -239,7 +238,6 @@ export function PropertiesSalesGrid({ properties, total, page, limit }: Properti
           pinActionsColumn
           onAddClick={() => setDialogOpen(true)}
           onExportExcel={handleExportExcel}
-          searchPlaceholder="Buscar propiedades..."
           data-test-id="properties-sales-data-grid"
         />
       )}

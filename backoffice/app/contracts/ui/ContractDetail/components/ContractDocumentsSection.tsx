@@ -134,7 +134,7 @@ export default function ContractDocumentsSection({
           <FileText className="mx-auto mb-2 size-10" aria-hidden />
           <p>No hay documentos registrados</p>
           {onAddDocument && (
-            <p className="text-xs mt-2">Usa el botón "Registrar documento" para crear un nuevo requisito.</p>
+            <p className="text-xs mt-2">Usa el botón &quot;Registrar documento&quot; para crear un nuevo requisito.</p>
           )}
         </div>
       ) : (

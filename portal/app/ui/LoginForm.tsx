@@ -45,9 +45,9 @@ export default function LoginForm({ onClose, logoSrc, companyName, onRegisterCli
       const result = await login(email, password);
       console.log('Backend response:', result); // Log the backend response
 
-      const ok = (result as any)?.success === true || (result as any)?.ok === true;
+      const ok = result.success;
       if (!ok) {
-        const err = (result as any)?.error;
+        const err = result.success ? undefined : result.error;
         if (err === 'EMAIL_NOT_VERIFIED') {
           setError('Tu correo electrónico no ha sido verificado.');
           setShowResendButton(true);

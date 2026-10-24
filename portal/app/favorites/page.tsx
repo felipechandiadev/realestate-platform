@@ -5,14 +5,14 @@ import { useAuth } from '@/app/providers';
 import { getUserFavoriteProperties } from '@/features/shared/users/actions/users.action';
 import { Alert } from "@realestate/ui";
 import { Card } from "@realestate/ui";
-import PropertyCard from '../ui/PropertyCard';
+import PropertyCard, { type PortalProperty } from '../ui/PropertyCard';
 import { useRouter } from 'next/navigation';
 import { Heart, Loader2, LogIn } from 'lucide-react';
 import { Button } from '@realestate/ui';
 
 export default function FavoritesPage() {
   const { user, status } = useAuth();
-  const [favorites, setFavorites] = useState<any[]>([]);
+  const [favorites, setFavorites] = useState<PortalProperty[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -32,9 +32,9 @@ export default function FavoritesPage() {
           console.log('[FavoritesPage] Received properties:', result.length);
           
           // Convert properties to the format expected by PropertyCard
-          const mappedFavorites = result.map((p: any) => ({
+          const mappedFavorites: PortalProperty[] = result.map((p) => ({
             ...p,
-            currencyPrice: p.currencyPrice || p.currency, // Handle mapping differences if any
+            currencyPrice: p.currencyPrice || p.currency || 'CLP',
           }));
           setFavorites(mappedFavorites);
         } catch (err) {

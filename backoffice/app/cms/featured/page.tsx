@@ -240,7 +240,7 @@ export default function CmsFeaturedPage() {
 
           <div className="flex justify-end">
             <Button type="button" variant="primary" onClick={handleSave} disabled={saving}>
-              {saving ? <DotProgress size="sm" /> : 'Guardar'}
+              {saving ? <DotProgress size={12} count={3} variant="wave" /> : 'Guardar'}
             </Button>
           </div>
         </div>

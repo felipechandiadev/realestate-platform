@@ -95,6 +95,8 @@ interface TextFieldProps {
   onMouseDown?: (e: React.MouseEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   /** Texto de ayuda bajo el campo. */
   helperText?: string;
+  /** Mensaje de error de validación; se muestra bajo el campo en lugar de `helperText`. */
+  error?: string;
   ["data-test-id"]?: string;
 }
 
@@ -140,6 +142,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   onBlur: onBlurProp,
   onMouseDown: onMouseDownProp,
   helperText,
+  error,
   inputMode,
   min,
   max,
@@ -874,7 +877,9 @@ export const TextField: React.FC<TextFieldProps> = ({
       ) : (
         controlEl
       )}
-      {helperText ? (
+      {error ? (
+        <p className="mt-1 text-xs text-red-500" role="alert">{error}</p>
+      ) : helperText ? (
         <p className="mt-1 text-xs text-muted-foreground">{helperText}</p>
       ) : null}
     </div>

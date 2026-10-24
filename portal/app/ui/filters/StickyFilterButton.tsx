@@ -5,46 +5,62 @@ import { SlidersHorizontal } from 'lucide-react';
 
 type Props = {
   onClick: () => void;
+  /** Kept for call-site compat; visibility follows the properties section via sticky. */
   containerId?: string;
   activeCount?: number;
 };
 
+/**
+ * Barra sticky "Filtrar" en mobile, alineada justo bajo TopBar + NavBar.
+ * Al salir del bloque de propiedades (p. ej. testimonios) deja de verse sola.
+ */
 export default function StickyFilterButton({
   onClick,
-  containerId = 'properties-container',
   activeCount = 0,
 }: Props) {
-  const [visible, setVisible] = useState(true);
+  const [topPx, setTopPx] = useState(96);
 
   useEffect(() => {
-    const el = document.getElementById(containerId);
-    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const header = document.getElementById('portal-sticky-header');
+    if (!header) return;
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setVisible(entry.isIntersecting && entry.intersectionRatio > 0);
-      },
-      { threshold: [0, 0.01, 0.1] },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [containerId]);
+    const update = () => {
+      const h = Math.ceil(header.getBoundingClientRect().height);
+      if (h > 0) setTopPx(h);
+    };
+
+    update();
+    const ro =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+    ro?.observe(header);
+    window.addEventListener('resize', update);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, []);
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Abrir filtros"
-      data-test-id="sticky-filter-button"
-      className={`fixed bottom-5 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all duration-300 md:hidden ${
-        visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-6 opacity-0'
-      }`}
+    <div
+      className="sticky z-40 -mx-2 mb-3 border-b border-border bg-background/95 px-2 py-2 backdrop-blur md:hidden"
+      style={{ top: topPx }}
+      data-test-id="sticky-filter-bar"
     >
-      <SlidersHorizontal size={18} />
-      Filtrar
-      {activeCount > 0 ? (
-        <span className="rounded-full bg-background/20 px-1.5 text-xs">{activeCount}</span>
-      ) : null}
-    </button>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label="Abrir filtros"
+        data-test-id="sticky-filter-button"
+        className="mx-auto flex w-full max-w-sm items-center justify-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md"
+      >
+        <SlidersHorizontal size={18} aria-hidden />
+        Filtrar
+        {activeCount > 0 ? (
+          <span className="min-w-5 rounded-full bg-background/20 px-1.5 text-center text-xs">
+            {activeCount}
+          </span>
+        ) : null}
+      </button>
+    </div>
   );
 }

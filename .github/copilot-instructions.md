@@ -5,12 +5,12 @@ Monorepo post-split (ver `doc/PLAN_PASO_A_PASO_SPLIT.md`):
 | Path | Rol |
 |------|-----|
 | `/core` | API NestJS (fuera de workspaces npm) |
-| `/portal` | Next.js público + community (:3001) |
-| `/backoffice` | Next.js admin/agentes (:3002) |
+| `/portal` | Next.js público + community (:8001) |
+| `/backoffice` | Next.js admin/agentes (:8002) |
 | `/packages/ui` | `@realestate/ui` design system |
-| `/legacy` | Snapshot pre-split — **no importar** |
+| `/packages/api-client` | `@realestate/api-client` cliente HTTP compartido |
 
-**Regla número 1:** aplica cambios en el subproyecto correcto. **Nunca** importar desde `legacy/`.
+**Regla número 1:** aplica cambios en el subproyecto correcto. `legacy/` fue eliminado (tag `archive/legacy-pre-fase-6`).
 
 ---
 

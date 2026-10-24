@@ -19,7 +19,7 @@
 
 import React from 'react'
 import { Target, Eye } from 'lucide-react'
-import { getPublicAboutUs as getAboutUs } from '@/features/cms/actions/aboutUs.action'
+import { getPublicAboutUs as getAboutUs, type AboutUsContent } from '@/features/cms/actions/aboutUs.action'
 
 // Mock data mientras se implementa la API
 const mockAboutUs = {
@@ -31,12 +31,7 @@ Nuestro compromiso es brindar una experiencia excepcional a nuestros clientes, c
   multimediaUrl: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
 }
 
-interface AboutUsData {
-  bio: string;
-  mision: string;
-  vision: string;
-  multimediaUrl?: string;
-}
+type AboutUsData = AboutUsContent;
 
 export default async function AboutUsPage() {
   // Intentar obtener datos reales, si falla usar mock

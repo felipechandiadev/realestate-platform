@@ -40,6 +40,8 @@ interface SelectProps {
   className?: string;
   /** Mantiene visible la etiqueta del campo aunque no haya valor seleccionado. */
   alwaysShowLabel?: boolean;
+  /** Mensaje de error de validación bajo el campo. */
+  error?: string;
 }
 
 const Select: React.FC<SelectProps> = ({
@@ -58,6 +60,7 @@ const Select: React.FC<SelectProps> = ({
   hideDropdownIcon = false,
   className = "",
   alwaysShowLabel = false,
+  error,
   ...props
 }) => {
   const isCompact = density === "compact";
@@ -485,6 +488,9 @@ const Select: React.FC<SelectProps> = ({
           )}
         </>
       )}
+      {error ? (
+        <p className="mt-1 text-xs text-red-500" role="alert">{error}</p>
+      ) : null}
     </div>
   );
 };

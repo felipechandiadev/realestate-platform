@@ -276,7 +276,7 @@ export default function RentPropertyPage() {
         contactName: user.name || prev.contactName,
         contactEmail: user.email || prev.contactEmail,
         // session.user.phone comes from our custom next-auth session
-        contactPhone: (user as any).phone || prev.contactPhone || '',
+        contactPhone: user.phone || prev.contactPhone || '',
       }));
     }
   }, [session]);
@@ -452,7 +452,7 @@ export default function RentPropertyPage() {
       }
 
       // Éxito: mostrar loading y luego mensaje de éxito
-      console.log('✅ Solicitud de arriendo enviada:', result.data.id);
+      console.log('✅ Solicitud de arriendo enviada:', result.data?.id);
       
       // Scroll hacia arriba para mostrar el mensaje
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -709,7 +709,7 @@ export default function RentPropertyPage() {
       required: true,
       props: { 
         placeholder: '+56 9 1234 5678',
-        disabled: !!session?.user && !!(session.user as any).phone
+        disabled: !!session?.user && !!session.user.phone
       }
     },
     {

@@ -410,7 +410,7 @@ export async function refreshAccessToken(): Promise<{
     }
 
     // Try using session token first
-    let tokenToUse = session.accessToken;
+    const tokenToUse = session.accessToken;
     let response = await fetch(`${env.backendApiUrl}/auth/refresh`, {
       method: 'POST',
       headers: {

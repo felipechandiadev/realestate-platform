@@ -127,7 +127,7 @@ export default function PublishPropertyPage() {
         ...prev,
         contactName: user.name || prev.contactName,
         contactEmail: user.email || prev.contactEmail,
-        contactPhone: (user as any).phone || prev.contactPhone || '',
+        contactPhone: user.phone || prev.contactPhone || '',
       }));
     }
   }, [user, status]);
@@ -294,7 +294,7 @@ export default function PublishPropertyPage() {
       }
 
       // Éxito: mostrar loading y luego mensaje de éxito
-      console.log('✅ Propiedad publicada:', result.data.id);
+      console.log('✅ Propiedad publicada:', result.data?.id);
       
       // Mostrar loading por 3 segundos antes del mensaje de éxito
       setShowPostSubmitLoading(true);
@@ -561,7 +561,7 @@ export default function PublishPropertyPage() {
         return (
           <div className="space-y-4">
             <Alert variant="info">
-              Revisa la información de tu propiedad antes de publicarla. Si todo está correcto, haz clic en "Publicar propiedad".
+              Revisa la información de tu propiedad antes de publicarla. Si todo está correcto, haz clic en &quot;Publicar propiedad&quot;.
             </Alert>
 
             {/* Tarjeta de propiedad */}

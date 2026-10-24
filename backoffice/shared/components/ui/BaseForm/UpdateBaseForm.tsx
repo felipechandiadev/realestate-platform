@@ -2,7 +2,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { TextField } from "@realestate/ui";
-import { AutoComplete, type AutoCompleteOption as Option } from "@realestate/ui";
+import { AutoComplete, type AutoCompleteOption, type SelectOption } from "@realestate/ui";
 import { Button } from "@realestate/ui";
 import type { ButtonVariant } from "@realestate/ui";
 import { DotProgress } from "@realestate/ui";
@@ -83,7 +83,8 @@ export interface BaseUpdateFormField {
 		| "video"
 		| "avatar";
 	required?: boolean;
-	options?: Option[];
+	/** `id` o `value` (alias); para `autocomplete` se normaliza a string. */
+	options?: SelectOption[];
 	multiline?: boolean;
 	rows?: number;
 	disabled?: boolean;
@@ -240,12 +241,16 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 		}
 
 		if (field.type === "autocomplete") {
-			const selectedId = getSelectableValue(fieldValue) ?? undefined;
+			const selectedId = getSelectableValue(fieldValue);
+			const acOptions: AutoCompleteOption[] = (field.options || []).map(opt => ({
+				...opt,
+				id: String(opt.id ?? opt.value ?? ""),
+			}));
 			return (
 				<AutoComplete
-					options={field.options || []}
+					options={acOptions}
 					label={field.label}
-					value={field.options?.find(opt => opt.id === selectedId) || null}
+					value={selectedId == null ? null : acOptions.find(opt => opt.id === String(selectedId)) || null}
 					onChange={opt => handleChange(field.name, opt?.id ?? null)}
 					required={field.required}
 					name={field.name}

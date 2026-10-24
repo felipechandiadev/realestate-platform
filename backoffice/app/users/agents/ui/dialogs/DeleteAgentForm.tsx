@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { DeleteBaseForm } from '@/shared/components/ui/BaseForm'
 import { deleteAgent } from '@/features/users/actions/agents.action'
-import type { AgentType } from './types'
+import type { AgentType } from '../types'
 
 interface DeleteAgentFormProps {
   agent: AgentType | null

@@ -214,13 +214,13 @@ const LazyImage = React.forwardRef<HTMLImageElement, LazyImageProps>(
     if (useNextImage && displayWidth && displayHeight) {
       return (
         <Image
-          ref={ref as any}
+          ref={ref}
           src={src}
           alt={alt}
           width={displayWidth}
           height={displayHeight}
           sizes={sizes}
-          loading={loading as any}
+          loading={loading === 'lazy' ? 'lazy' : 'eager'}
           placeholder={placeholder}
           className={className}
           {...props}

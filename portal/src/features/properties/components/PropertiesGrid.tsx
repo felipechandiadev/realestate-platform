@@ -8,6 +8,7 @@ import { IconButton } from "@realestate/ui";
 import LazyImage from '@/shared/components/ui/LazyImage';
 import PropertyCardSkeleton from '@/shared/components/ui/PropertyCardSkeleton/PropertyCardSkeleton';
 import type { Property } from '@/features/properties/types';
+import type { MediaItem } from '@/features/properties/actions/portalProperties.action';
 
 interface PropertiesGridProps {
   properties: Property[];
@@ -50,7 +51,7 @@ export default function PropertiesGrid({
 
   const buildImageMultimedia = (property: Property) => {
     const mediaAwareProperty = property as Property & {
-      multimedia?: any;
+      multimedia?: MediaItem | MediaItem[] | null;
       mainImageUrl?: string;
       thumbnail?: string;
       images?: string[];
@@ -58,8 +59,8 @@ export default function PropertiesGrid({
 
     const rawMultimedia = mediaAwareProperty.multimedia;
     const selectedMultimedia = Array.isArray(rawMultimedia)
-      ? rawMultimedia.find((item: any) => item?.type === 'PROPERTY_IMG') ||
-        rawMultimedia.find((item: any) => item?.format === 'IMG') ||
+      ? rawMultimedia.find((item) => item?.type === 'PROPERTY_IMG') ||
+        rawMultimedia.find((item) => item?.format === 'IMG') ||
         rawMultimedia[0]
       : rawMultimedia;
 

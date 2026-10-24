@@ -467,9 +467,9 @@ export default function PropertyDetailClient({
               {property.assignedAgent && (
                 <div className="flex flex-col items-center space-y-3 mb-6">
                   <div className="w-24 h-24 rounded-full border-4 border-secondary bg-primary/20 flex items-center justify-center overflow-hidden">
-                    {property.assignedAgent.personalInfo && 'avatarUrl' in property.assignedAgent.personalInfo && property.assignedAgent.personalInfo.avatarUrl ? (
+                    {property.assignedAgent.personalInfo?.avatarUrl ? (
                       <img
-                        src={normalizeImageUrl((property.assignedAgent.personalInfo as any).avatarUrl)}
+                        src={normalizeImageUrl(property.assignedAgent.personalInfo.avatarUrl)}
                         alt={agentName}
                         className="w-full h-full object-cover rounded-full"
                       />

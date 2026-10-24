@@ -69,6 +69,15 @@ function getComunasByRegionLocal(region: string): Array<{ id: string; label: str
 
 // Funciones helper para convertir enums a formato de opciones para componentes
 
+/** Región/comuna tal como la devuelve `/config/*` (el core ha usado `name`, `label` o `value`). */
+interface RawLocationOption {
+  id?: string
+  name?: string
+  label?: string
+  value?: string
+  stateId?: string
+}
+
 export async function getRegiones(): Promise<Array<{ id: string; label: string }>> {
   try {
     const session = await getServerSession(authOptions)
@@ -85,10 +94,10 @@ export async function getRegiones(): Promise<Array<{ id: string; label: string }
       })
 
       if (response.ok) {
-        const data = await response.json()
-        return data.map((region: any) => ({
-          id: region.id || region.name || region.value,
-          label: region.name || region.label || region.value
+        const data = (await response.json()) as RawLocationOption[]
+        return data.map((region) => ({
+          id: region.id || region.name || region.value || '',
+          label: region.name || region.label || region.value || ''
         }))
       }
     }
@@ -99,40 +108,6 @@ export async function getRegiones(): Promise<Array<{ id: string; label: string }
   // Fallback: usar datos locales de Chile
   return Object.entries(RegionEnum).map(([key, value]) => ({
     id: value, // Usar el valor como id (nombre de la región)
-    label: value
-  }))
-}
-
-export async function getComunas(): Promise<Array<{ id: string; label: string }>> {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (session?.accessToken) {
-      // Intentar obtener comunas desde el backend
-      const response = await fetch(`${env.backendApiUrl}/config/comunas`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${session.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store'
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        return data.map((comuna: any) => ({
-          id: comuna.id || comuna.name || comuna.value,
-          label: comuna.name || comuna.label || comuna.value
-        }))
-      }
-    }
-  } catch (error) {
-    console.warn('Error fetching comunas from backend, using fallback data:', error)
-  }
-
-  // Fallback: usar datos locales de Chile
-  return Object.entries(ComunaEnum).map(([key, value]) => ({
-    id: value, // Usar el valor como id (nombre de la comuna)
     label: value
   }))
 }
@@ -154,10 +129,10 @@ export async function getComunasByRegion(region: string): Promise<Array<{ id: st
       })
 
       if (response.ok) {
-        const data = await response.json()
-        return data.map((comuna: any) => ({
-          id: comuna.id || comuna.name || comuna.value,
-          label: comuna.name || comuna.label || comuna.value,
+        const data = (await response.json()) as RawLocationOption[]
+        return data.map((comuna) => ({
+          id: comuna.id || comuna.name || comuna.value || '',
+          label: comuna.name || comuna.label || comuna.value || '',
           stateId: comuna.stateId // Incluir el stateId retornado por el backend
         }))
       }

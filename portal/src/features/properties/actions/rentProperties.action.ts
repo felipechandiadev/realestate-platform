@@ -1,3 +1,4 @@
+import type { PropertyForRent } from '@/features/rentProperties/components/PropertiesForRentGrid';
 import { env } from '@/lib/env';
 
 export interface FilterRentPropertiesDto {
@@ -21,7 +22,7 @@ export interface FilterRentPropertiesDto {
 }
 
 export interface RentPropertiesResponse {
-  data: any[];
+  data: PropertyForRent[];
   total: number;
   page: number;
   limit: number;

@@ -1,4 +1,4 @@
-import type { NextAuthOptions } from 'next-auth';
+import type { NextAuthOptions, User } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { env } from '@/lib/env';
 
@@ -81,11 +81,11 @@ export const authOptions: NextAuthOptions = {
           if (!response.ok || !payload || !('access_token' in payload)) {
             if (
               response.status === 403 &&
-              (payload as any)?.error === 'EMAIL_NOT_VERIFIED'
+              payload && 'error' in payload && payload.error === 'EMAIL_NOT_VERIFIED'
             ) {
               throw new Error('EMAIL_NOT_VERIFIED');
             }
-            throw new Error((payload as any)?.message || 'Credenciales inválidas');
+            throw new Error((payload && 'message' in payload && payload.message) || 'Credenciales inválidas');
           }
 
           return {
@@ -96,7 +96,7 @@ export const authOptions: NextAuthOptions = {
             phone: payload.user?.phone,
             personId: payload.user?.personId,
             accessToken: payload.access_token,
-          } as any;
+          } satisfies User;
         } catch (error) {
           console.error('NextAuth community authorize error', error);
           return null;
@@ -110,24 +110,24 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.accessToken = (user as any).accessToken;
-        token.role = (user as any).role;
+        token.accessToken = user.accessToken;
+        token.role = user.role;
         token.user = {
-          id: (user as any).id,
-          email: (user as any).email ?? undefined,
-          name: (user as any).name ?? undefined,
-          role: (user as any).role,
-          phone: (user as any).phone,
-          personId: (user as any).personId,
+          id: user.id,
+          email: user.email ?? undefined,
+          name: user.name ?? undefined,
+          role: user.role,
+          phone: user.phone,
+          personId: user.personId,
         };
       }
       return token;
     },
     async session({ session, token }) {
-      const enrichedUser = (token as any).user;
+      const enrichedUser = token.user;
       if (session.user && enrichedUser) {
-        (session as any).accessToken = token.accessToken;
-        (session as any).role = token.role;
+        session.accessToken = token.accessToken;
+        session.role = token.role;
         session.user = {
           ...session.user,
           id: enrichedUser.id,
@@ -136,7 +136,7 @@ export const authOptions: NextAuthOptions = {
           role: enrichedUser.role,
           phone: enrichedUser.phone,
           personId: enrichedUser.personId,
-        } as any;
+        };
       }
       return session;
     },

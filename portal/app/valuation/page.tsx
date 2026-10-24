@@ -414,7 +414,7 @@ export default function ValoracionPage() {
     if (user && status === 'authenticated') {
       setContactData({
         contactName: user.name || '',
-        contactPhone: (user as any).phone || '',
+        contactPhone: user.phone || '',
         contactEmail: user.email || '',
       });
     }

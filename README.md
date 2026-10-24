@@ -61,8 +61,9 @@ Mailhog opcional: `npm run mail:dev` (`docker-compose.mail.yml`).
 Workflow: `.github/workflows/ci.yml`
 
 - `npm run typecheck:portal`
-- `npm run typecheck:backoffice` (aún con deuda; `ignoreBuildErrors` en backoffice)
+- `npm run typecheck:backoffice` (0 errores; el build ya no usa `ignoreBuildErrors`)
 - `npm run typecheck:core`
+- `npm run lint:portal` / `npm run lint:backoffice` (0 errores; `no-explicit-any` es `error` en portal y `warn` en backoffice)
 - `npm run test:core:unit`
 
 Frontend Jest del portal: **no instalado**; smoke con Node: `npm run test -w portal`. Ver `portal/tests/README.md` y `doc/tsc-debt.md`.

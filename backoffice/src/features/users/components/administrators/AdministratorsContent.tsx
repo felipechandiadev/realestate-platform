@@ -71,14 +71,7 @@ export function AdministratorsContent({
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // Safely get alert context
-  let alert: any = { success: () => {}, error: () => {}, info: () => {}, warning: () => {} };
-  try {
-    alert = useAlert();
-  } catch (error) {
-    // Alert context not available yet, use no-op functions
-    console.warn('Alert context not available:', error);
-  }
+  const alert = useAlert();
 
   const [search, setSearch] = useState(initialSearch);
   const [administrators, setAdministrators] = useState<AdministratorType[]>(initialAdministrators);

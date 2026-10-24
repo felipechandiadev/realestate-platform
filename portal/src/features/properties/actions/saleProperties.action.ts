@@ -1,3 +1,4 @@
+import type { PropertyForSale } from '@/features/saleProperties/components/PropertiesForSaleGrid';
 import { env } from '@/lib/env';
 
 export interface FilterSalePropertiesDto {
@@ -20,7 +21,7 @@ export interface FilterSalePropertiesDto {
 }
 
 export interface SalePropertiesResponse {
-  data: any[];
+  data: PropertyForSale[];
   total: number;
   page: number;
   limit: number;

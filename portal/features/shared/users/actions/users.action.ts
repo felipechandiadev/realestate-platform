@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { env } from '@/lib/env';
 import { revalidatePath } from 'next/cache';
+import type { PortalProperty } from '@/app/ui/PropertyCard';
 
 export type GridSort = 'asc' | 'desc';
 
@@ -29,70 +30,12 @@ export interface CommunityUserGridRow {
   status?: string;
   createdAt?: string;
   updatedAt?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type CommunityUsersGridResponse =
   | CommunityUserGridRow[]
   | { data: CommunityUserGridRow[]; total: number; page: number; limit: number; totalPages: number };
-
-/**
- * Get community users grid with pagination, search, and filtering
- * Follows the same pattern as getSalePropertiesGrid
- */
-export async function getCommunityUsersGrid(
-  params: CommunityUsersGridParams = {}
-): Promise<CommunityUsersGridResponse> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.accessToken;
-
-  if (!accessToken) {
-    throw new Error('No hay una sesión activa para consultar usuarios de la comunidad.');
-  }
-
-  const url = new URL(`${env.backendApiUrl}/users/grid/community`);
-
-  // map boolean flags to 'true'|'false' strings
-  const setBoolParam = (key: string, value?: boolean) => {
-    if (typeof value === 'boolean') url.searchParams.set(key, value ? 'true' : 'false');
-  };
-
-  // attach params
-  if (params.fields) url.searchParams.set('fields', params.fields);
-  if (params.sort) url.searchParams.set('sort', params.sort);
-  if (params.sortField) url.searchParams.set('sortField', params.sortField);
-  if (typeof params.search === 'string') url.searchParams.set('search', params.search);
-  if (typeof params.filters === 'string') url.searchParams.set('filters', params.filters);
-  setBoolParam('filtration', params.filtration);
-  setBoolParam('pagination', params.pagination);
-  if (typeof params.page === 'number') url.searchParams.set('page', String(params.page));
-  if (typeof params.limit === 'number') url.searchParams.set('limit', String(params.limit));
-
-  console.log('Fetching community users with params:', url.toString()); // Debugging log
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
-    },
-    cache: 'no-store',
-  });
-
-  const responseText = await response.text();
-  console.log('Backend response:', responseText); // Log backend response for debugging
-
-  if (!response.ok) {
-    let message = `Error ${response.status} al obtener usuarios de la comunidad`;
-    try {
-      const payload = JSON.parse(responseText);
-      if (payload?.message) message = payload.message;
-    } catch {}
-    throw new Error(message);
-  }
-
-  const result = JSON.parse(responseText);
-  return result as CommunityUsersGridResponse;
-}
 
 export type ListAdministratorsParams = {
 	search?: string;
@@ -119,55 +62,6 @@ export type BackendAdministrator = {
 		maritalStatus?: string | null;
 	} | null;
 };
-
-export async function listAdministrators(
-	params: ListAdministratorsParams = {},
-): Promise<{
-  success: boolean;
-  data?: {
-    data: BackendAdministrator[];
-    total: number;
-    page: number;
-    limit: number;
-  };
-  error?: string;
-}> {
-	const session = await getServerSession(authOptions);
-	const accessToken = session?.accessToken;
-
-	if (!accessToken) {
-		return { success: false, error: 'No hay una sesión activa para consultar administradores.' };
-	}
-
-	const url = new URL(`${env.backendApiUrl}/users/admins`);
-
-	const normalizedSearch = params.search?.trim();
-	if (normalizedSearch) {
-		url.searchParams.set('search', normalizedSearch);
-	}
-
-	const response = await fetch(url.toString(), {
-		headers: {
-			Authorization: `Bearer ${accessToken}`,
-			Accept: 'application/json',
-		},
-		cache: 'no-store',
-	});
-
-	if (!response.ok) {
-		const payload = (await response.json().catch(() => null)) as
-			| { message?: string }
-			| null;
-
-		return {
-			success: false,
-			error: payload?.message ?? `Error ${response.status} al obtener la lista de administradores`,
-		};
-	}
-
-	const data = await response.json();
-	return { success: true, data: { data, total: data.length, page: 1, limit: data.length } };
-}
 
 export async function listAdminsAgents(params: {
 	search?: string;
@@ -299,6 +193,7 @@ export interface UpdateUserDto {
 	email?: string;
 	role?: 'ADMIN' | 'AGENT';
 	status?: 'ACTIVE' | 'INACTIVE';
+	personId?: string;
 	personalInfo?: {
 		firstName?: string;
 		lastName?: string;
@@ -319,140 +214,6 @@ export interface UpdateUserDto {
 export interface ChangePasswordDto {
 	oldPassword: string;
 	newPassword: string;
-}
-
-/**
- * Create a new admin user
- */
-export async function createAdmin(data: {
-	username: string;
-	email: string;
-	password: string;
-	firstName: string;
-	lastName: string;
-	phone?: string;
-	avatarFile?: File;
-}): Promise<{
-  success: boolean;
-  data?: BackendAdministrator;
-  error?: string;
-  message?: string;
-}> {
-	try {
-		const session = await getServerSession(authOptions);
-		if (!session?.accessToken) {
-			console.error('[createAdmin] No access token found');
-			return { success: false, error: 'No autenticado' };
-		}
-
-		console.log('[createAdmin] Starting admin creation with:', {
-			username: data.username,
-			email: data.email,
-			firstName: data.firstName,
-			lastName: data.lastName,
-			phone: data.phone,
-			hasAvatar: !!data.avatarFile,
-		});
-
-		let avatarUrl: string | undefined = undefined;
-
-		// Step 1: Upload avatar if provided
-		if (data.avatarFile && data.avatarFile.size > 0) {
-			console.log('[createAdmin] Uploading avatar...');
-			const uploadFormData = new FormData();
-			uploadFormData.append('file', data.avatarFile);
-			uploadFormData.append('path', 'public/users');
-
-			const uploadRes = await fetch(`${env.backendApiUrl}/multimedia/upload`, {
-				method: 'POST',
-				headers: {
-					'Authorization': `Bearer ${session.accessToken}`,
-				},
-				body: uploadFormData,
-			});
-
-			if (!uploadRes.ok) {
-				const error = await uploadRes.json().catch(() => null);
-				console.error('[createAdmin] Avatar upload failed:', error);
-				return {
-					success: false,
-					error: 'Error al subir avatar: ' + (error?.message || 'Error desconocido'),
-				};
-			}
-
-			const uploadData = await uploadRes.json();
-			avatarUrl = uploadData.url || uploadData.path;
-			console.log('[createAdmin] Avatar uploaded successfully:', avatarUrl);
-		}
-
-		// Step 2: Create the admin user
-		const createUserData: CreateUserDto = {
-			username: data.username.trim(),
-			email: data.email.trim().toLowerCase(),
-			password: data.password,
-			role: 'ADMIN',
-			personalInfo: {
-				firstName: data.firstName.trim(),
-				lastName: data.lastName.trim(),
-				phone: data.phone?.trim(),
-				avatarUrl: avatarUrl,
-			},
-		};
-
-		console.log('[createAdmin] Creating user with data:', {
-			username: createUserData.username,
-			email: createUserData.email,
-			role: createUserData.role,
-		});
-
-		const createResponse = await fetch(`${env.backendApiUrl}/users`, {
-			method: 'POST',
-			headers: {
-				'Authorization': `Bearer ${session.accessToken}`,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify(createUserData),
-		});
-
-		console.log('[createAdmin] Create response status:', createResponse.status);
-
-		if (!createResponse.ok) {
-			const errorData = await createResponse.json().catch(() => null);
-			const errorMsg = errorData?.message || `Error ${createResponse.status} al crear administrador`;
-
-			// Handle specific error cases
-			if (createResponse.status === 409 || errorMsg.includes('unique')) {
-				return {
-					success: false,
-					error: 'El nombre de usuario o email ya existe en el sistema',
-				};
-			}
-
-			console.error('[createAdmin] User creation failed:', errorMsg);
-			return {
-				success: false,
-				error: errorMsg,
-			};
-		}
-
-		const user = await createResponse.json();
-		console.log('[createAdmin] User created successfully:', { id: user.id, username: user.username });
-
-		revalidatePath('/users/administrators', 'page');
-
-		return {
-			success: true,
-			data: user,
-			message: 'Administrador creado exitosamente',
-		};
-	} catch (error) {
-		console.error('[createAdmin] Exception thrown:', error);
-		const errorMsg = error instanceof Error ? error.message : 'Error desconocido';
-		return {
-			success: false,
-			error: errorMsg,
-		};
-	}
 }
 
 /**
@@ -540,46 +301,6 @@ export async function updateUser(id: string, data: UpdateUserDto): Promise<{
 }
 
 /**
- * Delete a user (soft delete)
- */
-export async function deleteUser(id: string): Promise<{
-  success: boolean;
-  error?: string;
-}> {
-	try {
-		const session = await getServerSession(authOptions);
-		if (!session?.accessToken) {
-			return { success: false, error: 'No authenticated' };
-		}
-
-		const response = await fetch(`${env.backendApiUrl}/users/${id}`, {
-			method: 'DELETE',
-			headers: {
-				'Authorization': `Bearer ${session.accessToken}`,
-				'Content-Type': 'application/json',
-			},
-		});
-
-		if (!response.ok) {
-			const errorData = await response.json().catch(() => null);
-			return { 
-				success: false, 
-				error: errorData?.message || `Failed to delete user: ${response.status}` 
-			};
-		}
-
-		revalidatePath('/users/administrators', 'page');
-		return { success: true };
-	} catch (error) {
-		console.error('Error deleting user:', error);
-		return { 
-			success: false, 
-			error: error instanceof Error ? error.message : 'Unknown error' 
-		};
-	}
-}
-
-/**
  * Change user password
  */
 export async function changeUserPassword(id: string, passwordData: ChangePasswordDto): Promise<{
@@ -616,114 +337,6 @@ export async function changeUserPassword(id: string, passwordData: ChangePasswor
 			success: false, 
 			error: error instanceof Error ? error.message : 'Unknown error' 
 		};
-	}
-}
-
-/**
- * Assign role to user
- */
-export async function assignUserRole(id: string, role: 'ADMIN' | 'AGENT'): Promise<{
-  success: boolean;
-  data?: BackendAdministrator;
-  error?: string;
-}> {
-	try {
-		const session = await getServerSession(authOptions);
-		if (!session?.accessToken) {
-			return { success: false, error: 'No authenticated' };
-		}
-
-		const response = await fetch(`${env.backendApiUrl}/users/${id}/role`, {
-			method: 'PATCH',
-			headers: {
-				'Authorization': `Bearer ${session.accessToken}`,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ role }),
-		});
-
-		if (!response.ok) {
-			const errorData = await response.json().catch(() => null);
-			return { 
-				success: false, 
-				error: errorData?.message || `Failed to assign role: ${response.status}` 
-			};
-		}
-
-		const result = await response.json();
-		revalidatePath('/users/administrators', 'page');
-		return { success: true, data: result };
-	} catch (error) {
-		console.error('Error assigning role:', error);
-		return { 
-			success: false, 
-			error: error instanceof Error ? error.message : 'Unknown error' 
-		};
-	}
-}
-
-/**
- * Set user status (active/inactive)
- */
-export async function setUserStatus(id: string, status: 'ACTIVE' | 'INACTIVE'): Promise<{
-  success: boolean;
-  data?: BackendAdministrator;
-  error?: string;
-}> {
-	try {
-		const session = await getServerSession(authOptions);
-		if (!session?.accessToken) {
-			return { success: false, error: 'No authenticated' };
-		}
-
-		const response = await fetch(`${env.backendApiUrl}/users/${id}/status`, {
-			method: 'PATCH',
-			headers: {
-				'Authorization': `Bearer ${session.accessToken}`,
-				'Content-Type': 'application/json',
-			},
-			body: JSON.stringify({ status }),
-		});
-
-		if (!response.ok) {
-			const errorData = await response.json().catch(() => null);
-			return { 
-				success: false, 
-				error: errorData?.message || `Failed to set status: ${response.status}` 
-			};
-		}
-
-		const result = await response.json();
-		revalidatePath('/users/administrators', 'page');
-		return { success: true, data: result };
-	} catch (error) {
-		console.error('Error setting status:', error);
-		return { 
-			success: false, 
-			error: error instanceof Error ? error.message : 'Unknown error' 
-		};
-	}
-}
-
-/**
- * Find user by ID for change history display
- */
-export async function findUserById(id: string): Promise<{ id: string; name: string } | null> {
-	const session = await getServerSession(authOptions);
-	if (!session?.accessToken) return null;
-
-	try {
-		const res = await fetch(`${env.backendApiUrl}/users/${id}`, {
-			headers: { Authorization: `Bearer ${session.accessToken}` },
-		});
-		if (!res.ok) return null;
-		const user = await res.json();
-		return { 
-			id: user.id, 
-			name: `${user.personalInfo?.firstName || ''} ${user.personalInfo?.lastName || ''}`.trim() || user.username || 'Usuario' 
-		};
-	} catch {
-		return null;
 	}
 }
 
@@ -787,6 +400,12 @@ export async function updateUserProfile(userId: string, data: Partial<UpdateUser
 /**
  * Update person information
  */
+/** Persona creada/actualizada por el core (solo los campos que usa el portal). */
+export interface PersonRecord {
+  id: string;
+  name?: string;
+}
+
 export async function updatePerson(personId: string, data: {
 	dni?: string;
 	address?: string;
@@ -796,7 +415,7 @@ export async function updatePerson(personId: string, data: {
 	dniCardRearId?: string;
 }): Promise<{
   success: boolean;
-  data?: any;
+  data?: PersonRecord;
   error?: string;
 }> {
 	try {
@@ -847,7 +466,7 @@ export async function createPerson(data: {
 	dniCardRearId?: string;
 }): Promise<{
   success: boolean;
-  data?: any;
+  data?: PersonRecord;
   error?: string;
 }> {
 	try {
@@ -1011,49 +630,6 @@ export async function getCurrentUserProfile(): Promise<{
 }
 
 /**
- * Delete a community user (soft delete)
- * Follows the same pattern as deleteProperty
- */
-export async function deleteCommunityUser(userId: string): Promise<{
-  success: boolean;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/users/${userId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Error al eliminar usuario: ${response.status}` 
-      };
-    }
-
-    // Revalidate the community users grid path
-    revalidatePath('/users/community');
-
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting community user:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Error al eliminar usuario' 
-    };
-  }
-}
-
-/**
  * Upload DNI front or rear image for person
  * @param file - The image file to upload
  * @param type - 'DNI_FRONT' or 'DNI_REAR'
@@ -1103,10 +679,16 @@ export async function uploadMultimediaDni(
   }
 }
 
+/** Propiedad favorita tal como la devuelve el core (la moneda puede venir como `currency`). */
+export type FavoriteProperty = Omit<PortalProperty, 'currencyPrice'> & {
+  currencyPrice?: PortalProperty['currencyPrice'];
+  currency?: PortalProperty['currencyPrice'];
+};
+
 /**
  * Get user favorite properties with details
  */
-export async function getUserFavoriteProperties(userId: string): Promise<any[]> {
+export async function getUserFavoriteProperties(userId: string): Promise<FavoriteProperty[]> {
   const session = await getServerSession(authOptions);
   const accessToken = session?.accessToken;
 
@@ -1166,8 +748,8 @@ export async function getUserFavoriteIds(userId: string): Promise<string[]> {
       return [];
     }
 
-    const user = await response.json();
-    return (user.favoriteProperties || []).map((fav: any) => fav.propertyId);
+    const user = (await response.json()) as { favoriteProperties?: Array<{ propertyId: string }> };
+    return (user.favoriteProperties || []).map((fav) => fav.propertyId);
   } catch (error) {
     console.error('[getUserFavoriteIds] unexpected error', error);
     return [];

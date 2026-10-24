@@ -7,6 +7,7 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { refreshAccessToken, logoutAction } from '@/features/shared/auth/actions/auth.action';
 import { cookies } from 'next/headers';
+import type { MediaItem } from '@/src/features/properties/actions/portalProperties.action';
 
 export type GridSort = 'asc' | 'desc';
 
@@ -25,6 +26,7 @@ export interface SalePropertiesGridParams {
 export interface SalePropertyGridRow {
   id: string;
   code?: string;
+  mainImageUrl?: string | null;
   title?: string;
   status?: string;
   operationType?: string;
@@ -40,96 +42,12 @@ export interface SalePropertyGridRow {
   createdAt?: string;
   updatedAt?: string;
   // allow additional fields without strict typing
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type SalePropertiesGridResponse =
   | SalePropertyGridRow[]
   | { data: SalePropertyGridRow[]; total: number; page: number; limit: number; totalPages: number };
-
-export async function getSalePropertiesGrid(
-  params: SalePropertiesGridParams = {}
-): Promise<SalePropertiesGridResponse> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.accessToken;
-
-  if (!accessToken) {
-    throw new Error('No hay una sesión activa para consultar propiedades.');
-  }
-
-  console.log('[DEBUG] getSalePropertiesGrid - params.filters received:', params.filters);
-  console.log('[DEBUG] getSalePropertiesGrid - params.filtration:', params.filtration);
-
-  const url = new URL(`${env.backendApiUrl}/properties/grid-sale`);
-
-  // map boolean flags to 'true'|'false' strings
-  const setBoolParam = (key: string, value?: boolean) => {
-    if (typeof value === 'boolean') url.searchParams.set(key, value ? 'true' : 'false');
-  };
-
-  // attach params
-  if (params.fields) url.searchParams.set('fields', params.fields);
-  if (params.sort) url.searchParams.set('sort', params.sort);
-  if (params.sortField) url.searchParams.set('sortField', params.sortField);
-  if (typeof params.search === 'string') url.searchParams.set('search', params.search);
-  if (typeof params.filters === 'string') url.searchParams.set('filters', params.filters);
-  setBoolParam('filtration', params.filtration);
-  setBoolParam('pagination', params.pagination);
-  if (typeof params.page === 'number') url.searchParams.set('page', String(params.page));
-  if (typeof params.limit === 'number') url.searchParams.set('limit', String(params.limit));
-
-  console.log('[DEBUG] getSalePropertiesGrid - Final URL sent to backend:', url.toString());
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
-    },
-    cache: 'no-store',
-  });
-
-  console.log('[DEBUG] getSalePropertiesGrid - Response status:', response.status);
-  if (!response.ok) {
-    let message = `Error ${response.status} al obtener propiedades en venta`;
-    try {
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('application/json')) {
-        const payload = await response.json();
-        // common payload shapes
-        message = payload?.message || payload?.error || message;
-        // sometimes validation errors come as an array or nested structure
-        if (!message && payload?.errors && Array.isArray(payload.errors)) {
-          message = payload.errors.map((e: any) => e?.message || JSON.stringify(e)).join('; ');
-        }
-      } else {
-        const text = await response.text().catch(() => '');
-        if (text) message = text;
-      }
-    } catch (err) {
-      console.warn('[getSalePropertiesGrid] Failed to parse error body:', err);
-    }
-
-    throw new Error(message);
-  }
-
-  // Parse success payload safely
-  let result: any;
-  try {
-    const text = await response.text();
-    if (!text) {
-      console.warn('[getSalePropertiesGrid] Empty response body');
-      result = [];
-    } else {
-      result = JSON.parse(text);
-    }
-  } catch (err) {
-    console.error('[getSalePropertiesGrid] Failed to parse response JSON:', err);
-    throw new Error('Error al procesar la respuesta del servidor');
-  }
-
-  console.log('[DEBUG] getSalePropertiesGrid - Response data type:', Array.isArray(result) ? 'array' : typeof result, 'keys:', result && typeof result === 'object' ? Object.keys(result) : 'n/a');
-  return result as SalePropertiesGridResponse;
-}
 
 export interface RentPropertiesGridParams {
   fields?: string; // comma-separated list of fields
@@ -161,7 +79,7 @@ export interface RentPropertyGridRow {
   createdAt?: string;
   updatedAt?: string;
   // allow additional fields without strict typing
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type RentPropertiesGridResponse =
@@ -185,174 +103,6 @@ export interface AvailableRentProperty {
 export interface ListAvailableRentPropertiesParams {
   search?: string;
   limit?: number;
-}
-
-export async function getRentPropertiesGrid(
-  params: RentPropertiesGridParams = {}
-): Promise<RentPropertiesGridResponse> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.accessToken;
-
-  if (!accessToken) {
-    throw new Error('No hay una sesión activa para consultar propiedades.');
-  }
-
-  console.log('[DEBUG] getRentPropertiesGrid - params.filters received:', params.filters);
-  console.log('[DEBUG] getRentPropertiesGrid - params.filtration:', params.filtration);
-
-  const url = new URL(`${env.backendApiUrl}/properties/grid-rent`);
-
-  // map boolean flags to 'true'|'false' strings
-  const setBoolParam = (key: string, value?: boolean) => {
-    if (typeof value === 'boolean') url.searchParams.set(key, value ? 'true' : 'false');
-  };
-
-  // attach params
-  if (params.fields) url.searchParams.set('fields', params.fields);
-  if (params.sort) url.searchParams.set('sort', params.sort);
-  if (params.sortField) url.searchParams.set('sortField', params.sortField);
-  if (typeof params.search === 'string') url.searchParams.set('search', params.search);
-  if (typeof params.filters === 'string') url.searchParams.set('filters', params.filters);
-  setBoolParam('filtration', params.filtration);
-  setBoolParam('pagination', params.pagination);
-  if (typeof params.page === 'number') url.searchParams.set('page', String(params.page));
-  if (typeof params.limit === 'number') url.searchParams.set('limit', String(params.limit));
-
-  console.log('[DEBUG] getRentPropertiesGrid - Final URL sent to backend:', url.toString());
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
-    },
-    cache: 'no-store',
-  });
-
-  console.log('[DEBUG] getRentPropertiesGrid - Response status:', response.status);
-
-  if (!response.ok) {
-    let message = `Error ${response.status} al obtener propiedades en renta`;
-    try {
-      const payload = await response.json();
-      if (payload?.message) message = payload.message;
-    } catch {}
-    throw new Error(message);
-  }
-
-  const result = await response.json();
-  console.log('[DEBUG] getRentPropertiesGrid - Response data length:', Array.isArray(result) ? result.length : 'Not an array');
-  return result as RentPropertiesGridResponse;
-}
-
-export async function listAvailableRentProperties(
-  params: ListAvailableRentPropertiesParams = {}
-): Promise<AvailableRentProperty[]> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.accessToken;
-
-  if (!accessToken) {
-    throw new Error('No hay una sesión activa para consultar propiedades.');
-  }
-
-  const url = new URL(`${env.backendApiUrl}/properties/available-rent`);
-
-  if (typeof params.search === 'string' && params.search.trim() !== '') {
-    url.searchParams.set('search', params.search.trim());
-  }
-
-  if (typeof params.limit === 'number') {
-    url.searchParams.set('limit', String(params.limit));
-  }
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
-    },
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    let message = `Error ${response.status} al obtener propiedades disponibles para arriendo`;
-    try {
-      const payload = await response.json();
-      if (payload?.message) {
-        message = payload.message;
-      }
-    } catch {
-      // ignore parse errors and keep default message
-    }
-    throw new Error(message);
-  }
-
-  const data = await response.json();
-
-  if (!Array.isArray(data)) {
-    throw new Error('Formato inesperado al listar propiedades disponibles para arriendo');
-  }
-
-  return data.map((item: any) => {
-    const rawPrice = item?.price;
-    const priceNumber =
-      typeof rawPrice === 'number'
-        ? rawPrice
-        : rawPrice !== null && rawPrice !== undefined && !Number.isNaN(Number(rawPrice))
-          ? Number(rawPrice)
-          : undefined;
-
-    return {
-      id: item?.id,
-      code: item?.code ?? null,
-      title: item?.title ?? null,
-      status: item?.status ?? null,
-      city: item?.city ?? null,
-      state: item?.state ?? null,
-      price: priceNumber ?? null,
-      currencyPrice: item?.currencyPrice ?? null,
-      propertyTypeId: item?.propertyTypeId ?? null,
-      propertyTypeName: item?.propertyTypeName ?? null,
-      mainImageUrl: item?.mainImageUrl ?? null,
-    } satisfies AvailableRentProperty;
-  });
-}
-
-export async function getSalePropertiesCountSale(): Promise<number> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.accessToken;
-  if (!accessToken) throw new Error('No hay sesión activa');
-  const res = await fetch(`${env.backendApiUrl}/properties/count-sale`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error('Error al obtener el total de propiedades en venta');
-  const data = await res.json();
-  return data.total;
-}
-
-export async function getSalePropertiesCountPublished(): Promise<number> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.accessToken;
-  if (!accessToken) throw new Error('No hay sesión activa');
-  const res = await fetch(`${env.backendApiUrl}/properties/count-published`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error('Error al obtener el total de propiedades publicadas');
-  const data = await res.json();
-  return data.total;
-}
-
-export async function getSalePropertiesCountFeatured(): Promise<number> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.accessToken;
-  if (!accessToken) throw new Error('No hay sesión activa');
-  const res = await fetch(`${env.backendApiUrl}/properties/count-featured`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error('Error al obtener el total de propiedades destacadas');
-  const data = await res.json();
-  return data.total;
 }
 
 export interface PropertyTypeWithFeatures {
@@ -541,7 +291,6 @@ export async function getPropertyTypeCharacteristics(id: string): Promise<{
   }
 }
 
-export type CreatePropertyPayload = FormData | { data: any; multimediaFiles?: File[] };
 
 export interface PublishPropertyPayload {
   title: string;
@@ -568,9 +317,15 @@ export interface PublishPropertyPayload {
   accessToken?: string;
 }
 
+
+/** Propiedad creada por `POST /properties/...` (el portal solo usa el `id`). */
+export interface PublishedPropertyRecord {
+  id: string;
+  [key: string]: unknown;
+}
 export async function publishPropertyPublic(
   payload: PublishPropertyPayload,
-): Promise<{ success: boolean; data?: any; error?: string }> {
+): Promise<{ success: boolean; data?: PublishedPropertyRecord; error?: string }> {
   try {
     console.log('📤 [publishPropertyPublic] Iniciando publicación de propiedad (público)');
 
@@ -656,7 +411,7 @@ export async function publishPropertyPublic(
 
 export async function publishProperty(
   payload: PublishPropertyPayload,
-): Promise<{ success: boolean; data?: any; error?: string }> {
+): Promise<{ success: boolean; data?: PublishedPropertyRecord; error?: string }> {
   try {
     const session = await getServerSession(authOptions);
 
@@ -929,133 +684,6 @@ export interface UpdatePropertyBasicDto {
 }
 
 /**
- * Create a new property
- */
-export async function createProperty(data: CreatePropertyPayload): Promise<{
-  success: boolean;
-  data?: Property;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    // Helper to build FormData from payload
-    const buildFormData = (payload: CreatePropertyPayload) => {
-      if (payload instanceof FormData) return payload;
-      const fd = new FormData();
-      fd.append('data', JSON.stringify(payload.data));
-      if (payload.multimediaFiles && payload.multimediaFiles.length > 0) {
-        payload.multimediaFiles.forEach((file, i) => fd.append('multimediaFiles', file));
-      }
-      return fd;
-    };
-
-    const attemptRequest = async (accessTokenToUse?: string) => {
-      const fd = buildFormData(data);
-      const response = await fetch(`${env.backendApiUrl}/properties`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessTokenToUse ?? session.accessToken}`,
-          // Content-Type must NOT be set for FormData
-        },
-        body: fd,
-      });
-      return response;
-    };
-
-    // Resolve token to use: prefer session token (fresh) then fallback to cookie
-    let tokenToTry = session.accessToken;
-    let tokenFromCookie: string | undefined;
-    try {
-      const cookieStore = await cookies();
-      tokenFromCookie = cookieStore.get('access_token')?.value;
-      if (!tokenToTry && tokenFromCookie) {
-        tokenToTry = tokenFromCookie;
-      }
-    } catch (err) {
-      console.warn('[createProperty] Could not read access_token cookie:', err);
-    }
-
-    // Debug: log which token source we're using (masked)
-    try {
-      const masked = tokenToTry ? `${String(tokenToTry).substring(0, 8)}...${String(tokenToTry).slice(-8)}` : 'none';
-      console.log('[createProperty] Using token from', tokenToTry === tokenFromCookie ? 'cookie' : 'session', masked);
-    } catch (err) {
-      // ignore masking errors
-    }
-
-    // First attempt with resolved token
-    let response = await attemptRequest(tokenToTry);
-
-    // If unauthorized, try refresh and retry once
-    if (response.status === 401) {
-      console.log('[createProperty] Received 401, attempting token refresh');
-      const refresh = await refreshAccessToken();
-      if (refresh.success && refresh.data?.access_token) {
-        console.log('[createProperty] Token refreshed, retrying request');
-        response = await attemptRequest(refresh.data.access_token);
-      } else {
-        console.log('[createProperty] Token refresh failed, logging out');
-        try {
-          await logoutAction();
-        } catch (err) {
-          console.warn('[createProperty] Logout failed after refresh failure', err);
-        }
-        return { success: false, error: 'Sesión inválida. Por favor, inicia sesión nuevamente.' };
-      }
-    }
-
-    // If still unauthorized, log response body for debugging
-    if (response.status === 401) {
-      const errBody = await response.json().catch(() => null);
-      console.error('[createProperty] Still 401 after refresh. Response payload:', errBody);
-    }
-
-    // Extra fallback: if after refresh we still get 401, try one last time with the original session token
-    if (response.status === 401 && session?.accessToken) {
-      try {
-        console.log('[createProperty] Retrying once with session token as a last-resort fallback');
-        response = await attemptRequest(session.accessToken);
-        if (response.status === 401) {
-          const errBody = await response.json().catch(() => null);
-          console.error('[createProperty] Final attempt with session token still 401. Payload:', errBody);
-        } else {
-          console.log('[createProperty] Final attempt with session token succeeded');
-        }
-      } catch (err) {
-        console.warn('[createProperty] Final fallback attempt failed', err);
-      }
-    }
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to create property: ${response.status}`,
-      };
-    }
-
-    const result = await response.json();
-    
-    // Revalidate both sales and rent property paths
-    revalidatePath('/properties/sales');
-    revalidatePath('/properties/rent');
-    revalidateTag('properties-grid', "max");
-    
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error creating property:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
  * Get a property by ID
  */
 export async function getProperty(id: string): Promise<{
@@ -1089,120 +717,6 @@ export async function getProperty(id: string): Promise<{
     return { success: true, data: result };
   } catch (error) {
     console.error('Error fetching property:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Get full property details with all relations and aggregated data
- */
-export async function getFullProperty(id: string): Promise<{
-  success: boolean;
-  data?: Property;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    console.log('🔍 [getFullProperty] Llamando a /properties/' + id + '/full');
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${id}/full`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      console.error('❌ [getFullProperty] Error response:', {
-        status: response.status,
-        error: errorData
-      });
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to fetch full property: ${response.status}` 
-      };
-    }
-
-    const result = await response.json();
-    console.log('✅ [getFullProperty] Resultado completo:', {
-      id: result?.id,
-      title: result?.title,
-      hasMultimedia: result?.multimedia ? result.multimedia.length : 0,
-      hasPropertyType: !!result?.propertyType,
-      propertyType: result?.propertyType,
-      hasChangeHistory: !!result?.changeHistory,
-      changeHistoryCount: result?.changeHistory?.length || 0
-    });
-    
-    // Resolver nombres de usuarios del historial en el servidor
-    if (result.changeHistory && Array.isArray(result.changeHistory) && result.changeHistory.length > 0) {
-      console.log('📜 [getFullProperty] Resolviendo nombres de usuarios del historial...');
-      
-      // Obtener IDs únicos de usuarios
-      const uniqueUserIds = [...new Set(
-        result.changeHistory
-          .map((h: any) => h.changedBy)
-          .filter((id: any) => id && typeof id === 'string' && id !== 'system')
-      )] as string[];
-      
-      console.log('👥 [getFullProperty] IDs de usuarios a resolver:', uniqueUserIds);
-      
-      // Cargar nombres de usuarios en paralelo
-      const userPromises = uniqueUserIds.map(async (userId: string) => {
-        try {
-          const userResponse = await fetch(`${env.backendApiUrl}/users/${userId}`, {
-            headers: {
-              'Authorization': `Bearer ${session.accessToken}`,
-            },
-            cache: 'no-store',
-          });
-          
-          if (!userResponse.ok) {
-            console.warn(`⚠️ [getFullProperty] No se pudo cargar usuario ${userId}`);
-            return { id: userId, name: 'Usuario desconocido' };
-          }
-          
-          const user = await userResponse.json();
-          const name = `${user.personalInfo?.firstName || ''} ${user.personalInfo?.lastName || ''}`.trim() 
-            || user.username 
-            || 'Usuario desconocido';
-          
-          return { id: userId, name };
-        } catch (error) {
-          console.error(`❌ [getFullProperty] Error cargando usuario ${userId}:`, error);
-          return { id: userId, name: 'Usuario desconocido' };
-        }
-      });
-      
-      const users = await Promise.all(userPromises);
-      const userMap = Object.fromEntries(users.map(u => [u.id, u.name]));
-      
-      console.log('✅ [getFullProperty] Nombres de usuarios resueltos:', userMap);
-      
-      // Agregar nombres al historial
-      result.changeHistory = result.changeHistory.map((change: any) => ({
-        ...change,
-        changedByName: change.changedBy === 'system' 
-          ? 'Sistema' 
-          : (userMap[change.changedBy] || 'Usuario desconocido')
-      }));
-      
-      console.log('✅ [getFullProperty] Historial enriquecido con nombres de usuarios');
-    }
-    
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('❌ [getFullProperty] Error fetching full property:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 
@@ -1253,48 +767,6 @@ export async function updateProperty(id: string, data: UpdatePropertyDto): Promi
 }
 
 /**
- * Update basic property information (title, description, status, operationType, propertyTypeId, assignedAgentId)
- */
-export async function updatePropertyBasic(id: string, data: UpdatePropertyBasicDto): Promise<{
-  success: boolean;
-  data?: Property;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${id}/basic`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to update property basic info: ${response.status}`,
-      };
-    }
-
-    const result = await response.json();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error updating property basic info:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
  * Delete a property (soft delete)
  */
 export async function deleteProperty(id: string): Promise<void> {
@@ -1326,187 +798,6 @@ export async function deleteProperty(id: string): Promise<void> {
   }
 }
 
-/**
- * Toggle property published status
- */
-export async function togglePropertyPublished(id: string): Promise<{
-  success: boolean;
-  data?: Property;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${id}/toggle-published`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to toggle published status: ${response.status}` 
-      };
-    }
-
-    const result = await response.json();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error toggling published status:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Toggle property featured status
- */
-export async function togglePropertyFeatured(id: string): Promise<{
-  success: boolean;
-  data?: Property;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${id}/toggle-featured`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to toggle featured status: ${response.status}` 
-      };
-    }
-
-    const result = await response.json();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error toggling featured status:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Assign agent to property
- */
-export async function assignPropertyAgent(id: string, agentId: string): Promise<{
-  success: boolean;
-  data?: Property;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${id}/assign-agent`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ agentId }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to assign agent: ${response.status}` 
-      };
-    }
-
-    const result = await response.json();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error assigning agent:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Get properties by agent
- */
-export async function getPropertiesByAgent(agentId: string, params: {
-  page?: number;
-  limit?: number;
-  status?: 'ACTIVE' | 'INACTIVE' | 'SOLD' | 'RESERVED';
-} = {}): Promise<{
-  success: boolean;
-  data?: {
-    data: Property[];
-    total: number;
-    page: number;
-    limit: number;
-  };
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const searchParams = new URLSearchParams();
-    if (params.page) searchParams.set('page', params.page.toString());
-    if (params.limit) searchParams.set('limit', params.limit.toString());
-    if (params.status) searchParams.set('status', params.status);
-
-    const url = `${env.backendApiUrl}/properties/by-agent/${agentId}?${searchParams.toString()}`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to fetch properties by agent: ${response.status}` 
-      };
-    }
-
-    const data = await response.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error fetching properties by agent:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
 export interface UpdatePropertyCharacteristicsDto {
   builtSquareMeters?: number;
   landSquareMeters?: number;
@@ -1515,48 +806,6 @@ export interface UpdatePropertyCharacteristicsDto {
   parkingSpaces?: number;
   floors?: number;
   constructionYear?: number;
-}
-
-/**
- * Update property characteristics
- */
-export async function updatePropertyCharacteristics(id: string, data: UpdatePropertyCharacteristicsDto): Promise<{
-  success: boolean;
-  data?: Property;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${id}/characteristics`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to update property characteristics: ${response.status}` 
-      };
-    }
-
-    const result = await response.json();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error updating property characteristics:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
 }
 
 export interface UpdatePropertyLocationDto {
@@ -1572,90 +821,6 @@ export interface UpdatePropertyPriceDto {
   currencyPrice?: 'CLP' | 'UF';
   seoTitle?: string;
   seoDescription?: string;
-}
-
-/**
- * Update property price and SEO information
- */
-export async function updatePropertyPrice(id: string, data: UpdatePropertyPriceDto): Promise<{
-  success: boolean;
-  data?: Property;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${id}/price`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to update property price: ${response.status}` 
-      };
-    }
-
-    const result = await response.json();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error updating property price:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
- * Update property location
- */
-export async function updatePropertyLocation(id: string, data: UpdatePropertyLocationDto): Promise<{
-  success: boolean;
-  data?: Property;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${id}/location`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to update property location: ${response.status}` 
-      };
-    }
-
-    const result = await response.json();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error updating property location:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
 }
 
 export interface PublicPropertyItem {
@@ -1687,44 +852,36 @@ export interface PublicPropertyItem {
   landSquareMeters?: number;
   parkingSpaces?: number;
   isFeatured?: boolean;
+  multimedia?: MediaItem[];
 }
 
-/**
- * Public: list all published properties (no token required)
- */
-export async function getPublishedPropertiesPublic(): Promise<{
-  success: boolean;
-  data?: PublicPropertyItem[];
-  error?: string;
-}> {
-  try {
-    const res = await fetch(`${env.backendApiUrl}/properties/public`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-      next: { revalidate: 60, tags: ['public-listings'] },
-    });
+type RawPublicPropertyItem = Omit<PublicPropertyItem, 'mainImageUrl' | 'multimedia'> & {
+  mainImageUrl?: string | null;
+  multimedia?: MediaItem[] | null;
+};
 
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to fetch published properties: ${res.status}`,
-      };
-    }
+const toAbsoluteMediaUrl = (url?: string | null): string | undefined => {
+  if (!url) return undefined;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) return `${env.backendApiUrl}${url}`;
+  return url;
+};
 
-  const payload = await res.json();
-  // Controller returns { success: true, data: [...] }
-  const data = Array.isArray(payload) ? payload : payload?.data ?? [];
-  return { success: true, data };
-  } catch (error) {
-    console.error('Error fetching published properties (public):', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
+/** Normaliza el listado público de propiedades: URLs absolutas en imagen principal, multimedia y variantes. */
+function normalizePublicProperties(raw: unknown): PublicPropertyItem[] {
+  const list = Array.isArray(raw) ? (raw as RawPublicPropertyItem[]) : [];
+  return list.map((property) => ({
+    ...property,
+    mainImageUrl: toAbsoluteMediaUrl(property.mainImageUrl),
+    multimedia: (property.multimedia || []).map((m) => ({
+      ...m,
+      url: toAbsoluteMediaUrl(m.url) ?? '',
+      variants: (m.variants || []).map((v) => ({
+        ...v,
+        url: toAbsoluteMediaUrl(v.url) ?? '',
+      })),
+    })),
+  }));
 }
 
 /**
@@ -1755,25 +912,7 @@ export async function getPublishedFeaturedPropertiesPublic(): Promise<{
   const payload = await res.json();
   const rawData = Array.isArray(payload) ? payload : payload?.data ?? [];
 
-  const ensureAbsoluteUrl = (url?: string | null): string | null => {
-    if (!url) return null;
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    if (url.startsWith('/')) return `${env.backendApiUrl}${url}`;
-    return url;
-  };
-
-  const data = (Array.isArray(rawData) ? rawData : []).map((property: any) => ({
-    ...property,
-    mainImageUrl: ensureAbsoluteUrl(property?.mainImageUrl),
-    multimedia: (property?.multimedia || []).map((m: any) => ({
-      ...m,
-      url: ensureAbsoluteUrl(m?.url),
-      variants: (m?.variants || []).map((v: any) => ({
-        ...v,
-        url: ensureAbsoluteUrl(v?.url),
-      })),
-    })),
-  }));
+  const data = normalizePublicProperties(rawData);
 
   return { success: true, data };
   } catch (error) {
@@ -1781,134 +920,6 @@ export async function getPublishedFeaturedPropertiesPublic(): Promise<{
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-export async function updateMainImage(
-  propertyId: string,
-  mainImageUrl: string | null
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No autorizado' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${propertyId}/main-image`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.accessToken}`,
-      },
-      body: JSON.stringify({ mainImageUrl }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      return {
-        success: false,
-        error: errorData.message || 'Error al actualizar imagen principal'
-      };
-    }
-
-    const updatedProperty = await response.json();
-    
-    // Revalidate the property page to refresh data
-    revalidatePath(`/properties`);
-    
-    return { success: true, data: updatedProperty };
-  } catch (error) {
-    console.error('Error updating main image:', error);
-    return {
-      success: false,
-      error: 'Error inesperado al actualizar imagen principal'
-    };
-  }
-}
-
-export async function uploadPropertyMultimedia(
-  propertyId: string,
-  files: File[]
-) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No autorizado' };
-    }
-
-    const formData = new FormData();
-    files.forEach(file => {
-      formData.append('files', file);
-    });
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${propertyId}/multimedia`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      return {
-        success: false,
-        error: errorData.message || 'Error al subir multimedia'
-      };
-    }
-
-    const uploadedFiles = await response.json();
-    return { success: true, data: uploadedFiles };
-  } catch (error) {
-    console.error('Error uploading multimedia:', error);
-    return {
-      success: false,
-      error: 'Error inesperado al subir multimedia'
-    };
-  }
-}
-
-/**
- * Check if a multimedia item is the main image of a property
- */
-export async function isMultimediaMain(
-  propertyId: string,
-  multimediaId: string
-): Promise<{
-  success: boolean;
-  isMain?: boolean;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No autorizado' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/properties/${propertyId}/multimedia/${multimediaId}/is-main`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      return {
-        success: false,
-        error: errorData.message || 'Error al verificar si la multimedia es principal'
-      };
-    }
-
-    const result = await response.json();
-    return { success: true, isMain: result.isMain };
-  } catch (error) {
-    console.error('Error checking if multimedia is main:', error);
-    return {
-      success: false,
-      error: 'Error inesperado al verificar multimedia principal'
     };
   }
 }
@@ -1950,545 +961,6 @@ export async function getPublishedPropertyPublic(id: string): Promise<{
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
-  }
-}
-
-/**
- * Get basic property information by ID (title, price, type, creator user)
- */
-export async function getBasicPropertyInfo(propertyId: string): Promise<{
-  success: boolean;
-  data?: any;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    const res = await fetch(`${env.backendApiUrl}/properties/${propertyId}/basic`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-      next: { revalidate: 0 },
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to fetch basic property info: ${res.status}`,
-      };
-    }
-
-    const data = await res.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error fetching basic property info:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Get property header information by ID (title, status)
- */
-export async function getPropertyHeaderInfo(propertyId: string): Promise<{
-  success: boolean;
-  data?: any;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    const res = await fetch(`${env.backendApiUrl}/properties/${propertyId}/header`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-      next: { revalidate: 0 },
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to fetch property header info: ${res.status}`,
-      };
-    }
-
-    const data = await res.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error fetching property header info:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Update property status
- */
-export async function updatePropertyStatus(
-  propertyId: string,
-  status: string
-): Promise<{
-  success: boolean;
-  data?: any;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    const res = await fetch(`${env.backendApiUrl}/properties/${propertyId}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ status }),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to update property status: ${res.status}`,
-      };
-    }
-
-    const data = await res.json();
-    revalidatePath('/properties');
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error updating property status:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Get property characteristics based on property type
- */
-export async function getPropertyCharacteristics(propertyId: string): Promise<{
-  success: boolean;
-  data?: any;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    const res = await fetch(`${env.backendApiUrl}/properties/${propertyId}/characteristics`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to fetch property characteristics: ${res.status}`,
-      };
-    }
-
-    const data = await res.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error fetching property characteristics:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Get property location information
- */
-export async function getPropertyLocation(propertyId: string): Promise<{
-  success: boolean;
-  data?: any;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    // Use the /full endpoint which includes location data
-    const res = await fetch(`${env.backendApiUrl}/properties/${propertyId}/full`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      console.error('❌ [getPropertyLocation] Failed to fetch:', {
-        status: res.status,
-        error: errorData?.message,
-        url: `${env.backendApiUrl}/properties/${propertyId}/full`,
-      });
-      return {
-        success: false,
-        error: errorData?.message || `Failed to fetch property location: ${res.status}`,
-      };
-    }
-
-    const fullData = await res.json();
-    console.log('📍 [getPropertyLocation] Full property data received:', {
-      propertyId,
-      state: fullData?.state,
-      city: fullData?.city,
-      address: fullData?.address,
-      latitude: fullData?.latitude,
-      longitude: fullData?.longitude,
-      allKeys: Object.keys(fullData || {}),
-    });
-    
-    // Extract location data from the full property response
-    const locationData = {
-      state: fullData?.state || '',
-      city: fullData?.city || '',
-      address: fullData?.address || '',
-      latitude: fullData?.latitude,
-      longitude: fullData?.longitude,
-    };
-    
-    console.log('✅ [getPropertyLocation] Location data extracted:', locationData);
-    return { success: true, data: locationData };
-  } catch (error) {
-    console.error('❌ [getPropertyLocation] Error:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Get property multimedia
- */
-export async function getPropertyMultimedia(propertyId: string): Promise<{
-  success: boolean;
-  data?: any[];
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    const res = await fetch(`${env.backendApiUrl}/properties/${propertyId}/multimedia`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to fetch property multimedia: ${res.status}`,
-      };
-    }
-
-    const data = await res.json();
-    return { success: true, data };
-  } catch (error) {
-    console.error('Error fetching property multimedia:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Delete property multimedia
- */
-export async function deletePropertyMultimedia(
-  propertyId: string,
-  multimediaId: string
-): Promise<{
-  success: boolean;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    const res = await fetch(`${env.backendApiUrl}/multimedia/${multimediaId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to delete multimedia: ${res.status}`,
-      };
-    }
-
-    // No revalidate path to keep dialog open
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting multimedia:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Update main multimedia URL
- */
-export async function updateMainMultimediaUrl(
-  propertyId: string,
-  mainImageUrl: string
-): Promise<{
-  success: boolean;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return {
-        success: false,
-        error: 'Unauthorized',
-      };
-    }
-
-    const res = await fetch(`${env.backendApiUrl}/properties/${propertyId}/main-image`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({ mainImageUrl }),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json().catch(() => null);
-      return {
-        success: false,
-        error: errorData?.message || `Failed to update main multimedia: ${res.status}`,
-      };
-    }
-
-    // No revalidate path to keep dialog open
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating main multimedia URL:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-/**
- * Get property history (requires auth)
- */
-export async function getPropertyHistory(propertyId: string): Promise<{ success: boolean; data?: any[]; error?: string }> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-    if (!accessToken) return { success: false, error: 'No authenticated' };
-
-    const res = await fetch(`${env.backendApiUrl}/properties/${propertyId}/history`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => null);
-      return { success: false, error: err?.message || `HTTP ${res.status}` };
-    }
-
-    const payload = await res.json();
-    return { success: true, data: payload?.data ?? payload };
-  } catch (error) {
-    console.error('[getPropertyHistory] Error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
-
-/**
- * Resolve display names for history entries by user/person identifiers.
- * Tries /users/:id first, then /people/:id as fallback.
- */
-export async function resolveHistoryUserDisplayNames(
-  ids: string[],
-): Promise<{ success: boolean; data?: Record<string, string>; error?: string }> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const uniqueIds = Array.from(
-      new Set(
-        ids
-          .filter((id): id is string => typeof id === 'string')
-          .map((id) => id.trim())
-          .filter((id) => id.length > 0 && id !== 'system'),
-      ),
-    );
-
-    if (uniqueIds.length === 0) {
-      return { success: true, data: {} };
-    }
-
-    const headers = {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/json',
-    };
-
-    const resolveUserName = (payload: any): string | null => {
-      const firstName = typeof payload?.personalInfo?.firstName === 'string' ? payload.personalInfo.firstName.trim() : '';
-      const lastName = typeof payload?.personalInfo?.lastName === 'string' ? payload.personalInfo.lastName.trim() : '';
-      const fullName = `${firstName} ${lastName}`.trim();
-      return fullName || payload?.name || payload?.username || payload?.email || null;
-    };
-
-    const resolvePersonName = (payload: any): string | null => {
-      const personName = typeof payload?.name === 'string' ? payload.name.trim() : '';
-      if (personName) return personName;
-      const userName = resolveUserName(payload?.user);
-      if (userName) return userName;
-      return typeof payload?.email === 'string' ? payload.email : null;
-    };
-
-    const entries = await Promise.all(
-      uniqueIds.map(async (id) => {
-        try {
-          const userRes = await fetch(`${env.backendApiUrl}/users/${id}`, {
-            method: 'GET',
-            headers,
-            cache: 'no-store',
-          });
-
-          if (userRes.ok) {
-            const userPayload = await userRes.json().catch(() => null);
-            const displayName = resolveUserName(userPayload);
-            if (displayName) {
-              return [id, displayName] as const;
-            }
-          }
-
-          const personRes = await fetch(`${env.backendApiUrl}/people/${id}`, {
-            method: 'GET',
-            headers,
-            cache: 'no-store',
-          });
-
-          if (personRes.ok) {
-            const personPayload = await personRes.json().catch(() => null);
-            const displayName = resolvePersonName(personPayload);
-            if (displayName) {
-              return [id, displayName] as const;
-            }
-          }
-        } catch {
-          // ignore and continue with next id
-        }
-
-        return [id, ''] as const;
-      }),
-    );
-
-    const data: Record<string, string> = {};
-    for (const [id, name] of entries) {
-      if (name) {
-        data[id] = name;
-      }
-    }
-
-    return { success: true, data };
-  } catch (error) {
-    console.error('[resolveHistoryUserDisplayNames] Error:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
 }
 
@@ -2543,7 +1015,12 @@ export async function revalidatePropertyRoute(path: string): Promise<{ success: 
 export async function getPublishedFeaturedProperties(
   page = 1,
   limit = 9,
-): Promise<{ success: boolean; data?: any[]; pagination?: any; error?: string }> {
+): Promise<{
+  success: boolean;
+  data?: PublicPropertyItem[];
+  pagination?: { total: number; page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPrevPage: boolean };
+  error?: string;
+}> {
   try {
     const safeLimit = Math.min(16, Math.max(1, limit));
     const res = await fetch(
@@ -2561,26 +1038,8 @@ export async function getPublishedFeaturedProperties(
     }
 
     const payload = await res.json();
-    const ensureAbsoluteUrl = (url?: string | null): string | null => {
-      if (!url) return null;
-      if (url.startsWith('http://') || url.startsWith('https://')) return url;
-      if (url.startsWith('/')) return `${env.backendApiUrl}${url}`;
-      return url;
-    };
-
     const rawData = payload?.data ?? payload ?? [];
-    const normalizedData = (Array.isArray(rawData) ? rawData : []).map((property: any) => ({
-      ...property,
-      mainImageUrl: ensureAbsoluteUrl(property?.mainImageUrl),
-      multimedia: (property?.multimedia || []).map((m: any) => ({
-        ...m,
-        url: ensureAbsoluteUrl(m?.url),
-        variants: (m?.variants || []).map((v: any) => ({
-          ...v,
-          url: ensureAbsoluteUrl(v?.url),
-        })),
-      })),
-    }));
+    const normalizedData = normalizePublicProperties(rawData);
 
     const pageNum = Number(payload?.page) || page;
     const limitNum = Number(payload?.limit) || safeLimit;

@@ -137,7 +137,7 @@ export default function AboutUsPage() {
       <div className="p-4">
         <div className="bg-blue-50 border border-blue-200 rounded-md p-6 text-center">
           <p className="text-blue-900 mb-4">
-            No hay datos de "Sobre Nosotros" registrados aún.
+            No hay datos de &quot;Sobre Nosotros&quot; registrados aún.
           </p>
           <Button 
             onClick={async () => {

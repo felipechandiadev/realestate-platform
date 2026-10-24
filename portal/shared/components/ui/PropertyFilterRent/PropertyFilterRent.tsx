@@ -109,9 +109,9 @@ export default function PropertyFilterRent({
   }, [router]);
 
   // Handle filter changes
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = <K extends keyof FilterRentPropertiesDto>(key: K, value: FilterRentPropertiesDto[K] | null) => {
     const newFilters = { ...filters };
-    (newFilters as any)[key] = value;
+    newFilters[key] = value ?? undefined;
     newFilters.page = 1;
 
     setFilters(newFilters);
@@ -350,7 +350,7 @@ export default function PropertyFilterRent({
         <Select
           placeholder="Tipo de propiedad"
           value={filters.typeProperty || ''}
-          onChange={(value) => handleFilterChange('typeProperty', value)}
+          onChange={(value) => handleFilterChange('typeProperty', value == null ? null : String(value))}
           options={propertyTypes}
         />
 
@@ -379,7 +379,7 @@ export default function PropertyFilterRent({
         <Select
           placeholder="Comuna"
           value={filters.city || ''}
-          onChange={(value) => handleFilterChange('city', value)}
+          onChange={(value) => handleFilterChange('city', value == null ? null : String(value))}
           options={getCommunesForRegion(filters.state || '')}
         />
 
@@ -387,7 +387,7 @@ export default function PropertyFilterRent({
         <Select
           placeholder="Moneda"
           value={filters.currency || 'CLP'}
-          onChange={(value) => handleFilterChange('currency', value)}
+          onChange={(value) => handleFilterChange('currency', value == null ? null : String(value))}
           options={[
             { id: 'CLP', label: 'CLP' },
             { id: 'UF', label: 'UF' },
@@ -427,7 +427,7 @@ export default function PropertyFilterRent({
                 </button>
               </div>
               <NumberStepper
-                label={getDynamicLabel(filters.bedroomsOperator as any, filters.bedrooms || 0, 'Dormitorios')}
+                label={getDynamicLabel(filters.bedroomsOperator, filters.bedrooms || 0, 'Dormitorios')}
                 value={filters.bedrooms || 0}
                 onChange={(value) => handleFilterChange('bedrooms', value)}
                 min={0}
@@ -465,7 +465,7 @@ export default function PropertyFilterRent({
                 </button>
               </div>
               <NumberStepper
-                label={getDynamicLabel(filters.bathroomsOperator as any, filters.bathrooms || 0, 'Baños')}
+                label={getDynamicLabel(filters.bathroomsOperator, filters.bathrooms || 0, 'Baños')}
                 value={filters.bathrooms || 0}
                 onChange={(value) => handleFilterChange('bathrooms', value)}
                 min={0}
@@ -503,7 +503,7 @@ export default function PropertyFilterRent({
                 </button>
               </div>
               <NumberStepper
-                label={getDynamicLabel(filters.parkingSpacesOperator as any, filters.parkingSpaces || 0, 'Estacionamientos')}
+                label={getDynamicLabel(filters.parkingSpacesOperator, filters.parkingSpaces || 0, 'Estacionamientos')}
                 value={filters.parkingSpaces || 0}
                 onChange={(value) => handleFilterChange('parkingSpaces', value)}
                 min={0}

@@ -7,18 +7,13 @@
  */
 
 // Articles
-export { ArticlesGrid } from './articles/ArticlesGrid';
 export { ArticleDialog } from './articles/ArticleDialog';
 export { ArticlesContent } from './articles/ArticlesContent';
 
 // Testimonials
-export { TestimonialsGrid } from './testimonials/TestimonialsGrid';
-export { TestimonialDialog } from './testimonials/TestimonialDialog';
 export { TestimonialsContent } from './testimonials/TestimonialsContent';
 
 // Slider
-export { SliderGrid } from './slider/SliderGrid';
-export { SliderDialog } from './slider/SliderDialog';
 export { SliderContent } from './slider/SliderContent';
 
 // About Us

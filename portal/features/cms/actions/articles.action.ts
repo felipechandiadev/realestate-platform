@@ -17,6 +17,8 @@ export interface Article {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Artículos relacionados (solo en `GET /articles/:id`). */
+  relatedArticles?: Article[];
 }
 
 export interface CreateArticleDto {

@@ -42,14 +42,20 @@ export interface UserNotificationGridRow {
   createdAt?: string;
   updatedAt?: string;
   // allow additional fields without strict typing
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type UserGridNotificationsResponse =
   | UserNotificationGridRow[]
   | { data: UserNotificationGridRow[]; total: number; page: number; limit: number; totalPages: number };
 
-export async function createNotification(data: CreateNotificationData): Promise<{ success: boolean; error?: string; notification?: any }> {
+/** Notificación devuelta por el core (campos mínimos que usa el portal). */
+export interface NotificationRecord {
+  id: string;
+  [key: string]: unknown;
+}
+
+export async function createNotification(data: CreateNotificationData): Promise<{ success: boolean; error?: string; notification?: NotificationRecord }> {
   try {
     // Obtener sesión para autenticación
     const session = await getServerSession(authOptions);
@@ -195,73 +201,6 @@ export async function getUserGridNotifications(
   return result as UserGridNotificationsResponse;
 }
 
-// Server action: export user notifications grid as XLSX (returns base64 + filename)
-export async function exportUserGridNotificationsExcel(
-  userId: string,
-  params: UserGridNotificationsParams = {}
-): Promise<{ filename: string; base64: string } | { success: false; error: string }> {
-  const session = await getServerSession(authOptions);
-  const accessToken = session?.accessToken;
-
-  if (!accessToken) {
-    return { success: false, error: 'No hay una sesión activa.' };
-  }
-
-  const url = new URL(`${env.backendApiUrl}/notifications/user/${userId}/grid/excel`);
-  const setBoolParam = (key: string, value?: boolean) => {
-    if (typeof value === 'boolean') url.searchParams.set(key, value ? 'true' : 'false');
-  };
-
-  if (params.fields) url.searchParams.set('fields', params.fields);
-  if (params.sort) url.searchParams.set('sort', params.sort);
-  if (params.sortField) url.searchParams.set('sortField', params.sortField);
-  if (typeof params.search === 'string') url.searchParams.set('search', params.search);
-  if (typeof params.filters === 'string') url.searchParams.set('filters', params.filters);
-  setBoolParam('filtration', params.filtration);
-  setBoolParam('pagination', params.pagination);
-
-  const response = await fetch(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    },
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      // Try refresh once
-      const refresh = await refreshAccessToken();
-      if (refresh.success && refresh.data?.access_token) {
-        const retryResp = await fetch(url.toString(), {
-          headers: {
-            Authorization: `Bearer ${refresh.data.access_token}`,
-            Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          },
-          cache: 'no-store',
-        });
-        if (!retryResp.ok) return { success: false, error: `HTTP ${retryResp.status}` };
-        const arr = await retryResp.arrayBuffer();
-        const base64 = Buffer.from(arr).toString('base64');
-        const contentDisposition = retryResp.headers.get('content-disposition') || 'notificaciones.xlsx';
-        const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
-        const filename = filenameMatch ? filenameMatch[1] : 'notificaciones.xlsx';
-        return { filename, base64 };
-      }
-      return { success: false, error: 'No autorizado' };
-    }
-
-    return { success: false, error: `HTTP ${response.status}` };
-  }
-
-  const arr = await response.arrayBuffer();
-  const base64 = Buffer.from(arr).toString('base64');
-  const contentDisposition = response.headers.get('content-disposition') || 'notificaciones.xlsx';
-  const filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
-  const filename = filenameMatch ? filenameMatch[1] : 'notificaciones.xlsx';
-  return { filename, base64 };
-}
-
 /**
  * Submit contact form - sends a public contact message to administrators
  */
@@ -270,7 +209,7 @@ export async function submitContactForm(data: {
   email: string
   phone: string
   message: string
-}): Promise<{ success: boolean; error?: string; notification?: any }> {
+}): Promise<{ success: boolean; error?: string; notification?: NotificationRecord }> {
   try {
     const url = `${env.backendApiUrl}/notifications/public/contact`;
     
@@ -289,38 +228,6 @@ export async function submitContactForm(data: {
 
     const notification = await response.json();
     return { success: true, notification };
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
-
-/**
- * Get all notifications for a specific user
- */
-export async function getUserNotifications(userId: string): Promise<{ success: boolean; error?: string; notifications?: any[] }> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return { success: false, error: 'Unauthorized' };
-    }
-
-    const url = `${env.backendApiUrl}/notifications/user/${userId}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { success: false, error: errorData?.message || `HTTP ${response.status}` };
-    }
-
-    const notifications = await response.json();
-    return { success: true, notifications };
   } catch (error) {
     return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
@@ -393,7 +300,7 @@ export async function getUnreadNotificationsCount(userId: string): Promise<numbe
 /**
  * Update notification status
  */
-export async function updateNotificationStatus(notificationId: string, status: 'SEND' | 'OPEN'): Promise<{ success: boolean; error?: string; notification?: any }> {
+export async function updateNotificationStatus(notificationId: string, status: 'SEND' | 'OPEN'): Promise<{ success: boolean; error?: string; notification?: NotificationRecord }> {
   try {
     const session = await getServerSession(authOptions);
     const accessToken = session?.accessToken;
@@ -410,38 +317,6 @@ export async function updateNotificationStatus(notificationId: string, status: '
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ status }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { success: false, error: errorData?.message || `HTTP ${response.status}` };
-    }
-
-    const notification = await response.json();
-    return { success: true, notification };
-  } catch (error) {
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
-  }
-}
-
-/**
- * Get notification by ID
- */
-export async function getNotificationById(notificationId: string): Promise<{ success: boolean; error?: string; notification?: any }> {
-  try {
-    const session = await getServerSession(authOptions);
-    const accessToken = session?.accessToken;
-
-    if (!accessToken) {
-      return { success: false, error: 'Unauthorized' };
-    }
-
-    const url = `${env.backendApiUrl}/notifications/${notificationId}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
     });
 
     if (!response.ok) {

@@ -400,19 +400,19 @@ function Header() {
                 <tr>
                   <td className="px-4 py-2 text-sm font-mono text-blue-600">src</td>
                   <td className="px-4 py-2 text-sm text-gray-600">string</td>
-                  <td className="px-4 py-2 text-sm text-gray-600">'/logo.svg'</td>
+                  <td className="px-4 py-2 text-sm text-gray-600">&apos;/logo.svg&apos;</td>
                   <td className="px-4 py-2 text-sm text-gray-600">Ruta de la imagen del logo</td>
                 </tr>
                 <tr className="bg-gray-50">
                   <td className="px-4 py-2 text-sm font-mono text-blue-600">alt</td>
                   <td className="px-4 py-2 text-sm text-gray-600">string</td>
-                  <td className="px-4 py-2 text-sm text-gray-600">'Logo'</td>
+                  <td className="px-4 py-2 text-sm text-gray-600">&apos;Logo&apos;</td>
                   <td className="px-4 py-2 text-sm text-gray-600">Texto alternativo para accesibilidad</td>
                 </tr>
                 <tr>
                   <td className="px-4 py-2 text-sm font-mono text-blue-600">className</td>
                   <td className="px-4 py-2 text-sm text-gray-600">string</td>
-                  <td className="px-4 py-2 text-sm text-gray-600">''</td>
+                  <td className="px-4 py-2 text-sm text-gray-600">&apos;&apos;</td>
                   <td className="px-4 py-2 text-sm text-gray-600">Clases CSS adicionales</td>
                 </tr>
                 <tr className="bg-gray-50">

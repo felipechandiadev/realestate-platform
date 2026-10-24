@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 export interface MediaItem {
   id: string;
   url: string;
+  filename?: string;
   type?: string;
   format?: string;
   variants?: Array<{
@@ -17,6 +18,23 @@ export interface MediaItem {
     size: number;
     url: string;
   }>;
+}
+
+/** Forma del JSON que devuelve el core para cada propiedad publicada (antes de normalizar). */
+type BackendPropertyItem = Omit<PropertyData, 'currency' | 'totalArea' | 'mainImageUrl' | 'multimedia'> & {
+  currencyPrice?: string;
+  mainImageUrl?: string | null;
+  multimedia?: MediaItem[] | null;
+};
+
+interface BackendPropertiesPage {
+  data?: BackendPropertyItem[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+  hasNextPage?: boolean;
+  hasPrevPage?: boolean;
 }
 
 export interface PropertyData {
@@ -159,7 +177,7 @@ export async function getPublishedPropertiesFiltered(filters: {
       return null;
     }
 
-    const rawData = await response.json();
+    const rawData = (await response.json()) as BackendPropertiesPage;
 
     // Helper: Asegurar URLs absolutas
     const ensureAbsoluteUrl = (url: string | null | undefined): string => {
@@ -179,7 +197,7 @@ export async function getPublishedPropertiesFiltered(filters: {
     };
 
     // Mapear los datos del backend al formato esperado
-    const mappedData: PropertyData[] = (rawData.data || []).map((prop: any) => ({
+    const mappedData: PropertyData[] = (rawData.data || []).map((prop) => ({
       id: prop.id,
       title: prop.title,
       description: prop.description,
@@ -191,18 +209,18 @@ export async function getPublishedPropertiesFiltered(filters: {
       address: prop.address,
       bedrooms: prop.bedrooms,
       bathrooms: prop.bathrooms,
-      totalArea: prop.builtSquareMeters,
+      totalArea: prop.builtSquareMeters ?? 0,
       builtSquareMeters: prop.builtSquareMeters ?? null,
       landSquareMeters: prop.landSquareMeters ?? null,
       parkingSpaces: prop.parkingSpaces ?? null,
       otherFeatures: Array.isArray(prop.otherFeatures) ? prop.otherFeatures : [],
       mainImageUrl: ensureAbsoluteUrl(prop.mainImageUrl),
-      multimedia: (prop.multimedia || []).map((m: any) => ({
+      multimedia: (prop.multimedia || []).map((m) => ({
         id: m.id,
         url: ensureAbsoluteUrl(m.url),
         type: m.type,
         format: m.format,
-        variants: (m.variants || []).map((v: any) => ({
+        variants: (m.variants || []).map((v) => ({
           id: v.id,
           variantType: v.variantType,
           format: v.format,
@@ -319,9 +337,4 @@ export async function getFilterBounds(opts?: {
   } catch {
     return DEFAULT_FILTER_BOUNDS;
   }
-}
-
-export async function refreshPortalProperties() {
-  'use server';
-  revalidatePath('/');
 }
