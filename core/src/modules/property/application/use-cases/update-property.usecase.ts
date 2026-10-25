@@ -9,6 +9,18 @@ import { User } from '../../../users/domain/user.entity';
 import { NotificationsService } from '../../../notifications/application/notifications.service';
 import { normalizeOtherFeatures } from '../../domain/other-features';
 
+/** Campos opcionales que el equipo puede dejar vacíos desde la ficha. */
+export const CLEARABLE_PROPERTY_FIELDS = new Set<string>([
+  'description',
+  'address',
+  'internalNotes',
+  'assignedAgentId',
+  'constructionYear',
+  'seoTitle',
+  'seoDescription',
+  'seoKeywords',
+]);
+
 @Injectable()
 export class UpdatePropertyUseCase {
   constructor(
@@ -28,11 +40,17 @@ export class UpdatePropertyUseCase {
     const oldAssignedAgentId = property.assignedAgentId;
     const oldStatus = property.status;
 
-    // Filter blank values (keep empty arrays so otherFeatures can be cleared)
+    // Vacío ('' o null): en los campos opcionales significa "borrar"; en los
+    // obligatorios (título, estado, precio…) se ignora. Los arrays vacíos se
+    // conservan para poder limpiar otherFeatures.
     const cleanDto = Object.fromEntries(
-      Object.entries(updatePropertyDto).filter(([, value]) =>
-        value !== '' && value !== null && value !== undefined,
-      ),
+      Object.entries(updatePropertyDto).flatMap(([key, value]) => {
+        if (value === undefined) return [];
+        if (value === '' || value === null) {
+          return CLEARABLE_PROPERTY_FIELDS.has(key) ? [[key, null]] : [];
+        }
+        return [[key, value]];
+      }),
     ) as UpdatePropertyDto;
 
     if (cleanDto.otherFeatures !== undefined) {
@@ -115,6 +133,17 @@ export class UpdatePropertyUseCase {
     Object.assign(property, cleanDto);
     if (cleanDto.status === PropertyStatus.PUBLISHED && !property.publishedAt) {
       property.publishedAt = new Date();
+    }
+    // Solo una propiedad publicada puede aparecer como destacada en la portada.
+    if (property.status !== PropertyStatus.PUBLISHED && property.isFeatured) {
+      changes.push({
+        timestamp: new Date(),
+        changedBy: updatedBy || 'system',
+        field: 'isFeatured',
+        previousValue: true,
+        newValue: false,
+      });
+      property.isFeatured = false;
     }
     property.lastModifiedAt = new Date();
     if (changes.length > 0) {

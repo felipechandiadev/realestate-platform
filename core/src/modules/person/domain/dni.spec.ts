@@ -1,4 +1,4 @@
-import { compactDni, normalizeDni } from './dni';
+import { compactDni, hasValidRutCheckDigit, normalizeDni } from './dni';
 
 describe('normalizeDni', () => {
   it.each([
@@ -19,6 +19,14 @@ describe('normalizeDni', () => {
     expect(normalizeDni('   ')).toBeUndefined();
     expect(normalizeDni(null)).toBeUndefined();
     expect(normalizeDni(undefined)).toBeUndefined();
+  });
+
+  it('valida el dígito verificador de un RUT y no exige nada a otros documentos', () => {
+    expect(hasValidRutCheckDigit('12.345.678-5')).toBe(true);
+    expect(hasValidRutCheckDigit('12345678-9')).toBe(false);
+    expect(hasValidRutCheckDigit('11.111.111-1')).toBe(true);
+    expect(hasValidRutCheckDigit('21987654-K')).toBe(false);
+    expect(hasValidRutCheckDigit('AB1234567')).toBe(true);
   });
 
   it('compactDni iguala formatos distintos del mismo RUT', () => {

@@ -5,7 +5,6 @@ import { AnalyticsService } from './application/analytics.service';
 import { GetDashboardSummaryUseCase } from './application/use-cases/get-dashboard-summary.usecase';
 import { GetAgentPerformanceUseCase } from './application/use-cases/get-agent-performance.usecase';
 import { GetAllAgentsPerformanceUseCase } from './application/use-cases/get-all-agents-performance.usecase';
-import { GetGeographicAnalyticsUseCase } from './application/use-cases/get-geographic-analytics.usecase';
 import { Property } from '../property/domain/property.entity';
 import { User } from '../users/domain/user.entity';
 import { Payment } from '../contracts/domain/payment.entity';
@@ -24,7 +23,6 @@ import { GetAdminReportUseCase } from './application/use-cases/get-admin-report.
     GetDashboardSummaryUseCase,
     GetAgentPerformanceUseCase,
     GetAllAgentsPerformanceUseCase,
-    GetGeographicAnalyticsUseCase,
     GetAdminReportUseCase,
     AnalyticsService,
   ],

@@ -12,6 +12,7 @@ import CreateAgentFormDialog from './CreateAgentFormDialog';
 import UpdateAgentDialog from './UpdateAgentDialog';
 import DeleteAgentDialog from './DeleteAgentDialog';
 import type { AgentType } from './types';
+import { formatUserDate, userStatusLabel } from '../../format';
 import { useUserManagementPermissions } from '../../hooks/useUserManagementPermissions';
 
 interface AgentsContentProps {
@@ -40,8 +41,8 @@ function agentColumns(
         return `${first} ${last}`.trim() || row.username || row.email;
       },
     },
-    { field: 'status', headerName: 'Estado', width: 140, sortable: true, filterable: true },
-    { field: 'createdAt', headerName: 'Fecha creación', width: 180, sortable: true, filterable: true },
+    { field: 'status', headerName: 'Estado', width: 140, sortable: true, filterable: true, renderCell: ({ row }) => userStatusLabel(row.status) },
+    { field: 'createdAt', headerName: 'Fecha creación', width: 180, sortable: true, filterable: true, renderCell: ({ row }) => formatUserDate(row.createdAt) },
   ];
   // Editar / eliminar otros usuarios: solo ADMIN (core responde 403 al resto).
   if (!canManageUsers) return columns;

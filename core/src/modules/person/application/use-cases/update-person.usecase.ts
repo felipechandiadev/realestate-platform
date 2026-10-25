@@ -1,5 +1,5 @@
-import { ConflictException, Injectable } from '@nestjs/common';
-import { normalizeDni } from '../../domain/dni';
+import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
+import { hasValidRutCheckDigit, normalizeDni } from '../../domain/dni';
 import { PersonRepository } from '../../domain/person.repository';
 import { Person } from '../../domain/person.entity';
 
@@ -16,6 +16,9 @@ export class UpdatePersonUseCase {
     }
     if (patch.dni !== undefined) {
       patch.dni = normalizeDni(patch.dni) as string;
+      if (patch.dni && !hasValidRutCheckDigit(patch.dni)) {
+        throw new BadRequestException('El RUT no es válido: revisa el dígito verificador');
+      }
     }
     if (patch.dni && patch.dni !== existing.dni) {
       const other = await this.personRepository.findByDni(patch.dni);

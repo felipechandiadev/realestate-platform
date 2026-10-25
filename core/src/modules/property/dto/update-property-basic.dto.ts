@@ -42,10 +42,11 @@ export class UpdatePropertyBasicDto {
   @IsUUID('4', { message: 'El tipo de propiedad no es válido' })
   propertyTypeId?: string;
 
+  // '' o null = quitar el agente asignado.
   @IsOptional()
-  @Transform(({ value }) => (value === '' || value === null ? undefined : value))
+  @Transform(({ value }) => (value === '' ? null : value))
   @IsUUID('4', { message: 'El agente asignado no es válido' })
-  assignedAgentId?: string;
+  assignedAgentId?: string | null;
 
   @IsOptional()
   @IsBoolean()

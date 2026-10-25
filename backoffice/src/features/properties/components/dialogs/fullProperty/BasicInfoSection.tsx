@@ -162,10 +162,8 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         description: formData.description,
         status: formData.status,
         currencyPrice: formData.currencyPrice,
-      }
-
-      if (formData.assignedAgentId) {
-        updateData.assignedAgentId = formData.assignedAgentId
+        // null = quitar el agente asignado
+        assignedAgentId: formData.assignedAgentId || null,
       }
       
       // Only include price if it has a value
@@ -311,7 +309,8 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
         <Select
           label="Agente asignado"
           placeholder="Agente Asignado"
-          options={agentsList}
+          // Opción vacía para poder quitar el agente asignado.
+          options={[{ id: '', label: 'Sin agente asignado' }, ...agentsList]}
           value={formData.assignedAgentId}
           onChange={(value) => setFormData({ ...formData, assignedAgentId: value as string })}
         />

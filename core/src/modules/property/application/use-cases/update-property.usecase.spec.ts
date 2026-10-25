@@ -118,4 +118,57 @@ describe('UpdatePropertyUseCase', () => {
     expect(save).toHaveBeenCalled();
     expect(property.status).toBe(PropertyStatus.INACTIVE);
   });
+
+  describe('vaciar campos y destacadas', () => {
+    it('vaciar descripción, notas, agente o año los deja en null; un título vacío se ignora', async () => {
+      const property: Record<string, unknown> = {
+        id: 'p1',
+        title: 'Casa',
+        description: 'Texto',
+        internalNotes: 'Nota',
+        assignedAgentId: 'agent-1',
+        constructionYear: 1990,
+        status: PropertyStatus.INACTIVE,
+        changeHistory: [],
+      };
+      findOne.mockResolvedValue(property);
+      mockReload(property);
+
+      await useCase.execute('p1', {
+        title: '',
+        description: '',
+        internalNotes: '',
+        assignedAgentId: null,
+        constructionYear: null,
+      } as any);
+
+      expect(property).toMatchObject({
+        title: 'Casa',
+        description: null,
+        internalNotes: null,
+        assignedAgentId: null,
+        constructionYear: null,
+      });
+      expect(notificationsService.notifyAgentAssigned).not.toHaveBeenCalled();
+    });
+
+    it('al dejar de estar publicada deja de ser destacada', async () => {
+      const property: Record<string, unknown> = {
+        id: 'p1',
+        status: PropertyStatus.PUBLISHED,
+        isFeatured: true,
+        assignedAgentId: 'agent-1',
+        changeHistory: [],
+      };
+      findOne.mockResolvedValue(property);
+      mockReload(property);
+
+      await useCase.execute('p1', { status: PropertyStatus.INACTIVE } as any, 'admin-1');
+
+      expect(property.isFeatured).toBe(false);
+      expect(property.changeHistory).toEqual(
+        expect.arrayContaining([expect.objectContaining({ field: 'isFeatured', newValue: false })]),
+      );
+    });
+  });
 });

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   HttpException,
+  ConflictException,
 } from '@nestjs/common';
 import { Repository, IsNull, In } from 'typeorm';
 import * as ExcelJS from 'exceljs';
@@ -181,6 +182,18 @@ export class PersonService {
   }
 
   async remove(id: string): Promise<void> {
+    // No se borra a quien participa en un contrato en proceso: el contrato quedaría sin esa parte.
+    const rows = (await this.userRepository.manager.query(
+      `SELECT code FROM contracts
+       WHERE deletedAt IS NULL AND status = 'IN_PROCESS'
+         AND JSON_SEARCH(people, 'one', ?, NULL, '$[*].personId') IS NOT NULL`,
+      [id],
+    )) as Array<{ code: string }>;
+    if (rows.length > 0) {
+      throw new ConflictException(
+        `La persona participa en contratos en proceso (${rows.map((r) => r.code).join(', ')}). Ciérralos o quítala de ellos antes de eliminarla.`,
+      );
+    }
     await this.removePersonUseCase.execute(id);
   }
 

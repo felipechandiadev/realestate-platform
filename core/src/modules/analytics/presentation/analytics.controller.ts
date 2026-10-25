@@ -10,7 +10,6 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { AnalyticsService } from '../application/analytics.service';
 import { AgentPerformanceDto, AnalyticsFiltersDto } from '../dto/agent-performance.dto';
-import { GeographicAnalyticsDto } from '../dto/geographic-analytics.dto';
 import { DashboardSummaryDto } from '../dto/dashboard-summary.dto';
 import { Audit } from '../../../shared/interceptors/audit.interceptor';
 import { AuditAction, AuditEntityType } from '../../../shared/enums/audit.enums';
@@ -113,18 +112,5 @@ export class AnalyticsController {
   async getDashboardSummary(@Query() filters: AnalyticsFiltersDto): Promise<DashboardSummaryDto> {
     const summary = await this.analyticsService.getDashboardSummary(filters as any);
     return summary as DashboardSummaryDto;
-  }
-
-  @Get('geographic')
-  @Audit(AuditAction.VIEW, AuditEntityType.PROPERTY, 'Geographic efficiency analytics viewed')
-  @ApiOperation({ summary: 'Get geographic efficiency analytics', description: 'Retrieves performance analytics grouped by regions and communes.' })
-  @ApiQuery({ name: 'period', description: 'Analysis period', enum: ['month','quarter','year','all'], required: false })
-  @ApiQuery({ name: 'startDate', description: 'Start date for analysis (ISO 8601 format)', type: Date, required: false })
-  @ApiQuery({ name: 'endDate', description: 'End date for analysis (ISO 8601 format)', type: Date, required: false })
-  @ApiQuery({ name: 'operationType', description: 'Filter by operation type', enum: ['SALE','RENT'], required: false })
-  @ApiResponse({ status: 200, description: 'Geographic analytics retrieved successfully', type: GeographicAnalyticsDto })
-  async getGeographicAnalytics(@Query() filters: AnalyticsFiltersDto): Promise<GeographicAnalyticsDto> {
-    const analytics = await this.analyticsService.getGeographicAnalytics(filters);
-    return analytics as GeographicAnalyticsDto;
   }
 }

@@ -14,7 +14,8 @@ export class CloseContractUseCase {
     await repository.update(id, {
       status: ContractStatus.CLOSED,
       endDate: new Date(dto.endDate),
-      documents: dto.documents as any,
+      // Un cierre sin documentos no debe borrar la lista de documentos requeridos.
+      ...(dto.documents?.length ? { documents: dto.documents } : {}),
     } as any);
   }
 }

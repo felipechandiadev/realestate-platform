@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { readFile } from 'fs/promises';
 import { toPublicPropertyRequest } from './public-property-request';
 import { propertyMediaTypeFor } from './property-media-type';
@@ -330,6 +330,9 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     if (dto.seoTitle !== undefined) property.seoTitle = dto.seoTitle;
     if (dto.seoDescription !== undefined) property.seoDescription = dto.seoDescription;
     if (dto.seoKeywords !== undefined) property.seoKeywords = dto.seoKeywords;
+    if (dto.isFeatured === true && property.status !== PropertyStatus.PUBLISHED) {
+      throw new BadRequestException('Solo una propiedad publicada puede marcarse como destacada');
+    }
     if (dto.isFeatured !== undefined) property.isFeatured = dto.isFeatured;
     property.lastModifiedAt = new Date();
 

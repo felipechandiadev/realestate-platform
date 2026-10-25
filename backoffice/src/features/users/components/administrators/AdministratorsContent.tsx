@@ -10,6 +10,7 @@ import { exportGridExcel } from '@/shared/lib/fetch-grid-excel';
 import CreateAdminFormDialog from './CreateAdminFormDialog';
 import UpdateAdminDialog from './UpdateAdminDialog';
 import DeleteAdminDialog from './DeleteAdminDialog';
+import { formatUserDate, userStatusLabel, userRoleLabel } from '../../format';
 import type { AdministratorType } from './types';
 
 function adminColumns(
@@ -28,9 +29,9 @@ function adminColumns(
       filterable: true,
       renderCell: ({ row }) => displayName(row),
     },
-    { field: 'role', headerName: 'Rol', width: 140, sortable: true, filterable: true },
-    { field: 'status', headerName: 'Estado', width: 140, sortable: true, filterable: true },
-    { field: 'createdAt', headerName: 'Fecha creación', width: 180, sortable: true, filterable: true },
+    { field: 'role', headerName: 'Rol', width: 140, sortable: true, filterable: true, renderCell: ({ row }) => userRoleLabel(row.role) },
+    { field: 'status', headerName: 'Estado', width: 140, sortable: true, filterable: true, renderCell: ({ row }) => userStatusLabel(row.status) },
+    { field: 'createdAt', headerName: 'Fecha creación', width: 180, sortable: true, filterable: true, renderCell: ({ row }) => formatUserDate(row.createdAt) },
     {
       field: 'actions',
       headerName: '',

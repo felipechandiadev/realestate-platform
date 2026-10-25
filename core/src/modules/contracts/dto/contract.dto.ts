@@ -319,10 +319,12 @@ export class CloseContractDto {
   @IsDateString()
   endDate: string;
 
+  /** Opcional: si viene vacío o no viene, se conserva la lista de documentos actual. */
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ContractDocumentDto)
-  documents: ContractDocumentDto[];
+  @IsOptional()
+  documents?: ContractDocumentDto[];
 }
 
 export class UploadContractDocumentDto {

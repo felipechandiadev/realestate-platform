@@ -46,7 +46,7 @@ export class CreatePropertyDto {
     // Convert frontend number to backend enum string, or pass through string if valid
     if (typeof value === 'string') {
       // If already a string, validate it's a valid status
-      const validStatuses = ['REQUEST', 'PRE-APPROVED', 'PUBLISHED', 'INACTIVE', 'SOLD', 'RENTED'];
+      const validStatuses = ['REQUEST', 'PRE-APPROVED', 'PUBLISHED', 'INACTIVE', 'SOLD', 'RENTED', 'CONTRACT-IN-PROGRESS'];
       return validStatuses.includes(value) ? value : 'REQUEST';
     }
     
@@ -57,7 +57,8 @@ export class CreatePropertyDto {
       3: 'PUBLISHED',
       4: 'INACTIVE',
       5: 'SOLD',
-      6: 'RENTED'
+      6: 'RENTED',
+      7: 'CONTRACT-IN-PROGRESS',
     };
     return statusMap[value] || 'REQUEST';
   })

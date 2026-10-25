@@ -379,51 +379,6 @@ export async function deleteDocumentOld(id: string): Promise<{
 }
 
 /**
- * Update document metadata
- */
-export async function updateDocumentMetadata(
-  id: string, 
-  metadata: UploadDocumentMetadata
-): Promise<{
-  success: boolean;
-  data?: Document;
-  error?: string;
-}> {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.accessToken) {
-      return { success: false, error: 'No authenticated' };
-    }
-
-    const response = await fetch(`${env.backendApiUrl}/document/${id}/metadata`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${session.accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ metadata }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      return { 
-        success: false, 
-        error: errorData?.message || `Failed to update metadata: ${response.status}` 
-      };
-    }
-
-    const result = await response.json();
-    return { success: true, data: result };
-  } catch (error) {
-    console.error('Error updating document metadata:', error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
-    };
-  }
-}
-
-/**
  * Get documents by property ID (specific to property multimedia)
  */
 export async function getPropertyDocuments(propertyId: string): Promise<{

@@ -89,7 +89,7 @@ const CharacteristicsSection: React.FC<CharacteristicsSectionProps> = ({
         'Año de construcción': 'constructionYear',
       }
 
-      const characteristicsData: { [key: string]: number | string[] } = {
+      const characteristicsData: { [key: string]: number | string[] | null } = {
         otherFeatures,
       }
 
@@ -99,11 +99,9 @@ const CharacteristicsSection: React.FC<CharacteristicsSectionProps> = ({
 
         const raw = (formData[char.name] ?? '').trim()
         if (dtoKey === 'constructionYear') {
-          // Optional: omit empty / 0 so backend does not reject Min(1800)
-          if (!raw) return
+          // Vacío o 0 = borrar el año (null); el backend no acepta 0.
           const year = Number(raw)
-          if (!Number.isFinite(year) || year === 0) return
-          characteristicsData[dtoKey] = year
+          characteristicsData[dtoKey] = raw && Number.isFinite(year) && year !== 0 ? year : null
           return
         }
 

@@ -3,7 +3,6 @@ import { AnalyticsFilters } from '../domain/analytics.interface';
 import { GetDashboardSummaryUseCase } from './use-cases/get-dashboard-summary.usecase';
 import { GetAgentPerformanceUseCase } from './use-cases/get-agent-performance.usecase';
 import { GetAllAgentsPerformanceUseCase } from './use-cases/get-all-agents-performance.usecase';
-import { GetGeographicAnalyticsUseCase } from './use-cases/get-geographic-analytics.usecase';
 
 @Injectable()
 export class AnalyticsService {
@@ -11,7 +10,6 @@ export class AnalyticsService {
     private readonly getDashboardSummaryUseCase: GetDashboardSummaryUseCase,
     private readonly getAgentPerformanceUseCase: GetAgentPerformanceUseCase,
     private readonly getAllAgentsPerformanceUseCase: GetAllAgentsPerformanceUseCase,
-    private readonly getGeographicAnalyticsUseCase: GetGeographicAnalyticsUseCase,
   ) {}
 
   async getDashboardSummary(filters: AnalyticsFilters = {}) {
@@ -26,7 +24,4 @@ export class AnalyticsService {
     return this.getAllAgentsPerformanceUseCase.execute(filters);
   }
 
-  async getGeographicAnalytics(filters: AnalyticsFilters = {}) {
-    return this.getGeographicAnalyticsUseCase.execute(filters);
-  }
 }

@@ -24,7 +24,7 @@ const person = (over: Partial<Person> = {}) =>
   ({
     id: undefined,
     name: 'Ana',
-    dni: '12.345.678-9',
+    dni: '12.345.678-5',
     verified: false,
     ...over,
   }) as unknown as Person;
@@ -36,9 +36,9 @@ describe('CreatePersonUseCase', () => {
 
     await new CreatePersonUseCase(repo).execute(person());
 
-    expect(repo.findByDni).toHaveBeenCalledWith('12345678-9');
+    expect(repo.findByDni).toHaveBeenCalledWith('12345678-5');
     expect(repo.save).toHaveBeenCalledWith(
-      expect.objectContaining({ dni: '12345678-9' }),
+      expect.objectContaining({ dni: '12345678-5' }),
     );
   });
 
@@ -46,7 +46,7 @@ describe('CreatePersonUseCase', () => {
     const repo = makeRepo();
     repo.findByDni.mockResolvedValue({
       id: 'p1',
-      dni: '123456789',
+      dni: '123456785',
       deletedAt: null,
     } as unknown as Person);
 
@@ -62,13 +62,13 @@ describe('CreatePersonUseCase', () => {
     const repo = makeRepo();
     repo.findByDni.mockResolvedValue({
       id: 'old',
-      dni: '12345678-9',
+      dni: '12345678-5',
       deletedAt: new Date(),
     } as unknown as Person);
     repo.findById.mockResolvedValue({
       id: 'old',
       name: 'Ana',
-      dni: '12345678-9',
+      dni: '12345678-5',
     } as unknown as Person);
 
     const result = await new CreatePersonUseCase(repo).execute(
@@ -79,12 +79,26 @@ describe('CreatePersonUseCase', () => {
       'old',
       expect.objectContaining({
         name: 'Ana',
-        dni: '12345678-9',
+        dni: '12345678-5',
         deletedAt: null,
       }),
     );
     expect(repo.save).not.toHaveBeenCalled();
     expect(result.id).toBe('old');
+  });
+});
+
+describe('dígito verificador', () => {
+  it('rechaza crear o editar con un RUT de dígito verificador inválido', async () => {
+    const repo = makeRepo();
+    await expect(
+      new CreatePersonUseCase(repo).execute(person({ dni: '12.345.678-9' })),
+    ).rejects.toThrow('El RUT no es válido: revisa el dígito verificador');
+    repo.findById.mockResolvedValue(person({ id: 'p1', dni: '11111111-1' }));
+    await expect(
+      new UpdatePersonUseCase(repo).execute('p1', { dni: '12345678-9' }),
+    ).rejects.toThrow('El RUT no es válido');
+    expect(repo.save).not.toHaveBeenCalled();
   });
 });
 
@@ -98,21 +112,21 @@ describe('UpdatePersonUseCase', () => {
     } as unknown as Person);
 
     await expect(
-      new UpdatePersonUseCase(repo).execute('p1', { dni: '12.345.678-9' }),
+      new UpdatePersonUseCase(repo).execute('p1', { dni: '12.345.678-5' }),
     ).rejects.toThrow('Ya existe una persona con ese RUT');
   });
 
   it('permite guardar su propio RUT con otro formato', async () => {
     const repo = makeRepo();
-    repo.findById.mockResolvedValue(person({ id: 'p1', dni: '123456789' }));
+    repo.findById.mockResolvedValue(person({ id: 'p1', dni: '123456785' }));
     repo.findByDni.mockResolvedValue({
       id: 'p1',
       deletedAt: null,
     } as unknown as Person);
 
-    await new UpdatePersonUseCase(repo).execute('p1', { dni: '12.345.678-9' });
+    await new UpdatePersonUseCase(repo).execute('p1', { dni: '12.345.678-5' });
     expect(repo.save).toHaveBeenCalledWith(
-      expect.objectContaining({ dni: '12345678-9' }),
+      expect.objectContaining({ dni: '12345678-5' }),
     );
   });
 });

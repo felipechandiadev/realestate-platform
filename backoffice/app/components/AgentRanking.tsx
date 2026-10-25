@@ -56,7 +56,12 @@ export default function AgentRanking({ data }: AgentRankingProps) {
 
   return (
     <Card className="bg-white border border-gray-200 rounded-lg p-6 h-full">
-      <h2 className="text-lg font-bold text-gray-900 mb-6">Ranking de Agentes</h2>
+      <h2 className="text-lg font-bold text-gray-900 mb-1">Ranking de Agentes</h2>
+      <p className="text-xs text-muted-foreground mb-6">Contratos cerrados sobre propiedades asignadas, este mes</p>
+
+      {data.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Aún no hay agentes con propiedades asignadas.</p>
+      ) : null}
 
       <div className="space-y-4">
         {data.map((agent, index) => (

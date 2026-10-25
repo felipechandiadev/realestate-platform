@@ -90,7 +90,10 @@ export default async function BackOfficeDashboard() {
     // Agent ranking: normalize agent metrics to component shape
     const agentRankingData = (summary.agentRanking ?? [])
       .slice()
-      .sort((a: any, b: any) => (b.metrics?.closedContracts || 0) - (a.metrics?.closedContracts || 0))
+      // Ordena por la misma métrica que se muestra (conversión); a igual conversión, más cierres primero.
+      .sort((a: any, b: any) =>
+        (b.metrics?.conversionRate || 0) - (a.metrics?.conversionRate || 0) ||
+        (b.metrics?.closedContracts || 0) - (a.metrics?.closedContracts || 0))
       .map((a: any, idx: number) => ({
         name: a.agentName,
         performance: Math.round(a.metrics?.conversionRate || 0),

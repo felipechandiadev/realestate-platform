@@ -28,7 +28,11 @@ export class LoginUseCase {
     if (user.status !== UserStatus.ACTIVE) {
       throw new UnauthorizedException('Usuario inactivo.');
     }
-   
+
+    // "Último acceso" en la ficha del usuario.
+    user.lastLogin = new Date();
+    await this.userRepo.update(user.id, { lastLogin: user.lastLogin });
+
     return user;
   }
 }

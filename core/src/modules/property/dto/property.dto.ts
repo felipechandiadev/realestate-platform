@@ -15,8 +15,10 @@ import {
 import { Type, Transform } from 'class-transformer';
 
 /** Empty / 0 year is "not set" — do not apply Min(1800). */
-function optionalConstructionYear({ value }: { value: unknown }): number | undefined {
-  if (value === '' || value === null || value === undefined) return undefined;
+/** '' o null = borrar el año (llega null al caso de uso); ausente = no tocarlo. */
+function optionalConstructionYear({ value }: { value: unknown }): number | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === '' || value === null) return null;
   const n = typeof value === 'string' ? Number(value) : value;
   if (typeof n !== 'number' || Number.isNaN(n) || n === 0) return undefined;
   return n;
