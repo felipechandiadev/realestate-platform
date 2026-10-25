@@ -8,6 +8,8 @@
 
 Esta acta deja constancia de que el sistema descrito aquí está desplegado, accesible y habilitado para su uso operativo. Con la firma de las partes comienza el período de garantía sobre el alcance entregado.
 
+Documentación técnica y funcional completa: [`documentacion-proyecto/`](./documentacion-proyecto/README.md).
+
 ---
 
 ## 1. Objeto
@@ -45,7 +47,7 @@ La sesión de los frontends la resuelve NextAuth. La API valida el JWT y disting
 
 - **Base de datos.** MySQL 8 en el mismo servidor, base `real_estate_platform`, acceso solo desde localhost. El esquema lo modelan las entidades TypeORM.
 - **Archivos.** Cloudflare R2 (compatible S3). Logos, multimedia de propiedades, documentos y piezas del CMS se publican desde el bucket configurado. La optimización de imágenes usa Sharp.
-- **Correo.** SMTP de Resend. Plantillas Handlebars para verificación de correo y recuperación de contraseña.
+- **Correo.** SMTP de Resend. Plantillas Handlebars para verificación de correo, recuperación de contraseña y avisos de la plataforma. Credenciales (dónde viven, sin valores), límites del plan y datos a traspasar: ver [`CORREO_TRANSACCIONAL.md`](./CORREO_TRANSACCIONAL.md).
 - **Valor UF.** El portal consulta el valor publicado para mostrarlo en la barra superior. Es un dato externo; si el proveedor no responde, el resto del sitio sigue disponible.
 
 ### 3.3 Cómo está publicado
@@ -176,15 +178,3 @@ Al firmar, las partes declaran que el sistema descrito se encuentra entregado en
 |---|---|---|---|---|
 | Entrega | | Desarrollo | | |
 | Recibe | | Bravo Shott Propiedades | | |
-
-
-DE:
-JUAN FRANCISCO FUENTEALBA GUZMÁN
-DIRECTOR SEGURIDAD PÚBLICA
-PARA:
-KARLA GUZMAN GUZMAN DIRECTOR (S) DE RECURSOS HUMANOS  
-Por medio del presente, vengo en certificar que la funcionaria regida por el Código del Trabajo, doña MARÍA ISABEL CASTILLO VARAS, C.N.I. N.º 14.442.094-2,
-cumplió íntegramente su jornada laboral correspondiente a los días 05/08/2026, en horario de entrada, y 11/09/2026, en horario de salida.
-Se deja constancia de que la falta de marcación registrada en el reporte de asistencia se debió a que el dispositivo de lectura biométrica no efectuó correctamente la captura de la marcación correspondiente, pese a haberse realizado el intento de registro.
-Por lo anterior, se extiende el presente certificado con el objeto de justificar la falta de registro biométrico de la entrada correspondiente al día 05/08/2026 y de la salida correspondiente al día 11/09/2026, dejando constancia de que la funcionaria cumplió íntegramente con su jornada laboral.
-Se extiende el presente certificado para los fines administrativos que correspondan.

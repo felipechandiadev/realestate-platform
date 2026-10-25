@@ -2,6 +2,8 @@
 
 Monorepo npm workspaces: **portal** (público), **backoffice** (admin), **packages/** (UI + API client) y **core** (NestJS API, fuera de workspaces).
 
+> 📘 **Documentación completa del proyecto (entrega al cliente):** [`doc/documentacion-proyecto/`](doc/documentacion-proyecto/README.md)
+
 ## Arquitectura
 
 ```
@@ -83,6 +85,7 @@ En deploy, las migraciones deben ir detrás de confirmación explícita (`CONFIR
 
 ## Documentación útil
 
+- `doc/CORREO_TRANSACCIONAL.md` — correo con Resend: credenciales (sin valores), límites del plan y checklist de entrega
 - `doc/dedup-remaining.md` — qué se compartió y qué sigue duplicado
 - `doc/client-components-audit.md` — páginas `'use client'` a revisar
 - `doc/tsc-debt.md` / `doc/typescript-strictness.md`
