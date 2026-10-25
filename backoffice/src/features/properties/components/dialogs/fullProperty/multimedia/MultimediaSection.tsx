@@ -8,9 +8,10 @@ import {
   getPropertyMultimedia,
   deletePropertyMultimedia,
   updateMainMultimediaUrl,
-  uploadPropertyMultimedia,
 } from '@/features/properties/actions/properties.action';
 import { useAlert } from '@/shared/hooks/useAlert';
+import { usePropertyUploadQueue } from '../../../../upload/usePropertyUploadQueue';
+import { UploadQueueList } from '../../../../upload/UploadQueueList';
 
 interface MultimediaSectionProps {
   propertyId: string;
@@ -34,20 +35,22 @@ const MultimediaSection: React.FC<MultimediaSectionProps> = ({
   const [multimedias, setMultimedias] = useState<MultimediaItem[]>([]);
   const [mainImageUrl, setMainImageUrl] = useState<string>('');
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [updatingMainId, setUpdatingMainId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  // Cambiar la key vacía el selector: los archivos pasan a la cola y no deben seguir como "pendientes".
+  const [uploaderKey, setUploaderKey] = useState(0);
 
-  const loadMultimedia = useCallback(async () => {
+  const loadMultimedia = useCallback(async (options?: { silent?: boolean }) => {
     if (!propertyId) {
       setLoading(false);
       setError('ID de propiedad no válido');
       return;
     }
     try {
-      setLoading(true);
+      // silent: refresco durante la subida, sin reemplazar la sección por el spinner.
+      if (!options?.silent) setLoading(true);
       setError(null);
       const response = await getPropertyMultimedia(propertyId);
       if (response.success) {
@@ -143,38 +146,25 @@ const MultimediaSection: React.FC<MultimediaSectionProps> = ({
     setSelectedFiles(files);
   };
 
+  // Cada archivo que termina refresca la galería: el usuario los ve aparecer de a uno.
+  const uploadQueue = usePropertyUploadQueue({ onItemDone: () => void loadMultimedia({ silent: true }) });
+  const uploading = uploadQueue.summary.active;
+
   const handleUpload = async () => {
     if (selectedFiles.length === 0) return;
-
-    try {
-      setUploading(true);
-      const response = await uploadPropertyMultimedia(propertyId, selectedFiles);
-
-      if (response.success) {
-        showAlert({
-          message: `${selectedFiles.length} archivo(s) subido(s) exitosamente`,
-          type: 'success',
-          duration: 3000,
-        });
-        setSelectedFiles([]);
-        await loadMultimedia();
-      } else {
-        showAlert({
-          message: response.error || 'Error al subir archivos',
-          type: 'error',
-          duration: 3000,
-        });
-      }
-    } catch (err) {
-      console.error('Error uploading multimedia:', err);
-      showAlert({
-        message: err instanceof Error ? err.message : 'Error desconocido',
-        type: 'error',
-        duration: 3000,
-      });
-    } finally {
-      setUploading(false);
-    }
+    const files = selectedFiles;
+    setSelectedFiles([]);
+    setUploaderKey((key) => key + 1);
+    const results = await uploadQueue.start(propertyId, files);
+    const failed = results.filter((item) => item.status === 'error').length;
+    showAlert({
+      message:
+        failed > 0
+          ? `${results.length - failed} de ${results.length} archivo(s) subido(s). Revisa los que fallaron.`
+          : `${results.length} archivo(s) subido(s) exitosamente`,
+      type: failed > 0 ? 'error' : 'success',
+      duration: 3000,
+    });
   };
 
   if (loading) {
@@ -234,6 +224,7 @@ const MultimediaSection: React.FC<MultimediaSectionProps> = ({
 
       <div className="space-y-4 border-t pt-6">
         <MultimediaUploader
+          key={uploaderKey}
           uploadPath={`/properties/${propertyId}/multimedia`}
           onChange={handleFileSelect}
           accept="image/*,video/mp4,video/webm"
@@ -243,7 +234,30 @@ const MultimediaSection: React.FC<MultimediaSectionProps> = ({
           aspectRatio="16:9"
         />
 
-        {selectedFiles.length > 0 ? (
+        {uploadQueue.items.length > 0 ? (
+          <div className="space-y-3">
+            <UploadQueueList items={uploadQueue.items} />
+            {uploadQueue.summary.finished ? (
+              <div className="flex flex-wrap justify-end gap-2">
+                {uploadQueue.summary.failed > 0 ? (
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    size="md"
+                    onClick={() => void uploadQueue.retryFailed(propertyId)}
+                  >
+                    Reintentar fallidos
+                  </Button>
+                ) : null}
+                <Button type="button" variant="outlinedSecondary" size="md" onClick={uploadQueue.reset}>
+                  Limpiar lista
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {selectedFiles.length > 0 && !uploading ? (
           <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4">
             <div className="flex-1">
               <p className="text-sm font-medium text-blue-900">

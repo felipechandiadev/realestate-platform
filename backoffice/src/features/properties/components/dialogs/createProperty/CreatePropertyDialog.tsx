@@ -11,6 +11,8 @@ import {
   getCreatePropertyStepFieldRows,
 } from './CreatePropertyWizard';
 import { validateRequiredFields } from './CreatePropertyStepFields';
+import { usePropertyUploadQueue } from '../../../upload/usePropertyUploadQueue';
+import { UploadQueueList } from '../../../upload/UploadQueueList';
 
 export type CreatePropertyDialogProps = {
   open: boolean;
@@ -35,6 +37,16 @@ export function CreatePropertyDialog({
     initialLat?: number;
     initialLng?: number;
   } | null>(null);
+  /** Propiedad ya creada cuya multimedia se está subiendo en cola. */
+  const [uploadPropertyId, setUploadPropertyId] = useState<string | null>(null);
+  const uploadQueue = usePropertyUploadQueue();
+  const { summary: uploadSummary } = uploadQueue;
+  const isUploadPhase = uploadPropertyId !== null;
+
+  const finish = useCallback(() => {
+    onSuccess?.();
+    onClose();
+  }, [onSuccess, onClose]);
 
   const {
     formData,
@@ -51,9 +63,13 @@ export function CreatePropertyDialog({
   } = useCreatePropertyForm(
     () => {},
     operation,
-    () => {
-      onSuccess?.();
-      onClose();
+    (propertyId, pendingFiles) => {
+      if (propertyId && pendingFiles.length > 0) {
+        setUploadPropertyId(propertyId);
+        void uploadQueue.start(propertyId, pendingFiles);
+        return;
+      }
+      finish();
     },
   );
 
@@ -62,6 +78,9 @@ export function CreatePropertyDialog({
     setStepIndex(0);
     setStepError(null);
     setDetectedCoords(null);
+    setUploadPropertyId(null);
+    uploadQueue.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, operation]);
 
   const geoAttemptedRef = useRef(false);
@@ -156,6 +175,59 @@ export function CreatePropertyDialog({
   const showNext = stepIndex < CREATE_PROPERTY_WIZARD_LAST_INDEX;
   const title =
     operation === 'RENT' ? 'Crear Propiedad en Arriendo' : 'Crear Propiedad en Venta';
+
+  if (isUploadPhase) {
+    return (
+      <Dialog
+        open={open}
+        // No se cierra mientras sube: la propiedad ya existe y quedaría sin fotos.
+        onClose={uploadSummary.active ? () => {} : finish}
+        title="Subiendo multimedia"
+        size="xl"
+        scroll="paper"
+        maxHeight="90vh"
+        actions={
+          uploadSummary.active ? (
+            <Button variant="primary" disabled loading data-test-id="create-property-upload-wait">
+              Subiendo {Math.min(uploadSummary.done + 1, uploadSummary.total)} de {uploadSummary.total}…
+            </Button>
+          ) : (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {uploadSummary.failed > 0 ? (
+                <>
+                  <Button variant="outlinedSecondary" onClick={finish} data-test-id="create-property-upload-skip">
+                    Finalizar sin los fallidos
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={() => {
+                      if (uploadPropertyId) void uploadQueue.retryFailed(uploadPropertyId);
+                    }}
+                    data-test-id="create-property-upload-retry"
+                  >
+                    Reintentar fallidos
+                  </Button>
+                </>
+              ) : (
+                <Button variant="primary" onClick={finish} data-test-id="create-property-upload-finish">
+                  Finalizar
+                </Button>
+              )}
+            </div>
+          )
+        }
+        data-test-id="create-property-upload-dialog"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            La propiedad ya fue creada. Los archivos se suben de a uno; espera a que terminen
+            antes de cerrar.
+          </p>
+          <UploadQueueList items={uploadQueue.items} />
+        </div>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog

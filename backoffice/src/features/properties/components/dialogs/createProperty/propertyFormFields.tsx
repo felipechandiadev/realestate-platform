@@ -321,7 +321,7 @@ export const getMultimediaFields = (): BaseFormField[][] => [
     required: true,
     props: {
       uploadPath: '/uploads/properties',
-      accept: 'image/*,video/*',
+      accept: 'image/*,video/mp4,video/webm',
       maxFiles: 20,
       maxSize: 10, // 10MB por archivo
       previewSize: 'sm',

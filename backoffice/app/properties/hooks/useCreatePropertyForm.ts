@@ -15,7 +15,8 @@ interface UseCreatePropertyFormProps {
 export const useCreatePropertyForm = (
   onCloseCallback?: () => void,
   operationType: 'SALE' | 'RENT' = 'SALE',
-  onSuccessCallback?: () => void
+  /** Recibe el id creado y los archivos pendientes de subir (la subida va en cola aparte). */
+  onSuccessCallback?: (propertyId: string | undefined, pendingFiles: File[]) => void
 ) => {
   const onClose = onCloseCallback || (() => {});
   const onSuccess = onSuccessCallback || (() => {});
@@ -243,48 +244,17 @@ export const useCreatePropertyForm = (
         })
       );
 
-      console.log('📍 [useCreatePropertyForm] Location included in payload:', dataToSend.location);
-
-      console.log('Filtered data to send:', dataToSend);
-
-      const formDataToSend = new FormData();
-
       if (typeof dataToSend.price === 'string') {
         dataToSend.price = dataToSend.price !== '' ? Number(dataToSend.price) : undefined;
       }
 
-      formDataToSend.append('data', JSON.stringify(dataToSend));
-
-      if (formData.multimedia && formData.multimedia.length > 0) {
-        console.log('🎯 [useCreatePropertyForm] Adding multimedia files to FormData:', formData.multimedia.length);
-        formData.multimedia.forEach((file: File, index: number) => {
-          console.log(`📎 [useCreatePropertyForm] Appending file ${index + 1}:`, {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-          });
-          formDataToSend.append(`multimediaFiles`, file);
-        });
-        console.log('✅ [useCreatePropertyForm] FormData entries after adding files:');
-        for (const [key, value] of formDataToSend.entries()) {
-          if (value instanceof File) {
-            console.log(`  - ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
-          } else {
-            console.log(`  - ${key}: ${value}`);
-          }
-        }
-      } else {
-        console.log('📭 [useCreatePropertyForm] No multimedia files to add');
-      }
-
-      // Call createProperty with a serializable payload so it can rebuild FormData for retries
-      const result = await createProperty({ data: dataToSend, multimediaFiles: formData.multimedia });
+      // La propiedad se crea sin archivos; la multimedia se sube después en cola,
+      // archivo por archivo y con progreso (ver usePropertyUploadQueue).
+      const result = await createProperty({ data: dataToSend, multimediaFiles: [] });
 
       if (result.success) {
-        console.log('✅ Property created successfully:', result.data);
-        // Call success callback (includes router.refresh() / dialog close).
         // Keep isSubmitting true until dialog remounts / reopens.
-        onSuccess();
+        onSuccess(result.data?.id, Array.isArray(formData.multimedia) ? formData.multimedia : []);
         return;
       }
 
