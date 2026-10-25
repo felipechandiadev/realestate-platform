@@ -16,6 +16,7 @@ type PaymentForUpload = {
   type: string;
   date?: string | Date;
   description?: string;
+  currency?: 'CLP' | 'UF';
   [key: string]: unknown;
 };
 
@@ -96,8 +97,9 @@ export default function ContractUploadPaymentDocumentDialog({
     }
 
     const amount = typeof payment.amount === 'number' ? payment.amount : Number(payment.amount);
+    const paymentCurrency = payment.currency ?? currency;
     const localizedAmount = Number.isFinite(amount)
-      ? amount.toLocaleString('es-CL', currency === 'UF'
+      ? amount.toLocaleString('es-CL', paymentCurrency === 'UF'
           ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
           : { minimumFractionDigits: 0, maximumFractionDigits: 0 })
       : payment.amount;
@@ -112,7 +114,7 @@ export default function ContractUploadPaymentDocumentDialog({
 
     return {
       typeLabel: getPaymentTypeLabel(payment.type),
-      amountLabel: `${currency === 'UF' ? 'UF' : '$'} ${localizedAmount}`,
+      amountLabel: `${paymentCurrency === 'UF' ? 'UF' : '$'} ${localizedAmount}`,
       dateLabel: formattedDate,
       description: payment.description,
     };

@@ -75,6 +75,14 @@ export class ContractOrmEntity {
   @Column({ type: 'date', nullable: true })
   endDate?: Date | null;
 
+  /** Arriendo: inicio de la vigencia. */
+  @Column({ type: 'date', nullable: true })
+  startDate?: string | null;
+
+  /** Arriendo: duración en meses. */
+  @Column({ type: 'int', nullable: true })
+  durationMonths?: number | null;
+
   @Column({ type: 'json', nullable: true })
   people?: any;
 

@@ -149,7 +149,8 @@ export default function ContractPaymentsSection({
   getPaymentStatusLabel,
   getPaymentStatusColor,
 }: ContractPaymentsSectionProps) {
-  const formatAmount = (amount: number | string) => {
+  // Cada pago tiene su moneda (las comisiones van en CLP aunque el contrato sea en UF).
+  const formatAmount = (amount: number | string, paymentCurrency: 'CLP' | 'UF' = currency) => {
     const numeric = typeof amount === 'string' ? parseFloat(amount) : Number(amount);
 
     if (Number.isNaN(numeric)) {
@@ -157,7 +158,7 @@ export default function ContractPaymentsSection({
     }
 
     const formatterOptions =
-      currency === 'UF'
+      paymentCurrency === 'UF'
         ? { minimumFractionDigits: 2, maximumFractionDigits: 2 }
         : { minimumFractionDigits: 0, maximumFractionDigits: 0 };
 
@@ -335,7 +336,8 @@ export default function ContractPaymentsSection({
                   <div className="text-right space-y-2">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Monto</p>
                     <p className="text-lg font-bold text-foreground">
-                      {currency === 'UF' ? 'UF' : '$'} {formatAmount(payment.amount ?? 0)}
+                      {(payment.currency ?? currency) === 'UF' ? 'UF' : '$'}{' '}
+                      {formatAmount(payment.amount ?? 0, payment.currency ?? currency)}
                     </p>
                   </div>
                 </div>

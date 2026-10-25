@@ -60,6 +60,8 @@ export interface ContractPayment {
   description?: string;
   type: PaymentType;  // Tipo de pago para categorización
   status?: PaymentStatus;
+  /** Moneda del pago (las comisiones se registran en CLP aunque el contrato sea en UF). */
+  currency?: ContractCurrency;
   paidAt?: string | Date | null;
   isAgencyRevenue?: boolean;
   documents?: ContractPaymentDocument[];
@@ -122,6 +124,10 @@ export class Contract {
   operation: ContractOperationType;
   status: ContractStatus;
   endDate?: Date | null;
+  /** Arriendo: inicio de la vigencia (YYYY-MM-DD). */
+  startDate?: string | null;
+  /** Arriendo: duración en meses. */
+  durationMonths?: number | null;
   amount: number;
   currency: ContractCurrency;
   // optional business attributes referenced by service logic

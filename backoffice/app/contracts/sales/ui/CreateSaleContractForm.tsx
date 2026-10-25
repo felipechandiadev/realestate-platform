@@ -361,6 +361,7 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
               amount: buyerAmount,
               date: commissionDate,
               type: PaymentType.COMMISSION_INCOME,
+              currency: 'CLP' as const,
               description: 'Comisión comprador',
               isAgencyRevenue: true,
             }
@@ -370,6 +371,7 @@ export default function CreateSaleContractForm({ onClose, onSuccess }: CreateSal
               amount: sellerAmount,
               date: commissionDate,
               type: PaymentType.COMMISSION_INCOME,
+              currency: 'CLP' as const,
               description: 'Comisión vendedor',
               isAgencyRevenue: true,
             }

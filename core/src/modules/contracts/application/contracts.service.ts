@@ -1,14 +1,21 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository } from 'typeorm';
+import { DataSource, EntityManager, IsNull, Repository } from 'typeorm';
 import { runInTransaction } from '../../../shared/database/run-in-transaction';
 import { ContractRepository } from '../domain/contract.repository';
-import { Contract } from '../domain/contract.entity';
+import { Contract, ContractStatus } from '../domain/contract.entity';
+import {
+  assertContractTransition,
+  defaultPaymentCurrency,
+  propertyStatusForContract,
+} from '../domain/contract-rules';
+import { PropertyStatus } from '../../../shared/enums/property-status.enum';
 import { CreateContractUseCase } from './use-cases/create-contract.usecase';
 import { FindContractUseCase } from './use-cases/find-contract.usecase';
 import { ChangeContractStatusUseCase } from './use-cases/change-contract-status.usecase';
@@ -92,9 +99,66 @@ export class ContractsService {
     return runInTransaction(this.dataSource, work);
   }
 
+  /**
+   * Refleja el contrato en la propiedad (en proceso → "Contrato en progreso",
+   * cerrado → vendida/arrendada). `onlyIf` evita pisar un estado que otro
+   * proceso ya cambió (p. ej. al fallar, solo se libera si seguía en contrato).
+   */
+  private async syncPropertyStatus(
+    manager: EntityManager,
+    propertyId: string | null | undefined,
+    status: PropertyStatus,
+    onlyIf?: PropertyStatus,
+  ): Promise<void> {
+    if (!propertyId) return;
+    const properties = manager.getRepository(Property);
+    const property = await properties.findOne({ where: { id: propertyId }, select: ['id', 'status'] });
+    if (!property || property.status === status) return;
+    if (onlyIf && property.status !== onlyIf) return;
+    await properties.update(propertyId, { status, lastModifiedAt: new Date() });
+  }
+
   async create(dto: CreateContractDto, actorId?: string): Promise<Contract> {
     return this.transaction(async (manager) => {
-      const contract = await this.createContract.execute(dto as any, manager);
+      if (dto.propertyId) {
+        const active = await this.contractRepository.withManager(manager).findOne({
+          where: { propertyId: dto.propertyId, status: ContractStatus.IN_PROCESS, deletedAt: IsNull() },
+        });
+        if (active) {
+          throw new ConflictException(
+            `La propiedad ya tiene un contrato en proceso (${active.code}). Ciérralo o márcalo como fallido antes de crear otro.`,
+          );
+        }
+      }
+
+      // Los pagos van a la tabla `payments` (la que permite marcarlos pagados y adjuntar
+      // comprobantes), no a la columna JSON del contrato.
+      const { payments = [], ...contractData } = dto;
+      const contract = await this.createContract.execute(
+        { ...contractData, payments: [] } as any,
+        manager,
+      );
+
+      if (payments.length > 0) {
+        const paymentRepo = manager.getRepository(Payment);
+        await paymentRepo.save(
+          payments.map((payment) =>
+            paymentRepo.create({
+              ...payment,
+              date: new Date(payment.date),
+              paidAt: payment.paidAt ? new Date(payment.paidAt) : null,
+              currency: payment.currency ?? defaultPaymentCurrency(payment.type, contract.currency),
+              contractId: contract.id,
+            }),
+          ),
+        );
+      }
+
+      await this.syncPropertyStatus(
+        manager,
+        contract.propertyId,
+        propertyStatusForContract(contract.operation, contract.status ?? ContractStatus.IN_PROCESS),
+      );
 
       // Create audit log
       await this.auditService.createAuditLog(
@@ -239,6 +303,7 @@ export class ContractsService {
       description: payment.description,
       type: payment.type,
       status: payment.status,
+      currency: payment.currency,
       paidAt: payment.paidAt,
       isAgencyRevenue: payment.isAgencyRevenue,
       documents: byPayment.get(payment.id) ?? [],
@@ -337,7 +402,17 @@ export class ContractsService {
 
   async softDelete(id: string, actorId?: string): Promise<void> {
     return this.transaction(async (manager) => {
+      const contract = await this.contractRepository.withManager(manager).findById(id);
       await this.deleteContract.execute(id, manager);
+
+      if (contract?.status === ContractStatus.IN_PROCESS) {
+        await this.syncPropertyStatus(
+          manager,
+          contract.propertyId,
+          PropertyStatus.PUBLISHED,
+          PropertyStatus.CONTRACT_IN_PROGRESS,
+        );
+      }
 
       // Create audit log
       await this.auditService.createAuditLog(
@@ -367,6 +442,14 @@ export class ContractsService {
         throw new NotFoundException();
       }
       const oldStatus = oldContract.status;
+      assertContractTransition(oldStatus, ContractStatus.CLOSED);
+
+      const roles = this.validateRequiredRolesUseCase.execute(oldContract);
+      if (!roles.valid) {
+        throw new BadRequestException(
+          `No se puede cerrar: faltan participantes con rol ${roles.missingRoles.join(', ')}.`,
+        );
+      }
 
       await this.closeContract.execute(id, dto, manager);
       const updated = await contracts.findById(id);
@@ -389,6 +472,12 @@ export class ContractsService {
         manager,
       );
 
+      await this.syncPropertyStatus(
+        manager,
+        updated.propertyId,
+        propertyStatusForContract(updated.operation, ContractStatus.CLOSED),
+      );
+
       return updated;
     });
   }
@@ -402,6 +491,7 @@ export class ContractsService {
         throw new NotFoundException();
       }
       const oldStatus = oldContract.status;
+      assertContractTransition(oldStatus, ContractStatus.FAILED);
 
       await this.failContract.execute(id, endDate, manager);
       const updated = await contracts.findById(id);
@@ -424,6 +514,14 @@ export class ContractsService {
         manager,
       );
 
+      // La propiedad vuelve a estar disponible, si seguía tomada por este contrato.
+      await this.syncPropertyStatus(
+        manager,
+        updated.propertyId,
+        propertyStatusForContract(updated.operation, ContractStatus.FAILED),
+        PropertyStatus.CONTRACT_IN_PROGRESS,
+      );
+
       return updated;
     });
   }
@@ -435,7 +533,13 @@ export class ContractsService {
     actorId?: string,
   ): Promise<any> {
     return this.transaction(async (manager) => {
-      const payment = await this.addPaymentUseCase.execute(id, dto, manager);
+      const contract = await this.contractRepository.withManager(manager).findById(id);
+      if (!contract) throw new NotFoundException('Contrato no encontrado');
+      const payment = await this.addPaymentUseCase.execute(
+        id,
+        { ...dto, currency: dto.currency ?? defaultPaymentCurrency(dto.type, contract.currency) },
+        manager,
+      );
 
       // Create audit log
       await this.auditService.createAuditLog(

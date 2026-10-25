@@ -13,6 +13,11 @@ import FileUploader from '@/shared/components/ui/FileUploader/FileUploader';
 import { useAlert } from '@/shared/hooks/useAlert';
 import { ArrowLeft, Info, Loader2, Upload } from 'lucide-react';
 
+const formatPaymentAmount = (payment: Pick<RentPayment, 'amount' | 'currency'>) =>
+  payment.currency === 'UF'
+    ? `UF ${Number(payment.amount).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : `$ ${Number(payment.amount).toLocaleString('es-CL')}`;
+
 export default function ContractPaymentsPage() {
   const params = useParams();
   const contractId = params.id as string;
@@ -163,7 +168,7 @@ export default function ContractPaymentsPage() {
               <div className="space-y-1">
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-bold text-primary">
-                    $ {payment.amount.toLocaleString('es-CL')}
+                    {formatPaymentAmount(payment)}
                   </span>
                   {getStatusBadge(payment.status)}
                 </div>
@@ -214,7 +219,7 @@ export default function ContractPaymentsPage() {
           <p className="text-sm text-muted-foreground">
             Sube el comprobante de transferencia o depósito para el pago de 
             <span className="font-bold text-foreground mx-1">
-              $ {selectedPayment?.amount.toLocaleString('es-CL')}
+              {selectedPayment ? formatPaymentAmount(selectedPayment) : null}
             </span> 
             con vencimiento el {selectedPayment && formatDate(selectedPayment.date)}.
           </p>

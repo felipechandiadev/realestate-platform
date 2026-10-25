@@ -27,6 +27,8 @@ export interface RentPayment {
   status: string;
   description?: string | null;
   paidAt?: string | null;
+  /** Moneda del pago (un arriendo en UF se cobra en UF). */
+  currency?: 'CLP' | 'UF';
 }
 
 /** Subconjunto de `GET /contracts/:id` usado por el portal. */

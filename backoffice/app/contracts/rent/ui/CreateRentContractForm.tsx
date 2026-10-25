@@ -1,5 +1,6 @@
 'use client';
 
+import { monthlyDueDates } from '@/features/contracts/utils/rent-schedule';
 import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -39,6 +40,7 @@ interface ContractPayment {
   type: PaymentType;
   description?: string;
   isAgencyRevenue: boolean;
+  currency?: 'CLP' | 'UF';
 }
 
 interface ContractDocumentForm {
@@ -160,27 +162,17 @@ export default function CreateRentContractForm({ onClose, onSuccess }: CreateRen
       return;
     }
 
-    const start = new Date(startDate);
-    if (Number.isNaN(start.valueOf())) {
-      setPayments([]);
-      return;
-    }
-
-    const generated: ContractPayment[] = Array.from({ length: duration }, (_, index) => {
-      const paymentDate = new Date(start);
-      paymentDate.setMonth(start.getMonth() + index);
-
-      return {
-        amount: rentAmount,
-        date: paymentDate.toISOString().split('T')[0],
-        type: PaymentType.RENT_PAYMENT,
-        description: `Arriendo mes ${index + 1}`,
-        isAgencyRevenue: false,
-      };
-    });
+    const generated: ContractPayment[] = monthlyDueDates(startDate, duration).map((date, index) => ({
+      amount: rentAmount,
+      date,
+      type: PaymentType.RENT_PAYMENT,
+      description: `Arriendo mes ${index + 1}`,
+      isAgencyRevenue: false,
+      currency,
+    }));
 
     setPayments(generated);
-  }, [showMonthlyPayments, monthlyRent, contractDuration, startDate]);
+  }, [showMonthlyPayments, monthlyRent, contractDuration, startDate, currency]);
 
   const propertyOptions = useMemo(() => {
     return properties.map((property) => {
@@ -461,6 +453,7 @@ export default function CreateRentContractForm({ onClose, onSuccess }: CreateRen
               type: PaymentType.COMMISSION_INCOME,
               description: 'Comisión arrendatario',
               isAgencyRevenue: true,
+              currency: 'CLP' as const,
             }
           : null,
         landlordAmount > 0
@@ -470,6 +463,7 @@ export default function CreateRentContractForm({ onClose, onSuccess }: CreateRen
               type: PaymentType.COMMISSION_INCOME,
               description: 'Comisión arrendador',
               isAgencyRevenue: true,
+              currency: 'CLP' as const,
             }
           : null,
       ].filter((payment): payment is NonNullable<typeof payment> => payment !== null);
@@ -482,6 +476,8 @@ export default function CreateRentContractForm({ onClose, onSuccess }: CreateRen
         currency,
         ufValue: currency === 'UF' ? parseFloat(ufValue) : undefined,
         monthlyRent: parseFloat(monthlyRent),
+        startDate,
+        durationMonths: parseInt(contractDuration, 10) || undefined,
         commissionPercent: tenantPercent + landlordPercent,
         commissionAmount: tenantAmount + landlordAmount,
         tenantCommissionPercent: tenantPercent,
@@ -504,6 +500,7 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
                 type: PaymentType.DEPOSIT,
                 description: 'Depósito/Garantía',
                 isAgencyRevenue: depositIsAgencyRevenue,
+                currency,
               }]
             : []),
           ...commissionPayments,
@@ -513,6 +510,7 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
             type: payment.type,
             description: payment.description,
             isAgencyRevenue: payment.isAgencyRevenue,
+            currency,
           })),
           ...manualScheduledPayments,
         ],
@@ -525,7 +523,17 @@ Depósito: ${formatCurrency(parseFloat(depositAmount), currency)}` : ''}`.trim()
         })),
       };
 
-      await createContract(contractData);
+      const result = await createContract(contractData);
+      if (!result.success) {
+        // P. ej. la propiedad ya tiene un contrato en proceso.
+        alert.showAlert({
+          message: `Error al crear contrato: ${result.error || 'Error desconocido'}`,
+          type: 'error',
+          duration: 5000,
+        });
+        setLoading(false);
+        return;
+      }
 
       alert.showAlert({
         message: 'Contrato de arriendo creado exitosamente',

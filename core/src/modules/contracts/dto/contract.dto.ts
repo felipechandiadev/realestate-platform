@@ -11,6 +11,7 @@ import {
   IsDateString,
   ValidateNested,
   IsBoolean,
+  IsInt,
   Min,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
@@ -71,6 +72,11 @@ export class ContractPaymentDto {
   @IsBoolean()
   @IsOptional()
   isAgencyRevenue?: boolean;
+
+  /** Moneda del pago. Si falta, se usa la del contrato (las comisiones van en CLP). */
+  @IsEnum(ContractCurrency)
+  @IsOptional()
+  currency?: ContractCurrency;
 }
 
 export class ContractDocumentDto {
@@ -157,6 +163,17 @@ export class CreateContractDto {
   @IsOptional()
   description?: string;
 
+  /** Arriendo: fecha de inicio de la vigencia. */
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  /** Arriendo: duración en meses. */
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  durationMonths?: number;
+
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ContractPersonDto)
@@ -176,6 +193,16 @@ export class CreateContractDto {
 }
 
 export class UpdateContractDto {
+  /** Arriendo: fecha de inicio de la vigencia. */
+  @IsDateString()
+  @IsOptional()
+  startDate?: string;
+
+  /** Arriendo: duración en meses. */
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  durationMonths?: number;
   @IsNumber()
   @IsPositive()
   @IsOptional()
@@ -271,6 +298,11 @@ export class AddPaymentDto {
   @IsBoolean()
   @IsOptional()
   isAgencyRevenue?: boolean;
+
+  /** Moneda del pago. Si falta, se usa la del contrato (las comisiones van en CLP). */
+  @IsEnum(ContractCurrency)
+  @IsOptional()
+  currency?: ContractCurrency;
 }
 
 export class AddPersonDto {

@@ -446,6 +446,9 @@ export async function createContract(data: {
   commissionPercent: number;
   commissionAmount?: number;
   monthlyRent?: number;
+  /** Arriendo: inicio (YYYY-MM-DD) y duración en meses. */
+  startDate?: string;
+  durationMonths?: number;
   tenantCommissionPercent?: number;
   tenantCommissionAmount?: number;
   landlordCommissionPercent?: number;
@@ -461,6 +464,7 @@ export async function createContract(data: {
     type: PaymentType;
     description?: string;
     isAgencyRevenue?: boolean;
+    currency?: 'CLP' | 'UF';
   }>;
   documents?: Array<{
     documentTypeId: string;

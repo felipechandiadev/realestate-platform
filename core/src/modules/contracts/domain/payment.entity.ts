@@ -59,6 +59,10 @@ export class Payment {
   })
   status: PaymentStatus;
 
+  /** Moneda del pago: CLP o UF (antes se asumía la del contrato). */
+  @Column({ type: 'varchar', length: 8, default: 'CLP' })
+  currency: string;
+
   @Column({ type: 'datetime', nullable: true })
   paidAt: Date | null;
 

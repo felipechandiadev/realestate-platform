@@ -63,12 +63,17 @@ describe('ContractsService', () => {
     uploadFile: jest.fn().mockResolvedValue({ id: 'm1', url: 'https://x/f.pdf' }),
   };
   const mockAudit = { createAuditLog: jest.fn() };
+  const mockPropertyRepo = {
+    findOne: jest.fn(),
+    update: jest.fn(),
+  };
 
   // QueryRunner simulado: el manager de la transacción devuelve los mismos mocks.
   const txManager = {
     getRepository: jest.fn((entity: unknown) => {
       if (entity === Payment) return mockPaymentRepo;
       if (entity === Document) return mockDocumentRepo;
+      if (entity === Property) return mockPropertyRepo;
       return {};
     }),
   };
@@ -95,6 +100,8 @@ describe('ContractsService', () => {
     mockDocumentRepo.find.mockResolvedValue([]);
     mockContractRepo.withManager.mockImplementation(() => mockContractRepo);
     mockContractRepo.findOne.mockResolvedValue(null);
+    mockPropertyRepo.findOne.mockResolvedValue(null);
+    (mockPaymentRepo as any).create = jest.fn((row) => row);
     queryRunner.isTransactionActive = false;
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -135,7 +142,7 @@ describe('ContractsService', () => {
     const dto = {} as any;
     mockCreate.execute.mockResolvedValue({ id: '1' });
     await service.create(dto, 'actor');
-    expect(mockCreate.execute).toHaveBeenCalledWith(dto, txManager);
+    expect(mockCreate.execute).toHaveBeenCalledWith({ payments: [] }, txManager);
     expect(mockAudit.createAuditLog).toHaveBeenCalledWith(expect.any(Object), txManager);
     expect(queryRunner.commitTransaction).toHaveBeenCalledTimes(1);
     expect(queryRunner.release).toHaveBeenCalledTimes(1);
@@ -246,7 +253,7 @@ describe('ContractsService', () => {
       mockAudit.createAuditLog.mockRejectedValueOnce(new Error('audit down'));
 
       await expect(service.create({} as any, 'actor')).rejects.toThrow('audit down');
-      expect(mockCreate.execute).toHaveBeenCalledWith({}, txManager);
+      expect(mockCreate.execute).toHaveBeenCalledWith({ payments: [] }, txManager);
       expectRolledBack();
     });
 
@@ -262,6 +269,7 @@ describe('ContractsService', () => {
     });
 
     it('addPayment: si falla la auditoría se revierte el pago', async () => {
+      mockContractRepo.findById.mockResolvedValue({ id: 'c1', currency: 'CLP' });
       mockAddPayment.execute.mockResolvedValue({ id: 'p1' });
       mockAudit.createAuditLog.mockRejectedValueOnce(new Error('audit down'));
 
@@ -311,6 +319,138 @@ describe('ContractsService', () => {
       await expect(service.softDelete('c1', 'actor')).rejects.toThrow('audit down');
       expect(mockDelete.execute).toHaveBeenCalledWith('c1', txManager);
       expectRolledBack();
+    });
+  });
+
+  describe('reglas de negocio', () => {
+    const property = (status: string) => ({ id: 'prop1', status });
+
+    it('create: rechaza si la propiedad ya tiene un contrato en proceso', async () => {
+      mockContractRepo.findOne.mockResolvedValueOnce({ id: 'c0', code: 'CV-26-0000001' });
+
+      await expect(
+        service.create({ propertyId: 'prop1', operation: 'COMPRAVENTA' } as any, 'actor'),
+      ).rejects.toThrow(/ya tiene un contrato en proceso \(CV-26-0000001\)/);
+      expect(mockCreate.execute).not.toHaveBeenCalled();
+      expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
+    });
+
+    it('create: guarda los pagos en la tabla con su moneda y marca la propiedad en contrato', async () => {
+      mockCreate.execute.mockResolvedValue({
+        id: 'c1', propertyId: 'prop1', operation: 'ARRIENDO', status: 'IN_PROCESS', currency: 'UF',
+      });
+      mockPropertyRepo.findOne.mockResolvedValue(property('PUBLISHED'));
+
+      await service.create(
+        {
+          propertyId: 'prop1',
+          operation: 'ARRIENDO',
+          currency: 'UF',
+          payments: [
+            { amount: 12, date: '2026-11-01', type: 'RENT_PAYMENT' },
+            { amount: 450000, date: '2026-11-01', type: 'COMMISSION_INCOME', isAgencyRevenue: true },
+            { amount: 30, date: '2026-11-01', type: 'DEPOSIT', currency: 'CLP' },
+          ],
+        } as any,
+        'actor',
+      );
+
+      expect(mockCreate.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ payments: [] }),
+        txManager,
+      );
+      const saved = mockPaymentRepo.save.mock.calls[0][0] as Array<Record<string, unknown>>;
+      expect(saved.map((p) => [p.type, p.currency, p.contractId])).toEqual([
+        ['RENT_PAYMENT', 'UF', 'c1'],
+        ['COMMISSION_INCOME', 'CLP', 'c1'],
+        ['DEPOSIT', 'CLP', 'c1'],
+      ]);
+      expect(mockPropertyRepo.update).toHaveBeenCalledWith(
+        'prop1',
+        expect.objectContaining({ status: 'CONTRACT-IN-PROGRESS' }),
+      );
+    });
+
+    it('close: marca la propiedad como vendida o arrendada', async () => {
+      for (const [operation, expected, roles] of [
+        ['COMPRAVENTA', 'SOLD', ['SELLER', 'BUYER']],
+        ['ARRIENDO', 'RENTED', ['LANDLORD', 'TENANT']],
+      ] as const) {
+        jest.clearAllMocks();
+        const contract = {
+          id: 'c1', propertyId: 'prop1', operation, status: 'IN_PROCESS',
+          people: roles.map((role) => ({ personId: role, role })),
+        };
+        mockContractRepo.findById
+          .mockResolvedValueOnce(contract)
+          .mockResolvedValueOnce({ ...contract, status: 'CLOSED' });
+        mockValidateRoles.execute.mockReturnValue({ valid: true, missingRoles: [] });
+        mockPropertyRepo.findOne.mockResolvedValue(property('CONTRACT-IN-PROGRESS'));
+
+        await service.close('c1', { endDate: '2026-12-01', documents: [] } as any, 'actor');
+
+        expect(mockPropertyRepo.update).toHaveBeenCalledWith(
+          'prop1',
+          expect.objectContaining({ status: expected }),
+        );
+      }
+    });
+
+    it('close: no permite cerrar sin las partes obligatorias', async () => {
+      mockContractRepo.findById.mockResolvedValue({ id: 'c1', operation: 'COMPRAVENTA', status: 'IN_PROCESS', people: [] });
+      mockValidateRoles.execute.mockReturnValue({ valid: false, missingRoles: ['BUYER'] });
+
+      await expect(
+        service.close('c1', { endDate: '2026-12-01', documents: [] } as any, 'actor'),
+      ).rejects.toThrow('faltan participantes con rol BUYER');
+      expect(mockClose.execute).not.toHaveBeenCalled();
+    });
+
+    it('close y fail: solo desde un contrato en proceso', async () => {
+      mockContractRepo.findById.mockResolvedValue({ id: 'c1', operation: 'ARRIENDO', status: 'FAILED' });
+      await expect(
+        service.close('c1', { endDate: '2026-12-01', documents: [] } as any, 'actor'),
+      ).rejects.toThrow('Solo un contrato en proceso');
+
+      mockContractRepo.findById.mockResolvedValue({ id: 'c1', operation: 'ARRIENDO', status: 'CLOSED' });
+      await expect(service.fail('c1', new Date(), 'actor')).rejects.toThrow('Solo un contrato en proceso');
+      expect(mockClose.execute).not.toHaveBeenCalled();
+      expect(mockFail.execute).not.toHaveBeenCalled();
+    });
+
+    it('fail: libera la propiedad solo si seguía en contrato', async () => {
+      const contract = { id: 'c1', propertyId: 'prop1', operation: 'COMPRAVENTA', status: 'IN_PROCESS' };
+      mockContractRepo.findById
+        .mockResolvedValueOnce(contract)
+        .mockResolvedValueOnce({ ...contract, status: 'FAILED' });
+      mockPropertyRepo.findOne.mockResolvedValue(property('CONTRACT-IN-PROGRESS'));
+
+      await service.fail('c1', new Date(), 'actor');
+      expect(mockPropertyRepo.update).toHaveBeenCalledWith(
+        'prop1',
+        expect.objectContaining({ status: 'PUBLISHED' }),
+      );
+
+      jest.clearAllMocks();
+      mockContractRepo.findById
+        .mockResolvedValueOnce(contract)
+        .mockResolvedValueOnce({ ...contract, status: 'FAILED' });
+      mockPropertyRepo.findOne.mockResolvedValue(property('INACTIVE'));
+      await service.fail('c1', new Date(), 'actor');
+      expect(mockPropertyRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('addPayment: usa la moneda del contrato salvo en comisiones', async () => {
+      mockContractRepo.findById.mockResolvedValue({ id: 'c1', currency: 'UF' });
+      mockAddPayment.execute.mockResolvedValue({ id: 'p1' });
+
+      await service.addPayment('c1', { amount: 12, type: 'RENT_PAYMENT', date: '2026-01-01' } as any, 'actor');
+      await service.addPayment('c1', { amount: 9, type: 'COMMISSION_INCOME', date: '2026-01-01' } as any, 'actor');
+
+      expect(mockAddPayment.execute.mock.calls.map((c) => (c[1] as { currency: string }).currency)).toEqual([
+        'UF',
+        'CLP',
+      ]);
     });
   });
 });
