@@ -29,9 +29,9 @@
 | 5 | 🟠 | garantía | **"Tiempo promedio de venta" mal calculado:** usa `updatedAt − createdAt` (cualquier edición lo cambia) e incluye arriendos. | `getGlobalAverageClosureDays`. | ✅ **Corregido:** días desde la creación hasta `endDate`, solo compraventas cerradas |
 | 6 | 🟠 | mejora | **El agente ve los ingresos de la corredora** en el dashboard (el endpoint `/analytics/summary` es ADMIN y AGENT). | Captura con sesión de agente. | **Confirmar con el cliente**; si no corresponde, ocultar ingresos al agente o mostrarle solo sus métricas |
 | 7 | 🟡 | garantía | **Línea de depuración en pantalla:** "Diagnóstico: 0 pago(s) reconocidos como ingreso…". | Captura del dashboard. | ✅ **Corregido:** línea eliminada |
-| 8 | 🟡 | garantía | **Ranking sin estado vacío:** cuando no hay datos la tarjeta queda en blanco. | Captura. | Mensaje "Sin datos este mes" |
-| 9 | 🟡 | garantía | **Ranking ordena por contratos cerrados pero muestra la tasa de conversión**, que además se calcula sobre propiedades asignadas actuales. | `page.tsx` y `get-agent-performance`. | Mostrar la misma métrica por la que se ordena |
-| 10 | 🟡 | deuda | **`/analytics/geographic` responde 500** (relación `state` inexistente). Ningún front lo usa; el reporte geográfico usa otra consulta y funciona. | Log: `Relation with property path state … not found`. | Corregir o eliminar el endpoint |
+| 8 | 🟡 | garantía | **Ranking sin estado vacío:** cuando no hay datos la tarjeta queda en blanco. | Captura. | ✅ **Corregido:** mensaje "Aún no hay agentes con propiedades asignadas" |
+| 9 | 🟡 | garantía | **Ranking ordena por contratos cerrados pero muestra la tasa de conversión**, que además se calcula sobre propiedades asignadas actuales. | `page.tsx` y `get-agent-performance`. | ✅ **Corregido:** ordena por la conversión que muestra (desempate por cierres) y lo explica bajo el título |
+| 10 | 🟡 | deuda | **`/analytics/geographic` responde 500** (relación `state` inexistente). Ningún front lo usa; el reporte geográfico usa otra consulta y funciona. | Log: `Relation with property path state … not found`. | ✅ **Corregido:** endpoint eliminado (no lo usaba ningún front) |
 | 11 | 🟡 | deuda | **"Valor de contratos" por agente también suma UF y CLP** (`getTotalContractValue`). | Código. | ✅ **Corregido** junto con #2 (valor de contratos por agente en CLP) |
 
 ## Correcciones aplicadas
