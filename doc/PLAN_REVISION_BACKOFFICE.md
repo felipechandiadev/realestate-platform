@@ -60,7 +60,7 @@ Se prioriza por **riesgo** (dinero, datos personales, permisos) y por **uso diar
 | 2 | Personas y documentos | Personas, Documentos, Tipos de documento | Datos personales | 🟢 Seguridad corregida (`97dcb89`); falta recorrido de UI |
 | 3 | Propiedades | Venta, Arriendo, Tipos de propiedad | Publicación en el portal | 🟡 Publicación y multimedia corregidas (`5ad6fce`, `19b6cac`); faltan puntos 4–5 del análisis |
 | 4 | Usuarios | Administradores, Agentes, Comunidad | Accesos | 🟢 Revisado; críticos y altos corregidos — quedan #4 (decisión) y menores ([informe](./revision-backoffice/04-usuarios.md)) |
-| 5 | Dashboard y reportes | Dashboard, Reportes | Decisiones con datos erróneos | ⚪ Pendiente |
+| 5 | Dashboard y reportes | Dashboard, Reportes | Decisiones con datos erróneos | 🟢 Revisado; críticos y altos corregidos — quedan #6 (decisión) y menores ([informe](./revision-backoffice/05-dashboard-reportes.md)) |
 | 6 | CMS | 11 pantallas | Imagen pública | ⚪ Pendiente |
 | 7 | Sistema | Notificaciones, Acerca de, Login, PWA | Bajo | ⚪ Pendiente |
 
