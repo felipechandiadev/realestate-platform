@@ -64,7 +64,7 @@
   width: 100%;
   box-sizing: border-box;
   min-height: var(--control-height-md, 2.25rem);
-  min-width: 180px;
+  min-width: 0;
   border-radius: 0.375rem;
   border: 1px solid var(--color-border, #a5c2c2);
   background-color: var(--tf-surface, var(--color-background, #fff));
@@ -418,3 +418,15 @@
   font-size: 0.875rem;
   line-height: 1.25rem;
 }
+
+/**
+ * Prevenir auto-zoom en iOS Safari (< 16px fuerza zoom de página al enfocar).
+ */
+@media (max-width: 768px) {
+  .fs-text-field__input,
+  .fs-text-field__input.fs-text-field__input--compact,
+  .fs-inline-combo-shell--default .fs-text-field__input.fs-text-field__input--borderless {
+    font-size: 16px;
+  }
+}
+

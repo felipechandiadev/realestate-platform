@@ -9,7 +9,9 @@ import type { PropertyFiltersState } from './filter-types';
 type Props = {
   open: boolean;
   filters: PropertyFiltersState;
-  total: number;
+  /** Total para los filtros del borrador; `null` si no se pudo calcular. */
+  total: number | null;
+  isCounting?: boolean;
   onChange: (patch: Partial<PropertyFiltersState>) => void;
   onClear: () => void;
   onApply: () => void;
@@ -21,6 +23,7 @@ export default function MobileFilterDrawer({
   open,
   filters,
   total,
+  isCounting = false,
   onChange,
   onClear,
   onApply,
@@ -37,6 +40,15 @@ export default function MobileFilterDrawer({
   }, [open]);
 
   if (!open) return null;
+
+  const noResults = !isCounting && total === 0;
+  const applyLabel = isCounting
+    ? 'Calculando…'
+    : total === null
+      ? 'Ver propiedades'
+      : noResults
+        ? 'Sin resultados'
+        : `Ver ${total} ${total === 1 ? 'propiedad' : 'propiedades'}`;
 
   return (
     <div
@@ -80,13 +92,15 @@ export default function MobileFilterDrawer({
           type="button"
           variant="primary"
           className="w-full"
+          disabled={noResults}
+          aria-live="polite"
           onClick={() => {
             onApply();
             onClose();
             document.getElementById('properties-container')?.scrollIntoView({ behavior: 'smooth' });
           }}
         >
-          Ver {total} propiedades
+          {applyLabel}
         </Button>
       </footer>
     </div>

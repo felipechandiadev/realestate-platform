@@ -3,11 +3,18 @@
 import React, { useEffect, useRef, useState } from 'react';
 import ListProperties, { PropertyPaginationControls } from '../ListProperties';
 import PropertyCardSkeleton from '@/shared/components/ui/PropertyCardSkeleton/PropertyCardSkeleton';
-import type { PropertyData } from '@/features/properties/actions/portalProperties.action';
+import {
+  getPublishedPropertiesFiltered,
+  type PropertyData,
+} from '@/features/properties/actions/portalProperties.action';
 import PropertyFiltersSidebar from './PropertyFiltersSidebar';
 import MobileFilterDrawer from './MobileFilterDrawer';
 import StickyFilterButton from './StickyFilterButton';
 import { countActiveFilters, type PropertyFiltersState } from './filter-types';
+import { filtersToApiPayload } from './url-sync';
+
+/** Espera tras el último cambio del borrador antes de pedir el total. */
+const DRAFT_COUNT_DEBOUNCE_MS = 300;
 
 type Pagination = {
   total: number;
@@ -52,9 +59,39 @@ export default function PropertyListingsLayout({
   const previousPageRef = useRef<number | null>(null);
   const paginationReadyRef = useRef(false);
 
+  // Total del borrador del panel móvil: se recalcula en vivo sin aplicar los filtros a la lista.
+  const [draftTotal, setDraftTotal] = useState<number | null>(null);
+  const [draftCounting, setDraftCounting] = useState(false);
+  const draftCountRequestRef = useRef(0);
+
   useEffect(() => {
     if (drawerOpen) setDraft(filters);
   }, [drawerOpen, filters]);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+
+    const requestId = ++draftCountRequestRef.current;
+    const appliedPayload = JSON.stringify(filtersToApiPayload({ ...filters, page: 1 }));
+    const draftPayload = filtersToApiPayload({ ...draft, page: 1 });
+
+    // Borrador igual a lo aplicado: el total de la lista ya es el correcto.
+    if (JSON.stringify(draftPayload) === appliedPayload) {
+      setDraftTotal(pagination?.total ?? null);
+      setDraftCounting(false);
+      return;
+    }
+
+    setDraftCounting(true);
+    const timer = window.setTimeout(async () => {
+      const result = await getPublishedPropertiesFiltered(draftPayload);
+      if (requestId !== draftCountRequestRef.current) return; // llegó una respuesta vieja
+      setDraftTotal(result ? result.pagination.total : null);
+      setDraftCounting(false);
+    }, DRAFT_COUNT_DEBOUNCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [drawerOpen, draft, filters, pagination?.total]);
 
   // Al cambiar de página, subir hasta la primera fila del listado (tras cargar).
   // ListProperties también hace scroll, pero aquí se desmonta mientras isLoading
@@ -139,7 +176,8 @@ export default function PropertyListingsLayout({
       <MobileFilterDrawer
         open={drawerOpen}
         filters={draft}
-        total={pagination?.total ?? 0}
+        total={draftTotal}
+        isCounting={draftCounting}
         lockedOperation={lockedOperation}
         onChange={(patch) =>
           setDraft((prev) => ({

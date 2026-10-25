@@ -238,7 +238,7 @@ const Dialog: React.FC<DialogProps> = ({
       ? typeof maxWidth === 'number'
         ? `${maxWidth}px`
         : maxWidth
-      : undefined,
+      : (maxWidth ? (typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth) : 'calc(100vw - 2rem)'),
     minWidth: minWidth ? (typeof minWidth === 'number' ? `${minWidth}px` : minWidth) : undefined,
     height: height ? (typeof height === 'number' ? `${height}px` : height) : undefined,
     maxHeight: maxHeight ? (typeof maxHeight === 'number' ? `${maxHeight}px` : maxHeight) : undefined,

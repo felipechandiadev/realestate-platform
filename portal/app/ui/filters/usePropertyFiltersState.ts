@@ -175,6 +175,8 @@ export function usePropertyFiltersState({
     if (params.get('operation') !== lockedOperation) {
       syncUrl(current);
     }
+    // Las páginas de venta/arriendo llegan sin resultados iniciales: cargar al montar.
+    void fetchResults(current);
     // Only re-run when the locked page changes (sale <-> rent)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockedOperation]);

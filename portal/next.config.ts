@@ -9,6 +9,17 @@ const uiPackageEntry = path.join(packagesRoot, "ui", "src", "index.ts");
 // Turbopack resolveAlias must be relative to turbopack.root (monorepo root).
 const uiPackageEntryRelative = "packages/ui/src/index.ts";
 
+// Host público de R2 configurado por entorno (mismo valor que R2_PUBLIC_URL del core).
+const r2PublicHost = (() => {
+  const raw = process.env.R2_PUBLIC_URL || process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
+  if (!raw) return null;
+  try {
+    return new URL(raw).hostname;
+  } catch {
+    return null;
+  }
+})();
+
 const nextConfig: NextConfig = {
   outputFileTracingRoot: monorepoRoot,
   transpilePackages: ["@realestate/ui", "@realestate/api-client"],
@@ -51,7 +62,15 @@ const nextConfig: NextConfig = {
         hostname: "pub-5ebfb00e2816441a8e34c1ccc36e6195.r2.dev",
         pathname: "/**",
       },
-      // Si R2_PUBLIC_URL usa otro host, añadirlo aquí (sin wildcards **)
+      {
+        protocol: "https",
+        hostname: "pub-06b4f98ed8fb4f55b1b8ceb091208319.r2.dev",
+        pathname: "/**",
+      },
+      // Si R2_PUBLIC_URL usa otro host, añadirlo aquí (sin wildcards **) o definir R2_PUBLIC_URL.
+      ...(r2PublicHost
+        ? [{ protocol: "https" as const, hostname: r2PublicHost, pathname: "/**" }]
+        : []),
     ],
   },
   turbopack: {

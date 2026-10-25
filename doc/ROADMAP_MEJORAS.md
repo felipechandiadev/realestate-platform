@@ -56,4 +56,5 @@ Hoy: portal 2 archivos de test (smoke con Node, sin Jest), backoffice 13; la CI 
 
 ## 3. Pendiente de validar
 
+- [x] **Auditoría completa de UI y Mobile**: Ver detalle y checklist priorizado en [`doc/LISTADO_CORRECCIONES_UI_MOBILE.md`](./LISTADO_CORRECCIONES_UI_MOBILE.md).
 - [ ] Revisión de UX real en navegador (sobre todo móvil): velocidad, filtros, flujo de publicación y área de cliente.
