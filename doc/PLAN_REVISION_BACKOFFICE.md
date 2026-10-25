@@ -61,7 +61,7 @@ Se prioriza por **riesgo** (dinero, datos personales, permisos) y por **uso diar
 | 3 | Propiedades | Venta, Arriendo, Tipos de propiedad | Publicación en el portal | 🟡 Publicación y multimedia corregidas (`5ad6fce`, `19b6cac`); faltan puntos 4–5 del análisis |
 | 4 | Usuarios | Administradores, Agentes, Comunidad | Accesos | 🟢 Revisado; críticos y altos corregidos — quedan #4 (decisión) y menores ([informe](./revision-backoffice/04-usuarios.md)) |
 | 5 | Dashboard y reportes | Dashboard, Reportes | Decisiones con datos erróneos | 🟢 Revisado; críticos y altos corregidos — quedan #6 (decisión) y menores ([informe](./revision-backoffice/05-dashboard-reportes.md)) |
-| 6 | CMS | 11 pantallas | Imagen pública | ⚪ Pendiente |
+| 6 | CMS | 11 pantallas | Imagen pública | 🟢 Revisado; XSS corregido — quedan #2–#3 (decisión de permisos) y menores ([informe](./revision-backoffice/06-cms.md)) |
 | 7 | Sistema | Notificaciones, Acerca de, Login, PWA | Bajo | ⚪ Pendiente |
 
 **Estimación total:** 6–8 jornadas de revisión, más el tiempo de las correcciones que surjan.
