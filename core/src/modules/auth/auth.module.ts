@@ -3,6 +3,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '../users/domain/user.entity';
+import { SessionUserService } from './application/session-user.service';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
@@ -29,8 +32,10 @@ import { ResendVerificationEmailUseCase } from './application/use-cases/resend-v
     }),
     forwardRef(() => UsersModule),
     MailModule,
+    TypeOrmModule.forFeature([User]),
   ],
   providers: [
+    SessionUserService,
     JwtStrategy,
     JwtAuthGuard,
     RolesGuard,
@@ -48,6 +53,6 @@ import { ResendVerificationEmailUseCase } from './application/use-cases/resend-v
     ResendVerificationEmailUseCase,
   ],
   controllers: [AuthController],
-  exports: [JwtModule, JwtAuthGuard, RolesGuard, AuthService, JweService],
+  exports: [JwtModule, JwtAuthGuard, RolesGuard, AuthService, JweService, SessionUserService],
 })
 export class AuthModule {}

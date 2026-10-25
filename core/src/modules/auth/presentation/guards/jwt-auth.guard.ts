@@ -1,15 +1,18 @@
-import { Injectable, ExecutionContext } from '@nestjs/common';
+import { Injectable, ExecutionContext, Optional } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { resolveAuthAudience } from '../../application/auth-audience.util';
 import { JweService } from '../../infrastructure/jwe/jwe.service';
+import { SessionUserService } from '../../application/session-user.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(
     private readonly jweService: JweService,
     private readonly reflector: Reflector,
+    // Solo la instancia global (AuthModule) lo tiene; sin él la vía alternativa no se usa.
+    @Optional() private readonly sessionUsers?: SessionUserService,
   ) {
     super();
   }
@@ -32,7 +35,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         try {
           await this.authenticate(context);
         } catch {
-          // token inválido en ruta pública: se ignora
+          // token inválido o cuenta inactiva en ruta pública: se atiende como anónimo
+          req.user = undefined;
         }
       }
       return true;
@@ -64,14 +68,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
           if (match) token = decodeURIComponent(match[1]);
         }
 
-        if (token) {
+        if (token && this.sessionUsers) {
           const payload = await this.jweService.decrypt(token);
           if (payload && payload.sub) {
+            const role = await this.sessionUsers.assertActive(payload.sub);
             // attach user-like object to request so controllers can use it
             req.user = {
               id: payload.sub,
               email: payload.email,
-              role: payload.role,
+              role,
               authAudience: resolveAuthAudience(payload),
             };
             return true;

@@ -81,6 +81,7 @@ export class CreateUserDto {
 
   @IsNotEmpty()
   @IsString()
+  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
   password: string;
 
   @IsOptional()
@@ -151,6 +152,7 @@ export class ChangePasswordDto {
 
   @IsNotEmpty()
   @IsString()
+  @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })
   newPassword: string;
 }
 

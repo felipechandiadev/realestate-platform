@@ -80,8 +80,10 @@ export class UsersController {
       @Body(ValidationPipe) createUserDto: CreateUserDto,
       @Req() req?: any,
     ) {
-      if (createUserDto.role === UserRole.ADMIN && req?.user?.role !== UserRole.ADMIN) {
-        throw new ForbiddenException('Solo un ADMIN puede crear administradores');
+      // Un agente solo puede registrar clientes; las cuentas de equipo las crea un ADMIN.
+      const requestedRole = createUserDto.role ?? UserRole.COMMUNITY; // mismo valor por defecto que CreateUserUseCase
+      if (req?.user?.role !== UserRole.ADMIN && requestedRole !== UserRole.COMMUNITY) {
+        throw new ForbiddenException('Solo un administrador puede crear cuentas de agente o administrador');
       }
       const user = await this.usersService.create(createUserDto);
       const { password, setPassword, validatePassword, ...userResponse } =
@@ -94,7 +96,8 @@ export class UsersController {
      */
     @Get()
     @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles(UserRole.ADMIN, UserRole.AGENT)
+    // Incluye correos y teléfonos de todo el equipo: solo ADMIN.
+    @Roles(UserRole.ADMIN)
     @ApiBearerAuth()
     @ApiOperation({ summary: 'Get all users' })
     @ApiResponse({
@@ -352,8 +355,9 @@ export class UsersController {
     setStatus(
       @Param('id') id: string,
       @Body('status', ValidationPipe) status: UserStatus,
+      @Req() req: any,
     ) {
-      return this.usersService.setStatus(id, status);
+      return this.usersService.setStatus(id, status, req?.user?.id);
     }
 
     /**
@@ -370,8 +374,9 @@ export class UsersController {
     assignRole(
       @Param('id') id: string,
       @Body(ValidationPipe) assignRoleDto: AssignRoleDto,
+      @Req() req: any,
     ) {
-      return this.usersService.assignRole(id, assignRoleDto.role);
+      return this.usersService.assignRole(id, assignRoleDto.role, req?.user?.id);
     }
 
     /**
@@ -443,8 +448,8 @@ export class UsersController {
     @ApiParam({ name: 'id', type: String })
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
-    softDelete(@Param('id') id: string) {
-      return this.usersService.softDelete(id);
+    softDelete(@Param('id') id: string, @Req() req: any) {
+      return this.usersService.softDelete(id, req?.user?.id);
     }
 
     /**

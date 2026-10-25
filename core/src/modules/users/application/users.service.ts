@@ -6,9 +6,14 @@ import {
   BadRequestException,
   ForbiddenException,
   Inject,
+  Optional,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull } from 'typeorm';
+import { Repository, IsNull, Not } from 'typeorm';
+import { SessionUserService } from '../../auth/application/session-user.service';
+import { ContractOrmEntity } from '../../contracts/infrastructure/persistence/contract.orm-entity';
+import { assertAccountChangeAllowed, type AccountChange } from './user-account-rules';
 import * as bcrypt from 'bcrypt';
 import * as ExcelJS from 'exceljs';
 import {
@@ -95,6 +100,9 @@ export class UsersService {
     private readonly verifyUserEmailUseCase: VerifyUserEmailUseCase,
     private readonly resendVerificationEmailUseCase: ResendVerificationEmailUseCase,
     private readonly gridCommunityUsersUseCase: GridCommunityUsersUseCase,
+    @Optional()
+    @Inject(forwardRef(() => SessionUserService))
+    private readonly sessionUsers?: SessionUserService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -133,16 +141,48 @@ export class UsersService {
     }
   }
 
-  async softDelete(id: string): Promise<void> {
+  async softDelete(id: string, actorId?: string): Promise<void> {
+    await this.guardAccountChange(id, { kind: 'delete' }, actorId);
     await this.softDeleteUserUseCase.execute(id);
+    this.sessionUsers?.invalidate(id);
+  }
+
+  /** Aplica `assertAccountChangeAllowed` con los datos actuales del usuario. */
+  private async guardAccountChange(id: string, change: AccountChange, actorId?: string): Promise<void> {
+    const target = await this.userRepository.findOne({
+      where: { id, deletedAt: IsNull() },
+      select: { id: true, role: true, status: true },
+    });
+    if (!target) throw new NotFoundException('Usuario no encontrado');
+
+    const [otherActiveAdmins, assignedProperties, activeContracts] = await Promise.all([
+      this.userRepository.count({
+        where: { id: Not(id), role: UserRole.ADMIN, status: UserStatus.ACTIVE, deletedAt: IsNull() },
+      }),
+      this.propertyRepository.count({ where: { assignedAgentId: id, deletedAt: IsNull() } }),
+      this.userRepository.manager.count(ContractOrmEntity, {
+        where: { userId: id, status: 'IN_PROCESS', deletedAt: IsNull() },
+      }),
+    ]);
+
+    assertAccountChangeAllowed(change, {
+      actorId,
+      target: { id: target.id, role: target.role, status: target.status },
+      otherActiveAdmins,
+      assignedProperties,
+      activeContracts,
+    });
   }
 
   async login(loginDto: LoginDto): Promise<any> {
     return this.loginUserUseCase.execute(loginDto);
   }
 
-  async assignRole(id: string, role: UserRole): Promise<any> {
-    return this.assignRoleUseCase.execute(id, role);
+  async assignRole(id: string, role: UserRole, actorId?: string): Promise<any> {
+    await this.guardAccountChange(id, { kind: 'role', role }, actorId);
+    const updated = await this.assignRoleUseCase.execute(id, role);
+    this.sessionUsers?.invalidate(id);
+    return updated;
   }
 
   async setPermissions(id: string, permissions: Permission[]): Promise<any> {
@@ -160,8 +200,11 @@ export class UsersService {
     return this.resetPasswordUseCase.execute(id, { newPassword });
   }
 
-  async setStatus(id: string, status: UserStatus): Promise<User> {
-    return this.setStatusUseCase.execute(id, status);
+  async setStatus(id: string, status: UserStatus, actorId?: string): Promise<User> {
+    await this.guardAccountChange(id, { kind: 'status', status }, actorId);
+    const updated = await this.setStatusUseCase.execute(id, status);
+    this.sessionUsers?.invalidate(id);
+    return updated;
   }
 
   async getUserProfile(userId: string): Promise<UserProfileResponseDto> {

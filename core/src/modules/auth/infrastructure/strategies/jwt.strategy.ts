@@ -3,13 +3,17 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-custom';
 import { resolveAuthAudience } from '../../application/auth-audience.util';
 import { JweService } from '../jwe/jwe.service';
+import { SessionUserService } from '../../application/session-user.service';
 import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   private readonly logger = new Logger(JwtStrategy.name);
 
-  constructor(private readonly jweService: JweService) {
+  constructor(
+    private readonly jweService: JweService,
+    private readonly sessionUsers: SessionUserService,
+  ) {
     super();
   }
 
@@ -39,11 +43,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
         throw new UnauthorizedException('Token expired');
       }
 
-      // Return user information
+      // Rol y estado vigentes en la base, no los del momento en que se emitió el token.
+      const role = await this.sessionUsers.assertActive(decryptedPayload.sub);
+
       return {
         id: decryptedPayload.sub,
         email: decryptedPayload.email,
-        role: decryptedPayload.role,
+        role,
         authAudience: resolveAuthAudience(decryptedPayload),
       };
     } catch (error) {

@@ -197,13 +197,16 @@ export function AgentsContent({
               Gestiona el equipo de agentes inmobiliarios
             </p>
           </div>
-          <IconButton
-            aria-label="Agregar agente"
-            variant="text"
-            onClick={handleAddAgent}
-            icon="add"
-            size={'lg'}
-          />
+          {/* Crear cuentas de agente: solo ADMIN (core responde 403 al resto). */}
+          {canManageUsers ? (
+            <IconButton
+              aria-label="Agregar agente"
+              variant="text"
+              onClick={handleAddAgent}
+              icon="add"
+              size={'lg'}
+            />
+          ) : null}
         </div>
 
         {/* Search */}
