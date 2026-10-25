@@ -243,6 +243,7 @@ const LocationSection: React.FC<LocationSectionProps> = ({
       <div className="space-y-4">
         {/* Region */}
         <Select
+          label="Región"
           options={regions}
           placeholder="Seleccione una región"
           value={formData.state || null}
@@ -251,6 +252,7 @@ const LocationSection: React.FC<LocationSectionProps> = ({
 
         {/* Commune */}
         <Select
+          label="Comuna"
           options={communes}
           placeholder="Seleccione una comuna"
           value={formData.city || null}

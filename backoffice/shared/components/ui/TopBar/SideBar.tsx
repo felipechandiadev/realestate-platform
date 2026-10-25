@@ -2,6 +2,7 @@
 
 import React, { useCallback, useMemo, useState, useTransition } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { ImageOff, User } from 'lucide-react';
 // Logo removed from sidebar per request
 import { Button } from "@realestate/ui";
@@ -98,12 +99,14 @@ const SideBar: React.FC<SideBarProps> = ({ menuItems, className, style, onClose,
   const openIds = sidebarMenuState?.openItems ?? localOpenIds;
   const toggleOpen = sidebarMenuState?.toggleItem ?? fallbackToggle;
 
+  const router = useRouter();
+
   const handleNavigate = (url?: string) => {
     if (!url) return;
     // Close sidebar BEFORE navigating for faster perceived response
     if (typeof onClose === 'function') onClose();
-    // Use window.location for full page reload to show loading.tsx
-    window.location.href = url;
+    // Navegación SPA: App Router igual muestra los loading.tsx de la ruta destino.
+    router.push(url);
   };
 
   const handleLogout = useCallback(() => {

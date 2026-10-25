@@ -269,12 +269,14 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
 
         {/* 2. Tipo de propiedad - Operación */}
         <Select
+          label="Tipo de propiedad"
           placeholder="Tipo de propiedad"
           options={propertyTypeOptions}
           value={formData.propertyTypeId}
           onChange={(value) => setFormData({ ...formData, propertyTypeId: value as string })}
         />
         <Select
+          label="Operación"
           placeholder="Operación"
           options={operationOptions}
           value={formData.operationType}
@@ -291,6 +293,7 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
           placeholder="Ej. 50000000"
         />
         <Select
+          label="Moneda"
           placeholder="Moneda"
           options={currencyOptions}
           value={formData.currencyPrice}
@@ -299,12 +302,14 @@ const BasicInfoSection: React.FC<BasicInfoSectionProps> = ({
 
         {/* 4. Estado - Agente asignado */}
         <Select
+          label="Estado"
           placeholder="Estado"
           options={statusOptions}
           value={formData.status}
           onChange={(value) => setFormData({ ...formData, status: value as string })}
         />
         <Select
+          label="Agente asignado"
           placeholder="Agente Asignado"
           options={agentsList}
           value={formData.assignedAgentId}

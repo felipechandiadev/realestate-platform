@@ -177,12 +177,19 @@ const Select: React.FC<SelectProps> = ({
     textFieldWrapClassName: string,
     insetLabel?: { text: string; required?: boolean },
   ) {
-    const comboInputValue = hasSelection
-      ? selectedDisplayLabel
-      : alwaysShowLabel && placeholder
+    // Con etiqueta, la etiqueta queda siempre visible (fija) y, sin selección, se muestra
+    // en gris una pista distinta de la etiqueta (nunca "Región" dentro de "Región").
+    const labelText = (label ?? "").trim();
+    const pinLabel = Boolean(textFieldLabel.trim());
+    const hint =
+      placeholder?.trim() && placeholder.trim() !== labelText
         ? placeholder
-        : "";
-    const comboPlaceholder = hasSelection ? undefined : placeholder;
+        : labelText
+          ? "Seleccionar"
+          : placeholder;
+    // TextField oculta el placeholder cuando la etiqueta está fija: la pista va como valor.
+    const comboInputValue = hasSelection ? selectedDisplayLabel : pinLabel ? (hint ?? "") : "";
+    const comboPlaceholder = hasSelection ? undefined : hint;
 
     return (
       <div
@@ -238,11 +245,11 @@ const Select: React.FC<SelectProps> = ({
           placeholder={comboPlaceholder}
           required={required}
           data-test-id="select-input"
-          className={`${textFieldWrapClassName}${!hasSelection && placeholder ? " [&_.fs-text-field__input]:text-muted-foreground" : ""}`.trim()}
+          className={`${textFieldWrapClassName}${!hasSelection ? " fs-select--empty" : ""}`.trim()}
           variante="autocomplete"
           readOnly={true}
           disabled={disabled}
-          alwaysShowLabel={alwaysShowLabel}
+          alwaysShowLabel={alwaysShowLabel || pinLabel}
           density={density}
         />
 

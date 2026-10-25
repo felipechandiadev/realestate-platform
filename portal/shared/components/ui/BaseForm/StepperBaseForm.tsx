@@ -398,7 +398,13 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 				const handleCoordsChange = getCoordHandler(field.name);
 
 				return (
-					<div key={field.name}>
+					<div key={field.name} className="flex flex-col gap-1">
+						{field.label ? (
+							<span className="text-xs font-normal text-foreground leading-none">
+								{field.label}
+								{field.required ? <span className="ml-0.5 text-red-500">*</span> : null}
+							</span>
+						) : null}
 						<LocationField
 						  name={field.name}
 						  onChangeCallback={handleCoordsChange}
@@ -796,12 +802,13 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 				) : (
 					// Nueva lógica de renderizado por filas
 					normalizedFields.map((row, rowIndex) => (
-						<div key={`row-${rowIndex}`} className="flex items-start gap-2 w-full">
+						<div key={`row-${rowIndex}`} className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:gap-2">
 							{row.map((field) => (
 								<div
 									key={field.name}
-									className="flex-grow" // Permite que los campos crezcan
-									style={{ width: field.width ?? 'auto', flexBasis: field.width ?? 'auto' }} // Aplica el ancho
+									// En móvil cada campo ocupa el ancho completo; desde sm se aplica field.width.
+									className="w-full min-w-0 flex-grow sm:w-[var(--field-width)] sm:basis-[var(--field-width)]"
+									style={{ '--field-width': field.width ?? 'auto' } as React.CSSProperties}
 								>
 									{renderField(field)}
 								</div>

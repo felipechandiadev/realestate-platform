@@ -269,7 +269,6 @@ export default function SellPropertyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loadingCharacteristics, setLoadingCharacteristics] = useState(false);
-  const [showPostSubmitLoading, setShowPostSubmitLoading] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Pre-fill contact info if session exists
@@ -359,17 +358,6 @@ export default function SellPropertyPage() {
     loadComunas();
   }, [values.region]);
 
-  // Handle post-submit loading delay
-  useEffect(() => {
-    if (showPostSubmitLoading) {
-      const timer = setTimeout(() => {
-        setShowPostSubmitLoading(false);
-        setShowSuccessMessage(true);
-      }, 3000); // 3 seconds delay
-
-      return () => clearTimeout(timer);
-    }
-  }, [showPostSubmitLoading]);
 
   const handleChange = (field: string, value: unknown) => {
     setValues(prev => {
@@ -463,8 +451,7 @@ export default function SellPropertyPage() {
       // Scroll hacia arriba para mostrar el mensaje
       window.scrollTo({ top: 0, behavior: 'smooth' });
       
-      // Mostrar loading por 3 segundos antes del mensaje de éxito
-      setShowPostSubmitLoading(true);
+      setShowSuccessMessage(true);
     } catch (error) {
       console.error('Error submitting sell request:', error);
       setErrors(['Error al enviar la solicitud']);
@@ -864,18 +851,7 @@ export default function SellPropertyPage() {
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {showPostSubmitLoading ? (
-          // Loading después del envío exitoso
-          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
-            <div className="flex justify-center"><Loader2 className="animate-spin" size={32} /></div>
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">Procesando tu solicitud...</h2>
-              <p className="text-muted-foreground">
-                Tu propiedad está siendo enviada para revisión. Esto tomará solo un momento.
-              </p>
-            </div>
-          </div>
-        ) : showSuccessMessage ? (
+        {showSuccessMessage ? (
           // Mensaje de éxito
           <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
             <div className="text-center space-y-4">

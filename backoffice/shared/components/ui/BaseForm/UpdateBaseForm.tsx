@@ -233,7 +233,7 @@ const UpdateBaseForm: React.FC<UpdateBaseFormProps> = ({
 			return (
 				<Select
 					options={field.options || []}
-					placeholder={field.label}
+					label={field.label}
 					value={selectValue}
 					onChange={(id: string | number | null) => handleChange(field.name, id)}
 				/>

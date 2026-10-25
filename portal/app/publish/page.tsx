@@ -117,7 +117,6 @@ export default function PublishPropertyPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loadingCharacteristics, setLoadingCharacteristics] = useState(false);
-  const [showPostSubmitLoading, setShowPostSubmitLoading] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   // Pre-llenar datos de contacto si el usuario está logueado
@@ -201,22 +200,10 @@ export default function PublishPropertyPage() {
     }
   }, [values.region]);
 
-  // Handle post-submit loading delay
-  useEffect(() => {
-    if (showPostSubmitLoading) {
-      const timer = setTimeout(() => {
-        setShowPostSubmitLoading(false);
-        setShowSuccessMessage(true);
-      }, 3000); // 3 seconds delay
-
-      return () => clearTimeout(timer);
-    }
-  }, [showPostSubmitLoading]);
 
   const handleGoHome = () => {
     // Limpiar estados antes de redirigir
     setShowSuccessMessage(false);
-    setShowPostSubmitLoading(false);
     router.push('/');
   };
 
@@ -296,8 +283,7 @@ export default function PublishPropertyPage() {
       // Éxito: mostrar loading y luego mensaje de éxito
       console.log('✅ Propiedad publicada:', result.data?.id);
       
-      // Mostrar loading por 3 segundos antes del mensaje de éxito
-      setShowPostSubmitLoading(true);
+      setShowSuccessMessage(true);
     } catch (error) {
       console.error('Error publishing property:', error);
       setErrors(['Error al publicar la propiedad']);
@@ -626,18 +612,7 @@ export default function PublishPropertyPage() {
   return (
     <div className="min-h-screen bg-background py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        {showPostSubmitLoading ? (
-          // Loading después del envío exitoso
-          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
-            <div className="flex justify-center"><span className="material-symbols-outlined animate-spin">progress_activity</span></div>
-            <div className="text-center space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">Procesando tu solicitud...</h2>
-              <p className="text-muted-foreground">
-                Tu propiedad está siendo enviada para revisión. Esto tomará solo un momento.
-              </p>
-            </div>
-          </div>
-        ) : showSuccessMessage ? (
+        {showSuccessMessage ? (
           // Mensaje de éxito
           <div className="flex flex-col items-center justify-center min-h-[400px] space-y-6">
             <div className="text-center space-y-4">

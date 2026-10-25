@@ -515,7 +515,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 					<div key={field.name}>
 						<Select
 							options={field.options || []}
-							placeholder={field.label}
+							label={field.label}
 							value={selectValue ?? undefined}
 							onChange={(id: string | number | null) => onChange(field.name, id)}
 							required={field.required}

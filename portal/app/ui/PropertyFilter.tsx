@@ -262,6 +262,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-x-1 gap-y-1 sm:gap-x-2 sm:gap-y-2 lg:gap-4 items-end mb-3 pt-4 pb-3">
           <div className="w-full">
             <Select
+          label="Operación"
               placeholder="Venta/Arriendo"
               options={operationOptions}
               value={filters.operation}
@@ -271,6 +272,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
 
           <div className="w-full">
             <Select
+          label="Tipo de propiedad"
               placeholder="Tipo de Propiedad"
               options={propertyTypeOptions}
               value={filters.typeProperty}
@@ -280,6 +282,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
 
           <div className="w-full">
             <Select
+          label="Región"
               placeholder="Región"
               options={regions}
               value={filters.state}
@@ -289,6 +292,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
 
           <div className="w-full">
             <Select
+          label="Comuna"
               placeholder="Comuna"
               options={communes}
               value={filters.city}
@@ -298,6 +302,7 @@ export default function PropertyFilter({ initialFilters = {}, onFiltersChange, i
 
           <div className="w-full">
             <Select
+          label="Moneda"
               placeholder="Pesos/UF"
               options={currencyOptions}
               value={filters.currency}

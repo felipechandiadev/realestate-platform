@@ -134,6 +134,7 @@ const CreateArticleDialog: React.FC<CreateArticleDialogProps> = ({
             Categoría
           </label>
           <Select
+          label="Categoría"
             value={Object.values(ArticleCategory).indexOf(formData.category)}
             onChange={(id) => {
               const categories = Object.values(ArticleCategory);

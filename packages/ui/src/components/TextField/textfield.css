@@ -430,3 +430,10 @@
   }
 }
 
+/**
+ * Select sin selección: la pista ("Seleccionar…") se muestra en gris para no confundirse
+ * con un valor elegido. Dos clases para ganarle a las utilidades de color del input.
+ */
+.fs-select--empty .fs-text-field__input {
+  color: var(--color-muted-foreground);
+}

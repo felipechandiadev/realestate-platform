@@ -230,7 +230,7 @@ const PortalFooter: React.FC<{
             </>
             ) : null}
 
-            {footer.showFaqs ? (
+            {footer.showFaqs && faqs.length > 0 ? (
             <div className={mail ? 'mt-8' : ''}>
               <h3 className="text-lg font-semibold text-inherit">
                 <button

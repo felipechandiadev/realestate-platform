@@ -51,9 +51,9 @@ export default function PortalLayout({
         <div id="portal-sticky-header" className="sticky top-0 z-50">
           <PortalTopBar initialIdentity={initialIdentity} initialHeader={header} />
           
-          {/* NavBar */}
+          {/* NavBar (solo desde md: en móvil los mismos enlaces están en el menú lateral) */}
           <div
-            className="shadow-[0_4px_8px_-4px_rgba(0,0,0,0.12)]"
+            className="hidden md:block shadow-[0_4px_8px_-4px_rgba(0,0,0,0.12)]"
             style={{ backgroundColor: 'var(--color-navbar-background)', color: 'var(--color-navbar-foreground)' }}
           >
             <NavBar navItems={header.navItems} />

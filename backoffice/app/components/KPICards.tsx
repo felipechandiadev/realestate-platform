@@ -26,9 +26,9 @@ export default function KPICards({ data }: KPICardsProps) {
 
             {/* Main value */}
             <div className="mb-4">
-              <p className="text-5xl font-bold text-gray-900">
+              <p className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900 break-words">
                 {kpi.value}
-                {kpi.unit && <span className="text-2xl font-normal ml-2">{kpi.unit}</span>}
+                {kpi.unit && <span className="text-base sm:text-xl lg:text-2xl font-normal ml-2">{kpi.unit}</span>}
               </p>
             </div>
 

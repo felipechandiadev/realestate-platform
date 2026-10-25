@@ -148,7 +148,7 @@ const CreateBaseForm: React.FC<CreateBaseFormProps> = ({
 			) : field.type === "select" ? (
 				<Select
 					options={field.options || []}
-					placeholder={field.label}
+					label={field.label}
 					value={values[field.name]}
 					onChange={(id: string | number | null) => onChange(field.name, id)}
 					required={field.required}

@@ -414,7 +414,7 @@ export default function PropertyDetailClient({
                 <h3 className="text-xl font-semibold text-foreground mb-3">
                   Descripción
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed text-justify">
+                <p className="text-sm text-muted-foreground leading-relaxed text-left md:text-justify">
                   {countWords(property.description) > 200 
                     ? getPreviewText(property.description) 
                     : property.description}
@@ -574,7 +574,7 @@ export default function PropertyDetailClient({
         onClose={() => setShowDescriptionDialog(false)}
       >
         <div className="max-h-96 overflow-y-auto">
-          <p className="text-sm text-muted-foreground leading-relaxed text-justify whitespace-pre-wrap">
+          <p className="text-sm text-muted-foreground leading-relaxed text-left md:text-justify whitespace-pre-wrap">
             {property.description}
           </p>
         </div>

@@ -353,15 +353,16 @@ export function CreatePropertyStepFields({
   return (
     <div className="flex w-full flex-col gap-3">
       {rows.map((row, rowIndex) => (
-        <div key={`row-${rowIndex}`} className="flex w-full items-start gap-2">
+        <div
+          key={`row-${rowIndex}`}
+          className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-start sm:gap-2"
+        >
           {row.map((field) => (
             <div
               key={field.name}
-              className="min-w-0 flex-grow"
-              style={{
-                width: field.width ?? 'auto',
-                flexBasis: field.width ?? 'auto',
-              }}
+              // En móvil cada campo ocupa el ancho completo; desde sm se aplica field.width.
+              className="w-full min-w-0 flex-grow sm:w-[var(--field-width)] sm:basis-[var(--field-width)]"
+              style={{ '--field-width': field.width ?? 'auto' } as React.CSSProperties}
             >
               {renderField(field)}
             </div>

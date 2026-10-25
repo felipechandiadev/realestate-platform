@@ -285,12 +285,14 @@ export default function FilterFormSections({ filters, onChange, lockedOperation 
         onToggle={() => setOpen((s) => ({ ...s, location: !s.location }))}
       >
         <Select
+          label="Región"
           placeholder="Región"
           options={regions}
           value={filters.state}
           onChange={(value) => onChange({ state: String(value || ''), city: '' })}
         />
         <Select
+          label="Comuna"
           placeholder="Comuna"
           options={communes}
           value={filters.city}

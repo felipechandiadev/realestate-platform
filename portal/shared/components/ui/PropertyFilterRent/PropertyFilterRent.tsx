@@ -348,6 +348,7 @@ export default function PropertyFilterRent({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Property Type */}
         <Select
+          label="Tipo de propiedad"
           placeholder="Tipo de propiedad"
           value={filters.typeProperty || ''}
           onChange={(value) => handleFilterChange('typeProperty', value == null ? null : String(value))}
@@ -356,6 +357,7 @@ export default function PropertyFilterRent({
 
         {/* Region */}
         <Select
+          label="Región"
           placeholder="Región"
           value={filters.state || ''}
           onChange={(value) => {
@@ -377,6 +379,7 @@ export default function PropertyFilterRent({
 
         {/* Commune */}
         <Select
+          label="Comuna"
           placeholder="Comuna"
           value={filters.city || ''}
           onChange={(value) => handleFilterChange('city', value == null ? null : String(value))}
@@ -385,6 +388,7 @@ export default function PropertyFilterRent({
 
         {/* Currency */}
         <Select
+          label="Moneda"
           placeholder="Moneda"
           value={filters.currency || 'CLP'}
           onChange={(value) => handleFilterChange('currency', value == null ? null : String(value))}
