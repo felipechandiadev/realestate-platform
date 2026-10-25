@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { readFile } from 'fs/promises';
+import { toPublicPropertyRequest } from './public-property-request';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Property } from '../domain/property.entity';
@@ -298,19 +299,15 @@ export class PropertyService {
 
 
 async createPropertyRequest(dto: any, userId: string): Promise<Property> {
-  const rawPrice = typeof dto?.price === 'string'
-    ? Number(dto.price.replace(/[^\d.-]/g, ''))
-    : dto?.price;
-  const price = typeof rawPrice === 'number' && Number.isFinite(rawPrice) ? rawPrice : undefined;
+  // Solo campos de solicitud; estado REQUEST y creador = usuario autenticado.
+  const request = toPublicPropertyRequest(dto);
+  const location = request.location as { lat?: number; lng?: number } | undefined;
 
   const property = await this.create(
     {
-      ...dto,
-      status: PropertyStatus.REQUEST,
-      state: dto?.state || dto?.region,
-      price,
-      latitude: dto?.latitude ?? dto?.coordinates?.latitude ?? dto?.location?.lat,
-      longitude: dto?.longitude ?? dto?.coordinates?.longitude ?? dto?.location?.lng,
+      ...request,
+      latitude: location?.lat,
+      longitude: location?.lng,
       creatorUserId: userId,
     },
     userId,

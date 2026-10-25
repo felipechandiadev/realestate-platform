@@ -55,28 +55,16 @@ import { UserRole } from '../../users/domain/user.entity';
 import { PropertyOperationType } from '../../../shared/enums/property-operation-type.enum';
 import { UploadPropertyMultimediaDto } from '../dto/upload-property-multimedia.dto';
 import { FileUploadService } from '../../../shared/services/file-upload.service';
-import { diskStorage } from 'multer';
-import { extname } from 'path';
-import { promises as fsPromises } from 'fs';
+import {
+  assertPropertyMediaSizes,
+  propertyMediaUploadOptions,
+  removeUploadedTempFiles,
+} from './property-media-upload';
+import { toPublicPropertyRequest } from '../application/public-property-request';
 import { StrictThrottle } from '../../../shared/security/throttle';
 
 const isStaffRole = (role?: string): boolean =>
   role === UserRole.ADMIN || role === UserRole.AGENT;
-
-// Configuración de storage para uploads de propiedades
-const propertyUploadStorage = diskStorage({
-  destination: (req, file, callback) => {
-    // Separar imágenes y videos en diferentes carpetas
-    const isVideo = file.mimetype.startsWith('video/');
-    const subfolder = isVideo ? 'video' : 'img';
-    callback(null, `./public/properties/${subfolder}`);
-  },
-  filename: (req, file, callback) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    const ext = extname(file.originalname);
-    callback(null, `${uniqueSuffix}${ext}`);
-  },
-});
 
 @ApiTags('Properties')
 @Roles(UserRole.ADMIN, UserRole.AGENT)
@@ -148,75 +136,42 @@ export class PropertyController {
     type: CreatePropertyPayloadDto,
     description: 'Property data with multimedia files',
   })
-  @UseInterceptors(FilesInterceptor('multimediaFiles', 10, {
-    storage: diskStorage({
-      destination: (req, file, callback) => {
-        const isVideo = file.mimetype.startsWith('video/');
-        const subfolder = isVideo ? 'video' : 'img';
-        callback(null, `./public/properties/${subfolder}`);
-      },
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = extname(file.originalname);
-        callback(null, `${uniqueSuffix}${ext}`);
-      },
-    }),
-    limits: { 
-      fileSize: 70 * 1024 * 1024,
-      files: 10
-    },
-    fileFilter: (req, file, callback) => {
-      const allowedMimes = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-        'video/mp4', 'video/mpeg', 'video/quicktime', 'video/webm'
-      ];
-      
-      if (!allowedMimes.includes(file.mimetype)) {
-        callback(new Error(`Tipo de archivo ${file.mimetype} no permitido`), false);
-        return;
-      }
-
-      const isVideo = file.mimetype.startsWith('video/');
-      const maxSizeInBytes = isVideo ? 70 * 1024 * 1024 : 10 * 1024 * 1024;
-      const maxSizeLabel = isVideo ? '70MB' : '10MB';
-      const fileType = isVideo ? 'videos' : 'imágenes';
-
-      if (file.size > maxSizeInBytes) {
-        callback(new Error(`Archivo demasiado grande. Máximo permitido: ${maxSizeLabel} para ${fileType}`), false);
-        return;
-      }
-
-      callback(null, true);
-    }
-  }))
+  @UseInterceptors(FilesInterceptor('multimediaFiles', 10, propertyMediaUploadOptions(10)))
   async publishPublic(
     @Body() body: any,
     @Req() request: any,
     @UploadedFiles() files?: Express.Multer.File[]
   ) {
-    let createPropertyDto: CreatePropertyPayloadDto;
     try {
-      if (body.data) {
-        createPropertyDto = typeof body.data === 'string'
-          ? JSON.parse(body.data)
-          : body.data;
-      } else {
-        createPropertyDto = body;
+      assertPropertyMediaSizes(files);
+
+      let rawPayload: unknown;
+      try {
+        rawPayload = body?.data
+          ? (typeof body.data === 'string' ? JSON.parse(body.data) : body.data)
+          : body;
+      } catch {
+        throw new BadRequestException('JSON inválido en el campo data');
       }
-    } catch (error) {
-      throw new BadRequestException('JSON inválido en el campo data');
+
+      // Solo campos de solicitud y estado REQUEST: el visitante no decide estado,
+      // destacada, agente, creador, SEO ni notas internas.
+      const validatedDto = await new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        transformOptions: { enableImplicitConversion: true },
+      }).transform(toPublicPropertyRequest(rawPayload), {
+        type: 'body',
+        metatype: CreatePropertyPayloadDto,
+      });
+
+      // Ruta @Public: el guard global valida un Bearer opcional y deja req.user si es válido.
+      const creatorId: string = request?.user?.id ?? 'anonymous';
+
+      return await this.propertyService.createPropertyWithFiles(validatedDto, creatorId, files || []);
+    } finally {
+      await removeUploadedTempFiles(files);
     }
-
-    // Validate the DTO
-    const validatedDto = await new ValidationPipe({
-      transform: true,
-      transformOptions: { enableImplicitConversion: true }
-    }).transform(createPropertyDto, { type: 'body', metatype: CreatePropertyPayloadDto });
-
-    // Ruta @Public: el guard global valida un Bearer opcional y deja req.user si es válido.
-    const creatorId: string = request?.user?.id ?? 'anonymous';
-
-    return this.propertyService.createPropertyWithFiles(validatedDto, creatorId, files || []);
   }
 
   @Post()
@@ -231,50 +186,7 @@ export class PropertyController {
     description: 'Property data with multimedia files',
   })
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FilesInterceptor('multimediaFiles', 10, {
-    storage: diskStorage({
-      destination: (req, file, callback) => {
-        // Separar imágenes y videos en diferentes carpetas
-        const isVideo = file.mimetype.startsWith('video/');
-        const subfolder = isVideo ? 'video' : 'img';
-        callback(null, `./public/properties/${subfolder}`);
-      },
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = extname(file.originalname);
-        callback(null, `${uniqueSuffix}${ext}`);
-      },
-    }),
-    limits: { 
-      fileSize: 70 * 1024 * 1024, // Máximo global 70MB (para videos)
-      files: 10 // Máximo 10 archivos
-    },
-    fileFilter: (req, file, callback) => {
-      // Validar tipos de archivo permitidos
-      const allowedMimes = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-        'video/mp4', 'video/mpeg', 'video/quicktime', 'video/webm'
-      ];
-      
-      if (!allowedMimes.includes(file.mimetype)) {
-        callback(new Error(`Tipo de archivo ${file.mimetype} no permitido`), false);
-        return;
-      }
-
-      // Validar tamaño específico por tipo de archivo
-      const isVideo = file.mimetype.startsWith('video/');
-      const maxSizeInBytes = isVideo ? 70 * 1024 * 1024 : 10 * 1024 * 1024; // 70MB para videos, 10MB para imágenes
-      const maxSizeLabel = isVideo ? '70MB' : '10MB';
-      const fileType = isVideo ? 'videos' : 'imágenes';
-
-      if (file.size > maxSizeInBytes) {
-        callback(new Error(`Archivo demasiado grande. Máximo permitido: ${maxSizeLabel} para ${fileType}`), false);
-        return;
-      }
-
-      callback(null, true);
-    }
-  }))
+  @UseInterceptors(FilesInterceptor('multimediaFiles', 10, propertyMediaUploadOptions(10)))
   @Audit(AuditAction.CREATE, AuditEntityType.PROPERTY, 'Property created')
   async create(
     @Body() body: any,
@@ -284,6 +196,7 @@ export class PropertyController {
     // Parse the 'data' field from FormData which contains the JSON string
     let createPropertyDto: CreatePropertyPayloadDto;
     try {
+      assertPropertyMediaSizes(files);
       if (body.data) {
         // If data is sent as a field in the form
         createPropertyDto = typeof body.data === 'string'
@@ -337,6 +250,8 @@ export class PropertyController {
       }
 
       throw new BadRequestException('No se pudo crear la propiedad');
+    } finally {
+      await removeUploadedTempFiles(files);
     }
   }
 
@@ -870,51 +785,7 @@ export class PropertyController {
   @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @Post(':id/multimedia')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FilesInterceptor('files', 20, {
-    storage: diskStorage({
-      destination: (req, file, callback) => {
-        // Separar imágenes y videos en diferentes carpetas
-        const isVideo = file.mimetype.startsWith('video/');
-        const subfolder = isVideo ? 'video' : 'img';
-        callback(null, `./public/properties/${subfolder}`);
-      },
-      filename: (req, file, callback) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = extname(file.originalname);
-        const filename = `${uniqueSuffix}${ext}`;
-        callback(null, filename);
-      },
-    }),
-    limits: {
-      fileSize: 70 * 1024 * 1024, // Máximo global 70MB (para videos)
-      files: 20 // Máximo 20 archivos
-    },
-    fileFilter: (req, file, callback) => {
-      // Validar tipos de archivo permitidos
-      const allowedMimes = [
-        'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp',
-        'video/mp4', 'video/mpeg', 'video/quicktime', 'video/webm'
-      ];
-
-      if (!allowedMimes.includes(file.mimetype)) {
-        callback(new Error('Tipo de archivo no permitido'), false);
-        return;
-      }
-
-      // Validar tamaño específico por tipo de archivo
-      const isVideo = file.mimetype.startsWith('video/');
-      const maxSizeInBytes = isVideo ? 70 * 1024 * 1024 : 10 * 1024 * 1024; // 70MB para videos, 10MB para imágenes
-      const maxSizeLabel = isVideo ? '70MB' : '10MB';
-      const fileType = isVideo ? 'videos' : 'imágenes';
-
-      if (file.size > maxSizeInBytes) {
-        callback(new Error(`Archivo demasiado grande. Máximo permitido: ${maxSizeLabel} para ${fileType}`), false);
-        return;
-      }
-
-      callback(null, true);
-    },
-  }))
+  @UseInterceptors(FilesInterceptor('files', 20, propertyMediaUploadOptions(20)))
   @Audit(AuditAction.CREATE, AuditEntityType.MULTIMEDIA, 'Multimedia uploaded to property')
   async uploadMultimedia(
     @Param('id') propertyId: string,
@@ -926,15 +797,20 @@ export class PropertyController {
       throw new BadRequestException('No se recibieron archivos');
     }
 
-    await this.assertCanManagePropertyMedia(propertyId, req.user, files);
+    try {
+      assertPropertyMediaSizes(files);
+      await this.assertCanManagePropertyMedia(propertyId, req.user);
 
-    const userId = this.extractUserId(req);
-    const uploadedMultimedia = await this.propertyService.uploadMultimedia(propertyId, files, dto, userId);
+      const userId = this.extractUserId(req);
+      const uploadedMultimedia = await this.propertyService.uploadMultimedia(propertyId, files, dto, userId);
 
-    return {
-      message: 'Multimedia uploaded successfully',
-      data: uploadedMultimedia
-    };
+      return {
+        message: 'Multimedia uploaded successfully',
+        data: uploadedMultimedia
+      };
+    } finally {
+      await removeUploadedTempFiles(files);
+    }
   }
 
   @Get(':id/location')
@@ -1054,16 +930,10 @@ export class PropertyController {
   private async assertCanManagePropertyMedia(
     propertyId: string,
     user: { id?: string; role?: UserRole } | undefined,
-    files: Express.Multer.File[] = [],
   ): Promise<void> {
     if (isStaffRole(user?.role)) return;
     const property = await this.propertyService.findOne(propertyId, false);
     if (!user?.id || property?.creatorUserId !== user.id) {
-      await Promise.all(
-        files
-          .filter((file) => file?.path)
-          .map((file) => fsPromises.unlink(file.path).catch(() => undefined)),
-      );
       throw new ForbiddenException('No puedes modificar una propiedad que no es tuya');
     }
   }
