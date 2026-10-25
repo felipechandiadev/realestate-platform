@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight, Bed, Bath, Home, Maximize2, ParkingSquare, Heart, MoreHorizontal } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Bed, Bath, Home, Maximize2, ParkingSquare, Heart, MoreHorizontal } from 'lucide-react';
 import { Button, OtherFeaturesReadonlyDialog } from '@realestate/ui';
 import { env } from '@/lib/env';
 import { useAlert } from '@/shared/hooks/useAlert';
@@ -89,23 +89,43 @@ function normalizeMediaUrl(url?: string | null): string | undefined {
     // Si apunta a localhost:3000 (frontend), convertirlo a backend
     if (cleaned.includes('localhost:3000') || cleaned.includes('127.0.0.1:3000')) {
       const backendUrl = cleaned.replace(/https?:\/\/[^\/]+/, env.backendApiUrl);
-      console.log('🔄 [PropertyCard] Converted localhost URL to backend:', backendUrl);
       return backendUrl;
     }
-    console.log('✅ [PropertyCard] Already absolute:', cleaned);
     return cleaned;
   }
 
   // Si es relativa (comienza con /), prepend backend API URL
   if (cleaned.startsWith('/')) {
     const absolute = `${env.backendApiUrl}${cleaned}`;
-    console.log('✅ [PropertyCard] Made absolute:', absolute);
     return absolute;
   }
 
-  console.log('⚠️ [PropertyCard] Unexpected URL format:', url);
   // Cualquier otro caso, devolver limpiada
   return cleaned;
+}
+
+/**
+ * Vista previa de video en una tarjeta: muestra el primer cuadro y un ícono,
+ * sin reproducir ni descargar el archivo completo (los listados tienen muchas tarjetas).
+ */
+function CardVideoPreview({ src, onError }: { src: string; onError: () => void }) {
+  return (
+    <div className="relative w-full h-full" style={{ aspectRatio: '16/9' }}>
+      <video
+        src={`${src}#t=0.1`}
+        className="object-cover w-full h-full"
+        muted
+        playsInline
+        preload="metadata"
+        onError={onError}
+      />
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white">
+          <Play className="h-6 w-6 translate-x-0.5" aria-hidden="true" />
+        </span>
+      </span>
+    </div>
+  );
 }
 
 function isVideoFile(url: string): boolean {
@@ -126,33 +146,10 @@ function resolveMediaUrl(mediaItem: MediaItem): string | undefined {
 function getOrderedMedia(property: PortalProperty): Array<{ type: 'image' | 'video'; url: string }> {
   const media: Array<{ type: 'image' | 'video'; url: string }> = [];
 
-  const isDebugProperty = property.id === '047c17f4-a582-4509-ac61-8177b12750ee';
-  const logPrefix = isDebugProperty ? '🔍🔍 [DEBUG PROPERTY]' : '🔍 [getOrderedMedia]';
-
-  console.log(`${logPrefix} Property multimedia details:`, {
-    propertyId: property.id,
-    mainImageUrl: property.mainImageUrl,
-    multimedia: property.multimedia?.map(m => ({
-      id: m.id,
-      url: m.url,
-      type: m.type,
-      format: m.format
-    })) || []
-  });
-
   // Agregar todo el multimedia (imágenes y videos) priorizando variantes optimizadas para imágenes
   if (property.multimedia && property.multimedia.length > 0) {
-    console.log(`${logPrefix} Processing ${property.multimedia.length} multimedia items`);
 
-    property.multimedia.forEach((mediaItem, index) => {
-      console.log(`${logPrefix} Processing media ${index + 1}/${property.multimedia!.length}:`, {
-        id: mediaItem.id,
-        url: mediaItem.url,
-        type: mediaItem.type,
-        format: mediaItem.format,
-        isVideo: isVideoFile(mediaItem.url),
-        urlLength: mediaItem.url?.length || 0
-      });
+    property.multimedia.forEach((mediaItem) => {
 
       const url = resolveMediaUrl(mediaItem);
       
@@ -162,16 +159,12 @@ function getOrderedMedia(property: PortalProperty): Array<{ type: 'image' | 'vid
         // Evitar duplicados con mainImageUrl
         if (!media.find(m => m.url === url)) {
           media.push({ type, url });
-          console.log(`${logPrefix} ✅ Added multimedia ${type} ${index + 1}:`, url);
         } else {
-          console.log(`${logPrefix} ⚠️ Skipped duplicate ${index + 1}:`, url);
         }
       } else {
-        console.log(`${logPrefix} ❌ Skipped invalid media ${index + 1} (no url)`);
       }
     });
   } else {
-    console.log(`${logPrefix} No multimedia array found`);
   }
 
   // Fallback a mainImageUrl sólo si no hay multimedia utilizable
@@ -180,15 +173,8 @@ function getOrderedMedia(property: PortalProperty): Array<{ type: 'image' | 'vid
     if (mainUrl) {
       const type = isVideoFile(mainUrl) ? 'video' : 'image';
       media.push({ type, url: mainUrl });
-      console.log(`${logPrefix} Added fallback mainImageUrl as ${type}:`, mainUrl);
     }
   }
-
-  console.log(`${logPrefix} Final result:`, {
-    totalMultimedia: property.multimedia?.length || 0,
-    mediaFound: media.length,
-    media: media
-  });
 
   return media;
 }
@@ -245,29 +231,13 @@ function operationLabel(op: OperationType): string {
 
 export default function PropertyCard({ property, href, onClick }: PropertyCardProps) {
   const primaryMedia = getPrimaryMedia(property);
-  const isDebugProperty = property.id === '047c17f4-a582-4509-ac61-8177b12750ee';
-  const logPrefix = isDebugProperty ? '🎯🎯 [DEBUG PROPERTY]' : '🎯 [PropertyCard]';
-
-  console.log(`${logPrefix} Property ID:`, property.id);
-  console.log(`${logPrefix} mainImageUrl:`, property.mainImageUrl);
-  console.log(`${logPrefix} primaryMedia (after getPrimaryMedia):`, primaryMedia);
   
   // Get ordered media (images + videos) for navigation
   const mediaItems = getOrderedMedia(property);
   const hasMedia = mediaItems.length > 0;
   
-  console.log(`${logPrefix} Debug info:`, {
-    propertyId: property.id,
-    mainImageUrl: property.mainImageUrl,
-    multimediaCount: property.multimedia?.length || 0,
-    mediaFound: mediaItems.length,
-    hasMedia,
-    currentMediaIndex: hasMedia ? 0 : -1,
-    allMedia: mediaItems
-  });
   
   const [mediaSrc, setMediaSrc] = useState<{ type: 'image' | 'video'; url: string } | undefined>(() => {
-    console.log('🎯 [PropertyCard] Initial mediaSrc state:', primaryMedia);
     return primaryMedia;
   });
   const [currentMediaIndex, setCurrentMediaIndex] = useState(hasMedia ? 0 : -1);
@@ -335,7 +305,6 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
   const handlePrevImage = () => {
     setCurrentMediaIndex(prev => {
       const newIndex = prev <= 0 ? mediaItems.length - 1 : prev - 1;
-      console.log('⬅️ [PropertyCard] Previous media:', newIndex, mediaItems[newIndex]);
       return newIndex;
     });
   };
@@ -343,7 +312,6 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
   const handleNextImage = () => {
     setCurrentMediaIndex(prev => {
       const newIndex = prev >= mediaItems.length - 1 ? 0 : prev + 1;
-      console.log('➡️ [PropertyCard] Next media:', newIndex, mediaItems[newIndex]);
       return newIndex;
     });
   };
@@ -356,23 +324,7 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
       
       if (currentMedia.type === 'video') {
         return (
-          <video
-            src={currentMedia.url}
-            className="object-cover w-full h-full"
-            style={{ aspectRatio: '16/9' }}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            onError={(e) => {
-              console.warn('⚠️ [PropertyCard] Video failed to load, trying next:', currentMedia.url);
-              handleNextImage();
-            }}
-            onLoadedData={() => {
-              console.log('✅ [PropertyCard] Video loaded successfully:', currentMedia.url);
-            }}
-          />
+          <CardVideoPreview src={currentMedia.url} onError={() => { handleNextImage(); }} />
         );
       }
       
@@ -407,23 +359,7 @@ export default function PropertyCard({ property, href, onClick }: PropertyCardPr
 
     if (mediaSrc.type === 'video') {
       return (
-        <video
-          src={mediaSrc.url}
-          className="object-cover w-full h-full"
-          style={{ aspectRatio: '16/9' }}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          onError={(e) => {
-            console.warn('⚠️ [PropertyCard] Video failed to load, showing fallback:', mediaSrc.url);
-            setMediaSrc(undefined);
-          }}
-          onLoadedData={() => {
-            console.log('✅ [PropertyCard] Video loaded successfully');
-          }}
-        />
+        <CardVideoPreview src={mediaSrc.url} onError={() => { setMediaSrc(undefined); }} />
       );
     }
 

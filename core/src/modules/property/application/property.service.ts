@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { readFile } from 'fs/promises';
 import { toPublicPropertyRequest } from './public-property-request';
+import { propertyMediaTypeFor } from './property-media-type';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Property } from '../domain/property.entity';
@@ -19,7 +20,7 @@ import { GridSaleQueryDto } from '../dto/grid-sale.dto';
 import { PropertyStatus } from '../../../shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../../shared/enums/property-operation-type.enum';
 import { IsNull } from 'typeorm';
-import { MultimediaType, MultimediaFormat } from '../../multimedia/domain/multimedia.entity';
+import { MultimediaFormat } from '../../multimedia/domain/multimedia.entity';
 import { NotificationsService } from '../../notifications/application/notifications.service';
 
 // application use-cases
@@ -649,7 +650,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     for (const file of files) {
       const multimedia = await this.multimediaService.uploadFile(
         file,
-        { type: MultimediaType.PROPERTY_IMG },
+        { type: propertyMediaTypeFor(file.mimetype) },
         userId,
       );
       multimedia.propertyId = propertyId;

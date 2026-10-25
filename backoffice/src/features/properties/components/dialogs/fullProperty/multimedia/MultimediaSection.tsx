@@ -236,7 +236,7 @@ const MultimediaSection: React.FC<MultimediaSectionProps> = ({
         <MultimediaUploader
           uploadPath={`/properties/${propertyId}/multimedia`}
           onChange={handleFileSelect}
-          accept="image/*,video/*"
+          accept="image/*,video/mp4,video/webm"
           maxSize={70}
           maxFiles={20}
           label=""

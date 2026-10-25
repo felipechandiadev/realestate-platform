@@ -17,12 +17,13 @@ const IMAGE_MIMES = [
   'image/gif',
   'image/webp',
 ];
-const VIDEO_MIMES = [
-  'video/mp4',
-  'video/mpeg',
-  'video/quicktime',
-  'video/webm',
-];
+// Solo formatos que reproducen todos los navegadores. MOV (HEVC de iPhone) y MPEG
+// se ven en negro en Chrome/Android: se rechazan con un mensaje claro.
+const VIDEO_MIMES = ['video/mp4', 'video/webm'];
+const UNSUPPORTED_VIDEO_MIMES = ['video/quicktime', 'video/mpeg'];
+
+export const UNSUPPORTED_VIDEO_MESSAGE =
+  'Formato de video no compatible con todos los navegadores (MOV/MPEG). Expórtalo como MP4 e intenta de nuevo.';
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 export const MAX_VIDEO_BYTES = 70 * 1024 * 1024;
@@ -54,6 +55,10 @@ export function propertyMediaUploadOptions(maxFiles: number) {
       callback: (error: Error | null, accept: boolean) => void,
     ) => {
       // Multer aún no conoce el tamaño aquí; se valida en assertPropertyMediaSizes.
+      if (UNSUPPORTED_VIDEO_MIMES.includes(file.mimetype)) {
+        callback(new BadRequestException(UNSUPPORTED_VIDEO_MESSAGE), false);
+        return;
+      }
       if (![...IMAGE_MIMES, ...VIDEO_MIMES].includes(file.mimetype)) {
         callback(
           new BadRequestException(

@@ -436,7 +436,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 						<MultimediaUploader
 							uploadPath={typedProps.uploadPath ?? "/uploads/media"}
 							label={(customLabel as string | undefined) ?? field.label}
-							accept={typedProps.accept ?? "image/*,video/*"}
+							accept={typedProps.accept ?? "image/*,video/mp4,video/webm"}
 							maxFiles={typedProps.maxFiles}
 							maxSize={typedProps.maxSize}
 							aspectRatio={typedProps.aspectRatio}

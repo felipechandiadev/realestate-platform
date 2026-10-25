@@ -18,7 +18,7 @@
  */
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
 import { IconButton } from '@realestate/ui';
 import { pickImageVariant } from '@/shared/lib/pick-image-variant';
 
@@ -85,6 +85,8 @@ function LoadableMedia({
           src={src}
           className={`${className} transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
           onLoadedData={() => setLoaded(true)}
+          // Con preload="metadata" algunos navegadores no emiten loadeddata.
+          onLoadedMetadata={() => setLoaded(true)}
           onError={() => setLoaded(true)}
           {...videoProps}
         />
@@ -193,13 +195,21 @@ export default function MultimediaGrid({
           setIsModalOpen(true);
         }}
       >
+        {/* Miniatura: primer cuadro del video, sin reproducir ni descargarlo completo. */}
         <LoadableMedia
-          src={media.url}
+          src={isVideo ? `${media.url}#t=0.1` : media.url}
           alt={`${propertyTitle} - ${index}`}
           type={isVideo ? 'video' : 'image'}
           className="w-full h-full object-cover"
-          videoProps={{ muted: true, autoPlay: true, loop: true }}
+          videoProps={{ muted: true, playsInline: true, preload: 'metadata' }}
         />
+        {isVideo && (
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55 text-white">
+              <Play className="h-7 w-7 translate-x-0.5" aria-hidden="true" />
+            </span>
+          </span>
+        )}
 
         {/* Overlay */}
         <div
@@ -447,7 +457,7 @@ function FullscreenModal({
           alt={`${propertyTitle} - ${selectedIndex}`}
           type={currentMedia.type}
           className="max-h-[80vh] w-full object-contain"
-          videoProps={{ autoPlay: true, muted: true, loop: true, controls: true }}
+          videoProps={{ autoPlay: true, muted: true, loop: true, controls: true, playsInline: true, preload: 'metadata' }}
         />
       </div>
 
