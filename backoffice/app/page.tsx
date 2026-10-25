@@ -55,29 +55,23 @@ export default async function BackOfficeDashboard() {
         // show localized CLP string (e.g. "$700.000")
         value: revenueFormatted,
         unit: '',
-        variation: 0,
-        isPositive: true
+        variation: summary.variations?.revenue ?? null,
       },
       {
         title: 'Propiedades Activas',
         value: summary.activeProperties ?? 0,
         unit: '',
-        variation: 0,
-        isPositive: true
       },
       {
         title: 'Nuevos Miembros (comunidad)',
         value: summary.newMembersThisMonth ?? 0,
         unit: '',
-        variation: 0,
-        isPositive: true
+        variation: summary.variations?.newMembers ?? null,
       },
       {
         title: 'Tiempo Promedio Venta',
         value: Math.round(summary.avgClosureDays ?? 0),
         unit: 'días',
-        variation: 0,
-        isPositive: false
       }
     ]
 
@@ -85,9 +79,9 @@ export default async function BackOfficeDashboard() {
     const revenueData = (summary.revenueTrend ?? []).map((r: any) => Number(r.amount ?? 0))
     const months = (summary.revenueTrend ?? []).map((r: any) => r.month)
 
-    // Revenue comparison: use current month and fallback previous-month if previousYearSameMonth not available
+    // Revenue comparison: mes actual vs el mismo mes del año anterior (calculado en el backend)
     const currentMonth = revenueData[revenueData.length - 1] ?? 0
-    const previousYearSameMonth = (summary.previousYearSameMonth ?? revenueData[revenueData.length - 2] ?? 0)
+    const previousYearSameMonth = Number(summary.previousYearSameMonth ?? 0)
     const monthName = new Date().toLocaleString('es-CL', { month: 'long' })
 
     // Property distribution
@@ -108,15 +102,6 @@ export default async function BackOfficeDashboard() {
         <div className="max-w-7xl mx-auto">
           {/* Section 1: KPI Cards */}
           <KPICards data={kpiData} />
-
-          {/* Diagnostic info (visible when backend returns diagnostic fields) */}
-          {typeof summary.agencyPaymentsCountThisMonth !== 'undefined' && (
-            <div className="mt-2 text-sm text-muted-foreground">
-              <strong>Diagnóstico:</strong>
-              {' '}
-              {summary.agencyPaymentsCountThisMonth} pago(s) reconocidos como ingreso de la empresa este mes • monto total: {new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(summary.rawTotalRevenueThisMonth ?? 0)}
-            </div>
-          )}
 
           {/* Section 2: Bottom row with charts */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

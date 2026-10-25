@@ -5,6 +5,7 @@ import { User, UserRole } from '../../../users/domain/user.entity';
 import { Property } from '../../../property/domain/property.entity';
 import { ContractRepository } from '../../../contracts/domain/contract.repository';
 import { ContractOperationType, ContractStatus } from '../../../contracts/domain/contract.entity';
+import { CONTRACT_AMOUNT_CLP, CONTRACT_CLOSURE_DAYS } from '../analytics-sql';
 import { AnalyticsFilters, AgentPerformance, AgentPerformanceMetrics } from '../../domain/analytics.interface';
 
 @Injectable()
@@ -104,7 +105,7 @@ export class GetAgentPerformanceUseCase {
   ): Promise<number> {
     const query = this.contractRepository
       .createQueryBuilder('contract')
-      .innerJoin('contract.property', 'property')
+      .innerJoin(Property, 'property', 'property.id = contract.propertyId')
       .where('property.assignedAgentId = :agentId', { agentId })
       .andWhere('contract.status = :status', { status: ContractStatus.CLOSED })
       .andWhere('contract.deletedAt IS NULL')
@@ -133,8 +134,8 @@ export class GetAgentPerformanceUseCase {
   ): Promise<number> {
     const query = this.contractRepository
       .createQueryBuilder('contract')
-      .innerJoin('contract.property', 'property')
-      .select('SUM(contract.amount)', 'total')
+      .innerJoin(Property, 'property', 'property.id = contract.propertyId')
+      .select(`SUM(${CONTRACT_AMOUNT_CLP})`, 'total')
       .where('property.assignedAgentId = :agentId', { agentId });
 
     if (dateRange) {
@@ -161,10 +162,11 @@ export class GetAgentPerformanceUseCase {
   ): Promise<number> {
     const query = this.contractRepository
       .createQueryBuilder('contract')
-      .innerJoin('contract.property', 'property')
-      .select('AVG(DATEDIFF(contract.updatedAt, contract.createdAt))', 'avgDays')
+      .innerJoin(Property, 'property', 'property.id = contract.propertyId')
+      .select(`AVG(${CONTRACT_CLOSURE_DAYS})`, 'avgDays')
       .where('property.assignedAgentId = :agentId', { agentId })
       .andWhere('contract.status = :status', { status: ContractStatus.CLOSED })
+      .andWhere('contract.endDate IS NOT NULL')
       .andWhere('contract.deletedAt IS NULL')
       .andWhere('property.deletedAt IS NULL');
 
@@ -221,7 +223,7 @@ export class GetAgentPerformanceUseCase {
       .createQueryBuilder('contract')
       .select('contract.operation', 'operation')
       .addSelect('COUNT(*)', 'count')
-      .innerJoin('contract.property', 'property')
+      .innerJoin(Property, 'property', 'property.id = contract.propertyId')
       .where('property.assignedAgentId = :agentId', { agentId })
       .andWhere('contract.deletedAt IS NULL')
       .andWhere('property.deletedAt IS NULL');
@@ -233,6 +235,7 @@ export class GetAgentPerformanceUseCase {
       });
     }
 
+    query.groupBy('contract.operation');
     const results = await query.getRawMany();
     const opCounts: any = { sale: 0, rent: 0 };
     results.forEach(r => {

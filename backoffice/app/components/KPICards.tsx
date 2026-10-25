@@ -7,8 +7,8 @@ interface KPICardData {
   title: string
   value: string | number
   unit?: string
-  variation: number
-  isPositive: boolean
+  /** % contra el mes anterior; null u omitido = sin comparación (no se muestra la línea). */
+  variation?: number | null
 }
 
 interface KPICardsProps {
@@ -32,21 +32,26 @@ export default function KPICards({ data }: KPICardsProps) {
               </p>
             </div>
 
-            {/* Variation indicator */}
+            {/* Variation indicator (solo si hay con qué comparar) */}
+            {typeof kpi.variation === 'number' ? (() => {
+              const isPositive = kpi.variation >= 0
+              return (
             <div className="flex items-center gap-2">
               <span
                 className={`inline-flex items-center justify-center w-6 h-6 rounded-full ${
-                  kpi.isPositive ? 'bg-green-100' : 'bg-red-100'
+                  isPositive ? 'bg-green-100' : 'bg-red-100'
                 }`}
               >
-                <span className={`text-sm font-semibold ${kpi.isPositive ? 'text-green-600' : 'text-red-600'}`}>
-                  {kpi.isPositive ? '↑' : '↓'}
+                <span className={`text-sm font-semibold ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                  {isPositive ? '↑' : '↓'}
                 </span>
               </span>
-              <span className={`text-sm font-medium ${kpi.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+              <span className={`text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
                 {Math.abs(kpi.variation)}% vs mes anterior
               </span>
             </div>
+              )
+            })() : null}
           </div>
         </Card>
       ))}
