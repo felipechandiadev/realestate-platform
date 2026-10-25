@@ -29,6 +29,7 @@ Documentación integral para la entrega al cliente. Explica qué es la plataform
 - [Correo transaccional](../CORREO_TRANSACCIONAL.md) — Resend, credenciales y límites del plan.
 - [Roadmap de mejoras](../ROADMAP_MEJORAS.md) — evolución sugerida.
 - [Correcciones UI móvil](../LISTADO_CORRECCIONES_UI_MOBILE.md) — estado de la interfaz móvil.
+- [Plan de revisión del backoffice](../PLAN_REVISION_BACKOFFICE.md) — revisión sección por sección.
 
 ## Datos rápidos
 
