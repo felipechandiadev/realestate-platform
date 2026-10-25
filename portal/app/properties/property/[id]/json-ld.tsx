@@ -1,6 +1,7 @@
 import { portalPublicOrigin, pickShareImage } from './share-metadata';
 import { propertyPublicPath } from './share-links';
 import type { Property } from './actions';
+import { serializeJsonLd } from '@/shared/lib/json-ld';
 
 export function PropertyJsonLd({ property, id }: { property: Property; id: string }) {
   const origin = portalPublicOrigin();
@@ -45,7 +46,7 @@ export function PropertyJsonLd({ property, id }: { property: Property; id: strin
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
     />
   );
 }
