@@ -12,7 +12,7 @@ export const TestimonialImageStrategy: VariantConfig[] = [
     width: 80,
     height: 80,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 85, jpeg: 90, png: 90 },
   },
   {
@@ -20,7 +20,7 @@ export const TestimonialImageStrategy: VariantConfig[] = [
     width: 160,
     height: 160,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 85, jpeg: 90, png: 90 },
   },
   {
@@ -28,7 +28,7 @@ export const TestimonialImageStrategy: VariantConfig[] = [
     width: 400,
     height: 300,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 85, jpeg: 90, png: 90 },
   },
 ];

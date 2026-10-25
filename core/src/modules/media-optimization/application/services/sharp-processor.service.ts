@@ -10,46 +10,67 @@ export interface ProcessedImage {
   height: number;
 }
 
-@Injectable()
+/**
+ * Imagen ya decodificada, orientada y reducida, lista para generar variantes
+ * sin volver a decodificar el original.
+ */
+export interface PreparedSource {
+  data: Buffer;
+  info: sharp.OutputInfo;
+}
+
 @Injectable()
 export class SharpProcessorService {
   /**
-   * Procesa una variante de imagen según la configuración
-   * @param buffer Buffer de la imagen original
-   * @param config Configuración de la variante
-   * @param format Formato de salida (webp, jpeg, png)
-   * @returns Imagen procesada con metadata
+   * Decodifica el original una sola vez: aplica la orientación EXIF (fotos de
+   * celular) y lo reduce al mínimo que necesitan las variantes, sin agrandarlo.
+   */
+  async prepareSource(
+    buffer: Buffer,
+    configs: VariantConfig[],
+  ): Promise<PreparedSource> {
+    const maxWidth = Math.max(...configs.map((c) => c.width));
+    const maxHeight = Math.max(...configs.map((c) => c.height ?? c.width));
+
+    const { data, info } = await sharp(buffer)
+      .rotate()
+      // 'outside': ambos lados quedan >= al máximo pedido, así un recorte 'cover' no pierde resolución.
+      .resize(maxWidth, maxHeight, { fit: 'outside', withoutEnlargement: true })
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    return { data, info };
+  }
+
+  /**
+   * Genera una variante desde la imagen preparada.
    */
   async processVariant(
-    buffer: Buffer,
+    source: PreparedSource,
     config: VariantConfig,
     format: ImageFormat,
   ): Promise<ProcessedImage> {
-    // Para archivos grandes (>1MB), usar compresión más agresiva
-    const isLargeFile = buffer.length > 1024 * 1024;
-    const effort = isLargeFile ? 4 : 6; // Reducir effort para archivos grandes
-    
-    let pipeline = sharp(buffer);
-
-    // Resize según estrategia de fit
-    pipeline = pipeline.resize(config.width, config.height, {
+    let pipeline = sharp(source.data, {
+      raw: {
+        width: source.info.width,
+        height: source.info.height,
+        channels: source.info.channels,
+      },
+    }).resize(config.width, config.height, {
       fit: this.mapFitStrategy(config.fit),
-      position: 'center', // Crop desde el centro para cover
-      // Permitir agrandamiento solo para avatares pequeños, mantener COVER sin restricciones
+      position: 'center',
+      // 'inside' muestra la foto completa: nunca se estira una imagen pequeña.
+      withoutEnlargement: config.fit === FitStrategy.INSIDE,
     });
 
-    // Aplicar formato y compresión
     switch (format) {
       case ImageFormat.WEBP:
-        pipeline = pipeline.webp({
-          quality: isLargeFile ? Math.max(config.quality.webp - 5, 70) : config.quality.webp,
-          effort, // Reducido para archivos grandes
-        });
+        pipeline = pipeline.webp({ quality: config.quality.webp, effort: 4 });
         break;
       case ImageFormat.JPEG:
-        pipeline = pipeline.jpeg({
-          quality: isLargeFile ? Math.max(config.quality.jpeg - 5, 75) : config.quality.jpeg,
-          mozjpeg: true, // Mejor compresión
+        pipeline = pipeline.flatten({ background: '#ffffff' }).jpeg({
+          quality: config.quality.jpeg,
+          mozjpeg: true,
         });
         break;
       case ImageFormat.PNG:
@@ -60,14 +81,13 @@ export class SharpProcessorService {
         break;
     }
 
-    const processedBuffer = await pipeline.toBuffer();
-    const metadata = await sharp(processedBuffer).metadata();
+    const { data, info } = await pipeline.toBuffer({ resolveWithObject: true });
 
     return {
-      buffer: processedBuffer,
-      size: processedBuffer.length,
-      width: metadata.width!,
-      height: metadata.height!,
+      buffer: data,
+      size: data.length,
+      width: info.width,
+      height: info.height,
     };
   }
 
@@ -119,8 +139,8 @@ export class SharpProcessorService {
     return {
       buffer: processedBuffer,
       size: processedBuffer.length,
-      width: processedMetadata.width!,
-      height: processedMetadata.height!,
+      width: processedMetadata.width,
+      height: processedMetadata.height,
     };
   }
 

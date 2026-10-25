@@ -60,7 +60,8 @@ export class ImageOptimizationService {
       // 1. Obtener metadata original
       const metadata = await this.sharpProcessor.getMetadata(file.buffer);
 
-      // 2. Generar todas las variantes (SIN almacenar original)
+      // 2. Decodificar y orientar una sola vez; luego generar variantes (sin almacenar original)
+      const source = await this.sharpProcessor.prepareSource(file.buffer, strategy);
       const variants: Partial<MultimediaVariant>[] = [];
       let totalVariantSize = 0;
       const primaryVariantPreference = this.getPrimaryVariantPreference(entityType);
@@ -69,11 +70,7 @@ export class ImageOptimizationService {
         for (const format of config.formats) {
           try {
             this.logger.debug(`⏳ Creating ${config.type}.${format}...`);
-            const processed = await this.sharpProcessor.processVariant(
-              file.buffer,
-              config,
-              format,
-            );
+            const processed = await this.sharpProcessor.processVariant(source, config, format);
 
             const key = `${entityType}/${entityId}/${imageId}_${config.type}.${format}`;
             const { url } = await this.r2Storage.upload(
@@ -137,8 +134,9 @@ export class ImageOptimizationService {
           originalSize,
           compressedSize,
           compressionRatio,
-          width: metadata.width || 0,
-          height: metadata.height || 0,
+          // Orientación EXIF 5–8 = foto girada 90°: ancho y alto quedan invertidos.
+          width: ((metadata.orientation ?? 1) >= 5 ? metadata.height : metadata.width) || 0,
+          height: ((metadata.orientation ?? 1) >= 5 ? metadata.width : metadata.height) || 0,
         } as Multimedia,
         compressionRatio,
         variantsCreated: variants.length,

@@ -10,7 +10,7 @@ export const SliderImageStrategy: VariantConfig[] = [
     width: 1080,
     height: 608,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 78, jpeg: 82, png: 85 },
   },
   {
@@ -18,7 +18,7 @@ export const SliderImageStrategy: VariantConfig[] = [
     width: 1920,
     height: 1080,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 80, jpeg: 85, png: 85 },
   },
   {
@@ -26,7 +26,7 @@ export const SliderImageStrategy: VariantConfig[] = [
     width: 400,
     height: 225,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 78, jpeg: 82, png: 85 },
   },
 ];

@@ -12,7 +12,7 @@ export const BlogImageStrategy: VariantConfig[] = [
     width: 640,
     height: 360, // 16:9 ratio
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 80, jpeg: 85, png: 85 },
   },
   {

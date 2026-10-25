@@ -10,7 +10,7 @@ export const AvatarImageStrategy: VariantConfig[] = [
     width: 64,
     height: 64,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 88, jpeg: 92, png: 92 },
   },
   {
@@ -18,7 +18,7 @@ export const AvatarImageStrategy: VariantConfig[] = [
     width: 128,
     height: 128,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 90, jpeg: 95, png: 95 },
   },
 ];

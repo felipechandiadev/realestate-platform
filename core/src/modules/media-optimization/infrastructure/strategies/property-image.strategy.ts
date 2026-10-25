@@ -13,7 +13,7 @@ export const PropertyImageStrategy: VariantConfig[] = [
     width: 400,
     height: 225,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 78, jpeg: 82, png: 85 },
   },
   {
@@ -21,7 +21,7 @@ export const PropertyImageStrategy: VariantConfig[] = [
     width: 960,
     height: 540,
     fit: FitStrategy.COVER,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 80, jpeg: 85, png: 85 },
   },
   {
@@ -29,7 +29,7 @@ export const PropertyImageStrategy: VariantConfig[] = [
     width: 1600,
     height: 900,
     fit: FitStrategy.INSIDE,
-    formats: [ImageFormat.WEBP, ImageFormat.JPEG],
+    formats: [ImageFormat.WEBP],
     quality: { webp: 82, jpeg: 85, png: 85 },
   },
 ];
