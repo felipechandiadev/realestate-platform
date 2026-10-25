@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { User } from '../../users/domain/user.entity';
@@ -22,6 +22,8 @@ export interface ValidateTokenResult {
 
 @Injectable()
 export class PasswordRecoveryService {
+  private readonly logger = new Logger(PasswordRecoveryService.name);
+
   constructor(
     private readonly passwordResetTokenRepository: PasswordResetTokenRepository,
     @InjectRepository(User)
@@ -68,12 +70,21 @@ export class PasswordRecoveryService {
 
     const resetUrl = this.buildResetUrl(createdToken.token);
 
-    await this.mailService.sendPasswordReset(
-      user.email,
-      user.personalInfo?.firstName || user.name || 'Usuario',
-      resetUrl,
-      expiresInMinutes,
-    );
+    // En segundo plano y sin propagar errores: una falla SMTP no debe devolver 500 solo
+    // para correos registrados (eso revelaría qué cuentas existen).
+    void this.mailService
+      .sendPasswordReset(
+        user.email,
+        user.personalInfo?.firstName || user.name || 'Usuario',
+        resetUrl,
+        expiresInMinutes,
+      )
+      .catch((mailError: unknown) => {
+        this.logger.error(
+          `Error sending password reset email for user ${user.id}`,
+          mailError instanceof Error ? mailError.stack : String(mailError),
+        );
+      });
 
     await this.auditService.createAuditLog({
       userId: user.id,

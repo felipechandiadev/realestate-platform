@@ -877,113 +877,133 @@ export class NotificationsService {
 
     console.log(`✅ Mail config found:`, mailConfig);
 
+    let context: Awaited<ReturnType<typeof this.buildMailContext>>;
     try {
       // Extraer información del contexto de la notificación
-      const context = await this.buildMailContext(notification, createDto);
-      console.log(`📋 Mail context built:`, context);
+      context = await this.buildMailContext(notification, createDto);
+    } catch (error) {
+      console.error(`❌ Error building mail context for notification ${notification.id}:`, error);
+      return;
+    }
 
-      // Enviar correo al usuario interesado si corresponde
-      if (mailConfig.sendToInterested && context.interestedUserEmail) {
-        if (typeForChecks === NotificationType.PROPERTY_PUBLICATION_REQUEST) {
-          console.log(`📤 Sending property request confirmation to: ${context.interestedUserEmail}`);
-          await this.mailService.sendPropertyRequestUserConfirmation(
-            context.interestedUserEmail,
-            context.interestedUserName || 'Usuario',
-            context.propertyTitle || 'Propiedad'
-          );
-        } else if (typeForChecks === NotificationType.PUBLICATION_STATUS_CHANGE) {
-          console.log(`📤 Sending property status change notification to: ${context.interestedUserEmail}`);
-          await this.mailService.sendPropertyStatusChangeNotification(
-            context.interestedUserEmail,
-            context.interestedUserName || 'Usuario',
-            context.propertyTitle || 'Propiedad',
-            context.interestedUserMessage?.split(': ')[1] || 'Actualizado'
-          );
-        } else {
-          console.log(`📤 Sending interest confirmation to: ${context.interestedUserEmail}`);
-          await this.mailService.sendInterestConfirmation(
-            context.interestedUserEmail,
+    // Cada destinatario se envía por separado: una falla (p. ej. un correo mal escrito
+    // del visitante) no debe impedir que admins y agente reciban el aviso.
+    const safeSend = async (label: string, send: () => Promise<void>) => {
+      try {
+        await send();
+        console.log(`✅ ${label}`);
+      } catch (error) {
+        console.error(`❌ Error sending ${label} (notification ${notification.id}):`, error);
+      }
+    };
+
+    // Enviar correo al usuario interesado si corresponde
+    if (mailConfig.sendToInterested && context.interestedUserEmail) {
+      const interestedEmail = context.interestedUserEmail;
+      if (typeForChecks === NotificationType.PROPERTY_PUBLICATION_REQUEST) {
+        await safeSend('property request confirmation to interested user', () =>
+          this.mailService.sendPropertyRequestUserConfirmation(
+            interestedEmail,
             context.interestedUserName || 'Usuario',
             context.propertyTitle || 'Propiedad',
-            context.message,
-            context.interestedUserPhone,
+          ),
+        );
+      } else if (typeForChecks === NotificationType.PUBLICATION_STATUS_CHANGE) {
+        await safeSend('status change notification to interested user', () =>
+          this.mailService.sendPropertyStatusChangeNotification(
+            interestedEmail,
+            context.interestedUserName || 'Usuario',
+            context.propertyTitle || 'Propiedad',
+            context.interestedUserMessage?.split(': ')[1] || 'Actualizado',
+          ),
+        );
+      } else {
+        // El correo del interesado lo escribe cualquiera en un formulario público:
+        // la confirmación NO reenvía su mensaje ni su teléfono, para que no se pueda
+        // usar el sistema como relay de spam/phishing hacia terceros.
+        await safeSend('interest confirmation to interested user', () =>
+          this.mailService.sendInterestConfirmation(
+            interestedEmail,
+            context.interestedUserName || 'Usuario',
+            context.propertyTitle || 'Propiedad',
+            undefined,
+            undefined,
             context.propertyCode,
             context.propertyPrice,
             context.propertyLocation,
             context.agentName,
-          );
-        }
-        console.log(`✅ Confirmation sent to: ${context.interestedUserEmail}`);
+          ),
+        );
+      }
+    }
+
+    // Enviar notificaciones a administradores si corresponde
+    if (mailConfig.sendToAdmins && notification.targetUserIds) {
+      let adminEmails: string[] = [];
+      try {
+        adminEmails = await this.getAdminEmails(notification.targetUserIds);
+      } catch (error) {
+        console.error(`❌ Error resolving admin emails for notification ${notification.id}:`, error);
       }
 
-      // Enviar notificaciones a administradores si corresponde
-      if (mailConfig.sendToAdmins && notification.targetUserIds) {
-        const adminEmails = await this.getAdminEmails(notification.targetUserIds);
-        console.log(`👥 Found admin emails:`, adminEmails);
-
-        for (const adminEmail of adminEmails) {
-          console.log(`📤 Sending admin notification to: ${adminEmail}`);
+      for (const adminEmail of adminEmails) {
+        await safeSend(`admin notification to ${adminEmail}`, async () => {
           const adminUser = await this.userRepository.findOne({
-            where: { email: adminEmail, deletedAt: IsNull() }
+            where: { email: adminEmail, deletedAt: IsNull() },
           });
-          if (adminUser) {
-            if (typeForChecks === NotificationType.PROPERTY_PUBLICATION_REQUEST) {
-              await this.mailService.sendPropertyRequestAdminNotification(
-                adminEmail,
-                adminUser.name || 'Administrador',
-                context.interestedUserName || 'Usuario',
-                context.interestedUserEmail || '',
-                context.propertyTitle || 'Propiedad',
-                context.propertyOperation || 'Solicitud'
-              );
-            } else {
-              await this.mailService.sendAdminNotification(
-                adminEmail,
-                adminUser.name || 'Administrador',
-                context.interestedUserName || 'Usuario',
-                context.interestedUserEmail || '',
-                context.interestedUserPhone || undefined,
-                context.propertyTitle || 'Propiedad',
-                context.message || ''
-              );
-            }
-            console.log(`✅ Admin notification sent to: ${adminEmail}`);
-          } else {
+          if (!adminUser) {
             console.log(`❌ Admin user not found for email: ${adminEmail}`);
+            return;
           }
-        }
-      } else {
-        console.log(`❌ Not sending to admins - config: ${mailConfig.sendToAdmins}, targetUserIds: ${notification.targetUserIds?.length || 0}`);
-      }
-
-      // Enviar notificación al agente asignado si corresponde
-      if (mailConfig.sendToAgent && context.agentEmail) {
-        console.log(`📤 Sending agent notification to: ${context.agentEmail}`);
-        const agentUser = await this.userRepository.findOne({
-          where: { email: context.agentEmail, deletedAt: IsNull() }
+          if (typeForChecks === NotificationType.PROPERTY_PUBLICATION_REQUEST) {
+            await this.mailService.sendPropertyRequestAdminNotification(
+              adminEmail,
+              adminUser.name || 'Administrador',
+              context.interestedUserName || 'Usuario',
+              context.interestedUserEmail || '',
+              context.propertyTitle || 'Propiedad',
+              context.propertyOperation || 'Solicitud',
+            );
+          } else {
+            await this.mailService.sendAdminNotification(
+              adminEmail,
+              adminUser.name || 'Administrador',
+              context.interestedUserName || 'Usuario',
+              context.interestedUserEmail || '',
+              context.interestedUserPhone || undefined,
+              context.propertyTitle || 'Propiedad',
+              context.message || '',
+            );
+          }
         });
-        if (agentUser) {
-          await this.mailService.sendAdminNotification(
-            context.agentEmail,
-            agentUser.name || 'Agente',
-            context.interestedUserName || 'Usuario',
-            context.interestedUserEmail || '',
-            context.interestedUserPhone || undefined,
-            context.propertyTitle || 'Propiedad',
-            context.message || ''
-          );
-          console.log(`✅ Agent notification sent to: ${context.agentEmail}`);
-        } else {
-          console.log(`❌ Agent user not found for email: ${context.agentEmail}`);
-        }
-      } else {
-        console.log(`❌ Not sending to agent - config: ${mailConfig.sendToAgent}, agentEmail: ${context.agentEmail}`);
       }
+    } else {
+      console.log(`❌ Not sending to admins - config: ${mailConfig.sendToAdmins}, targetUserIds: ${notification.targetUserIds?.length || 0}`);
+    }
 
-    } catch (error) {
-      console.error(`❌ Error sending emails for notification ${notification.id}:`, error);
-      console.error('Stack trace:', error.stack);
-      // No lanzamos el error para no afectar la creación de la notificación
+    // Enviar notificación al agente asignado si corresponde
+    if (mailConfig.sendToAgent && context.agentEmail) {
+      const agentEmail = context.agentEmail;
+      await safeSend(`agent notification to ${agentEmail}`, async () => {
+        const agentUser = await this.userRepository.findOne({
+          where: { email: agentEmail, deletedAt: IsNull() },
+        });
+        if (!agentUser) {
+          console.log(`❌ Agent user not found for email: ${agentEmail}`);
+          return;
+        }
+        await this.mailService.sendAdminNotification(
+          agentEmail,
+          agentUser.name || 'Agente',
+          context.interestedUserName || 'Usuario',
+          context.interestedUserEmail || '',
+          context.interestedUserPhone || undefined,
+          context.propertyTitle || 'Propiedad',
+          context.message || '',
+        );
+      });
+    } else {
+      console.log(`❌ Not sending to agent - config: ${mailConfig.sendToAgent}, agentEmail: ${context.agentEmail}`);
     }
   }
 
