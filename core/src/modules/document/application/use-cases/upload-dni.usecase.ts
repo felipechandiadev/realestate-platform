@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { UserRole } from '../../../users/domain/user.entity';
 import type { Express } from 'express';
 import { UploadDNIDto, CreateDocumentDto } from '../../dto/document.dto';
 import { MultimediaService } from '../../../multimedia/application/multimedia.service';
@@ -25,6 +26,7 @@ export class UploadDniUseCase {
   async execute(
     file: Express.Multer.File,
     uploadDto: UploadDNIDto & { uploadedById: string },
+    actor?: { id?: string; role?: string },
   ): Promise<Document> {
     if (!file.mimetype.startsWith('image/')) {
       throw new BadRequestException('Solo se permiten archivos de imagen para DNI');
@@ -36,6 +38,10 @@ export class UploadDniUseCase {
     });
     if (!person) {
       throw new NotFoundException('Persona no encontrada');
+    }
+    // Un cliente del portal solo puede cambiar el carnet de su propia ficha.
+    if (actor?.role === UserRole.COMMUNITY && person.userId !== actor.id) {
+      throw new ForbiddenException('Solo puedes subir el carnet de tu propia ficha');
     }
 
     const multimediaType = uploadDto.dniSide === 'FRONT' ? MultimediaType.DNI_FRONT : MultimediaType.DNI_REAR;

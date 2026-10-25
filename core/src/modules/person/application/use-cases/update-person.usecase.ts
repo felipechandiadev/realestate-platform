@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
+import { normalizeDni } from '../../domain/dni';
 import { PersonRepository } from '../../domain/person.repository';
 import { Person } from '../../domain/person.entity';
 
@@ -13,10 +14,17 @@ export class UpdatePersonUseCase {
     if (!existing) {
       throw new Error('Persona no encontrada');
     }
+    if (patch.dni !== undefined) {
+      patch.dni = normalizeDni(patch.dni) as string;
+    }
     if (patch.dni && patch.dni !== existing.dni) {
       const other = await this.personRepository.findByDni(patch.dni);
-      if (other) {
-        throw new Error('Ya existe una persona con ese DNI');
+      if (other && other.id !== id) {
+        throw new ConflictException(
+          other.deletedAt
+            ? 'Ese RUT pertenece a una ficha eliminada'
+            : 'Ya existe una persona con ese RUT',
+        );
       }
     }
     const updated = { ...existing, ...patch } as Person;

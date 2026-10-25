@@ -43,7 +43,7 @@ import { JwtAuthGuard, RolesGuard } from '../../auth/guards/jwt-auth.guard';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 import { UserRole } from '../../users/domain/user.entity';
 
-type AuthenticatedRequest = Request & { user?: { id?: string } };
+type AuthenticatedRequest = Request & { user?: { id?: string; role?: string } };
 
 @ApiTags('Documents')
 @Controller('document')
@@ -70,6 +70,7 @@ export class DocumentController {
    * Upload a document file
    */
   @Post('upload')
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
   @ApiOperation({ summary: 'Upload document file' })
   @ApiResponse({
     status: 201,
@@ -123,14 +124,14 @@ export class DocumentController {
     @Req() req: AuthenticatedRequest,
   ) {
     assertAllowedFileSignature(file, DOCUMENT_UPLOAD_KINDS);
+    // Quien sube es siempre el usuario del token, nunca un id enviado en el cuerpo.
     const userId = req.user?.id;
-    uploadDocumentDto.uploadedById ??= userId;
-    if (!uploadDocumentDto.uploadedById) {
+    if (!userId) {
       throw new UnauthorizedException('Usuario no autenticado');
     }
     const resolvedDto: UploadDocumentDto & { uploadedById: string } = {
       ...uploadDocumentDto,
-      uploadedById: uploadDocumentDto.uploadedById,
+      uploadedById: userId,
     };
     return this.documentService.uploadDocument(file, resolvedDto);
   }
@@ -139,6 +140,8 @@ export class DocumentController {
    * Upload a DNI file (frontal or trasero)
    */
   @Post('upload-dni')
+  // COMMUNITY solo para su propia ficha (se valida en UploadDniUseCase).
+  @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)
   @ApiOperation({ summary: 'Upload DNI file' })
   @ApiResponse({
     status: 201,
@@ -181,15 +184,14 @@ export class DocumentController {
   ) {
     assertAllowedFileSignature(file, DNI_UPLOAD_KINDS);
     const userId = req.user?.id;
-    uploadDNIDto.uploadedById ??= userId;
-    if (!uploadDNIDto.uploadedById) {
+    if (!userId) {
       throw new UnauthorizedException('Usuario no autenticado');
     }
     const resolvedDto: UploadDNIDto & { uploadedById: string } = {
       ...uploadDNIDto,
-      uploadedById: uploadDNIDto.uploadedById,
+      uploadedById: userId,
     };
-    return this.documentService.uploadDNI(file, resolvedDto);
+    return this.documentService.uploadDNI(file, resolvedDto, req.user);
   }
 
   /**

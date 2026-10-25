@@ -11,6 +11,8 @@ export class VerifyPersonUseCase {
     if (!person) throw new NotFoundException('Persona no encontrada');
     if (person.verified) throw new BadRequestException('La persona ya está verificada');
     person.verified = true;
+    // La solicitud queda resuelta: la persona puede volver a pedir verificación más adelante.
+    person.verificationRequest = null as unknown as Date;
     await this.personRepository.save(person);
   }
 }

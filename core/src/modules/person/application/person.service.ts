@@ -1,7 +1,7 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
+  HttpException,
 } from '@nestjs/common';
 import { Repository, IsNull, In } from 'typeorm';
 import * as ExcelJS from 'exceljs';
@@ -59,11 +59,7 @@ export class PersonService {
       updatedAt: new Date(),
       deletedAt: null,
     };
-    try {
-      return await this.createPersonUseCase.execute(p);
-    } catch (err) {
-      throw new ConflictException(err.message);
-    }
+    return await this.createPersonUseCase.execute(p);
   }
 
   async findAll(): Promise<Person[]> {
@@ -176,10 +172,11 @@ export class PersonService {
       const personId = await this.resolvePersonId(id);
       return await this.updatePersonUseCase.execute(personId, patch);
     } catch (err) {
-      if (err.message.includes('no encontrada')) {
+      if (err instanceof HttpException) throw err;
+      if (err instanceof Error && err.message.includes('no encontrada')) {
         throw new NotFoundException(err.message);
       }
-      throw new ConflictException(err.message);
+      throw err;
     }
   }
 

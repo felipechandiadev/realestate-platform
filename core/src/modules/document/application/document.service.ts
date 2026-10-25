@@ -114,7 +114,8 @@ export class DocumentService {
   async uploadDNI(
     file: Express.Multer.File,
     uploadDNIDto: UploadDNIDto & { uploadedById: string },
+    actor?: { id?: string; role?: string },
   ): Promise<Document> {
-    return this.uploadDniUseCase.execute(file, uploadDNIDto);
+    return this.uploadDniUseCase.execute(file, uploadDNIDto, actor);
   }
 }

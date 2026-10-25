@@ -1,3 +1,4 @@
+import { compactDni } from '../../domain/dni';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
@@ -73,8 +74,19 @@ export class TypeormPersonRepository extends PersonRepository {
     return found ? this.toDomain(found) : null;
   }
 
+  /**
+   * Busca por RUT sin importar el formato guardado (con o sin puntos/guion) e
+   * incluye fichas eliminadas: la columna es única también para ellas.
+   */
   async findByDni(dni: string): Promise<Person | null> {
-    const found = await this.repository.findOne({ where: { dni } });
+    const found = await this.repository
+      .createQueryBuilder('p')
+      .withDeleted()
+      .where("REPLACE(REPLACE(REPLACE(UPPER(TRIM(p.dni)), '.', ''), '-', ''), ' ', '') = :compact", {
+        compact: compactDni(dni),
+      })
+      .orderBy('p.deletedAt', 'ASC')
+      .getOne();
     return found ? this.toDomain(found) : null;
   }
 
