@@ -218,7 +218,6 @@ export default function PropertyDetailClient({
       // Enviar notificación de interés en propiedad
       const result = await notifyPropertyInterest({
         propertyId: property.id,
-        assignedAgentId: property.assignedAgent?.id,
         name: formData.name,
         email: formData.email,
         phone: formData.phone,

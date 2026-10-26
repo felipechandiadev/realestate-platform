@@ -92,3 +92,27 @@ export function toPublicPropertyDetail(property: any): Record<string, unknown> {
     : 0;
   return out;
 }
+
+/**
+ * Vista pública de una propiedad en listados (portada, ventas, arriendos,
+ * destacadas, relacionadas): mismos campos que el detalle, pero conserva las
+ * banderas del tipo de propiedad que usan las tarjetas.
+ */
+export function toPublicPropertyListItem(property: any): Record<string, unknown> {
+  const out = toPublicPropertyDetail(property);
+  const type = property?.propertyType;
+  if (type) {
+    out.propertyType = {
+      id: type.id,
+      name: type.name,
+      hasBedrooms: type.hasBedrooms,
+      hasBathrooms: type.hasBathrooms,
+      hasBuiltSquareMeters: type.hasBuiltSquareMeters,
+      hasLandSquareMeters: type.hasLandSquareMeters,
+      hasParkingSpaces: type.hasParkingSpaces,
+      hasFloors: type.hasFloors,
+      hasConstructionYear: type.hasConstructionYear,
+    };
+  }
+  return out;
+}

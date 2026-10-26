@@ -141,7 +141,6 @@ export async function getPublishedPropertyPublic(id: string): Promise<{
  */
 export async function notifyPropertyInterest(data: {
   propertyId: string;
-  assignedAgentId?: string;
   name: string;
   email: string;
   phone: string;
@@ -150,15 +149,13 @@ export async function notifyPropertyInterest(data: {
   try {
     // Get current session to determine if user is logged in
     const session = await getServerSession(authOptions);
-    const currentUser = session?.user;
 
     // Use public endpoint that doesn't require authentication
     const url = `${env.backendApiUrl}/notifications/public/property-interest`;
     
+    // El agente lo define core desde la propiedad y el usuario sale del token.
     const body = {
       propertyId: data.propertyId,
-      assignedAgentId: data.assignedAgentId,
-      interestedUserId: currentUser?.id, // Will be undefined if not logged in
       interestedUserName: data.name,
       interestedUserEmail: data.email,
       interestedUserPhone: data.phone,
@@ -170,6 +167,7 @@ export async function notifyPropertyInterest(data: {
       headers: {
         ...(await clientIpHeader()),
         'Content-Type': 'application/json',
+        ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
       },
       body: JSON.stringify(body),
     });

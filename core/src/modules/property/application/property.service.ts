@@ -25,7 +25,7 @@ import { NotificationsService } from '../../notifications/application/notificati
 
 // application use-cases
 import { CreatePropertyUseCase } from '../application/use-cases/create-property.usecase';
-import { isPubliclyVisible, toPublicPropertyDetail } from './public-property.mapper';
+import { isPubliclyVisible, toPublicPropertyDetail, toPublicPropertyListItem } from './public-property.mapper';
 import { FindPropertiesUseCase } from '../application/use-cases/find-properties.usecase';
 import { FindOnePropertyUseCase } from '../application/use-cases/find-one-property.usecase';
 import { CountPropertiesUseCase } from '../application/use-cases/count-properties.usecase';
@@ -452,6 +452,14 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
       console.error('Error getting filter bounds', e);
       return fallback;
     }
+  }
+
+  /** Relacionadas para el portal: solo de una propiedad publicada y en vista pública. */
+  async getPublicRelatedProperties(propertyId: string, limit: number = 5): Promise<Array<Record<string, unknown>>> {
+    const ref = await this.propertyRepository.findOne({ where: { id: propertyId, deletedAt: IsNull() } });
+    if (!isPubliclyVisible(ref as any)) return [];
+    const related = await this.getRelatedProperties(propertyId, limit);
+    return related.map(toPublicPropertyListItem);
   }
 
   async getRelatedProperties(propertyId: string, limit: number = 5): Promise<Property[]> {

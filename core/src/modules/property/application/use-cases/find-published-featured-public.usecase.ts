@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Property } from '../../domain/property.entity';
+import { toPublicPropertyListItem } from '../public-property.mapper';
 import { PropertyRepository } from '../../domain/property.repository';
 import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 
@@ -7,7 +7,7 @@ import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 export class FindPublishedFeaturedPublicUseCase {
   constructor(private readonly propertyRepository: PropertyRepository) {}
 
-  async execute(): Promise<Partial<Property>[]> {
+  async execute(): Promise<Array<Record<string, unknown>>> {
     const qb = this.propertyRepository.createQueryBuilder('p')
       .leftJoinAndSelect('p.propertyType', 'pt')
       .leftJoinAndSelect('p.multimedia', 'multimedia')
@@ -20,6 +20,6 @@ export class FindPublishedFeaturedPublicUseCase {
       .addOrderBy('p.createdAt', 'DESC');
 
     const rows = await qb.getMany();
-    return rows as Partial<Property>[];
+    return rows.map(toPublicPropertyListItem);
   }
 }

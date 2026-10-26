@@ -696,7 +696,7 @@ export class PropertyController {
     @Query('limit') limit?: number,
   ) {
     const maxLimit = limit ? Math.min(Math.max(parseInt(String(limit), 10), 3), 10) : 5;
-    return this.propertyService.getRelatedProperties(id, maxLimit);
+    return this.propertyService.getPublicRelatedProperties(id, maxLimit);
   }
 
   /**

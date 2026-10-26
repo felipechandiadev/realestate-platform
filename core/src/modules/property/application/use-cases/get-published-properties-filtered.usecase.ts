@@ -4,6 +4,7 @@ import { Property } from '../../domain/property.entity';
 import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../../../shared/enums/property-operation-type.enum';
 import { MultimediaType, MultimediaFormat } from '../../../multimedia/domain/multimedia.entity';
+import { toPublicPropertyListItem } from '../public-property.mapper';
 import { applyPublishedPropertyFilters } from './apply-published-property-filters';
 
 @Injectable()
@@ -14,7 +15,7 @@ export class GetPublishedPropertiesFilteredUseCase {
     filters: any,
     operationType?: PropertyOperationType,
   ): Promise<{
-    data: Property[];
+    data: Array<Record<string, unknown>>;
     total: number;
     page: number;
     limit: number;
@@ -114,7 +115,7 @@ export class GetPublishedPropertiesFilteredUseCase {
       const hasPrevPage = page > 1;
 
       return {
-        data,
+        data: data.map(toPublicPropertyListItem),
         total,
         page,
         limit,

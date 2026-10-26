@@ -112,16 +112,13 @@ export class NotificationsController {
     @Post('public/property-interest')
     @ApiOperation({ summary: 'Enviar notificación de interés en propiedad desde portal público' })
     @ApiBody({ type: PropertyInterestDto })
-    async notifyPublicPropertyInterest(@Body() body: PropertyInterestDto) {
-      return this.notificationsService.notifyInterestOnProperty(
-        body.propertyId,
-        body.assignedAgentId,
-        body.interestedUserId,
-        body.interestedUserName,
-        body.interestedUserEmail,
-        body.interestedUserPhone,
-        body.interestedUserMessage
-      );
+    async notifyPublicPropertyInterest(
+      @Body() body: PropertyInterestDto,
+      @Req() req: AuthenticatedRequest,
+    ) {
+      // Ruta @Public: si viene un Bearer válido, el guard deja req.user.
+      const actorId = req.user?.id ?? (typeof req.user?.sub === 'string' ? req.user.sub : undefined);
+      return this.notificationsService.submitPropertyInterest(body, actorId);
     }
 
     /**
@@ -149,16 +146,12 @@ export class NotificationsController {
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: 'Enviar notificación de interés en propiedad a administradores y agente asignado' })
     @ApiBody({ type: PropertyInterestDto })
-    async notifyInterestOnProperty(@Body() body: PropertyInterestDto) {
-      return this.notificationsService.notifyInterestOnProperty(
-        body.propertyId,
-        body.assignedAgentId,
-        body.interestedUserId,
-        body.interestedUserName,
-        body.interestedUserEmail,
-        body.interestedUserPhone,
-        body.interestedUserMessage
-      );
+    async notifyInterestOnProperty(
+      @Body() body: PropertyInterestDto,
+      @Req() req: AuthenticatedRequest,
+    ) {
+      const actorId = req.user?.id ?? (typeof req.user?.sub === 'string' ? req.user.sub : undefined);
+      return this.notificationsService.submitPropertyInterest(body, actorId);
     }
   constructor(
     private readonly notificationsService: NotificationsService,

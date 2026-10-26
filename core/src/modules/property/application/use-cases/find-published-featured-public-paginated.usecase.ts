@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Property } from '../../domain/property.entity';
+import { toPublicPropertyListItem } from '../public-property.mapper';
 import { PropertyRepository } from '../../domain/property.repository';
 import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 
@@ -11,7 +11,7 @@ export class FindPublishedFeaturedPublicPaginatedUseCase {
     page: number = 1,
     limit: number = 9,
   ): Promise<{
-    data: Partial<Property>[];
+    data: Array<Record<string, unknown>>;
     total: number;
     page: number;
     limit: number;
@@ -37,6 +37,6 @@ export class FindPublishedFeaturedPublicPaginatedUseCase {
     const [rows, total] = await qb.getManyAndCount();
     const totalPages = Math.ceil(total / limit);
 
-    return { data: rows as Partial<Property>[], total, page, limit, totalPages };
+    return { data: rows.map(toPublicPropertyListItem), total, page, limit, totalPages };
   }
 }

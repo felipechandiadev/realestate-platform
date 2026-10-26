@@ -26,12 +26,46 @@ import { NOTIFICATION_MAIL_CONFIG, shouldSendEmail } from '../notification-mail.
 import { NotificationsGateway } from '../presentation/notifications.gateway';
 import { PushNotificationsService } from './push-notifications.service';
 
+/** Datos del formulario de interés; el agente y el usuario los define el servidor. */
+export interface PropertyInterestInput {
+  propertyId: string;
+  interestedUserName: string;
+  interestedUserEmail: string;
+  interestedUserPhone: string;
+  interestedUserMessage: string;
+}
+
 export interface NotificationWithUserDetails extends Notification {
   targetUsers?: Array<{ id: string; name: string }>;
 }
 
 @Injectable()
 export class NotificationsService {
+  /**
+   * Interés desde el portal: solo sobre propiedades publicadas; el agente sale de
+   * la propiedad y el usuario del token (nunca del cuerpo de la petición).
+   */
+  async submitPropertyInterest(
+    input: PropertyInterestInput,
+    actorUserId?: string,
+  ): Promise<Notification[]> {
+    const property = await this.propertyRepository.findOne({
+      where: { id: input.propertyId, deletedAt: IsNull() },
+    });
+    if (!property || property.status !== PropertyStatus.PUBLISHED) {
+      throw new NotFoundException('Propiedad no encontrada');
+    }
+    return this.notifyInterestOnProperty(
+      property.id,
+      property.assignedAgentId ?? undefined,
+      actorUserId,
+      input.interestedUserName,
+      input.interestedUserEmail,
+      input.interestedUserPhone,
+      input.interestedUserMessage,
+    );
+  }
+
   /**
    * Envía notificación de interés en propiedad a todos los administradores y al agente asignado
    */
@@ -44,26 +78,15 @@ export class NotificationsService {
     interestedUserPhone?: string,
     interestedUserMessage?: string
   ): Promise<Notification[]> {
-    console.log('🔄 notifyInterestOnProperty called with:', {
-      propertyId,
-      assignedAgentId,
-      interestedUserId,
-      interestedUserName,
-      interestedUserEmail,
-      interestedUserPhone,
-      interestedUserMessage,
-    });
 
     // Obtener todos los administradores
     const admins = await this.getAdminUserIds();
-    console.log('👥 Found admins:', admins);
 
     // Construir lista de destinatarios
     const targetUserIds = [...admins];
     if (assignedAgentId) {
       targetUserIds.push(assignedAgentId);
     }
-    console.log('📧 Target user IDs:', targetUserIds);
 
     // Datos del sender
     const senderType = interestedUserId ? NotificationSenderType.USER : NotificationSenderType.ANONYMOUS;
@@ -89,12 +112,9 @@ export class NotificationsService {
     // Incluir propertyId de forma específica para facilitar la extracción después
     const fullMessage = `${interestHeader}\n\nDe: ${userContact}\n\nMensaje: ${interestedUserMessage || 'Sin mensaje adicional.'}\n\n[PROPERTY_ID: ${propertyId}]`;
 
-    console.log('📝 Full message:', fullMessage);
-
     // Crear notificación para cada destinatario
     const notifications: Notification[] = [];
     for (const userId of targetUserIds) {
-      console.log(`📤 Creating notification for user: ${userId}`);
 
       const dto: CreateNotificationDto = {
         senderType,
@@ -112,19 +132,9 @@ export class NotificationsService {
         interestedUserMessage,
       };
 
-      console.log(`📧 DTO being created:`, {
-        interestedUserEmail: dto.interestedUserEmail,
-        interestedUserName: dto.interestedUserName,
-        interestedUserPhone: dto.interestedUserPhone,
-        interestedUserMessage: dto.interestedUserMessage,
-      });
-
       const notification = await this.create(dto);
       notifications.push(notification);
-      console.log(`✅ Notification created: ${notification.id}`);
     }
-
-    console.log(`🎯 Total notifications created: ${notifications.length}`);
     return notifications;
   }
 
