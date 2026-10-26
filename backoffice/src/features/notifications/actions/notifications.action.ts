@@ -1,5 +1,6 @@
 'use server';
 
+import { clientIpHeader } from '@/lib/client-ip';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { env } from '@/lib/env';
@@ -276,7 +277,7 @@ export async function submitContactForm(data: {
     
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
+      headers: { ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),

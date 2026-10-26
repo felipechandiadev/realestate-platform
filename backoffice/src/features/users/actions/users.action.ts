@@ -1,5 +1,6 @@
 'use server';
 
+import { clientIpHeader } from '@/lib/client-ip';
 import { getServerSession } from 'next-auth';
 
 import { authOptions } from '@/lib/auth';
@@ -1442,7 +1443,7 @@ export async function resendCommunityUserVerification(
       `${env.backendApiUrl}/auth/resend-verification-email`,
       {
         method: 'POST',
-        headers: {
+        headers: { ...(await clientIpHeader()),
           Authorization: `Bearer ${session.accessToken}`,
           'Content-Type': 'application/json',
           Accept: 'application/json',

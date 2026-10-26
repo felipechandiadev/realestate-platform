@@ -1,3 +1,4 @@
+import { clientIpHeader } from '@/lib/client-ip';
 /**
  * Reset Password Page (Portal - Auth Flow)
  * 
@@ -37,7 +38,7 @@ async function validatePasswordResetToken(token: string) {
   try {
     const response = await fetch(`${env.backendApiUrl}/auth/password-recovery/validate`, {
       method: "POST",
-      headers: {
+      headers: { ...(await clientIpHeader()),
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ token }),

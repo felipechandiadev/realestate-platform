@@ -3,6 +3,7 @@
 'use server';
 
 import { getServerSession } from 'next-auth';
+import { clientIpHeader } from '@/lib/client-ip';
 import { authOptions } from '@/lib/auth';
 import { env } from '@/lib/env';
 
@@ -167,6 +168,7 @@ export async function notifyPropertyInterest(data: {
     const response = await fetch(url, {
       method: 'POST',
       headers: {
+        ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),

@@ -116,4 +116,31 @@ describe('AppThrottlerGuard', () => {
       false,
     );
   });
+
+  describe('IP del visitante reenviada por el portal/backoffice', () => {
+    const httpCtx = (req: Record<string, unknown>) =>
+      ({ getType: () => 'http', switchToHttp: () => ({ getRequest: () => req }) }) as any;
+    const guard = () => new AppThrottlerGuard([] as any, {} as any, new Reflector());
+
+    it('desde localhost con x-client-ip limita por esa IP (no se exime)', async () => {
+      const req = { ip: '127.0.0.1', headers: { 'x-client-ip': '203.0.113.50' } };
+      await expect((guard() as any).getTracker(req)).resolves.toBe('203.0.113.50');
+      await expect((guard() as any).shouldSkip(httpCtx(req))).resolves.toBe(false);
+    });
+
+    it('desde localhost sin cabecera sigue exento (SSR interno)', async () => {
+      await expect((guard() as any).shouldSkip(httpCtx({ ip: '127.0.0.1', headers: {} }))).resolves.toBe(true);
+    });
+
+    it('ignora x-client-ip de un visitante externo (no puede suplantar otra IP)', async () => {
+      const req = { ip: '198.51.100.20', headers: { 'x-client-ip': '203.0.113.50' } };
+      await expect((guard() as any).getTracker(req)).resolves.toBe('198.51.100.20');
+    });
+
+    it('ignora valores que no son una IP', async () => {
+      const req = { ip: '127.0.0.1', headers: { 'x-client-ip': 'no-es-ip' } };
+      await expect((guard() as any).getTracker(req)).resolves.toBe('127.0.0.1');
+      await expect((guard() as any).shouldSkip(httpCtx(req))).resolves.toBe(true);
+    });
+  });
 });

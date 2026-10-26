@@ -1,5 +1,6 @@
 'use server';
 
+import { clientIpHeader } from '@/lib/client-ip';
 import { env } from '@/lib/env';
 
 /**
@@ -13,7 +14,7 @@ export async function verifyEmailAction(token: string): Promise<{
   try {
     const response = await fetch(`${env.backendApiUrl}/auth/verify-email`, {
       method: 'POST',
-      headers: {
+      headers: { ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ token }),
@@ -54,7 +55,7 @@ export async function resendVerificationEmailAction(email: string): Promise<{
       `${env.backendApiUrl}/auth/resend-verification-email`,
       {
         method: 'POST',
-        headers: {
+        headers: { ...(await clientIpHeader()),
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email }),

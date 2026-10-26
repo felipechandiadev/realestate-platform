@@ -1,5 +1,6 @@
 'use server';
 
+import { clientIpHeader } from '@/lib/client-ip';
 import { cookies } from 'next/headers';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
@@ -119,7 +120,7 @@ export async function signIn(credentials: SignInCredentials): Promise<{
   try {
     const response = await fetch(`${env.backendApiUrl}/auth/sign-in`, {
       method: 'POST',
-      headers: {
+      headers: { ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
@@ -155,7 +156,7 @@ export async function signUp(data: SignUpData): Promise<{
   try {
     const response = await fetch(`${env.backendApiUrl}/auth/sign-up`, {
       method: 'POST',
-      headers: {
+      headers: { ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
@@ -191,7 +192,7 @@ export async function requestPasswordReset(data: PasswordResetRequest): Promise<
   try {
     const response = await fetch(`${env.backendApiUrl}/auth/password-recovery/request`, {
       method: 'POST',
-      headers: {
+      headers: { ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
@@ -232,7 +233,7 @@ export async function resetPassword(data: PasswordReset): Promise<{
   try {
     const response = await fetch(`${env.backendApiUrl}/auth/password-recovery/reset`, {
       method: 'POST',
-      headers: {
+      headers: { ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -532,7 +533,7 @@ export async function registerUserAction(formData: {
   try {
     const response = await fetch(`${env.backendApiUrl}/auth/register`, {
       method: 'POST',
-      headers: {
+      headers: { ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

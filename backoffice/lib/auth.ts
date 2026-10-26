@@ -1,3 +1,15 @@
+import { clientIpFrom, CLIENT_IP_HEADER } from './client-ip';
+
+/** Reenvía a core la IP del visitante que inicia sesión (límite de intentos por IP). */
+function clientIpHeaderFromRequest(req: { headers?: Record<string, unknown> } | undefined): Record<string, string> {
+  const ip = clientIpFrom({
+    get: (name) => {
+      const value = req?.headers?.[name];
+      return Array.isArray(value) ? String(value[0]) : typeof value === 'string' ? value : null;
+    },
+  });
+  return ip ? { [CLIENT_IP_HEADER]: ip } : {};
+}
 import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { env } from '@/lib/env';
@@ -51,7 +63,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Correo electrónico', type: 'email' },
         password: { label: 'Contraseña', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials.password) {
           return null;
         }
@@ -62,7 +74,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const response = await fetch(`${backendBaseUrl}/auth/staff/sign-in`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { ...clientIpHeaderFromRequest(req), 'Content-Type': 'application/json' },
             body: JSON.stringify({
               email: credentials.email,
               password: credentials.password,

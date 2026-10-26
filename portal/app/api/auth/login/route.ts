@@ -1,3 +1,4 @@
+import { clientIpHeader } from '@/lib/client-ip';
 import { env } from '@/lib/env';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
 
     const response = await fetch(`${env.backendApiUrl}/auth/sign-in`, {
       method: 'POST',
-      headers: {
+      headers: { ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email, password }),

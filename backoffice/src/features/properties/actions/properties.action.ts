@@ -1,5 +1,6 @@
 'use server';
 
+import { clientIpHeader } from '@/lib/client-ip';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { env } from '@/lib/env';
@@ -631,7 +632,7 @@ export async function publishPropertyPublic(
 
     console.log('🌐 [publishPropertyPublic] Enviando a:', `${env.backendApiUrl}/properties/public/publish`);
 
-    const headers: Record<string, string> = {};
+    const headers: Record<string, string> = { ...(await clientIpHeader()) };
     if (payload.accessToken) {
       headers['Authorization'] = `Bearer ${payload.accessToken}`;
     }

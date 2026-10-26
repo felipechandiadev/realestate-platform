@@ -8,6 +8,7 @@ import {
 import { Logger } from '@nestjs/common';
 import type { Server, Socket } from 'socket.io';
 import { JweService } from '../../auth/infrastructure/jwe/jwe.service';
+import { SessionUserService } from '../../auth/application/session-user.service';
 import { resolveAuthAudience } from '../../auth/application/auth-audience.util';
 
 type AuthenticatedSocket = Socket & {
@@ -33,7 +34,10 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   @WebSocketServer()
   private server!: Server;
 
-  constructor(private readonly jweService: JweService) {}
+  constructor(
+    private readonly jweService: JweService,
+    private readonly sessionUsers: SessionUserService,
+  ) {}
 
   async handleConnection(@ConnectedSocket() socket: AuthenticatedSocket): Promise<void> {
     const token = socket.handshake.auth?.token;
@@ -56,6 +60,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         socket.disconnect(true);
         return;
       }
+
+      // La cuenta debe seguir existiendo y activa (no basta con un token vigente).
+      await this.sessionUsers.assertActive(userId);
 
       socket.data.userId = userId;
       await socket.join(this.roomName(userId));

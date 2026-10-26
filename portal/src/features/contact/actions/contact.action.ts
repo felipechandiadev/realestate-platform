@@ -1,5 +1,6 @@
 'use server'
 
+import { clientIpHeader } from '@/lib/client-ip';
 import { env } from '@/lib/env'
 
 export interface ContactFormData {
@@ -12,7 +13,7 @@ export async function submitContactForm(data: ContactFormData) {
   try {
     const res = await fetch(`${env.backendApiUrl}/notifications/public/contact`, {
       method: 'POST',
-      headers: {
+      headers: { ...(await clientIpHeader()),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
