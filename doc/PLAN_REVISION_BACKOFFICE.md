@@ -62,7 +62,7 @@ Se prioriza por **riesgo** (dinero, datos personales, permisos) y por **uso diar
 | 4 | Usuarios | Administradores, Agentes, Comunidad | Accesos | 🟢 Revisado; críticos y altos corregidos — quedan #4 (decisión) y menores ([informe](./revision-backoffice/04-usuarios.md)) |
 | 5 | Dashboard y reportes | Dashboard, Reportes | Decisiones con datos erróneos | 🟢 Revisado; críticos y altos corregidos — quedan #6 (decisión) y menores ([informe](./revision-backoffice/05-dashboard-reportes.md)) |
 | 6 | CMS | 11 pantallas | Imagen pública | 🟢 Revisado; XSS corregido — quedan #2–#3 (decisión de permisos) y menores ([informe](./revision-backoffice/06-cms.md)) |
-| 7 | Sistema | Notificaciones, Acerca de, Login, PWA | Bajo | ⚪ Pendiente |
+| 7 | Sistema | Notificaciones, Acerca de, Login, PWA | Accesos | 🟢 Revisado; críticos y altos corregidos — quedan menores ([informe](./revision-backoffice/07-sistema.md)) |
 
 **Estimación total:** 6–8 jornadas de revisión, más el tiempo de las correcciones que surjan.
 
