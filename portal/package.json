@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start -p 8001",
     "lint": "eslint",
-    "test": "node --test --experimental-strip-types tests/smoke.node.test.mjs tests/json-ld.node.test.mjs tests/client-ip.node.test.mjs",
+    "test": "node --test --experimental-strip-types tests/smoke.node.test.mjs tests/json-ld.node.test.mjs tests/client-ip.node.test.mjs tests/seo.node.test.mjs",
     "typecheck": "tsc --noEmit",
     "test:jest": "jest --passWithNoTests"
   },

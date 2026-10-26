@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { pageMetadata } from '@/shared/lib/seo-core';
 /**
  * Blog Articles Page (Portal)
  * 
@@ -19,11 +21,20 @@
  */
 
 import { listArticles } from '@/features/cms/actions/articles.action';
-import BlogList from './ui/BlogList';
-import CategoriesBlog from './ui/CategoriesBlog';
+import BlogList from '../ui/BlogList';
+import CategoriesBlog from '../ui/CategoriesBlog';
 
 interface BlogPageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
+
+export function generateMetadata(): Metadata {
+  return pageMetadata({
+    path: '/blog',
+    title: 'Blog',
+    description:
+      'Artículos, noticias y consejos sobre compra, venta, arriendo e inversión en propiedades.',
+  });
 }
 
 export default async function BlogPage({ searchParams }: BlogPageProps) {

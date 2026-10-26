@@ -20,6 +20,7 @@
 
 import React from 'react';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { getPublishedPropertyPublic } from './actions';
 import PropertyDetailClient from './PropertyDetailClient';
 import { buildPropertyShareMetadata } from './share-metadata';
@@ -35,7 +36,7 @@ export async function generateMetadata({
   const { id } = await params;
   const propertyResult = await getPublishedPropertyPublic(id);
   if (!propertyResult.success || !propertyResult.data) {
-    return { title: 'Propiedad no encontrada' };
+    return { title: 'Propiedad no encontrada', robots: { index: false } };
   }
   return buildPropertyShareMetadata(propertyResult.data, id);
 }
@@ -47,6 +48,9 @@ export default async function PropertyDetailPage({
 
   // Fetch property data on server (public endpoint, no auth required)
   const propertyResult = await getPublishedPropertyPublic(id);
+
+  // No existe, se vendió/arrendó o se despublicó: 404 real para que Google la retire.
+  if (propertyResult.notFound) notFound();
 
   if (!propertyResult.success || !propertyResult.data) {
     return (

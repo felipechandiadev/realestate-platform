@@ -83,6 +83,8 @@ export async function getPublishedPropertyPublic(id: string): Promise<{
   success: boolean;
   data?: Property;
   error?: string;
+  /** true solo si la API respondió 404 (no existe o no está publicada). */
+  notFound?: boolean;
 }> {
   try {
     // Try to fetch the full property details without authentication
@@ -107,24 +109,12 @@ export async function getPublishedPropertyPublic(id: string): Promise<{
       return {
         success: false,
         error: 'Propiedad no encontrada',
+        notFound: res.status === 404,
       };
     }
 
     const data = await res.json();
     
-    // Log what we received for debugging
-    console.log('Property fetched from /full endpoint:', {
-      id: data?.id,
-      title: data?.title,
-      status: data?.status,
-      state: data?.state,
-      city: data?.city,
-      address: data?.address,
-      latitude: data?.latitude,
-      longitude: data?.longitude,
-      multimedia: data?.multimedia?.length || 0,
-    });
-
     return { success: true, data };
   } catch (error) {
     console.error('Error fetching published property (public):', error);

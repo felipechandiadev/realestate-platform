@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { pageMetadata } from '@/shared/lib/seo-core';
 /**
  * Portal Homepage
  */
@@ -29,6 +31,18 @@ interface PortalPageProps {
     features?: string;
     featured_page?: string;
   }>;
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const identity = await getIdentity().catch(() => null);
+  const name = identity?.name?.trim() || 'Bravo Shott Propiedades';
+  const seo = pageMetadata({
+    path: '/',
+    title: name,
+    description:
+      'Casas, departamentos y terrenos en venta y arriendo. Administración y tasación de propiedades con asesoría personalizada.',
+  });
+  return { ...seo, title: { absolute: name } };
 }
 
 export default async function PortalPage({ searchParams }: PortalPageProps) {

@@ -17,7 +17,7 @@ sync_one() {
 
 sync_one "$ROOT/envs/portal.env.example" "$ROOT/portal/.env.local"
 sync_one "$ROOT/envs/backoffice.env.example" "$ROOT/backoffice/.env.local"
-sync_one "$ROOT/envs/core.env.example" "$ROOT/core/.env.example"
+sync_one "$ROOT/envs/core.env.example" "$ROOT/core/.env"
 
 # If core/.env exists and --force, update PORT / URLs in place via rewrite of known keys
 if [[ -f "$ROOT/core/.env" && "$FORCE" -eq 1 ]]; then

@@ -1,9 +1,8 @@
-'use client'
-
-import React, { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
-import { getArticleById, Article } from '@/features/cms/actions/articles.action'
-import { DotProgress } from "@realestate/ui"
+import { cache } from 'react'
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import { getArticleById } from '@/features/cms/actions/articles.action'
+import { metaDescription, pageMetadata } from '@/shared/lib/seo-core'
 import ArticleDetailCard from './ArticleDetailCard'
 import RelatedArticlesSection from './RelatedArticlesSection'
 
@@ -18,55 +17,39 @@ const FALLBACK_IMAGE_DATA_URL =
     </svg>`
   );
 
-export default function ArticleDetailPage() {
-  const params = useParams()
-  const id = params.id as string
-  
-  const [article, setArticle] = useState<Article | null>(null)
-  const [relatedArticles, setRelatedArticles] = useState<Article[]>([])
-  const [loading, setLoading] = useState(true)
+interface ArticlePageProps {
+  params: Promise<{ id: string }>
+}
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        // Cargar artículo principal con sus relacionados (desde backend)
-        const data = await getArticleById(id)
-        
-        if (data) {
-          setArticle(data)
-          // Los artículos relacionados vienen del backend
-          setRelatedArticles(data.relatedArticles || [])
-        }
-      } catch (error) {
-        console.error('Error loading article:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
+// Se arma en el servidor para que Google reciba el texto completo del artículo.
+const loadArticle = cache(async (id: string) => {
+  const article = await getArticleById(id)
+  return article && article.isActive !== false ? article : null
+})
 
-    if (id) {
-      loadData()
-    }
-  }, [id])
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <DotProgress count={3} variant="wave" />
-      </div>
-    )
+export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
+  const { id } = await params
+  const article = await loadArticle(id)
+  if (!article) return { title: 'Artículo no encontrado', robots: { index: false } }
+  const seo = pageMetadata({
+    path: `/blog/article/${id}`,
+    title: article.title,
+    description: metaDescription(article.subtitle || article.text),
+  })
+  const image = article.multimediaUrl && /^https?:\/\//i.test(article.multimediaUrl)
+    ? [{ url: article.multimediaUrl, alt: article.title }]
+    : undefined
+  return {
+    ...seo,
+    openGraph: { ...seo.openGraph, type: 'article', publishedTime: article.createdAt, images: image },
   }
+}
 
-  if (!article) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Artículo no encontrado</h1>
-          <p className="text-muted-foreground">Lo sentimos, el artículo que buscas no existe.</p>
-        </div>
-      </div>
-    )
-  }
+export default async function ArticleDetailPage({ params }: ArticlePageProps) {
+  const { id } = await params
+  const article = await loadArticle(id)
+  if (!article) notFound()
+  const relatedArticles = article.relatedArticles || []
 
   return (
     <div className="w-full">

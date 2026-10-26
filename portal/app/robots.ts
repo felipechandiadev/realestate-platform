@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { portalPublicOrigin } from '@/app/properties/property/[id]/share-metadata';
+import { portalPublicOrigin } from '@/shared/lib/seo-core';
 
 export default function robots(): MetadataRoute.Robots {
   const origin = portalPublicOrigin();
@@ -15,6 +15,9 @@ export default function robots(): MetadataRoute.Robots {
         '/notifications',
         '/publish',
         '/api/',
+        '/forgot-password',
+        '/reset-password',
+        '/verify-email',
       ],
     },
     sitemap: `${origin}/sitemap.xml`,

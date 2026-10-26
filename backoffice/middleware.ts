@@ -18,6 +18,7 @@ function isPublicPath(pathname: string): boolean {
 
   if (
     pathname === '/favicon.ico' ||
+    pathname === '/robots.txt' ||
     pathname === '/manifest.webmanifest' ||
     pathname === '/manifest.webmanifest/' ||
     pathname === '/icon.png' ||

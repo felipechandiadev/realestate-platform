@@ -1,5 +1,5 @@
-import CategoriesBlogSkeleton from './ui/CategoriesBlogSkeleton';
-import ArticleCardSkeleton from './ui/ArticleCardSkeleton';
+import CategoriesBlogSkeleton from '../ui/CategoriesBlogSkeleton';
+import ArticleCardSkeleton from '../ui/ArticleCardSkeleton';
 
 export default function BlogLoading() {
   return (

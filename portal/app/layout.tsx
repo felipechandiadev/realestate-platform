@@ -9,6 +9,28 @@ import { getPortalHeader } from '@/features/cms/actions/portal-header.action';
 import { getPortalFooter } from '@/features/cms/actions/portal-footer.action';
 import { getAppearance } from '@/features/cms/actions/appearance.action';
 import { appearanceStyle } from '@realestate/ui/theme/appearance-theme';
+import { portalPublicOrigin } from '@/shared/lib/seo-core';
+
+const DEFAULT_SITE_NAME = 'Bravo Shott Propiedades';
+const DEFAULT_DESCRIPTION =
+  'Propiedades en venta y arriendo, administración y tasación de propiedades. Encuentra tu próxima casa, departamento o terreno.';
+
+function siteMetadata(siteName: string, icons: Metadata['icons']): Metadata {
+  return {
+    metadataBase: new URL(portalPublicOrigin()),
+    title: { default: siteName, template: `%s | ${siteName}` },
+    description: DEFAULT_DESCRIPTION,
+    applicationName: siteName,
+    openGraph: {
+      siteName,
+      title: siteName,
+      description: DEFAULT_DESCRIPTION,
+      type: 'website',
+      locale: 'es_CL',
+    },
+    icons,
+  };
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const icons: Metadata['icons'] = {
@@ -22,12 +44,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
   try {
     const identity = await getIdentity();
-    return {
-      title: identity?.name || 'Real Estate Portal',
-      icons,
-    };
+    return siteMetadata(identity?.name?.trim() || DEFAULT_SITE_NAME, icons);
   } catch {
-    return { title: 'Real Estate Portal', icons };
+    return siteMetadata(DEFAULT_SITE_NAME, icons);
   }
 }
 

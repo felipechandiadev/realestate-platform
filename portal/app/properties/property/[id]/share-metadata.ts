@@ -2,17 +2,11 @@ import type { Metadata } from 'next';
 import { env } from '@/lib/env';
 import type { Property } from './actions';
 import { propertyPublicPath } from './share-links';
+import { portalPublicOrigin } from '@/shared/lib/seo-core';
 
 const VIDEO_URL = /\.(mp4|webm|ogg|mov)(\?|#|$)/i;
 
-export function portalPublicOrigin(): string {
-  const raw =
-    process.env.NEXT_PUBLIC_PORTAL_URL ||
-    process.env.PORTAL_URL ||
-    process.env.NEXTAUTH_URL ||
-    'http://localhost:8001';
-  return raw.replace(/\/+$/, '');
-}
+export { portalPublicOrigin };
 
 function absoluteMediaUrl(url?: string | null): string | undefined {
   if (!url) return undefined;
@@ -80,6 +74,7 @@ export function buildPropertyShareMetadata(property: Property, id: string): Meta
     title,
     description,
     metadataBase: new URL(origin),
+    alternates: { canonical: pageUrl },
     openGraph: {
       title,
       description,

@@ -33,6 +33,8 @@ export async function generateMetadata(): Promise<Metadata> {
     applicationName: APP_NAME,
     title,
     description: 'Backoffice Bravo — gestión inmobiliaria',
+    // Herramienta interna: no debe aparecer en buscadores.
+    robots: { index: false, follow: false },
     appleWebApp: {
       capable: true,
       statusBarStyle: 'default',

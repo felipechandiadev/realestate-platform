@@ -16,7 +16,9 @@ export class R2Config {
 
     this.client = new S3Client({
       region: 'auto',
-      endpoint: `https://${this.accountId}.r2.cloudflarestorage.com`,
+      endpoint:
+        this.configService.get<string>('R2_ENDPOINT') ||
+        `https://${this.accountId}.r2.cloudflarestorage.com`,
       forcePathStyle: true,
       credentials: {
         accessKeyId: this.configService.get<string>('R2_ACCESS_KEY_ID')!,
