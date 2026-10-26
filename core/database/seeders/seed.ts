@@ -239,42 +239,42 @@ async function seedDatabase() {
         position: 'Directora de Ventas',
         bio: 'Especialista en ventas inmobiliarias con más de 10 años de experiencia en el mercado chileno.',
         phone: '+56 9 1111 2222',
-        mail: 'ana.lopez@realestate.cl',
+        mail: 'ana.lopez@bravoshottpropiedades.cl',
       },
       {
         name: 'Carlos Martínez',
         position: 'Agente Inmobiliario Senior',
         bio: 'Experto en propiedades comerciales y residenciales en Santiago.',
         phone: '+56 9 3333 4444',
-        mail: 'carlos.martinez@realestate.cl',
+        mail: 'carlos.martinez@bravoshottpropiedades.cl',
       },
       {
         name: 'María González',
         position: 'Especialista en Arriendos',
         bio: 'Dedicada a facilitar arriendos seguros y rentables para propietarios e inquilinos.',
         phone: '+56 9 5555 6666',
-        mail: 'maria.gonzalez@realestate.cl',
+        mail: 'maria.gonzalez@bravoshottpropiedades.cl',
       },
       {
         name: 'Pedro Ramírez',
         position: 'Analista de Mercado',
         bio: 'Analiza tendencias del mercado inmobiliario para optimizar inversiones.',
         phone: '+56 9 7777 8888',
-        mail: 'pedro.ramirez@realestate.cl',
+        mail: 'pedro.ramirez@bravoshottpropiedades.cl',
       },
       {
         name: 'Sofia Herrera',
         position: 'Coordinadora de Marketing',
         bio: 'Encargada de promocionar propiedades y gestionar la presencia digital.',
         phone: '+56 9 9999 0000',
-        mail: 'sofia.herrera@realestate.cl',
+        mail: 'sofia.herrera@bravoshottpropiedades.cl',
       },
       {
         name: 'Diego Silva',
         position: 'Asesor Legal',
         bio: 'Proporciona asesoría legal en transacciones inmobiliarias.',
         phone: '+56 9 2222 3333',
-        mail: 'diego.silva@realestate.cl',
+        mail: 'diego.silva@bravoshottpropiedades.cl',
       },
     ];
 
@@ -1428,27 +1428,27 @@ async function seedDatabase() {
     const identityRepository = AppDataSource.getRepository(Identity);
     const identity = await identityRepository.save(
       identityRepository.create({
-        name: 'EstateFlow',
+        name: 'Bravo Schott Propiedades',
         address: 'Avenida Apoquindo 6000, Las Condes, Santiago',
         phone: '+56 9 1234 5678',
-        mail: 'contacto@estateflow.cl',
+        mail: 'contacto@bravoshottpropiedades.cl',
         businessHours: 'Lunes a Viernes: 9:00 - 18:00\nSábado: 10:00 - 14:00\nDomingo: Cerrado',
         urlLogo: undefined,
         socialMedia: {
           instagram: {
-            url: 'https://instagram.com/estateflow',
+            url: 'https://instagram.com/bravoshottpropiedades',
             available: true
           },
           facebook: {
-            url: 'https://facebook.com/estateflow',
+            url: 'https://facebook.com/bravoshottpropiedades',
             available: true
           },
           linkedin: {
-            url: 'https://linkedin.com/company/estateflow',
+            url: 'https://linkedin.com/company/bravoshottpropiedades',
             available: true
           },
           youtube: {
-            url: 'https://youtube.com/@estateflow',
+            url: 'https://youtube.com/@bravoshottpropiedades',
             available: true
           }
         },
@@ -1505,16 +1505,16 @@ async function seedDatabase() {
         deletedAt: undefined
       })
     );
-    console.log(`✓ Identity created: EstateFlow`);
+    console.log(`✓ Identity created: Bravo Schott Propiedades`);
     
     // ===== STEP 8: CREATE BASIC ABOUT US =====
     console.log('Seeding about us...');
     const aboutUsRepository = AppDataSource.getRepository(AboutUs);
     const aboutUs = await aboutUsRepository.save(
       aboutUsRepository.create({
-        bio: 'EstateFlow es la plataforma inmobiliaria líder en Chile, conectando compradores, vendedores e inversores. Nuestro equipo de profesionales se dedica a hacer del proceso inmobiliario algo transparente, seguro y eficiente.',
-        mision: 'Facilitar transacciones inmobiliarias seguras, transparentes y accesibles para todos los chilenos, proporcionando información de calidad y asesoría profesional a través de EstateFlow.',
-        vision: 'Ser la plataforma inmobiliaria de referencia en Chile, transformando la manera en que las personas compran, venden y arriendan propiedades a través de EstateFlow.',
+        bio: 'Bravo Schott Propiedades es una corredora de propiedades chilena, conectando compradores, vendedores e inversores. Nuestro equipo de profesionales se dedica a hacer del proceso inmobiliario algo transparente, seguro y eficiente.',
+        mision: 'Facilitar transacciones inmobiliarias seguras, transparentes y accesibles para todos los chilenos, proporcionando información de calidad y asesoría profesional a través de Bravo Schott Propiedades.',
+        vision: 'Ser la plataforma inmobiliaria de referencia en Chile, transformando la manera en que las personas compran, venden y arriendan propiedades a través de Bravo Schott Propiedades.',
         createdAt: new Date(),
         updatedAt: new Date(),
         deletedAt: undefined

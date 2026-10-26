@@ -24,6 +24,8 @@
     "db:seed:fresh": "ts-node database/seeders/seed.ts --reset",
     "seed": "ts-node database/seeders/seed.ts",
     "seed:reset": "ts-node database/seeders/seed.ts --reset",
+    "seed:demo": "ts-node database/seeders/seed-demo.ts",
+    "seed:full": "ts-node database/seeders/seed.ts --reset && ts-node database/seeders/seed-demo.ts",
     "seed:minimal": "ts-node database/seeders/seed-minimal.ts",
     "migration:show": "ts-node src/database/migration-cli.ts show",
     "migration:run": "ts-node src/database/migration-cli.ts run",
