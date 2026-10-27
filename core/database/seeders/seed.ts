@@ -35,6 +35,9 @@ import {
   Multimedia,
   MultimediaType,
 } from '../../src/modules/multimedia/domain/multimedia.entity';
+import { MultimediaVariant } from '../../src/modules/media-optimization/domain/multimedia-variant.entity';
+import { PortalHeader } from '../../src/modules/portal-header/domain/portal-header.entity';
+import { DEFAULT_ACCOUNT_ITEMS, DEFAULT_NAV_ITEMS } from '../../src/modules/portal-header/portal-header.defaults';
 import { RegionEnum } from '../../src/shared/regions/regions.enum';
 import { ComunaEnum } from '../../src/shared/regions/comunas.enum';
 import { cleanPublicDirectory } from '../../scripts/clean-public';
@@ -205,23 +208,45 @@ async function seedDatabase() {
 
     // Avatars for agents (people samples → R2/local + user.personalInfo.avatarUrl)
     const multimediaRepository = AppDataSource.getRepository(Multimedia);
+    const multimediaVariantRepository = AppDataSource.getRepository(MultimediaVariant);
+    const saveUploadedMedia = async (
+      uploaded: Awaited<ReturnType<typeof uploadSampleImage>>,
+      data: Partial<Multimedia>,
+    ) => {
+      const media = await multimediaRepository.save(
+        multimediaRepository.create({
+          ...data,
+          format: uploaded.format,
+          type: uploaded.type,
+          url: uploaded.url,
+          filename: uploaded.filename,
+          fileSize: uploaded.fileSize,
+          originalSize: uploaded.originalSize,
+          compressedSize: uploaded.compressedSize,
+          compressionRatio: uploaded.compressionRatio,
+          width: uploaded.width,
+          height: uploaded.height,
+        }),
+      );
+      if (uploaded.variants.length > 0) {
+        await multimediaVariantRepository.save(
+          uploaded.variants.map((variant) =>
+            multimediaVariantRepository.create({ ...variant, multimediaId: media.id }),
+          ),
+        );
+      }
+      return media;
+    };
     for (let i = 0; i < agents.length; i++) {
       const uploaded = await uploadSampleImage(
         SAMPLE_SETS.people[i % SAMPLE_SETS.people.length],
         'users',
         MultimediaType.AGENT_IMG,
       );
-      const media = await multimediaRepository.save(
-        multimediaRepository.create({
-          format: uploaded.format,
-          type: uploaded.type,
-          url: uploaded.url,
-          filename: uploaded.filename,
-          fileSize: uploaded.fileSize,
-          userId: agents[i].id,
-          description: `Avatar ${agents[i].username}`,
-        }),
-      );
+      const media = await saveUploadedMedia(uploaded, {
+        userId: agents[i].id,
+        description: `Avatar ${agents[i].username}`,
+      });
       agents[i].personalInfo = {
         ...agents[i].personalInfo,
         avatarUrl: media.url,
@@ -285,16 +310,9 @@ async function seedDatabase() {
         'web/staff',
         MultimediaType.STAFF,
       );
-      const media = await multimediaRepository.save(
-        multimediaRepository.create({
-          format: uploaded.format,
-          type: uploaded.type,
-          url: uploaded.url,
-          filename: uploaded.filename,
-          fileSize: uploaded.fileSize,
-          description: `Staff ${teamMemberDefs[i].name}`,
-        }),
-      );
+      const media = await saveUploadedMedia(uploaded, {
+        description: `Staff ${teamMemberDefs[i].name}`,
+      });
       const member = await teamMemberRepository.save(
         teamMemberRepository.create({
           ...teamMemberDefs[i],
@@ -1031,18 +1049,11 @@ async function seedDatabase() {
           'properties/img',
           MultimediaType.PROPERTY_IMG,
         );
-        const media = await multimediaRepository.save(
-          multimediaRepository.create({
-            format: uploaded.format,
-            type: uploaded.type,
-            url: uploaded.url,
-            filename: uploaded.filename,
-            fileSize: uploaded.fileSize,
-            propertyId: property.id,
-            description: `${property.title} — image ${j + 1}`,
-            seoTitle: property.title,
-          }),
-        );
+        const media = await saveUploadedMedia(uploaded, {
+          propertyId: property.id,
+          description: `${property.title} — image ${j + 1}`,
+          seoTitle: property.title,
+        });
         if (!mainUrl) mainUrl = media.url;
         propertyMediaCount += 1;
       }
@@ -1194,16 +1205,9 @@ async function seedDatabase() {
     const slideUploads: string[] = [];
     for (const file of slideImageFiles) {
       const uploaded = await uploadSampleImage(file, 'web/slides', MultimediaType.SLIDE);
-      const media = await multimediaRepository.save(
-        multimediaRepository.create({
-          format: uploaded.format,
-          type: uploaded.type,
-          url: uploaded.url,
-          filename: uploaded.filename,
-          fileSize: uploaded.fileSize,
-          description: 'Home slider image',
-        }),
-      );
+      const media = await saveUploadedMedia(uploaded, {
+        description: 'Home slider image',
+      });
       slideUploads.push(media.url);
     }
     
@@ -1327,16 +1331,9 @@ async function seedDatabase() {
         'web/articles',
         MultimediaType.PROPERTY_IMG,
       );
-      const media = await multimediaRepository.save(
-        multimediaRepository.create({
-          format: uploaded.format,
-          type: uploaded.type,
-          url: uploaded.url,
-          filename: uploaded.filename,
-          fileSize: uploaded.fileSize,
-          description: `Article cover: ${def.title}`,
-        }),
-      );
+      const media = await saveUploadedMedia(uploaded, {
+        description: `Article cover: ${def.title}`,
+      });
       const saved = await articleRepository.save(
         articleRepository.create({
           title: def.title,
@@ -1399,16 +1396,9 @@ async function seedDatabase() {
         'web/testimonials',
         MultimediaType.TESTIMONIAL_IMG,
       );
-      const media = await multimediaRepository.save(
-        multimediaRepository.create({
-          format: uploaded.format,
-          type: uploaded.type,
-          url: uploaded.url,
-          filename: uploaded.filename,
-          fileSize: uploaded.fileSize,
-          description: `Testimonial ${testimonialDefs[i].name}`,
-        }),
-      );
+      const media = await saveUploadedMedia(uploaded, {
+        description: `Testimonial ${testimonialDefs[i].name}`,
+      });
       const saved = await testimonialRepository.save(
         testimonialRepository.create({
           ...testimonialDefs[i],
@@ -1426,6 +1416,15 @@ async function seedDatabase() {
     // ===== STEP 7: CREATE BASIC IDENTITY =====
     console.log('Seeding identity...');
     const identityRepository = AppDataSource.getRepository(Identity);
+    const uploadedLogo = await uploadSampleImage(
+      SAMPLE_SETS.brandLogo,
+      'web/logos',
+      MultimediaType.LOGO,
+    );
+    const logoMedia = await saveUploadedMedia(uploadedLogo, {
+      description: 'Bravo Schott Propiedades — logo institucional',
+      seoTitle: 'Bravo Schott Propiedades',
+    });
     const identity = await identityRepository.save(
       identityRepository.create({
         name: 'Bravo Schott Propiedades',
@@ -1433,7 +1432,7 @@ async function seedDatabase() {
         phone: '+56 9 1234 5678',
         mail: 'contacto@bravoshottpropiedades.cl',
         businessHours: 'Lunes a Viernes: 9:00 - 18:00\nSábado: 10:00 - 14:00\nDomingo: Cerrado',
-        urlLogo: undefined,
+        urlLogo: logoMedia.url,
         socialMedia: {
           instagram: {
             url: 'https://instagram.com/bravoshottpropiedades',
@@ -1506,6 +1505,30 @@ async function seedDatabase() {
       })
     );
     console.log(`✓ Identity created: Bravo Schott Propiedades`);
+
+    const portalHeaderRepository = AppDataSource.getRepository(PortalHeader);
+    const portalHeader = await portalHeaderRepository.findOne({ order: { createdAt: 'ASC' } });
+    if (portalHeader) {
+      await portalHeaderRepository.update(portalHeader.id, { logoUrl: logoMedia.url });
+    } else {
+      await portalHeaderRepository.save(
+        portalHeaderRepository.create({
+          logoUrl: logoMedia.url,
+          showCompanyName: true,
+          showMail: true,
+          showPhone: true,
+          showUf: true,
+          ufLabel: 'UF hoy',
+          showLogin: true,
+          showRegister: true,
+          loginLabel: 'Ingresar',
+          registerLabel: 'Registrarse',
+          navItems: DEFAULT_NAV_ITEMS,
+          accountItems: DEFAULT_ACCOUNT_ITEMS,
+        }),
+      );
+    }
+    console.log('✓ Logo assigned to identity and portal header');
     
     // ===== STEP 8: CREATE BASIC ABOUT US =====
     console.log('Seeding about us...');

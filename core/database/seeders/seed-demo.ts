@@ -17,6 +17,9 @@ import { User, UserRole, UserStatus, Permission } from '../../src/modules/users/
 import { PersonOrmEntity } from '../../src/modules/person/infrastructure/persistence/person.orm-entity';
 import { Property, CurrencyPriceEnum } from '../../src/modules/property/domain/property.entity';
 import { PropertyType } from '../../src/modules/property-types/domain/property-type.entity';
+import { Multimedia, MultimediaType } from '../../src/modules/multimedia/domain/multimedia.entity';
+import { MultimediaVariant } from '../../src/modules/media-optimization/domain/multimedia-variant.entity';
+import { SAMPLE_SETS, uploadSampleImage } from './seed-media.uploader';
 import { PropertyStatus } from '../../src/shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../src/shared/enums/property-operation-type.enum';
 import { RegionEnum } from '../../src/shared/regions/regions.enum';
@@ -131,6 +134,8 @@ async function seedDemo() {
     const users = AppDataSource.getRepository(User);
     const persons = AppDataSource.getRepository(PersonOrmEntity);
     const properties = AppDataSource.getRepository(Property);
+    const multimedia = AppDataSource.getRepository(Multimedia);
+    const multimediaVariants = AppDataSource.getRepository(MultimediaVariant);
     const contracts = AppDataSource.getRepository(ContractOrmEntity);
     const payments = AppDataSource.getRepository(Payment);
     const notifications = AppDataSource.getRepository(NotificationOrmEntity);
@@ -227,7 +232,6 @@ async function seedDemo() {
 
     // ---- propiedades
     console.log('Creando propiedades con historial…');
-    const imagePool = baseProps.map((p) => p.mainImageUrl).filter(Boolean) as string[];
     const counters: Record<string, number> = {};
     for (const p of baseProps) {
       const [prefix, , seq] = (p.code || '').split('-');
@@ -320,7 +324,6 @@ async function seedDemo() {
           assignedAgentId: assigned?.id,
           publicationDate: publishedAt,
           publishedAt,
-          mainImageUrl: imagePool.length ? imagePool[i % imagePool.length] : undefined,
           views,
           leads,
           favorites,
@@ -330,7 +333,50 @@ async function seedDemo() {
           lastModifiedAt: publishedAt ?? createdAt,
         } as any),
       );
-      created.push(Array.isArray(property) ? property[0] : property);
+      const savedProperty = Array.isArray(property) ? property[0] : property;
+      const propertyImageFiles = [
+        SAMPLE_SETS.propertyExterior[i % SAMPLE_SETS.propertyExterior.length],
+        SAMPLE_SETS.propertyInterior[i % SAMPLE_SETS.propertyInterior.length],
+        SAMPLE_SETS.propertyExterior[(i + 7) % SAMPLE_SETS.propertyExterior.length],
+      ];
+      const propertyMedia: Multimedia[] = [];
+      for (let imageIndex = 0; imageIndex < propertyImageFiles.length; imageIndex++) {
+        const uploaded = await uploadSampleImage(
+          propertyImageFiles[imageIndex],
+          'properties/img',
+          MultimediaType.PROPERTY_IMG,
+        );
+        const media = await multimedia.save(
+          multimedia.create({
+            format: uploaded.format,
+            type: uploaded.type,
+            url: uploaded.url,
+            filename: uploaded.filename,
+            fileSize: uploaded.fileSize,
+            originalSize: uploaded.originalSize,
+            compressedSize: uploaded.compressedSize,
+            compressionRatio: uploaded.compressionRatio,
+            width: uploaded.width,
+            height: uploaded.height,
+            propertyId: savedProperty.id,
+            description: `${savedProperty.title} — image ${imageIndex + 1}`,
+            seoTitle: savedProperty.title,
+          }),
+        );
+        if (uploaded.variants.length > 0) {
+          await multimediaVariants.save(
+            uploaded.variants.map((variant) =>
+              multimediaVariants.create({ ...variant, multimediaId: media.id }),
+            ),
+          );
+        }
+        propertyMedia.push(media);
+      }
+      savedProperty.mainImageUrl = propertyMedia[0]?.url;
+      if (savedProperty.mainImageUrl) {
+        await properties.update(savedProperty.id, { mainImageUrl: savedProperty.mainImageUrl });
+      }
+      created.push(savedProperty);
     }
 
     // ---- contratos y pagos
@@ -487,7 +533,7 @@ async function seedDemo() {
 
     console.log('\n✅ Historial de demostración listo');
     console.log(`  • ${extraAgents.length} agentes y ${community.length} clientes nuevos`);
-    console.log(`  • ${created.length} propiedades (${created.filter((p) => p.status === PropertyStatus.PUBLISHED).length} publicadas)`);
+    console.log(`  • ${created.length} propiedades con ${created.length * 3} imágenes optimizadas (${created.filter((p) => p.status === PropertyStatus.PUBLISHED).length} publicadas)`);
     console.log(`  • ${contractCount} contratos y ${paymentCount} pagos`);
     console.log(`  • ${notificationCount} notificaciones`);
   } finally {

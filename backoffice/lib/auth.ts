@@ -1,4 +1,4 @@
-import { clientIpFrom, CLIENT_IP_HEADER } from './client-ip';
+import { clientIpFrom, CLIENT_IP_HEADER } from './client-ip-core';
 
 /** Reenvía a core la IP del visitante que inicia sesión (límite de intentos por IP). */
 function clientIpHeaderFromRequest(req: { headers?: Record<string, unknown> } | undefined): Record<string, string> {

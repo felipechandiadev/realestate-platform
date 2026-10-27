@@ -1,7 +1,9 @@
 -- Marca como YA EJECUTADAS las migraciones existentes hasta 1792170000000
 -- (el esquema de producción se creó con `synchronize`, no con migraciones).
--- NO incluye 1792180000000-AddPublicPropertyIndexes: esa se ejecuta de verdad
--- con `npm run migration:run[:prod]`.
+-- NO incluye 1792180000000-AddPublicPropertyIndexes ni
+-- 1792190000000-ContractPaymentsCurrencyAndRentDates: ambas deben ejecutarse
+-- con `npm run migration:run[:prod]` después de revisar el esquema y, para la
+-- segunda, probar el backfill de pagos sobre una copia de la base.
 --
 -- Idempotente: crea la tabla `migrations` si no existe (mismo formato que
 -- TypeORM 0.3) e inserta solo las filas que falten.

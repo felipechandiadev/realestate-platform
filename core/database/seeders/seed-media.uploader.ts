@@ -12,6 +12,20 @@ import {
   MultimediaFormat,
   MultimediaType,
 } from '../../src/modules/multimedia/domain/multimedia.entity';
+import {
+  ImageFormat,
+  VariantType,
+} from '../../src/modules/media-optimization/domain/multimedia-variant.entity';
+import { FitStrategy } from '../../src/modules/media-optimization/domain/enums';
+import { SharpProcessorService } from '../../src/modules/media-optimization/application/services/sharp-processor.service';
+import {
+  AvatarImageStrategy,
+  BlogImageStrategy,
+  PropertyImageStrategy,
+  SliderImageStrategy,
+  TestimonialImageStrategy,
+  type VariantConfig,
+} from '../../src/modules/media-optimization/infrastructure/strategies';
 
 const SAMPLES_DIR = path.join(
   __dirname,
@@ -28,6 +42,20 @@ export type SeedUploadResult = {
   fileSize: number;
   format: MultimediaFormat;
   type: MultimediaType;
+  originalSize: number;
+  compressedSize: number;
+  compressionRatio: number;
+  width: number;
+  height: number;
+  variants: Array<{
+    variantType: VariantType;
+    format: ImageFormat;
+    width: number;
+    height: number;
+    size: number;
+    url: string;
+    r2Key: string;
+  }>;
 };
 
 function resolveProvider(): 'local' | 'r2' | 's3' {
@@ -69,16 +97,6 @@ function createR2Client(): { client: S3Client; bucket: string; publicUrl: string
 
 function getLocalUploadBase(): string {
   return path.join(__dirname, '../../public');
-}
-
-function buildKey(uploadDir: string, originalName: string): string {
-  const ext = path.extname(originalName) || '.jpg';
-  const stamp = new Date()
-    .toISOString()
-    .replace(/[-:TZ.]/g, '')
-    .slice(0, 14);
-  const filename = `seed_${stamp}_${randomUUID().slice(0, 8)}${ext}`;
-  return path.posix.join(uploadDir.replace(/^\/+/, ''), filename);
 }
 
 function isTruthyEnv(value: string | undefined): boolean {
@@ -217,6 +235,106 @@ async function uploadBuffer(
   return { url: `${baseUrl}/public/${key}`, key };
 }
 
+const sharpProcessor = new SharpProcessorService();
+
+function getImageStrategy(type: MultimediaType): VariantConfig[] {
+  switch (type) {
+    case MultimediaType.PROPERTY_IMG:
+      return PropertyImageStrategy;
+    case MultimediaType.SLIDE:
+      return SliderImageStrategy;
+    case MultimediaType.TESTIMONIAL_IMG:
+      return TestimonialImageStrategy;
+    case MultimediaType.AGENT_IMG:
+    case MultimediaType.STAFF:
+      return AvatarImageStrategy;
+    case MultimediaType.LOGO:
+      return [{
+        type: VariantType.FULL,
+        width: 800,
+        height: 800,
+        fit: FitStrategy.INSIDE,
+        formats: [ImageFormat.WEBP],
+        quality: { webp: 88, jpeg: 90, png: 90 },
+      }];
+    default:
+      return BlogImageStrategy;
+  }
+}
+
+function getPrimaryVariant(type: MultimediaType): VariantType {
+  if (type === MultimediaType.SLIDE) return VariantType.SLIDE_DESKTOP;
+  if (type === MultimediaType.AGENT_IMG || type === MultimediaType.STAFF) {
+    return VariantType.AVATAR_MD;
+  }
+  if (type === MultimediaType.TESTIMONIAL_IMG) return VariantType.AVATAR_MD;
+  if (type === MultimediaType.LOGO) return VariantType.FULL;
+  if (type === MultimediaType.PROPERTY_IMG) return VariantType.FULL;
+  return VariantType.OG_IMAGE;
+}
+
+/** Optimize a source image with the same Sharp strategies used by normal uploads. */
+export async function uploadImageBuffer(
+  originalBuffer: Buffer,
+  originalName: string,
+  uploadDir: string,
+  type: MultimediaType,
+): Promise<SeedUploadResult> {
+  const strategy = getImageStrategy(type);
+  const metadata = await sharpProcessor.getMetadata(originalBuffer);
+  const source = await sharpProcessor.prepareSource(originalBuffer, strategy);
+  const imageId = randomUUID();
+  const variants: SeedUploadResult['variants'] = [];
+
+  for (const config of strategy) {
+    for (const format of config.formats) {
+      const processed = await sharpProcessor.processVariant(source, config, format);
+      const extension = format === ImageFormat.JPEG ? 'jpg' : format;
+      const key = path.posix.join(
+        uploadDir.replace(/^\/+/, ''),
+        imageId,
+        `${config.type}.${extension}`,
+      );
+      const uploaded = await uploadBuffer(processed.buffer, key, `image/${format}`);
+      variants.push({
+        variantType: config.type,
+        format,
+        width: processed.width,
+        height: processed.height,
+        size: processed.size,
+        url: uploaded.url,
+        r2Key: uploaded.key,
+      });
+    }
+  }
+
+  const primaryType = getPrimaryVariant(type);
+  const primary = variants.find((variant) => variant.variantType === primaryType) ?? variants[0];
+  if (!primary) throw new Error(`No optimized variants generated for ${originalName}`);
+
+  const compressedSize = variants.reduce((total, variant) => total + variant.size, 0);
+  const originalSize = originalBuffer.length;
+  const compressionRatio = originalSize > 0
+    ? Number((((originalSize - compressedSize) / originalSize) * 100).toFixed(2))
+    : 0;
+  const filename = path.posix.basename(primary.r2Key);
+
+  return {
+    url: primary.url,
+    key: primary.r2Key,
+    filename,
+    fileSize: compressedSize,
+    format: MultimediaFormat.IMG,
+    type,
+    originalSize,
+    compressedSize,
+    compressionRatio,
+    width: ((metadata.orientation ?? 1) >= 5 ? metadata.height : metadata.width) || primary.width,
+    height: ((metadata.orientation ?? 1) >= 5 ? metadata.width : metadata.height) || primary.height,
+    variants,
+  };
+}
+
 export async function uploadSampleImage(
   sampleFileName: string,
   uploadDir: string,
@@ -224,20 +342,7 @@ export async function uploadSampleImage(
 ): Promise<SeedUploadResult> {
   const sourcePath = path.join(SAMPLES_DIR, sampleFileName);
   const buffer = await fs.readFile(sourcePath);
-  const key = buildKey(uploadDir, sampleFileName);
-  const contentType = sampleFileName.toLowerCase().endsWith('.png')
-    ? 'image/png'
-    : 'image/jpeg';
-  const uploaded = await uploadBuffer(buffer, key, contentType);
-
-  return {
-    url: uploaded.url,
-    key: uploaded.key,
-    filename: path.basename(uploaded.key),
-    fileSize: buffer.length,
-    format: MultimediaFormat.IMG,
-    type,
-  };
+  return uploadImageBuffer(buffer, sampleFileName, uploadDir, type);
 }
 
 export const SAMPLE_SETS = {
@@ -250,6 +355,7 @@ export const SAMPLE_SETS = {
   people: Array.from({ length: 10 }, (_, i) =>
     `people-${String(i + 1).padStart(2, '0')}.jpg`,
   ),
+  brandLogo: 'bravo-schott-logo.png',
 };
 
 export function getSeedStorageProviderLabel(): string {

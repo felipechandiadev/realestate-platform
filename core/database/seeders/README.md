@@ -2,11 +2,18 @@
 
 | Comando | Qué hace |
 |---|---|
-| `npm run seed` / `seed:reset` | Seed base de Bravo Schott Propiedades: **recrea el esquema** (`synchronize(true)`) y carga usuarios, propiedades, CMS, equipo e identidad. |
-| `npm run seed:demo` | Agrega ~3 meses de historial (agentes, clientes, ~58 propiedades, ~19 contratos, ~62 pagos, 70 notificaciones) para Dashboard y Reportes. Requiere el seed base y no borra nada. |
+| `npm run seed` / `seed:reset` | Seed base de Bravo Schott Propiedades: **recrea el esquema** (`synchronize(true)`) y carga usuarios, propiedades, CMS, equipo e identidad. Optimiza imágenes con Sharp y guarda registros de variantes. |
+| `npm run seed:demo` | Agrega ~3 meses de historial (agentes, clientes, ~58 propiedades, ~19 contratos, ~62 pagos, 70 notificaciones) para Dashboard y Reportes. Cada propiedad demo recibe galería de 3 imágenes optimizadas; no borra datos. |
 | `npm run seed:full` | `seed:reset` + `seed:demo`. |
+| `npm run seed:media:repair` | Completa galerías de propiedades seed que no tienen multimedia y optimiza las imágenes seed heredadas, sliders y logo sin resetear tablas ni reemplazar archivos reales. |
 
 Las fechas del historial son relativas a hoy y el generador es determinista.
+
+El uploader genera variantes WebP siguiendo las estrategias del flujo normal:
+propiedades (thumbnail pequeño/mediano y full), sliders (mobile/desktop/thumbnail),
+avatares/testimonios y logo. El logo actual de producción está en
+`core/test/multimedia/multimediaSamples/images/bravo-schott-logo.png` y se asigna
+a la identidad y al header del portal.
 
 ## Base local recomendada
 

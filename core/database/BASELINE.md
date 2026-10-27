@@ -115,15 +115,23 @@ npm run migration:generate -- src/database/migrations/BaselineDrift
 
 - Si TypeORM dice que no hay cambios: el esquema coincide con las entidades.
 - Es **esperable** que el diff incluya los índices `IDX_properties_*`
-  (los agrega la migración nueva `1792180000000-AddPublicPropertyIndexes`).
+  (los agrega `1792180000000-AddPublicPropertyIndexes`). También puede mostrar
+  `payments.currency`, `contracts.startDate` y `contracts.durationMonths`, que
+  agrega `1792190000000-ContractPaymentsCurrencyAndRentDates`. Conserva esos
+  cambios en las migraciones correspondientes; no los dupliques en `BaselineDrift`.
+- Revisa aparte el backfill de pagos de `1792190000000` sobre la copia: contrasta
+  `contracts.payments` con las filas de `payments`, en especial contratos que ya
+  tienen pagos y pagos con estado `PENDING_VERIFICATION`. La comparación de
+  esquema por sí sola no valida esa migración de datos.
 - Revisa cada sentencia del archivo generado. En particular:
   - `DROP COLUMN`/`DROP TABLE`/`DROP INDEX`: ¿de verdad sobra? (p. ej.
     `contracts.changeHistory` no está en la entidad: si existe en prod,
     `synchronize` o el diff intentarán borrarlo).
   - Cambios de `ENUM` (región/comuna, estados): valores que ya están en uso.
   - Cambios de tipo/longitud o `NOT NULL` sobre tablas con datos.
-- Quita del archivo lo que ya cubre `AddPublicPropertyIndexes` y deja solo
-  la deriva real. Si queda vacío, **borra** el archivo generado.
+- Quita del archivo lo que ya cubren `AddPublicPropertyIndexes` y
+  `ContractPaymentsCurrencyAndRentDates`; deja solo la deriva real. Si queda
+  vacío, **borra** el archivo generado.
 - Recomendado: prueba la migración resultante en la copia `_dev`
   (`npm run migration:run` tras el paso 6, luego `npm run migration:revert`).
 
@@ -139,8 +147,11 @@ mysql -h 127.0.0.1 -u root -p "$LOCAL_DB" < database/baseline-mark-existing-migr
 npm run migration:show
 ```
 
-Deben quedar `[X]` todas salvo `AddPublicPropertyIndexes1792180000000`
-(y `BaselineDrift…` si la creaste). Ejecuta las pendientes en local:
+Deben quedar `[X]` todas las migraciones históricas hasta `1792170000000`.
+Deben quedar pendientes `AddPublicPropertyIndexes1792180000000` y
+`ContractPaymentsCurrencyAndRentDates1792190000000` (y `BaselineDrift…` si la
+creaste). Ejecuta las pendientes en local después de revisar la estructura y los
+datos de pagos:
 
 ```bash
 npm run migration:run
