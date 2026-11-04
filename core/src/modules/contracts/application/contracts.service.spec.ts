@@ -76,6 +76,8 @@ describe('ContractsService', () => {
       if (entity === Property) return mockPropertyRepo;
       return {};
     }),
+    // Historial de la propiedad (UPDATE atómico del JSON).
+    query: jest.fn(async () => undefined),
   };
   const queryRunner = {
     manager: txManager,
@@ -337,7 +339,7 @@ describe('ContractsService', () => {
 
     it('create: guarda los pagos en la tabla con su moneda y marca la propiedad en contrato', async () => {
       mockCreate.execute.mockResolvedValue({
-        id: 'c1', propertyId: 'prop1', operation: 'ARRIENDO', status: 'IN_PROCESS', currency: 'UF',
+        id: 'c1', code: 'CT-0001', propertyId: 'prop1', operation: 'ARRIENDO', status: 'IN_PROCESS', currency: 'UF',
       });
       mockPropertyRepo.findOne.mockResolvedValue(property('PUBLISHED'));
 
@@ -369,6 +371,19 @@ describe('ContractsService', () => {
         'prop1',
         expect.objectContaining({ status: 'CONTRACT-IN-PROGRESS' }),
       );
+      // El cambio de estado queda en el historial de la propiedad, con el contrato como origen.
+      const [sql, params] = txManager.query.mock.calls[0] as unknown as [string, string[]];
+      expect(sql).toMatch(/UPDATE `properties` SET `changeHistory`/);
+      expect(params[1]).toBe('prop1');
+      const [entry] = JSON.parse(params[0]);
+      expect(entry).toMatchObject({
+        field: 'status',
+        kind: 'STATUS_CHANGED',
+        previousValue: 'PUBLISHED',
+        newValue: 'CONTRACT-IN-PROGRESS',
+        changedBy: 'actor',
+        source: { channel: 'CONTRACT', section: 'Contrato', ref: 'CT-0001' },
+      });
     });
 
     it('close: marca la propiedad como vendida o arrendada', async () => {
@@ -438,6 +453,8 @@ describe('ContractsService', () => {
       mockPropertyRepo.findOne.mockResolvedValue(property('INACTIVE'));
       await service.fail('c1', new Date(), 'actor');
       expect(mockPropertyRepo.update).not.toHaveBeenCalled();
+      // Si la propiedad no cambió de estado, tampoco hay entrada en el historial.
+      expect(txManager.query).not.toHaveBeenCalled();
     });
 
     it('addPayment: usa la moneda del contrato salvo en comisiones', async () => {

@@ -55,6 +55,7 @@ import { UserRole } from '../../users/domain/user.entity';
 import { PropertyOperationType } from '../../../shared/enums/property-operation-type.enum';
 import { UploadPropertyMultimediaDto } from '../dto/upload-property-multimedia.dto';
 import { CreateInternalNoteDto } from '../dto/create-internal-note.dto';
+import { historyContextFromRequest } from '../application/property-history';
 import { FileUploadService } from '../../../shared/services/file-upload.service';
 import {
   assertPropertyImageLimit,
@@ -171,7 +172,11 @@ export class PropertyController {
       // Ruta @Public: el guard global valida un Bearer opcional y deja req.user si es válido.
       const creatorId: string = request?.user?.id ?? 'anonymous';
 
-      return await this.propertyService.createPropertyWithFiles(validatedDto, creatorId, files || []);
+      return await this.propertyService.createPropertyWithFiles(validatedDto, creatorId, files || [], {
+        userId: creatorId,
+        channel: 'PORTAL',
+        section: 'Publicación desde el portal',
+      });
     } finally {
       await removeUploadedTempFiles(files);
     }
@@ -224,7 +229,12 @@ export class PropertyController {
       }
 
       // Pasar archivos como parámetro separado en lugar de dentro del DTO
-      const result = await this.propertyService.createPropertyWithFiles(validatedDto, creatorId, files || []);
+      const result = await this.propertyService.createPropertyWithFiles(
+        validatedDto,
+        creatorId,
+        files || [],
+        historyContextFromRequest(request),
+      );
 
       return result;
     } catch (error) {
@@ -377,7 +387,7 @@ export class PropertyController {
   ): Promise<Property> {
     const user = request?.user;
     const userId = user?.id || user?.sub || (typeof user === 'string' ? user : undefined);
-    return await this.propertyService.update(id, dto as UpdatePropertyDto, userId);
+    return await this.propertyService.update(id, dto as UpdatePropertyDto, userId, historyContextFromRequest(request));
   }
 
   @Patch(':id')
@@ -396,7 +406,7 @@ export class PropertyController {
   ) {
     const user = request?.user;
     const userId = user?.id || user?.sub || (typeof user === 'string' ? user : undefined);
-    return this.propertyService.update(id, updatePropertyDto, userId);
+    return this.propertyService.update(id, updatePropertyDto, userId, historyContextFromRequest(request));
   }
 
   @Delete(':id')
@@ -409,7 +419,7 @@ export class PropertyController {
   @Audit(AuditAction.DELETE, AuditEntityType.PROPERTY, 'Property deleted')
   remove(@Param('id') id: string, @Req() req: Request) {
     const userId = this.extractUserId(req);
-    return this.propertyService.remove(id, userId);
+    return this.propertyService.remove(id, userId, historyContextFromRequest(req));
   }
 
     /**
@@ -459,7 +469,7 @@ export class PropertyController {
     @Req() req: any,
   ): Promise<Property> {
     const userId = this.extractUserId(req);
-    return this.propertyService.updateMainImage(id, dto.mainImageUrl, userId);
+    return this.propertyService.updateMainImage(id, dto.mainImageUrl, userId, historyContextFromRequest(req));
   }
 
   /**
@@ -479,7 +489,7 @@ export class PropertyController {
     @Req() req: any,
   ): Promise<Property> {
     const userId = this.extractUserId(req);
-    return this.propertyService.updatePrice(id, dto, userId);
+    return this.propertyService.updatePrice(id, dto, userId, historyContextFromRequest(req));
   }
 
   /**
@@ -499,7 +509,7 @@ export class PropertyController {
     @Req() req: any,
   ): Promise<Property> {
     const userId = this.extractUserId(req);
-    return this.propertyService.updateCharacteristics(id, dto, userId);
+    return this.propertyService.updateCharacteristics(id, dto, userId, historyContextFromRequest(req));
   }
 
   /**
@@ -519,7 +529,7 @@ export class PropertyController {
     @Req() req: any,
   ): Promise<Property> {
     const userId = this.extractUserId(req);
-    return this.propertyService.updateLocation(id, dto, userId);
+    return this.propertyService.updateLocation(id, dto, userId, historyContextFromRequest(req));
   }
 
   /**
@@ -553,7 +563,7 @@ export class PropertyController {
     @Req() req: any,
   ) {
     const userId = this.extractUserId(req);
-    return await this.propertyService.updateSeoData(id, dto, userId);
+    return await this.propertyService.updateSeoData(id, dto, userId, historyContextFromRequest(req));
   }
 
   /**
@@ -756,7 +766,7 @@ export class PropertyController {
     @Req() req: any,
   ): Promise<Property> {
     const userId = this.extractUserId(req);
-    return this.propertyService.createPropertyRequest(dto, userId);
+    return this.propertyService.createPropertyRequest(dto, userId, historyContextFromRequest(req, { section: 'Solicitud de publicación' }));
   }
 
   /**
@@ -807,7 +817,7 @@ export class PropertyController {
       assertPropertyImageLimit(files);
 
       const userId = this.extractUserId(req);
-      const uploadedMultimedia = await this.propertyService.uploadMultimedia(propertyId, files, dto, userId);
+      const uploadedMultimedia = await this.propertyService.uploadMultimedia(propertyId, files, dto, userId, historyContextFromRequest(req));
 
       return {
         message: 'Multimedia uploaded successfully',
@@ -843,9 +853,12 @@ export class PropertyController {
     @Req() req: any,
   ) {
     // El autor se toma del token; cualquier autor enviado por el cliente se ignora.
-    const note = await this.propertyService.addInternalNote(propertyId, dto.text, {
-      id: this.extractUserId(req),
-    });
+    const note = await this.propertyService.addInternalNote(
+      propertyId,
+      dto.text,
+      { id: this.extractUserId(req) },
+      historyContextFromRequest(req),
+    );
     return { data: note };
   }
 
@@ -862,10 +875,12 @@ export class PropertyController {
     @Param('noteId') noteId: string,
     @Req() req: any,
   ) {
-    await this.propertyService.deleteInternalNote(propertyId, noteId, {
-      id: this.extractUserId(req),
-      role: req.user?.role,
-    });
+    await this.propertyService.deleteInternalNote(
+      propertyId,
+      noteId,
+      { id: this.extractUserId(req), role: req.user?.role },
+      historyContextFromRequest(req),
+    );
     return { message: 'Nota eliminada' };
   }
 

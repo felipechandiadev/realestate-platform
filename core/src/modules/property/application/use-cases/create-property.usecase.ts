@@ -6,6 +6,7 @@ import { CreatePropertyDto } from '../../dto/property.dto';
 import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../../../shared/enums/property-operation-type.enum';
 import { normalizeOtherFeatures } from '../../domain/other-features';
+import { HistoryContext, eventEntry } from '../property-history';
 
 @Injectable()
 export class CreatePropertyUseCase {
@@ -49,6 +50,7 @@ export class CreatePropertyUseCase {
   async execute(
     createPropertyDto: CreatePropertyDto,
     creatorId?: string,
+    historyContext?: HistoryContext,
   ): Promise<Property> {
     this.validatePropertyData(createPropertyDto);
 
@@ -88,13 +90,10 @@ export class CreatePropertyUseCase {
       lastModifiedAt: new Date(),
     });
 
-    const historyEntry: ChangeHistoryEntry = {
-      timestamp: new Date(),
-      changedBy: creatorId || 'system',
-      field: 'creation',
-      previousValue: null,
-      newValue: 'Created',
-    };
+    const historyEntry: ChangeHistoryEntry = eventEntry(
+      { field: 'creation', kind: 'CREATED', newValue: 'Created' },
+      { ...historyContext, userId: creatorId || historyContext?.userId },
+    );
 
     property.changeHistory = [historyEntry];
 

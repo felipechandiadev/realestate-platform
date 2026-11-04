@@ -119,6 +119,106 @@ describe('UpdatePropertyUseCase', () => {
     expect(property.status).toBe(PropertyStatus.INACTIVE);
   });
 
+  describe('historial', () => {
+    const ctx = { userId: 'u1', channel: 'BACKOFFICE' as const };
+
+    it('guarda anterior, nuevo, autor, origen y agrupa los campos de una misma edición', async () => {
+      const property: Record<string, any> = {
+        id: 'p1',
+        title: 'Casa',
+        address: null,
+        latitude: null,
+        longitude: null,
+        status: PropertyStatus.INACTIVE,
+        changeHistory: [{ field: 'creation', previousValue: null, newValue: 'Created', changedBy: 'u0' }],
+      };
+      findOne.mockResolvedValue(property);
+      mockReload(property);
+
+      await useCase.execute('p1', { address: 'Calle 1', latitude: -33.5, longitude: -70.7 } as any, 'u1', ctx);
+
+      const history = property.changeHistory as any[];
+      expect(history).toHaveLength(4); // la creación + 3 cambios
+      const added = history.slice(1);
+      expect(added.map((e) => [e.field, e.previousValue, e.newValue])).toEqual([
+        ['address', null, 'Calle 1'],
+        ['latitude', null, -33.5],
+        ['longitude', null, -70.7],
+      ]);
+      expect(new Set(added.map((e) => e.groupId)).size).toBe(1);
+      expect(added.every((e) => e.changedBy === 'u1')).toBe(true);
+      expect(added.every((e) => e.source?.channel === 'BACKOFFICE' && e.source?.section === 'Ubicación')).toBe(true);
+    });
+
+    it('una edición sin cambios reales (listas iguales, decimal como texto) no agrega nada', async () => {
+      const property: Record<string, any> = {
+        id: 'p1',
+        title: 'Casa',
+        price: '100000000.00',
+        otherFeatures: ['POOL'],
+        status: PropertyStatus.INACTIVE,
+        changeHistory: [],
+      };
+      findOne.mockResolvedValue(property);
+      mockReload(property);
+
+      await useCase.execute('p1', { title: 'Casa', price: 100000000, otherFeatures: ['POOL'] } as any, 'u1', ctx);
+
+      expect(property.changeHistory).toEqual([]);
+    });
+
+    it('sin lista previa, enviar una lista vacía no es un cambio', async () => {
+      const property: Record<string, any> = { id: 'p1', title: 'Casa', otherFeatures: null, status: PropertyStatus.INACTIVE, changeHistory: [] };
+      findOne.mockResolvedValue(property);
+      mockReload(property);
+      await useCase.execute('p1', { otherFeatures: [] } as any, 'u1', ctx);
+      expect(property.changeHistory).toEqual([]);
+    });
+
+    it('publicar: el evento queda como publicación y usa el autor del parámetro si el contexto no lo trae', async () => {
+      const property: Record<string, any> = {
+        id: 'p1',
+        title: 'Casa',
+        status: PropertyStatus.INACTIVE,
+        assignedAgentId: 'ag1',
+        changeHistory: [],
+      };
+      findOne.mockResolvedValue(property);
+      mockReload(property);
+
+      await useCase.execute('p1', { status: PropertyStatus.PUBLISHED } as any, 'u7', { channel: 'BACKOFFICE' });
+
+      expect(property.changeHistory[0]).toMatchObject({
+        field: 'status',
+        previousValue: PropertyStatus.INACTIVE,
+        newValue: PropertyStatus.PUBLISHED,
+        kind: 'PUBLISHED',
+        changedBy: 'u7',
+        source: { channel: 'BACKOFFICE', section: 'Información básica' },
+      });
+    });
+
+    it('al despublicar una destacada también queda constancia de que dejó de serlo, en el mismo evento', async () => {
+      const property: Record<string, any> = {
+        id: 'p1',
+        title: 'Casa',
+        status: PropertyStatus.PUBLISHED,
+        assignedAgentId: 'ag1',
+        isFeatured: true,
+        changeHistory: [],
+      };
+      findOne.mockResolvedValue(property);
+      mockReload(property);
+
+      await useCase.execute('p1', { status: PropertyStatus.INACTIVE } as any, 'u1', ctx);
+
+      const [statusEntry, featuredEntry] = property.changeHistory;
+      expect(statusEntry).toMatchObject({ field: 'status', kind: 'UNPUBLISHED' });
+      expect(featuredEntry).toMatchObject({ field: 'isFeatured', previousValue: true, newValue: false, source: { section: 'SEO y marketing' } });
+      expect(featuredEntry.groupId).toBe(statusEntry.groupId);
+    });
+  });
+
   describe('vaciar campos y destacadas', () => {
     it('vaciar descripción, agente o año los deja en null; un título vacío se ignora', async () => {
       const property: Record<string, unknown> = {

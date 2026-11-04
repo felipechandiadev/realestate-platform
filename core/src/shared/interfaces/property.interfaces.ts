@@ -11,12 +11,45 @@ export interface PostRequest {
   status: PostRequestStatus;
 }
 
+/** Desde dónde se ejecutó un cambio. */
+export type HistoryChannel = 'BACKOFFICE' | 'PORTAL' | 'CONTRACT' | 'SYSTEM';
+
+/** Tipo de evento (para titular la tarjeta del historial). */
+export type HistoryKind =
+  | 'CREATED'
+  | 'UPDATED'
+  | 'PUBLISHED'
+  | 'UNPUBLISHED'
+  | 'STATUS_CHANGED'
+  | 'MEDIA'
+  | 'NOTE'
+  | 'DELETED';
+
+export interface HistorySource {
+  channel: HistoryChannel;
+  /** Pantalla o sección donde se hizo (p. ej. "Ubicación"). */
+  section?: string;
+  /** Referencia opcional (p. ej. el código del contrato). */
+  ref?: string;
+}
+
+/**
+ * Una entrada del historial de una propiedad. Los campos desde `kind` son opcionales:
+ * las entradas anteriores no los tienen y se muestran sin origen.
+ */
 export interface ChangeHistoryEntry {
   timestamp: Date;
   changedBy: string; // User ID of the person who made the change
   field: string;
   previousValue: any;
   newValue: any;
+  kind?: HistoryKind;
+  source?: HistorySource;
+  /** Las entradas de una misma operación comparten `groupId` y se muestran juntas. */
+  groupId?: string;
+  /** Moneda del precio en ese momento (solo `price`). */
+  unit?: string;
+  previousUnit?: string;
 }
 
 export enum UserType {

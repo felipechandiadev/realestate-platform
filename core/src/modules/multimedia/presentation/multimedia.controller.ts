@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +18,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { MultimediaService } from '../application/multimedia.service';
+import { historyContextFromRequest } from '../../property/application/property-history';
 import { CreateMultimediaDto, UpdateMultimediaDto } from '../dto/multimedia.dto';
 import { Roles } from '../../auth/guards/jwt-auth.guard';
 import { UserRole } from '../../users/domain/user.entity';
@@ -71,8 +73,8 @@ export class MultimediaController {
   @ApiResponse({ status: 200, description: 'Multimedia deleted successfully' })
   @ApiResponse({ status: 404, description: 'Multimedia not found' })
   @ApiParam({ name: 'id', type: String })
-  hardDelete(@Param('id') id: string) {
-    return this.multimediaService.hardDelete(id);
+  hardDelete(@Param('id') id: string, @Req() req: any) {
+    return this.multimediaService.hardDelete(id, historyContextFromRequest(req));
   }
 
   @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)

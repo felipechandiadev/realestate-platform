@@ -1,3 +1,4 @@
+import { HistoryContext } from '../../property/application/property-history';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Multimedia } from '../domain/multimedia.entity';
 import { CreateMultimediaDto, UpdateMultimediaDto } from '../dto/multimedia.dto';
@@ -63,8 +64,8 @@ export class MultimediaService {
     await this.softDeleteUseCase.execute(id);
   }
 
-  async hardDelete(id: string): Promise<void> {
-    await this.hardDeleteUseCase.execute(id);
+  async hardDelete(id: string, historyContext?: HistoryContext): Promise<void> {
+    await this.hardDeleteUseCase.execute(id, historyContext);
   }
 
   async getUrl(id: string): Promise<string> {

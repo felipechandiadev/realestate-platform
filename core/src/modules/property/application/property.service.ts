@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { readFile } from 'fs/promises';
+import { randomUUID } from 'crypto';
 import { toPublicPropertyRequest } from './public-property-request';
 import { propertyMediaTypeFor } from './property-media-type';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -21,7 +22,8 @@ import { UploadPropertyMultimediaDto } from '../dto/upload-property-multimedia.d
 import { GridSaleQueryDto } from '../dto/grid-sale.dto';
 import { PropertyStatus } from '../../../shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../../shared/enums/property-operation-type.enum';
-import { IsNull } from 'typeorm';
+import { In, IsNull } from 'typeorm';
+import { HistoryContext, appendPropertyHistory, diffProperty, eventEntry } from './property-history';
 import { MultimediaFormat } from '../../multimedia/domain/multimedia.entity';
 import { NotificationsService } from '../../notifications/application/notifications.service';
 
@@ -47,6 +49,16 @@ import { ListAvailableRentPropertiesUseCase } from '../application/use-cases/lis
 import { UpdatePropertyUseCase } from '../application/use-cases/update-property.usecase';
 import { SharePropertyByEmailUseCase } from '../application/use-cases/share-property-by-email.usecase';
 import { normalizeOtherFeatures } from '../domain/other-features';
+
+/** "Se agregaron 3 imágenes y 1 video" */
+function describeMediaAdded(items: Multimedia[]): string {
+  const images = items.filter((m) => m.format === MultimediaFormat.IMG).length;
+  const videos = items.length - images;
+  const parts: string[] = [];
+  if (images) parts.push(`${images} ${images === 1 ? 'imagen' : 'imágenes'}`);
+  if (videos) parts.push(`${videos} ${videos === 1 ? 'video' : 'videos'}`);
+  return `Se ${items.length === 1 ? 'agregó' : 'agregaron'} ${parts.join(' y ')}`;
+}
 
 @Injectable()
 export class PropertyService {
@@ -82,10 +94,11 @@ export class PropertyService {
 
   // --- high-level delegations ---
 
-  async create(dto: any, creatorId?: string): Promise<Property> {
+  async create(dto: any, creatorId?: string, ctx?: HistoryContext): Promise<Property> {
     return await this.createPropertyUseCase.execute(
       await this.withInitialInternalNote(dto, creatorId),
       creatorId,
+      ctx,
     );
   }
 
@@ -116,8 +129,8 @@ export class PropertyService {
     };
   }
 
-  async createPropertyWithFiles(dto: any, creatorId: string, files: any[]) {
-    const property = await this.create(dto, creatorId);
+  async createPropertyWithFiles(dto: any, creatorId: string, files: any[], ctx?: HistoryContext) {
+    const property = await this.create(dto, creatorId, ctx);
 
     if (files?.length) {
       try {
@@ -282,30 +295,37 @@ export class PropertyService {
     return this.sharePropertyByEmailUseCase.execute(id, dto, senderUserId);
   }
 
-  async update(id: string, dto: any, userId?: string) {
-    return await this.updatePropertyUseCase.execute(id, dto, userId);
+  async update(id: string, dto: any, userId?: string, ctx?: HistoryContext) {
+    return await this.updatePropertyUseCase.execute(id, dto, userId, ctx);
   }
 
-  async remove(id: string, userId?: string) {
+  async remove(id: string, userId?: string, ctx?: HistoryContext) {
+    // Queda constancia en el historial antes de dar de baja la propiedad.
+    await appendPropertyHistory(this.propertyRepository.manager, id, [
+      eventEntry(
+        { field: 'deletion', kind: 'DELETED', previousValue: null, newValue: 'Eliminada' },
+        { ...ctx, userId: ctx?.userId ?? userId },
+      ),
+    ]);
     await this.softDeletePropertyUseCase.execute(id);
   }
 
-  async updateMainImage(id: string, url: string, userId?: string) {
-    return await this.updatePropertyUseCase.execute(id, { mainImageUrl: url } as any, userId);
+  async updateMainImage(id: string, url: string, userId?: string, ctx?: HistoryContext) {
+    return await this.updatePropertyUseCase.execute(id, { mainImageUrl: url } as any, userId, ctx);
   }
 
-  async updatePrice(id: string, dto: any, userId?: string) {
-    return await this.updatePropertyUseCase.execute(id, dto, userId);
+  async updatePrice(id: string, dto: any, userId?: string, ctx?: HistoryContext) {
+    return await this.updatePropertyUseCase.execute(id, dto, userId, ctx);
   }
 
-  async updateCharacteristics(id: string, dto: any, userId?: string) {
-    return await this.updatePropertyUseCase.execute(id, dto, userId);
+  async updateCharacteristics(id: string, dto: any, userId?: string, ctx?: HistoryContext) {
+    return await this.updatePropertyUseCase.execute(id, dto, userId, ctx);
   }
 
   // additional helpers derived from legacy service
-  async updateLocation(id: string, dto: UpdatePropertyLocationDto, userId: string) {
+  async updateLocation(id: string, dto: UpdatePropertyLocationDto, userId: string, ctx?: HistoryContext) {
     // reuse generic update use-case
-    return await this.updatePropertyUseCase.execute(id, dto as any, userId);
+    return await this.updatePropertyUseCase.execute(id, dto as any, userId, ctx);
   }
     async countFavorites(propertyId: string): Promise<number> {
       const property = await this.propertyRepository.findOne({ where: { id: propertyId } });
@@ -331,7 +351,7 @@ export class PropertyService {
   }
 
 
-async createPropertyRequest(dto: any, userId: string): Promise<Property> {
+async createPropertyRequest(dto: any, userId: string, ctx?: HistoryContext): Promise<Property> {
   // Solo campos de solicitud; estado REQUEST y creador = usuario autenticado.
   const request = toPublicPropertyRequest(dto);
   const location = request.location as { lat?: number; lng?: number } | undefined;
@@ -344,6 +364,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
       creatorUserId: userId,
     },
     userId,
+    ctx ?? { channel: 'PORTAL', section: 'Solicitud de publicación' },
   );
 
   if (dto?.contactName && dto?.contactEmail) {
@@ -355,9 +376,21 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
   return property;
 }
 
-  async updateSeoData(id: string, dto: UpdatePropertySeoDto, _userId: string) {
+  async updateSeoData(id: string, dto: UpdatePropertySeoDto, _userId: string, ctx?: HistoryContext) {
     const property = await this.propertyRepository.findOne({ where: { id, deletedAt: IsNull() } });
     if (!property) throw new NotFoundException('Propiedad no encontrada');
+
+    // Se compara contra los valores actuales, antes de aplicar nada.
+    const seoChanges = diffProperty(
+      property as unknown as Record<string, any>,
+      {
+        seoTitle: dto.seoTitle,
+        seoDescription: dto.seoDescription,
+        seoKeywords: dto.seoKeywords,
+        isFeatured: dto.isFeatured,
+      },
+      { ...ctx, userId: ctx?.userId ?? _userId },
+    );
 
     if (dto.seoTitle !== undefined) property.seoTitle = dto.seoTitle;
     if (dto.seoDescription !== undefined) property.seoDescription = dto.seoDescription;
@@ -367,6 +400,9 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     }
     if (dto.isFeatured !== undefined) property.isFeatured = dto.isFeatured;
     property.lastModifiedAt = new Date();
+    if (seoChanges.length > 0) {
+      property.changeHistory = [...(property.changeHistory || []), ...seoChanges];
+    }
 
     await this.propertyRepository.save(property);
     return this.getSeoData(id);
@@ -706,6 +742,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     propertyId: string,
     text: string,
     user: { id: string },
+    ctx?: HistoryContext,
   ): Promise<InternalNote> {
     const note = buildInternalNote({
       text,
@@ -720,6 +757,12 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
       if (!property) throw new NotFoundException('Propiedad no encontrada');
       const internalNotesLog = appendNote(property.internalNotesLog, note);
       await em.update(Property, propertyId, { internalNotesLog });
+      await appendPropertyHistory(em, propertyId, [
+        eventEntry(
+          { field: 'internalNotes', kind: 'NOTE', previousValue: null, newValue: 'Nota agregada', section: 'Notas internas' },
+          { ...ctx, userId: user.id },
+        ),
+      ]);
     });
     return note;
   }
@@ -728,6 +771,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     propertyId: string,
     noteId: string,
     user: { id?: string; role?: string },
+    ctx?: HistoryContext,
   ): Promise<void> {
     await this.propertyRepository.manager.transaction(async (em: any) => {
       const property = await em.findOne(Property, {
@@ -739,6 +783,12 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
       await em.update(Property, propertyId, {
         internalNotesLog: internalNotesLog.length ? internalNotesLog : null,
       });
+      await appendPropertyHistory(em, propertyId, [
+        eventEntry(
+          { field: 'internalNotes', kind: 'NOTE', previousValue: 'Nota', newValue: 'Nota eliminada', section: 'Notas internas' },
+          { ...ctx, userId: user.id ?? ctx?.userId },
+        ),
+      ]);
     });
   }
 
@@ -747,6 +797,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     files: Express.Multer.File[],
     dto: UploadPropertyMultimediaDto,
     userId: string,
+    ctx?: HistoryContext,
   ): Promise<Multimedia[]> {
     const property = await this.findOne(propertyId);
     const results: Multimedia[] = [];
@@ -760,11 +811,45 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
       await this.multimediaRepository.save(multimedia);
       results.push(multimedia);
     }
+    let newMainImage: string | undefined;
     if (results.length > 0 && (!property.mainImageUrl || property.mainImageUrl.trim() === '')) {
       const firstImage = results.find(m => m.format === MultimediaFormat.IMG);
       if (firstImage) {
         await this.propertyRepository.update(propertyId, { mainImageUrl: firstImage.url });
+        newMainImage = firstImage.url;
       }
+    }
+
+    // Solo cuando hay contexto (carga desde una pantalla); al crear la propiedad ya queda
+    // el evento de creación.
+    if (ctx && results.length > 0) {
+      const groupId = randomUUID();
+      const historyCtx = { ...ctx, userId: ctx.userId ?? userId };
+      const entries = [
+        eventEntry(
+          {
+            field: 'multimedia',
+            kind: 'MEDIA',
+            previousValue: null,
+            newValue: describeMediaAdded(results),
+            section: 'Multimedia',
+          },
+          historyCtx,
+          new Date(),
+          groupId,
+        ),
+      ];
+      if (newMainImage) {
+        entries.push(
+          eventEntry(
+            { field: 'mainImageUrl', kind: 'UPDATED', previousValue: property.mainImageUrl ?? null, newValue: newMainImage, section: 'Multimedia' },
+            historyCtx,
+            new Date(),
+            groupId,
+          ),
+        );
+      }
+      await appendPropertyHistory(this.propertyRepository.manager, propertyId, entries);
     }
     return results;
   }
@@ -875,7 +960,7 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
 
     const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-    return changeHistory.map((entry: any) => {
+    const entries = changeHistory.map((entry: any) => {
       const rawChangedBy = typeof entry?.changedBy === 'string' ? entry.changedBy.trim() : '';
 
       if (!rawChangedBy) {
@@ -896,6 +981,52 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
       }
 
       return { ...entry, changedById: rawChangedBy, changedBy: rawChangedBy };
+    });
+
+    return this.withDisplayValues(entries);
+  }
+
+  /**
+   * Agrega `previousDisplay` / `newDisplay` con el nombre legible de los valores que se
+   * guardan como id (agente asignado, tipo de propiedad), para que la pantalla no muestre UUID.
+   */
+  private async withDisplayValues(entries: any[]): Promise<any[]> {
+    const USER_FIELDS = new Set(['assignedAgentId', 'creatorUserId']);
+    const TYPE_FIELDS = new Set(['propertyTypeId']);
+    const userIds = new Set<string>();
+    const typeIds = new Set<string>();
+    for (const e of entries) {
+      for (const v of [e?.previousValue, e?.newValue]) {
+        if (typeof v !== 'string' || !v) continue;
+        if (USER_FIELDS.has(e.field)) userIds.add(v);
+        if (TYPE_FIELDS.has(e.field)) typeIds.add(v);
+      }
+    }
+    if (userIds.size === 0 && typeIds.size === 0) return entries;
+
+    const names = new Map<string, string>();
+    if (userIds.size > 0) {
+      const users = await this.userRepository
+        .createQueryBuilder('u')
+        .withDeleted()
+        .where('u.id IN (:...ids)', { ids: [...userIds] })
+        .getMany();
+      for (const u of users) names.set(u.id, u.name || u.email || 'Usuario');
+    }
+    if (typeIds.size > 0) {
+      const types = await this.propertyTypeRepository.find({ where: { id: In([...typeIds]) }, withDeleted: true });
+      for (const t of types) names.set(t.id, t.name);
+    }
+
+    const label = (field: string, v: unknown) =>
+      typeof v === 'string' && v && (USER_FIELDS.has(field) || TYPE_FIELDS.has(field))
+        ? names.get(v) ?? 'No disponible'
+        : undefined;
+
+    return entries.map((e) => {
+      const previousDisplay = label(e.field, e.previousValue);
+      const newDisplay = label(e.field, e.newValue);
+      return previousDisplay || newDisplay ? { ...e, previousDisplay, newDisplay } : e;
     });
   }
 

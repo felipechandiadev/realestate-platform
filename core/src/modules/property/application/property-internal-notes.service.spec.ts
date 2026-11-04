@@ -12,6 +12,7 @@ function makeService(opts: {
   const em = {
     findOne: jest.fn().mockResolvedValue(opts.property ?? null),
     update: jest.fn().mockResolvedValue(undefined),
+    query: jest.fn().mockResolvedValue(undefined),
   };
   const manager = {
     transaction: jest.fn(async (cb: (em: unknown) => Promise<unknown>) => cb(em)),
@@ -81,6 +82,11 @@ describe('PropertyService · notas internas', () => {
         'Nota previa',
         'Llamar al dueño',
       ]);
+      // Queda registrado en el historial (sin copiar el texto de la nota).
+      const [, params] = em.query.mock.calls[0] as unknown as [string, string[]];
+      const [event] = JSON.parse(params[0]);
+      expect(event).toMatchObject({ field: 'internalNotes', kind: 'NOTE', newValue: 'Nota agregada', changedBy: 'u1' });
+      expect(JSON.stringify(event)).not.toContain('Llamar al dueño');
     });
 
     it('crea la lista si la propiedad no tenía', async () => {
@@ -124,6 +130,8 @@ describe('PropertyService · notas internas', () => {
       await service.deleteInternalNote('p1', 'mine', { id: 'u1', role: 'AGENT' });
 
       expect(em.update.mock.calls[0][2]).toEqual({ internalNotesLog: [other] });
+      const [, params] = em.query.mock.calls[0] as unknown as [string, string[]];
+      expect(JSON.parse(params[0])[0]).toMatchObject({ kind: 'NOTE', newValue: 'Nota eliminada' });
     });
 
     it('al borrar la última nota la columna queda en null', async () => {

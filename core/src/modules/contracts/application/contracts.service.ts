@@ -43,6 +43,7 @@ import { Person } from '../../person/domain/person.entity';
 import { PersonOrmEntity } from '../../person/infrastructure/persistence/person.orm-entity';
 import { User } from '../../users/domain/user.entity';
 import { Property } from '../../property/domain/property.entity';
+import { appendPropertyHistory, eventEntry, kindForStatus } from '../../property/application/property-history';
 import { NotificationsService } from '../../notifications/application/notifications.service';
 import {
   Document as DocumentEntity,
@@ -109,6 +110,7 @@ export class ContractsService {
     propertyId: string | null | undefined,
     status: PropertyStatus,
     onlyIf?: PropertyStatus,
+    origin?: { contractCode?: string; actorId?: string },
   ): Promise<void> {
     if (!propertyId) return;
     const properties = manager.getRepository(Property);
@@ -116,6 +118,23 @@ export class ContractsService {
     if (!property || property.status === status) return;
     if (onlyIf && property.status !== onlyIf) return;
     await properties.update(propertyId, { status, lastModifiedAt: new Date() });
+    // El cambio de estado queda en el historial de la propiedad, indicando el contrato.
+    await appendPropertyHistory(manager, propertyId, [
+      eventEntry(
+        {
+          field: 'status',
+          kind: kindForStatus(property.status, status),
+          previousValue: property.status,
+          newValue: status,
+          section: 'Contrato',
+        },
+        {
+          userId: origin?.actorId,
+          channel: 'CONTRACT',
+          ref: origin?.contractCode,
+        },
+      ),
+    ]);
   }
 
   async create(dto: CreateContractDto, actorId?: string): Promise<Contract> {
@@ -158,6 +177,8 @@ export class ContractsService {
         manager,
         contract.propertyId,
         propertyStatusForContract(contract.operation, contract.status ?? ContractStatus.IN_PROCESS),
+        undefined,
+        { contractCode: contract.code, actorId },
       );
 
       // Create audit log
@@ -411,6 +432,7 @@ export class ContractsService {
           contract.propertyId,
           PropertyStatus.PUBLISHED,
           PropertyStatus.CONTRACT_IN_PROGRESS,
+          { contractCode: contract.code, actorId },
         );
       }
 
@@ -476,6 +498,8 @@ export class ContractsService {
         manager,
         updated.propertyId,
         propertyStatusForContract(updated.operation, ContractStatus.CLOSED),
+        undefined,
+        { contractCode: updated.code, actorId },
       );
 
       return updated;
@@ -520,6 +544,7 @@ export class ContractsService {
         updated.propertyId,
         propertyStatusForContract(updated.operation, ContractStatus.FAILED),
         PropertyStatus.CONTRACT_IN_PROGRESS,
+        { contractCode: updated.code, actorId },
       );
 
       return updated;

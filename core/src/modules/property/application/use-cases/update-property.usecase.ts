@@ -8,6 +8,8 @@ import { PropertyType } from '../../../property-types/domain/property-type.entit
 import { User } from '../../../users/domain/user.entity';
 import { NotificationsService } from '../../../notifications/application/notifications.service';
 import { normalizeOtherFeatures } from '../../domain/other-features';
+import { randomUUID } from 'crypto';
+import { HistoryContext, buildSource, diffProperty } from '../property-history';
 
 /** Campos opcionales que el equipo puede dejar vacíos desde la ficha. */
 export const CLEARABLE_PROPERTY_FIELDS = new Set<string>([
@@ -40,7 +42,9 @@ export class UpdatePropertyUseCase {
     id: string,
     updatePropertyDto: UpdatePropertyDto,
     updatedBy?: string,
+    historyContext?: HistoryContext,
   ): Promise<Property> {
+    const ctx: HistoryContext = { ...historyContext, userId: historyContext?.userId ?? updatedBy };
     const property = await this.propertyRepository.findOne({ where: { id, deletedAt: IsNull() } });
     if (!property) {
       throw new NotFoundException('Propiedad no encontrada');
@@ -91,44 +95,15 @@ export class UpdatePropertyUseCase {
       );
     }
 
-    const changes: Array<{
-      timestamp: Date;
-      changedBy: string;
-      field: string;
-      previousValue: any;
-      newValue: any;
-    }> = [];
-
-    for (const [key, newValue] of Object.entries(cleanDto)) {
-      if (newValue === undefined) continue;
-      const currentValue = property[key];
-      let hasChanged = false;
-      if (currentValue !== newValue) {
-        if ((currentValue == null && newValue != null) ||
-            (currentValue != null && newValue == null)) {
-          hasChanged = true;
-        } else if (typeof currentValue !== typeof newValue) {
-          hasChanged = true;
-        } else if (typeof newValue === 'boolean') {
-          hasChanged = Boolean(currentValue) !== Boolean(newValue);
-        } else if (typeof newValue === 'string') {
-          hasChanged = String(currentValue || '').trim() !== String(newValue).trim();
-        } else if (typeof newValue === 'number') {
-          hasChanged = Number(currentValue || 0) !== Number(newValue);
-        } else {
-          hasChanged = currentValue !== newValue;
-        }
-      }
-      if (hasChanged) {
-        changes.push({
-          timestamp: new Date(),
-          changedBy: updatedBy || 'system',
-          field: key,
-          previousValue: currentValue,
-          newValue: newValue,
-        });
-      }
-    }
+    // Una operación = un evento: todas las entradas comparten groupId.
+    const groupId = randomUUID();
+    const changes = diffProperty(
+      property as unknown as Record<string, any>,
+      cleanDto as Record<string, any>,
+      ctx,
+      new Date(),
+      groupId,
+    );
 
     if (cleanDto.propertyTypeId) {
       const propertyType = await this.propertyRepository.manager.findOne(PropertyType, {
@@ -147,10 +122,13 @@ export class UpdatePropertyUseCase {
     if (property.status !== PropertyStatus.PUBLISHED && property.isFeatured) {
       changes.push({
         timestamp: new Date(),
-        changedBy: updatedBy || 'system',
+        changedBy: ctx.userId || 'system',
         field: 'isFeatured',
         previousValue: true,
         newValue: false,
+        kind: 'UPDATED',
+        source: buildSource(ctx, 'SEO y marketing'),
+        groupId,
       });
       property.isFeatured = false;
     }
