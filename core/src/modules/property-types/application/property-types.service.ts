@@ -1,8 +1,11 @@
+import { DUPLICATE_NAME_MESSAGE, isDuplicateKeyError } from './property-type-name';
 import {
   Injectable,
   NotFoundException,
   ConflictException,
   HttpException,
+  InternalServerErrorException,
+  Logger,
 } from '@nestjs/common';
 import {
   CreatePropertyTypeDto,
@@ -20,6 +23,8 @@ import { UpdatePropertyTypeFeaturesUseCase } from './use-cases/update-property-t
 
 @Injectable()
 export class PropertyTypesService {
+  private readonly logger = new Logger(PropertyTypesService.name);
+
   constructor(
     private readonly createUseCase: CreatePropertyTypeUseCase,
     private readonly findAllUseCase: FindAllPropertyTypesUseCase,
@@ -35,15 +40,21 @@ export class PropertyTypesService {
     createPropertyTypeDto: CreatePropertyTypeDto,
   ) {
     try {
-      return await this.createUseCase.execute({
-        ...createPropertyTypeDto,
-        description: createPropertyTypeDto.description?.trim() || null,
-      } as any);
+      return await this.createUseCase.execute(createPropertyTypeDto as any);
     } catch (err) {
-      if (err instanceof HttpException) throw err;
-      const message = err instanceof Error ? err.message : 'No se pudo crear el tipo de propiedad';
-      throw new ConflictException(message);
+      throw this.toHttpError(err);
     }
+  }
+
+  /**
+   * Los errores HTTP pasan tal cual; "valor único repetido" de MySQL es "ya existe"; el resto
+   * se deja subir (500) en vez de mostrar al usuario el texto técnico de la base.
+   */
+  private toHttpError(err: unknown): unknown {
+    if (err instanceof HttpException) return err;
+    if (isDuplicateKeyError(err)) return new ConflictException(DUPLICATE_NAME_MESSAGE);
+    this.logger.error(`Error guardando un tipo de propiedad: ${err instanceof Error ? err.message : String(err)}`);
+    return new InternalServerErrorException('No se pudo guardar el tipo de propiedad. Inténtalo de nuevo.');
   }
 
   async findAll(search?: string) {
@@ -73,10 +84,7 @@ export class PropertyTypesService {
     try {
       return await this.updateUseCase.execute(id, updatePropertyTypeDto as any);
     } catch (err) {
-      if (err instanceof NotFoundException) {
-        throw err;
-      }
-      throw new ConflictException(err.message);
+      throw this.toHttpError(err);
     }
   }
 

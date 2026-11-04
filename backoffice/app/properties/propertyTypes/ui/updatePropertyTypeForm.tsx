@@ -66,10 +66,18 @@ export default function UpdatePropertyTypeForm({
     setErrors([]);
 
     try {
-      await updatePropertyType(propertyType.id, {
+      const result = await updatePropertyType(propertyType.id, {
         name: values.name.trim(),
-        description: values.description?.trim() || undefined,
+        // Vacía borra la descripción (si no se enviara, se conservaría la anterior).
+        description: (values.description ?? '').trim(),
       });
+
+      if (!result.success) {
+        alert.error(result.error);
+        setErrors([result.error]);
+        setSubmitting(false);
+        return;
+      }
 
       alert.success('Tipo de propiedad actualizado exitosamente');
       onSuccess?.();

@@ -41,4 +41,16 @@ export class TypeormPropertyTypeRepository extends PropertyTypeRepository {
   createQueryBuilder(alias: string) {
     return this.repository.createQueryBuilder(alias);
   }
+
+  async countPropertiesUsing(id: string): Promise<number> {
+    // Consulta directa a la tabla: este módulo no importa la entidad Property.
+    const row = await this.repository.manager
+      .createQueryBuilder()
+      .select('COUNT(*)', 'total')
+      .from('properties', 'p')
+      .where('p.propertyTypeId = :id', { id })
+      .andWhere('p.deletedAt IS NULL')
+      .getRawOne<{ total: string }>();
+    return Number(row?.total ?? 0);
+  }
 }

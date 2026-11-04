@@ -99,7 +99,11 @@ const PropertyTypeList: React.FC<PropertyTypeListProps> = ({
         try {
             // Create the update object with only the feature being changed
             const updateData = { [feature]: value };
-            await updatePropertyTypeFeatures(propertyTypeId, updateData);
+            const result = await updatePropertyTypeFeatures(propertyTypeId, updateData);
+            if (!result.success) {
+                alert.error(result.error);
+                return;
+            }
             
             // Update local state optimistically
             setPropertyTypes(prevTypes => 

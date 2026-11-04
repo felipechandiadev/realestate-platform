@@ -24,7 +24,15 @@ export default function DeletePropertyTypeForm({ propertyType, onSuccess, onCanc
     setErrors([]);
 
     try {
-      await deletePropertyType(propertyType.id);
+      const result = await deletePropertyType(propertyType.id);
+
+      if (!result.success) {
+        // Por ejemplo: "No se puede eliminar "Casa": 40 propiedades lo usan…"
+        alert.error(result.error);
+        setErrors([result.error]);
+        setIsSubmitting(false);
+        return;
+      }
 
       alert.success(`Tipo de propiedad "${propertyType.name}" eliminado exitosamente`);
 
@@ -45,7 +53,7 @@ export default function DeletePropertyTypeForm({ propertyType, onSuccess, onCanc
   return (
     <DeleteBaseForm
       title=""
-      subtitle="Esta acción eliminará permanentemente el tipo de propiedad"
+      subtitle="El tipo dejará de estar disponible al crear o editar propiedades"
       message={message}
       onSubmit={handleSubmit}
       isSubmitting={isSubmitting}

@@ -26,6 +26,9 @@ import {
 import { Roles, Public } from '../../auth/guards/jwt-auth.guard';
 import { UserRole } from '../../users/domain/user.entity';
 
+/** Recorta los textos y descarta los campos que no son del tipo (id, fechas, borrado…). */
+const PROPERTY_TYPE_PIPE = new ValidationPipe({ transform: true, whitelist: true });
+
 @Roles(UserRole.ADMIN, UserRole.AGENT)
 @Controller('property-types')
 @ApiTags('Property Types')
@@ -46,7 +49,7 @@ export class PropertyTypesController {
     description: 'Validation error',
   })
   @ApiBody({ type: CreatePropertyTypeDto })
-  create(@Body(ValidationPipe) createPropertyTypeDto: CreatePropertyTypeDto) {
+  create(@Body(PROPERTY_TYPE_PIPE) createPropertyTypeDto: CreatePropertyTypeDto) {
     return this.propertyTypesService.create(createPropertyTypeDto);
   }
 
@@ -160,7 +163,7 @@ export class PropertyTypesController {
   @ApiBody({ type: UpdatePropertyTypeDto })
   update(
     @Param('id') id: string,
-    @Body(ValidationPipe) updatePropertyTypeDto: UpdatePropertyTypeDto,
+    @Body(PROPERTY_TYPE_PIPE) updatePropertyTypeDto: UpdatePropertyTypeDto,
   ) {
     return this.propertyTypesService.update(id, updatePropertyTypeDto);
   }
@@ -182,7 +185,7 @@ export class PropertyTypesController {
   @ApiBody({ type: UpdatePropertyTypeFeaturesDto })
   updateFeatures(
     @Param('id') id: string,
-    @Body(ValidationPipe) updateFeaturesDto: UpdatePropertyTypeFeaturesDto,
+    @Body(PROPERTY_TYPE_PIPE) updateFeaturesDto: UpdatePropertyTypeFeaturesDto,
   ) {
     return this.propertyTypesService.updateFeatures(id, updateFeaturesDto);
   }

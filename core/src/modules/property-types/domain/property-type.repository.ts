@@ -9,4 +9,6 @@ export abstract class PropertyTypeRepository {
   abstract update(id: string, patch: Partial<PropertyType>): Promise<void>;
   abstract softDelete(id: string): Promise<void>;
   abstract createQueryBuilder(alias: string): SelectQueryBuilder<PropertyType>;
+  /** Propiedades activas (no eliminadas) que usan este tipo. */
+  abstract countPropertiesUsing(id: string): Promise<number>;
 }
