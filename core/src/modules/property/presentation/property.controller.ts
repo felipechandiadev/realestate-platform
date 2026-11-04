@@ -56,6 +56,7 @@ import { PropertyOperationType } from '../../../shared/enums/property-operation-
 import { UploadPropertyMultimediaDto } from '../dto/upload-property-multimedia.dto';
 import { FileUploadService } from '../../../shared/services/file-upload.service';
 import {
+  assertPropertyImageLimit,
   assertPropertyMediaSizes,
   propertyMediaUploadOptions,
   removeUploadedTempFiles,
@@ -144,6 +145,7 @@ export class PropertyController {
   ) {
     try {
       assertPropertyMediaSizes(files);
+      assertPropertyImageLimit(files);
 
       let rawPayload: unknown;
       try {
@@ -197,6 +199,7 @@ export class PropertyController {
     let createPropertyDto: CreatePropertyPayloadDto;
     try {
       assertPropertyMediaSizes(files);
+      assertPropertyImageLimit(files);
       if (body.data) {
         // If data is sent as a field in the form
         createPropertyDto = typeof body.data === 'string'
@@ -800,6 +803,10 @@ export class PropertyController {
     try {
       assertPropertyMediaSizes(files);
       await this.assertCanManagePropertyMedia(propertyId, req.user);
+      assertPropertyImageLimit(
+        files,
+        await this.propertyService.countPropertyImages(propertyId),
+      );
 
       const userId = this.extractUserId(req);
       const uploadedMultimedia = await this.propertyService.uploadMultimedia(propertyId, files, dto, userId);

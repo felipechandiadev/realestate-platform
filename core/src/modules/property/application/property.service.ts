@@ -650,6 +650,13 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
     };
   }
 
+  /** Cantidad de imágenes (no videos) activas de la propiedad. */
+  async countPropertyImages(propertyId: string): Promise<number> {
+    return this.multimediaRepository.count({
+      where: { propertyId, format: MultimediaFormat.IMG },
+    });
+  }
+
   async uploadMultimedia(
     propertyId: string,
     files: Express.Multer.File[],

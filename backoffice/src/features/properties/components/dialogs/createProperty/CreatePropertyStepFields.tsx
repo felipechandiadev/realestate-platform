@@ -117,6 +117,7 @@ export function CreatePropertyStepFields({
           uploadPath?: string;
           accept?: string;
           maxFiles?: number;
+          maxImages?: number;
           maxSize?: number;
           aspectRatio?: 'square' | 'video' | 'auto';
           buttonType?: 'icon' | 'normal';
@@ -136,6 +137,7 @@ export function CreatePropertyStepFields({
               label={(customLabel as string | undefined) ?? field.label}
               accept={typedProps.accept ?? 'image/*,video/mp4,video/webm'}
               maxFiles={typedProps.maxFiles}
+              maxImages={typedProps.maxImages}
               maxSize={typedProps.maxSize}
               aspectRatio={typedProps.aspectRatio}
               buttonType={typedProps.buttonType}

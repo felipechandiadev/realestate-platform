@@ -188,8 +188,8 @@ const MapController = ({
 
 const LocationPicker: React.FC<LocationPickerProps> = ({ 
   onChange, 
-  initialLat = 19.4326, 
-  initialLng = -99.1332,
+  initialLat = -33.4489, 
+  initialLng = -70.6693, // Santiago, Chile
   variant = 'default',
   rounded = 'md',
   className = '',
@@ -254,7 +254,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
 
   /**
    * Intenta obtener ubicación actual del usuario vía Geolocation API.
-   * En error/permisos denegados aplica fallback seguro (Santiago).
+   * En error/permisos denegados solo centra en Santiago y avisa; no fija coordenadas.
    */
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -272,25 +272,24 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
         onChange?.(newPos);
       },
       (error) => {
-        let errorMessage = 'Error al obtener la ubicación';
+        let errorMessage = 'No pudimos obtener tu ubicación.';
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Permiso de ubicación denegado';
+            errorMessage = 'No tenemos permiso para ver tu ubicación.';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Ubicación no disponible';
+            errorMessage = 'Tu ubicación no está disponible.';
             break;
           case error.TIMEOUT:
-            errorMessage = 'Tiempo de espera agotado';
+            errorMessage = 'Se agotó el tiempo para obtener tu ubicación.';
             break;
         }
-        setLocationError(errorMessage);
+        setLocationError(`${errorMessage} Haz clic en el mapa para marcar la propiedad.`);
 
-        // Fallback defensivo para no dejar el mapa sin referencia.
-        const fallbackPos = { lat: -33.4489, lng: -70.6693 }; // Santiago, Chile
-        setPosition(fallbackPos);
-        setPositionToCenter(fallbackPos);
-        onChange?.(fallbackPos);
+        // Solo centra el mapa en Santiago como referencia visual. NO fija un punto ni
+        // llama a onChange: así el campo sigue vacío (y obligatorio) hasta que la
+        // persona elija una ubicación real, en vez de guardar coordenadas inventadas.
+        setPositionToCenter({ lat: -33.4489, lng: -70.6693 });
       },
       {
         enableHighAccuracy: true,
@@ -305,6 +304,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
     
     const newPosition = { lat: e.latlng.lat, lng: e.latlng.lng };
     setPosition(newPosition);
+    setLocationError(null);
     onChange?.(newPosition);
     
     // Ripple visual para confirmar interacción al usuario.
@@ -359,13 +359,13 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
       className={containerClasses} 
       style={containerStyle}
     >
-      {/* Banner de error de geolocalización (no bloquea uso manual del mapa). */}
+      {/* Aviso informativo de geolocalización (no bloquea el uso manual del mapa). */}
       {locationError && (
-        <div className="absolute top-2 right-2 z-[1000] max-w-xs">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 shadow-sm">
-            <div className="flex items-center gap-2">
-              <AlertCircle size={20} className="text-red-500 flex-shrink-0" />
-              <span className="text-red-700 text-sm font-medium">{locationError}</span>
+        <div className="absolute top-2 right-2 z-[1000] max-w-xs" role="status">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 shadow-sm">
+            <div className="flex items-start gap-2">
+              <AlertCircle size={20} className="text-amber-500 flex-shrink-0" />
+              <span className="text-amber-800 text-sm font-medium">{locationError}</span>
             </div>
           </div>
         </div>
@@ -422,6 +422,7 @@ const LocationPicker: React.FC<LocationPickerProps> = ({
             onDragEnd={(newPos: { lat: number; lng: number }) => {
               if (isEditable) {
                 setPosition(newPos);
+                setLocationError(null);
                 onChange?.(newPos);
               }
             }}

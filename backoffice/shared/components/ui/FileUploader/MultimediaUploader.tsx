@@ -11,6 +11,10 @@ interface MultimediaUploaderProps {
   label?: string;
   accept?: string;
   maxFiles?: number;
+  /** Máximo de imágenes (los videos no cuentan). Útil para respetar el tope por propiedad. */
+  maxImages?: number;
+  /** Oculta el contador "X de N imágenes" (si el padre muestra uno propio). */
+  hideImageCounter?: boolean;
   maxSize?: number;
   aspectRatio?: 'square' | 'video' | '16:9' | 'auto';
   buttonType?: 'icon' | 'normal';
@@ -70,6 +74,8 @@ function MultimediaUploaderDefault({
   label = '',
   accept = 'image/*,video/*',
   maxFiles = 5,
+  maxImages,
+  hideImageCounter = false,
   maxSize = 9,
   aspectRatio = '16:9',
   buttonType = 'icon',
@@ -79,6 +85,7 @@ function MultimediaUploaderDefault({
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [limitError, setLimitError] = useState<string | null>(null);
 
   // Función para validar tamaño de archivo según tipo
   const validateFileSize = (file: File): string | null => {
@@ -105,6 +112,7 @@ function MultimediaUploaderDefault({
     const selectedFiles = Array.from(e.target.files || []);
 
     if (selectedFiles.length === 0) return;
+    setLimitError(null);
 
     // Para variante avatar: solo un archivo y solo imágenes
     if (variant === 'avatar' || variant === 'banner') {
@@ -180,6 +188,23 @@ function MultimediaUploaderDefault({
       return;
     }
 
+    // Verificar límite de imágenes (los videos no cuentan)
+    if (maxImages !== undefined) {
+      const isImage = (f: File) => f.type.startsWith('image/');
+      const currentImages = files.filter(isImage).length;
+      const incomingImages = validFiles.filter(isImage).length;
+      if (currentImages + incomingImages > maxImages) {
+        const remaining = Math.max(maxImages - currentImages, 0);
+        setLimitError(
+          remaining > 0
+            ? `Se superaría el máximo de imágenes por propiedad. Puedes agregar ${remaining} más.`
+            : 'Ya alcanzaste el máximo de imágenes por propiedad.',
+        );
+        if (inputRef.current) inputRef.current.value = "";
+        return;
+      }
+    }
+
     // Limpiar URLs de preview anteriores
     previewUrls.forEach(url => URL.revokeObjectURL(url));
 
@@ -195,6 +220,7 @@ function MultimediaUploaderDefault({
   };
 
   const handleRemove = (index: number) => {
+    setLimitError(null);
     // Revocar URL del archivo que se elimina
     if (previewUrls[index]) {
       URL.revokeObjectURL(previewUrls[index]);
@@ -290,6 +316,16 @@ function MultimediaUploaderDefault({
               <Button variant="secondary" type="button" onClick={() => inputRef.current?.click()}>
                 Subir multimedia
               </Button>
+            )}
+            {maxImages !== undefined && !hideImageCounter && (
+              <span className="text-xs text-muted-foreground">
+                {files.filter(f => f.type.startsWith('image/')).length} de {maxImages} imágenes
+              </span>
+            )}
+            {limitError && (
+              <span role="alert" className="text-sm text-red-600">
+                {limitError}
+              </span>
             )}
           </div>
 

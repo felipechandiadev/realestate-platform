@@ -418,6 +418,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 					uploadPath?: string;
 					accept?: string;
 					maxFiles?: number;
+					maxImages?: number;
 					maxSize?: number;
 					aspectRatio?: "square" | "video" | "auto";
 					buttonType?: "icon" | "normal";
@@ -437,6 +438,7 @@ const StepperBaseForm: React.FC<StepperBaseFormProps> = ({
 							label={(customLabel as string | undefined) ?? field.label}
 							accept={typedProps.accept ?? "image/*,video/mp4,video/webm"}
 							maxFiles={typedProps.maxFiles}
+												maxImages={typedProps.maxImages}
 							maxSize={typedProps.maxSize}
 							aspectRatio={typedProps.aspectRatio}
 							buttonType={typedProps.buttonType}

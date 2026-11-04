@@ -13,6 +13,9 @@ import { useAlert } from '@/shared/hooks/useAlert';
 import { usePropertyUploadQueue } from '../../../../upload/usePropertyUploadQueue';
 import { UploadQueueList } from '../../../../upload/UploadQueueList';
 
+/** Tope de imágenes por propiedad (debe coincidir con MAX_PROPERTY_IMAGES del core). */
+const MAX_PROPERTY_IMAGES = 10;
+
 interface MultimediaSectionProps {
   propertyId: string;
   title?: string;
@@ -74,6 +77,8 @@ const MultimediaSection: React.FC<MultimediaSectionProps> = ({
       setLoading(false);
     }
   }, [propertyId]);
+
+  const imageCount = multimedias.filter((m) => m.type === 'image').length;
 
   useEffect(() => {
     void loadMultimedia();
@@ -223,6 +228,9 @@ const MultimediaSection: React.FC<MultimediaSectionProps> = ({
       ) : null}
 
       <div className="space-y-4 border-t pt-6">
+        <p className="text-xs text-muted-foreground">
+          {imageCount} de {MAX_PROPERTY_IMAGES} imágenes
+        </p>
         <MultimediaUploader
           key={uploaderKey}
           uploadPath={`/properties/${propertyId}/multimedia`}
@@ -230,6 +238,8 @@ const MultimediaSection: React.FC<MultimediaSectionProps> = ({
           accept="image/*,video/mp4,video/webm"
           maxSize={70}
           maxFiles={20}
+          maxImages={Math.max(MAX_PROPERTY_IMAGES - imageCount, 0)}
+          hideImageCounter
           label=""
           aspectRatio="16:9"
         />

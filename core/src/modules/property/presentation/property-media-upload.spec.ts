@@ -5,6 +5,7 @@ import {
   MAX_IMAGE_BYTES,
   PROPERTY_UPLOAD_TMP_DIR,
   UNSUPPORTED_VIDEO_MESSAGE,
+  assertPropertyImageLimit,
   assertPropertyMediaSizes,
   propertyMediaUploadOptions,
   removeUploadedTempFiles,
@@ -28,6 +29,26 @@ describe('property-media-upload', () => {
       ]),
     ).not.toThrow();
     expect(() => assertPropertyMediaSizes(undefined)).not.toThrow();
+  });
+
+  it('limita a 10 imágenes por propiedad y no cuenta videos', () => {
+    const img = { mimetype: 'image/jpeg' };
+    const video = { mimetype: 'video/mp4' };
+    expect(() =>
+      assertPropertyImageLimit(Array(10).fill(img)),
+    ).not.toThrow();
+    expect(() => assertPropertyImageLimit(Array(11).fill(img))).toThrow(
+      BadRequestException,
+    );
+    expect(() =>
+      assertPropertyImageLimit([...Array(10).fill(img), video, video]),
+    ).not.toThrow();
+    // Suma las ya guardadas: 8 existentes + 3 nuevas = 11
+    expect(() => assertPropertyImageLimit(Array(3).fill(img), 8)).toThrow(
+      /solo puedes agregar 2 más/,
+    );
+    expect(() => assertPropertyImageLimit(Array(2).fill(img), 8)).not.toThrow();
+    expect(() => assertPropertyImageLimit(undefined)).not.toThrow();
   });
 
   it('filtra por tipo MIME', () => {

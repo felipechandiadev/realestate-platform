@@ -73,6 +73,29 @@ export function propertyMediaUploadOptions(maxFiles: number) {
   };
 }
 
+/** Máximo de imágenes por propiedad (los videos no cuentan). */
+export const MAX_PROPERTY_IMAGES = 10;
+
+/**
+ * Rechaza si la propiedad superaría `MAX_PROPERTY_IMAGES` imágenes.
+ * `existingImages` son las ya guardadas (0 al crear); `files` los archivos entrantes.
+ */
+export function assertPropertyImageLimit(
+  files: Pick<UploadedFile, 'mimetype'>[] = [],
+  existingImages = 0,
+): void {
+  const incoming = files.filter((file) =>
+    IMAGE_MIMES.includes(file.mimetype),
+  ).length;
+  if (existingImages + incoming > MAX_PROPERTY_IMAGES) {
+    const remaining = Math.max(MAX_PROPERTY_IMAGES - existingImages, 0);
+    throw new BadRequestException(
+      `Máximo ${MAX_PROPERTY_IMAGES} imágenes por propiedad. ` +
+        `Ya tiene ${existingImages} y solo puedes agregar ${remaining} más.`,
+    );
+  }
+}
+
 /** Rechaza imágenes sobre 10 MB (los videos ya quedan acotados a 70 MB por Multer). */
 export function assertPropertyMediaSizes(files: UploadedFile[] = []): void {
   const tooBig = files.find(
