@@ -53,7 +53,7 @@ describe('PropertyController (integration)', () => {
       // Ejecutar seed:reset antes de las pruebas
       console.log('🔄 Resetting database to initial state...');
       try {
-        execSync('npm run seed:reset', { env: process.env, stdio: 'inherit' });
+        execSync('npm run seed:base', { env: process.env, stdio: 'inherit' });
         console.log('✅ Database reset successful');
       } catch (error) {
         console.error('❌ Failed to reset database:', error.message);

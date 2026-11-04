@@ -5,8 +5,8 @@
  * ni recrea el esquema. Las fechas son relativas a hoy y el generador es
  * determinista, así que cada ejecución sobre una base nueva da el mismo resultado.
  *
- *   npm run seed:demo        # solo el historial (requiere el seed base)
- *   npm run seed:full        # seed base + historial
+ *   npm run seed             # seed base + historial (lo normal)
+ *   npm run seed:demo        # solo el historial (requiere el seed base ya cargado)
  *
  * Comparte la guardia de seguridad del seed: solo corre contra una base local `_dev`.
  */
@@ -127,10 +127,9 @@ const FEATURES = ['pool', 'garden', 'terrace', 'storage', 'elevator', 'concierge
 
 type Mix = { weight: number; status: PropertyStatus };
 
-async function seedDemo() {
-  assertSafeToSeed(AppDataSource.options as { host?: string; database?: string }, 'seed:demo');
-  await initializeDataSource();
-  try {
+/** Agrega el historial usando el DataSource ya inicializado (lo llama el seed base). */
+export async function runDemoSeed() {
+  {
     const users = AppDataSource.getRepository(User);
     const persons = AppDataSource.getRepository(PersonOrmEntity);
     const properties = AppDataSource.getRepository(Property);
@@ -145,10 +144,10 @@ async function seedDemo() {
     const baseAgents = await users.find({ where: { role: UserRole.AGENT } });
     const baseProps = await properties.find();
     if (!admin || baseAgents.length === 0 || baseProps.length === 0) {
-      throw new Error('Falta el seed base. Ejecuta primero `npm run seed` (o `npm run seed:full`).');
+      throw new Error('Falta el seed base. Ejecuta primero `npm run seed:base`.');
     }
     if (await users.findOne({ where: { email: 'valentina.rojas@bravoshottpropiedades.cl' } })) {
-      throw new Error('El historial de demostración ya está aplicado. Para repetirlo ejecuta `npm run seed:reset && npm run seed:demo`.');
+      throw new Error('El historial de demostración ya está aplicado. Para repetirlo ejecuta `npm run seed` (recrea todo).');
     }
 
     // ---- el seed base crea todo "hoy": se reparte en el período para que los reportes
@@ -536,12 +535,23 @@ async function seedDemo() {
     console.log(`  • ${created.length} propiedades con ${created.length * 3} imágenes optimizadas (${created.filter((p) => p.status === PropertyStatus.PUBLISHED).length} publicadas)`);
     console.log(`  • ${contractCount} contratos y ${paymentCount} pagos`);
     console.log(`  • ${notificationCount} notificaciones`);
+  }
+}
+
+/** Ejecución independiente: `npm run seed:demo` (requiere el seed base ya cargado). */
+async function main() {
+  assertSafeToSeed(AppDataSource.options as { host?: string; database?: string }, 'seed:demo');
+  await initializeDataSource();
+  try {
+    await runDemoSeed();
   } finally {
     await AppDataSource.destroy().catch(() => undefined);
   }
 }
 
-seedDemo().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  });
+}

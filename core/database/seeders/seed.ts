@@ -41,6 +41,7 @@ import { DEFAULT_ACCOUNT_ITEMS, DEFAULT_NAV_ITEMS } from '../../src/modules/port
 import { RegionEnum } from '../../src/shared/regions/regions.enum';
 import { ComunaEnum } from '../../src/shared/regions/comunas.enum';
 import { cleanPublicDirectory } from '../../scripts/clean-public';
+import { runDemoSeed } from './seed-demo';
 import {
   SAMPLE_SETS,
   cleanCloudBucketForSeed,
@@ -1556,7 +1557,11 @@ async function seedDatabase() {
     console.log(`  • 3 slides in Spanish`);
     console.log(`  • ${articles.length} blog articles by category`);
     console.log(`  • ${testimonials.length} testimonies`);
-    
+
+    // Historial de ~3 meses para Dashboard y Reportes (omitir con --base-only).
+    if (!process.argv.includes('--base-only')) {
+      await runDemoSeed();
+    }
   } catch (error) {
     console.error('Error during seeding:', error);
     throw error;

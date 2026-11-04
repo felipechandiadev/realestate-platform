@@ -48,7 +48,7 @@ export async function loginStaff(app: INestApplication): Promise<LoginResult> {
   }
 
   throw new Error(
-    'loginStaff failed: no seed admin could sign in. Run npm run seed:reset in core.',
+    'loginStaff failed: no seed admin could sign in. Run npm run seed:base in core.',
   );
 }
 
