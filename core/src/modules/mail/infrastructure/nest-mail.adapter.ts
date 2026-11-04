@@ -9,7 +9,7 @@ import { DEFAULT_COMPANY_NAME } from '../brand.constants';
 @Injectable()
 export class NestMailAdapter extends MailAdapter {
   private readonly logger = new Logger(NestMailAdapter.name);
-  private cachedCompanyName?: string;
+  private cachedBrand?: { companyName: string; logoUrl?: string };
 
   constructor(
     private readonly mailerService: MailerService,
@@ -19,32 +19,37 @@ export class NestMailAdapter extends MailAdapter {
     super();
   }
 
-  private async getCompanyName(): Promise<string> {
-    if (this.cachedCompanyName) return this.cachedCompanyName;
+  private async getBrand(): Promise<{ companyName: string; logoUrl?: string }> {
+    if (this.cachedBrand) return this.cachedBrand;
 
     try {
       const identityRepo = this.dataSource.getRepository(Identity);
       const identity = await identityRepo.findOne({ where: { deletedAt: IsNull() }, order: { createdAt: 'DESC' } });
       const name = identity?.name?.trim();
-      this.cachedCompanyName = name && name.length ? name : DEFAULT_COMPANY_NAME;
-      return this.cachedCompanyName;
+      const logoUrl = identity?.urlLogo?.trim();
+      this.cachedBrand = {
+        companyName: name && name.length ? name : DEFAULT_COMPANY_NAME,
+        logoUrl: logoUrl && logoUrl.length ? logoUrl : undefined,
+      };
+      return this.cachedBrand;
     } catch (error) {
       this.logger.warn(
-        `Failed to fetch company name from Identity, falling back to ${DEFAULT_COMPANY_NAME}`,
+        `Failed to fetch brand from Identity, falling back to ${DEFAULT_COMPANY_NAME}`,
         error?.message,
       );
-      return DEFAULT_COMPANY_NAME;
+      return { companyName: DEFAULT_COMPANY_NAME };
     }
   }
 
   async sendMail(options: MailOptions): Promise<void> {
-    const companyName = await this.getCompanyName();
+    const { companyName, logoUrl } = await this.getBrand();
     const mailFrom =
       (this.configService.get<string>('MAIL_FROM') || '').trim() ||
       'noreply@example.com';
     const context = {
       ...(options.context || {}),
       companyName,
+      logoUrl,
     };
 
     await this.mailerService.sendMail({
