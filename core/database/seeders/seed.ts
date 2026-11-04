@@ -1508,7 +1508,7 @@ async function seedDatabase() {
     console.log(`✓ Identity created: Bravo Schott Propiedades`);
 
     const portalHeaderRepository = AppDataSource.getRepository(PortalHeader);
-    const portalHeader = await portalHeaderRepository.findOne({ order: { createdAt: 'ASC' } });
+    const [portalHeader] = await portalHeaderRepository.find({ order: { createdAt: 'ASC' }, take: 1 });
     if (portalHeader) {
       await portalHeaderRepository.update(portalHeader.id, { logoUrl: logoMedia.url });
     } else {
