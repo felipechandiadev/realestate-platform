@@ -5,7 +5,9 @@ import { propertyMediaTypeFor } from './property-media-type';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Property } from '../domain/property.entity';
-import { User } from '../../users/domain/user.entity';
+import { InternalNote } from '../domain/internal-note';
+import { appendNote, buildInternalNote, readNotes, removeNote } from './internal-notes';
+import { User, UserRole } from '../../users/domain/user.entity';
 import { Multimedia } from '../../multimedia/domain/multimedia.entity';
 import { PropertyType } from '../../property-types/domain/property-type.entity';
 import { PropertyRepository } from '../domain/property.repository';
@@ -81,7 +83,37 @@ export class PropertyService {
   // --- high-level delegations ---
 
   async create(dto: any, creatorId?: string): Promise<Property> {
-    return await this.createPropertyUseCase.execute(dto, creatorId);
+    return await this.createPropertyUseCase.execute(
+      await this.withInitialInternalNote(dto, creatorId),
+      creatorId,
+    );
+  }
+
+  /**
+   * El asistente del backoffice envía una nota inicial como texto (`internalNotes`).
+   * Se convierte en la primera nota del listado (solo si quien crea es staff) y se
+   * descarta cualquier `internalNotesLog` enviado por el cliente.
+   */
+  private async withInitialInternalNote(dto: any, creatorId?: string): Promise<any> {
+    if (!dto || typeof dto !== 'object') return dto;
+    const { internalNotes, internalNotesLog: _ignored, ...rest } = dto;
+    if (typeof internalNotes !== 'string' || !internalNotes.trim() || !creatorId) {
+      return rest;
+    }
+    const creator = await this.userRepository.findOne({ where: { id: creatorId } });
+    if (!creator || (creator.role !== UserRole.ADMIN && creator.role !== UserRole.AGENT)) {
+      return rest;
+    }
+    return {
+      ...rest,
+      internalNotesLog: [
+        buildInternalNote({
+          text: internalNotes,
+          authorId: creator.id,
+          authorName: creator.name,
+        }),
+      ],
+    };
   }
 
   async createPropertyWithFiles(dto: any, creatorId: string, files: any[]) {
@@ -648,6 +680,66 @@ async createPropertyRequest(dto: any, userId: string): Promise<Property> {
       characteristics,
       otherFeatures: normalizeOtherFeatures(p.otherFeatures),
     };
+  }
+
+  // --- notas internas (solo staff) ---
+
+  private async resolveAuthorName(userId: string): Promise<string> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    return user?.name || user?.email || 'Usuario';
+  }
+
+  async listInternalNotes(propertyId: string): Promise<InternalNote[]> {
+    const property = await this.propertyRepository.findOne({
+      where: { id: propertyId, deletedAt: IsNull() },
+    });
+    if (!property) throw new NotFoundException('Propiedad no encontrada');
+    return readNotes(property.internalNotesLog);
+  }
+
+  /**
+   * Agrega una nota. El autor sale del usuario autenticado (nunca del cliente) y la
+   * lectura+escritura va en una transacción con bloqueo para que dos notas simultáneas
+   * no se pisen.
+   */
+  async addInternalNote(
+    propertyId: string,
+    text: string,
+    user: { id: string },
+  ): Promise<InternalNote> {
+    const note = buildInternalNote({
+      text,
+      authorId: user.id,
+      authorName: await this.resolveAuthorName(user.id),
+    });
+    await this.propertyRepository.manager.transaction(async (em: any) => {
+      const property = await em.findOne(Property, {
+        where: { id: propertyId, deletedAt: IsNull() },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!property) throw new NotFoundException('Propiedad no encontrada');
+      const internalNotesLog = appendNote(property.internalNotesLog, note);
+      await em.update(Property, propertyId, { internalNotesLog });
+    });
+    return note;
+  }
+
+  async deleteInternalNote(
+    propertyId: string,
+    noteId: string,
+    user: { id?: string; role?: string },
+  ): Promise<void> {
+    await this.propertyRepository.manager.transaction(async (em: any) => {
+      const property = await em.findOne(Property, {
+        where: { id: propertyId, deletedAt: IsNull() },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!property) throw new NotFoundException('Propiedad no encontrada');
+      const internalNotesLog = removeNote(property.internalNotesLog, noteId, user);
+      await em.update(Property, propertyId, {
+        internalNotesLog: internalNotesLog.length ? internalNotesLog : null,
+      });
+    });
   }
 
   /** Cantidad de imágenes (no videos) activas de la propiedad. */

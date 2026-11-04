@@ -38,6 +38,7 @@ import { Multimedia } from '../../multimedia/domain/multimedia.entity';
 import { RegionEnum } from '../../../shared/regions/regions.enum';
 import { ComunaEnum } from '../../../shared/regions/comunas.enum';
 import { PropertyType } from '../../property-types/domain/property-type.entity';
+import { InternalNote } from './internal-note';
 
 export enum CurrencyPriceEnum {
   CLP = 'CLP',
@@ -275,11 +276,17 @@ export class Property {
   @IsArray()
   favorites?: Array<{ userId: string; addedAt: Date }>;
 
-  // Internal Notes
+  /** @deprecated Texto único anterior. Se reemplazó por `internalNotesLog`; queda solo como respaldo. */
   @Column({ type: 'text', nullable: true })
   @IsOptional()
   @IsString()
   internalNotes?: string;
+
+  /** Notas internas (solo staff): lista con autor y fecha. Nunca se expone en el portal. */
+  @Column({ type: 'json', nullable: true })
+  @IsOptional()
+  @IsArray()
+  internalNotesLog?: InternalNote[] | null;
 
   // Timestamps
   @CreateDateColumn()

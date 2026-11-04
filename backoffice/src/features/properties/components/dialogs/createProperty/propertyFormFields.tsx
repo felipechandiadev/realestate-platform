@@ -358,8 +358,9 @@ export const getSeoFields = (): BaseFormField[][] => [
 // Función para obtener campos de notas internas
 export const getInternalNotesFields = (): BaseFormField[][] => [
   [{
+    // El backend la convierte en la primera nota del listado (autor = quien crea).
     name: 'internalNotes',
-    label: 'Notas Internas',
+    label: 'Nota interna inicial (opcional)',
     type: 'textarea',
     rows: 4,
     width: '100%',

@@ -16,6 +16,7 @@ const fullProperty = {
   status: PropertyStatus.PUBLISHED,
   price: 100,
   internalNotes: 'secreto',
+  internalNotesLog: [{ id: 'n1', text: 'secreto', authorId: 'a', authorName: 'Ana', createdAt: '2026-01-01T00:00:00.000Z' }],
   creatorUserId: 'u-creator',
   creatorUser: { id: 'u-creator', email: 'creador@x.cl', password: 'hash' },
   changeHistory: [{ field: 'price' }],
@@ -56,6 +57,7 @@ describe('toPublicPropertyDetail', () => {
     });
     for (const key of [
       'internalNotes',
+      'internalNotesLog',
       'creatorUserId',
       'creatorUser',
       'changeHistory',
@@ -103,6 +105,7 @@ describe('PropertyService.getPublicFullProperty', () => {
     const out: any = await callPublic(fullProperty);
     expect(out.id).toBe('p1');
     expect(out).not.toHaveProperty('internalNotes');
+    expect(out).not.toHaveProperty('internalNotesLog');
   });
 });
 
@@ -139,5 +142,32 @@ describe('PropertyController.getFullProperty', () => {
       }),
     ).resolves.toEqual({ full: true });
     expect(service.getPublicFullProperty).not.toHaveBeenCalled();
+  });
+});
+
+describe('PropertyController.findOne · notas internas solo para staff', () => {
+  const service = { findOne: jest.fn().mockResolvedValue(fullProperty) };
+  const controller = new PropertyController(service as any, {} as any);
+
+  it('ADMIN y AGENT reciben la propiedad con sus notas', async () => {
+    for (const role of [UserRole.ADMIN, UserRole.AGENT]) {
+      const out: any = await controller.findOne('p1', { user: { id: 'u', role } });
+      expect(out.internalNotesLog).toHaveLength(1);
+      expect(out.internalNotes).toBe('secreto');
+    }
+  });
+
+  it('COMMUNITY (u otro usuario autenticado) no recibe ninguna nota', async () => {
+    const out: any = await controller.findOne('p1', {
+      user: { id: 'u', role: UserRole.COMMUNITY },
+    });
+    expect(out).not.toHaveProperty('internalNotes');
+    expect(out).not.toHaveProperty('internalNotesLog');
+    expect(out.title).toBe('Casa');
+  });
+
+  it('sin usuario en la petición tampoco', async () => {
+    const out: any = await controller.findOne('p1', {});
+    expect(out).not.toHaveProperty('internalNotesLog');
   });
 });

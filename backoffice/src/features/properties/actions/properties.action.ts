@@ -2620,3 +2620,65 @@ export async function getUserProperties(userId: string, params: SalePropertiesGr
   return response.json();
 }
 
+
+// ---------------------------------------------------------------------------
+// Notas internas (solo staff). El autor lo decide el backend con el token.
+// ---------------------------------------------------------------------------
+
+export interface PropertyInternalNote {
+  id: string;
+  text: string;
+  authorId: string | null;
+  authorName: string;
+  /** ISO 8601 (UTC) */
+  createdAt: string;
+}
+
+async function internalNotesRequest<T>(
+  path: string,
+  init: { method: 'GET' | 'POST' | 'DELETE'; body?: unknown },
+): Promise<{ success: boolean; data?: T; error?: string }> {
+  try {
+    const session = await getServerSession(authOptions);
+    const accessToken = session?.accessToken;
+    if (!accessToken) return { success: false, error: 'No authenticated' };
+
+    const res = await fetch(`${env.backendApiUrl}/properties/${path}`, {
+      method: init.method,
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
+        ...(init.body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+      cache: 'no-store',
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      const message = Array.isArray(err?.message) ? err.message.join('. ') : err?.message;
+      return { success: false, error: message || `HTTP ${res.status}` };
+    }
+
+    const payload = await res.json().catch(() => null);
+    return { success: true, data: (payload?.data ?? payload) as T };
+  } catch (error) {
+    console.error('[internalNotes] Error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+export async function getPropertyInternalNotes(propertyId: string) {
+  return internalNotesRequest<PropertyInternalNote[]>(`${propertyId}/internal-notes`, { method: 'GET' });
+}
+
+export async function addPropertyInternalNote(propertyId: string, text: string) {
+  return internalNotesRequest<PropertyInternalNote>(`${propertyId}/internal-notes`, {
+    method: 'POST',
+    body: { text },
+  });
+}
+
+export async function deletePropertyInternalNote(propertyId: string, noteId: string) {
+  return internalNotesRequest<unknown>(`${propertyId}/internal-notes/${noteId}`, { method: 'DELETE' });
+}

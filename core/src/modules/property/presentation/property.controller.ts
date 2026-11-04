@@ -54,6 +54,7 @@ import { JwtAuthGuard, RolesGuard, Roles, Public } from '../../auth/guards/jwt-a
 import { UserRole } from '../../users/domain/user.entity';
 import { PropertyOperationType } from '../../../shared/enums/property-operation-type.enum';
 import { UploadPropertyMultimediaDto } from '../dto/upload-property-multimedia.dto';
+import { CreateInternalNoteDto } from '../dto/create-internal-note.dto';
 import { FileUploadService } from '../../../shared/services/file-upload.service';
 import {
   assertPropertyImageLimit,
@@ -820,6 +821,57 @@ export class PropertyController {
     }
   }
 
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
+  @Get(':id/internal-notes')
+  @ApiOperation({ summary: 'List internal notes of a property (staff only)' })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Audit(AuditAction.READ, AuditEntityType.PROPERTY, 'Property internal notes viewed')
+  async listInternalNotes(@Param('id') propertyId: string) {
+    return { data: await this.propertyService.listInternalNotes(propertyId) };
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
+  @Post(':id/internal-notes')
+  @ApiOperation({ summary: 'Add an internal note to a property (staff only)' })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiBody({ type: CreateInternalNoteDto })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Audit(AuditAction.UPDATE, AuditEntityType.PROPERTY, 'Property internal note added')
+  async addInternalNote(
+    @Param('id') propertyId: string,
+    @Body(new ValidationPipe({ transform: true, whitelist: true })) dto: CreateInternalNoteDto,
+    @Req() req: any,
+  ) {
+    // El autor se toma del token; cualquier autor enviado por el cliente se ignora.
+    const note = await this.propertyService.addInternalNote(propertyId, dto.text, {
+      id: this.extractUserId(req),
+    });
+    return { data: note };
+  }
+
+  @Roles(UserRole.ADMIN, UserRole.AGENT)
+  @Delete(':id/internal-notes/:noteId')
+  @ApiOperation({ summary: 'Delete an internal note (author or admin)' })
+  @ApiParam({ name: 'id', type: String, description: 'Property ID' })
+  @ApiParam({ name: 'noteId', type: String, description: 'Note ID' })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @Audit(AuditAction.UPDATE, AuditEntityType.PROPERTY, 'Property internal note deleted')
+  async deleteInternalNote(
+    @Param('id') propertyId: string,
+    @Param('noteId') noteId: string,
+    @Req() req: any,
+  ) {
+    await this.propertyService.deleteInternalNote(propertyId, noteId, {
+      id: this.extractUserId(req),
+      role: req.user?.role,
+    });
+    return { message: 'Nota eliminada' };
+  }
+
   @Get(':id/location')
   @UseGuards(JwtAuthGuard)
   @Audit(AuditAction.READ, AuditEntityType.PROPERTY, 'Property location retrieved')
@@ -904,8 +956,12 @@ export class PropertyController {
   @ApiResponse({ status: 404, description: 'Property not found' })
   @ApiParam({ name: 'id', type: String, description: 'Property ID' })
   @Audit(AuditAction.READ, AuditEntityType.PROPERTY, 'Property viewed')
-  findOne(@Param('id') id: string) {
-    return this.propertyService.findOne(id);
+  async findOne(@Param('id') id: string, @Req() req: any) {
+    const property = await this.propertyService.findOne(id);
+    if (isStaffRole(req?.user?.role)) return property;
+    // Las notas internas son solo del staff: no se devuelven a otros usuarios autenticados.
+    const { internalNotes, internalNotesLog, ...publicFields } = property as Property;
+    return publicFields;
   }
 
   @Roles(UserRole.ADMIN, UserRole.AGENT, UserRole.COMMUNITY)

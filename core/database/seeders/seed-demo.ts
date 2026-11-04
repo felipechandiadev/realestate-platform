@@ -22,6 +22,7 @@ import { MultimediaVariant } from '../../src/modules/media-optimization/domain/m
 import { SAMPLE_SETS, uploadSampleImage } from './seed-media.uploader';
 import { PropertyStatus } from '../../src/shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../src/shared/enums/property-operation-type.enum';
+import { buildInternalNote } from '../../src/modules/property/application/internal-notes';
 import { RegionEnum } from '../../src/shared/regions/regions.enum';
 import { ComunaEnum } from '../../src/shared/regions/comunas.enum';
 import { ContractOrmEntity } from '../../src/modules/contracts/infrastructure/persistence/contract.orm-entity';
@@ -326,7 +327,19 @@ export async function runDemoSeed() {
           views,
           leads,
           favorites,
-          internalNotes: status === PropertyStatus.REQUEST ? 'Pendiente de revisión de antecedentes del propietario.' : undefined,
+          internalNotesLog:
+            status === PropertyStatus.REQUEST
+              ? [
+                  buildInternalNote(
+                    {
+                      text: 'Pendiente de revisión de antecedentes del propietario.',
+                      authorId: admin.id,
+                      authorName: admin.name,
+                    },
+                    createdAt,
+                  ),
+                ]
+              : undefined,
           createdAt,
           updatedAt: publishedAt ?? createdAt,
           lastModifiedAt: publishedAt ?? createdAt,

@@ -13,12 +13,20 @@ import { normalizeOtherFeatures } from '../../domain/other-features';
 export const CLEARABLE_PROPERTY_FIELDS = new Set<string>([
   'description',
   'address',
-  'internalNotes',
   'assignedAgentId',
   'constructionYear',
   'seoTitle',
   'seoDescription',
   'seoKeywords',
+]);
+
+/**
+ * Campos que NO se cambian con PATCH: las notas internas se gestionan solo con
+ * `POST/DELETE /properties/:id/internal-notes` (autor tomado del token, solo staff).
+ */
+export const NON_PATCHABLE_PROPERTY_FIELDS = new Set<string>([
+  'internalNotes',
+  'internalNotesLog',
 ]);
 
 @Injectable()
@@ -46,6 +54,7 @@ export class UpdatePropertyUseCase {
     const cleanDto = Object.fromEntries(
       Object.entries(updatePropertyDto).flatMap(([key, value]) => {
         if (value === undefined) return [];
+        if (NON_PATCHABLE_PROPERTY_FIELDS.has(key)) return [];
         if (value === '' || value === null) {
           return CLEARABLE_PROPERTY_FIELDS.has(key) ? [[key, null]] : [];
         }

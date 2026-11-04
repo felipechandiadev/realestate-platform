@@ -120,12 +120,11 @@ describe('UpdatePropertyUseCase', () => {
   });
 
   describe('vaciar campos y destacadas', () => {
-    it('vaciar descripción, notas, agente o año los deja en null; un título vacío se ignora', async () => {
+    it('vaciar descripción, agente o año los deja en null; un título vacío se ignora', async () => {
       const property: Record<string, unknown> = {
         id: 'p1',
         title: 'Casa',
         description: 'Texto',
-        internalNotes: 'Nota',
         assignedAgentId: 'agent-1',
         constructionYear: 1990,
         status: PropertyStatus.INACTIVE,
@@ -137,7 +136,6 @@ describe('UpdatePropertyUseCase', () => {
       await useCase.execute('p1', {
         title: '',
         description: '',
-        internalNotes: '',
         assignedAgentId: null,
         constructionYear: null,
       } as any);
@@ -145,11 +143,34 @@ describe('UpdatePropertyUseCase', () => {
       expect(property).toMatchObject({
         title: 'Casa',
         description: null,
-        internalNotes: null,
         assignedAgentId: null,
         constructionYear: null,
       });
       expect(notificationsService.notifyAgentAssigned).not.toHaveBeenCalled();
+    });
+
+    it('las notas internas no se cambian por PATCH (ni el texto antiguo ni el listado)', async () => {
+      const log = [{ id: 'n1', text: 'Original', authorId: 'u1', authorName: 'Ana', createdAt: '2026-01-01T00:00:00.000Z' }];
+      const property: Record<string, unknown> = {
+        id: 'p1',
+        title: 'Casa',
+        internalNotes: 'Texto antiguo',
+        internalNotesLog: log,
+        status: PropertyStatus.INACTIVE,
+        changeHistory: [],
+      };
+      findOne.mockResolvedValue(property);
+      mockReload(property);
+
+      await useCase.execute('p1', {
+        title: 'Casa nueva',
+        internalNotes: 'hackeado',
+        internalNotesLog: [{ id: 'x', text: 'inyectada' }],
+      } as any);
+
+      expect(property.title).toBe('Casa nueva');
+      expect(property.internalNotes).toBe('Texto antiguo');
+      expect(property.internalNotesLog).toBe(log);
     });
 
     it('al dejar de estar publicada deja de ser destacada', async () => {
