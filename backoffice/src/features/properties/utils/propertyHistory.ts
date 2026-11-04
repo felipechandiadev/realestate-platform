@@ -33,6 +33,8 @@ export interface HistoryEntry {
   /** Nombre legible (agente, tipo de propiedad) que agrega el backend. */
   previousDisplay?: string;
   newDisplay?: string;
+  /** Cantidades de una carga de multimedia. */
+  meta?: { images?: number; videos?: number };
 }
 
 export interface HistoryEvent {
@@ -45,6 +47,8 @@ export interface HistoryEvent {
   /** "Backoffice · Ubicación", "Contrato CT-0001"… o null si la entrada es anterior al registro de origen. */
   origin: string | null;
   entries: HistoryEntry[];
+  /** Uso interno al juntar cargas de multimedia. */
+  oldestTimestamp?: Date;
 }
 
 const FIELD_LABELS: Record<string, string> = {
@@ -99,7 +103,7 @@ export function entryKind(entry: HistoryEntry): HistoryKind {
   if (entry.kind) return entry.kind;
   if (entry.field === 'creation') return 'CREATED';
   if (entry.field === 'status') {
-    if (entry.newValue === 'PUBLISHED') return 'PUBLISHED';
+    if (entry.newValue === 'PUBLISHED' && entry.previousValue !== 'CONTRACT-IN-PROGRESS') return 'PUBLISHED';
     if (entry.previousValue === 'PUBLISHED' && entry.newValue === 'INACTIVE') return 'UNPUBLISHED';
     return 'STATUS_CHANGED';
   }
@@ -183,10 +187,63 @@ export function groupHistory(entries: HistoryEntry[]): HistoryEvent[] {
     });
   }
   // Más reciente primero; a igual fecha, el que se registró después.
-  return events
+  const sorted = events
     .map((event, index) => ({ event, index }))
     .sort((a, b) => b.event.timestamp.getTime() - a.event.timestamp.getTime() || b.index - a.index)
     .map(({ event }) => event);
+  return mergeMediaUploads(sorted);
+}
+
+/** Entre una carga de imagen y la siguiente puede pasar hasta este tiempo para considerarlas una sola. */
+export const MEDIA_MERGE_WINDOW_MS = 10 * 60 * 1000;
+
+const isMediaUpload = (event: HistoryEvent): boolean =>
+  event.kind === 'MEDIA' &&
+  event.entries.every(
+    (e) => (e.field === 'multimedia' && !!e.meta) || e.field === 'mainImageUrl',
+  );
+
+const mediaText = (images: number, videos: number): string => {
+  const parts: string[] = [];
+  if (images) parts.push(`${images} ${images === 1 ? 'imagen' : 'imágenes'}`);
+  if (videos) parts.push(`${videos} ${videos === 1 ? 'video' : 'videos'}`);
+  return `Se ${images + videos === 1 ? 'agregó' : 'agregaron'} ${parts.join(' y ')}`;
+};
+
+/**
+ * El backoffice sube las imágenes de a una, así que cada imagen deja su propio evento.
+ * Las cargas consecutivas del mismo usuario se muestran como un solo evento
+ * ("Se agregaron 3 imágenes"). Recibe los eventos del más reciente al más antiguo.
+ */
+export function mergeMediaUploads(events: HistoryEvent[]): HistoryEvent[] {
+  const result: HistoryEvent[] = [];
+  for (const event of events) {
+    const previous = result[result.length - 1];
+    const sameActor =
+      previous && (previous.changedById || previous.changedBy) === (event.changedById || event.changedBy);
+    const close =
+      previous &&
+      previous.oldestTimestamp !== undefined &&
+      previous.oldestTimestamp.getTime() - event.timestamp.getTime() <= MEDIA_MERGE_WINDOW_MS;
+
+    if (previous && sameActor && close && isMediaUpload(previous) && isMediaUpload(event)) {
+      const all = [...previous.entries, ...event.entries];
+      const uploads = all.filter((e) => e.field === 'multimedia');
+      const images = uploads.reduce((n, e) => n + (e.meta?.images ?? 0), 0);
+      const videos = uploads.reduce((n, e) => n + (e.meta?.videos ?? 0), 0);
+      // La imagen principal que se fijó primero (la carga más antigua) es la que importa.
+      const main = [...all].reverse().find((e) => e.field === 'mainImageUrl');
+      const base = uploads[0];
+      previous.entries = [
+        { ...base, newValue: mediaText(images, videos), meta: { images, videos } },
+        ...(main ? [main] : []),
+      ];
+      previous.oldestTimestamp = event.timestamp;
+      continue;
+    }
+    result.push({ ...event, oldestTimestamp: event.timestamp });
+  }
+  return result.map(({ oldestTimestamp: _drop, ...rest }) => rest);
 }
 
 const OPERATION_LABELS: Record<string, string> = { SALE: 'Venta', RENT: 'Arriendo' };

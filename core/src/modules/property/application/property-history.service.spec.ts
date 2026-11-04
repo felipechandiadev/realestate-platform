@@ -95,6 +95,7 @@ describe('PropertyService · historial', () => {
         field: 'multimedia',
         kind: 'MEDIA',
         newValue: 'Se agregaron 2 imágenes y 1 video',
+        meta: { images: 2, videos: 1 },
         changedBy: 'u1',
         source: { channel: 'BACKOFFICE', section: 'Multimedia' },
       });

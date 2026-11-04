@@ -51,9 +51,13 @@ import { SharePropertyByEmailUseCase } from '../application/use-cases/share-prop
 import { normalizeOtherFeatures } from '../domain/other-features';
 
 /** "Se agregaron 3 imágenes y 1 video" */
-function describeMediaAdded(items: Multimedia[]): string {
+function countMedia(items: Multimedia[]): { images: number; videos: number } {
   const images = items.filter((m) => m.format === MultimediaFormat.IMG).length;
-  const videos = items.length - images;
+  return { images, videos: items.length - images };
+}
+
+function describeMediaAdded(items: Multimedia[]): string {
+  const { images, videos } = countMedia(items);
   const parts: string[] = [];
   if (images) parts.push(`${images} ${images === 1 ? 'imagen' : 'imágenes'}`);
   if (videos) parts.push(`${videos} ${videos === 1 ? 'video' : 'videos'}`);
@@ -833,6 +837,7 @@ async createPropertyRequest(dto: any, userId: string, ctx?: HistoryContext): Pro
             previousValue: null,
             newValue: describeMediaAdded(results),
             section: 'Multimedia',
+            meta: countMedia(results),
           },
           historyCtx,
           new Date(),

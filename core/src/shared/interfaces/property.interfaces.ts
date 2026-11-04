@@ -50,6 +50,8 @@ export interface ChangeHistoryEntry {
   /** Moneda del precio en ese momento (solo `price`). */
   unit?: string;
   previousUnit?: string;
+  /** Cantidades de una carga de multimedia (permite juntar varias cargas seguidas). */
+  meta?: { images?: number; videos?: number };
 }
 
 export enum UserType {

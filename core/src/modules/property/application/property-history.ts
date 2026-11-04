@@ -149,10 +149,11 @@ const storable = (v: unknown): unknown => (isEmptyish(v) ? null : v);
 
 /**
  * Publicación = pasar a Publicada; despublicación = dejarla Inactiva estando publicada.
- * Cualquier otro cambio (p. ej. "Contrato en progreso", Vendida, Arrendada) es un cambio de estado.
+ * Cualquier otro cambio es un cambio de estado: "Contrato en progreso", Vendida, Arrendada y
+ * también volver a Publicada cuando un contrato falla (eso es liberar la propiedad, no publicarla).
  */
 export function kindForStatus(previous: unknown, next: unknown): HistoryKind {
-  if (next === 'PUBLISHED') return 'PUBLISHED';
+  if (next === 'PUBLISHED' && previous !== 'CONTRACT-IN-PROGRESS') return 'PUBLISHED';
   if (previous === 'PUBLISHED' && next === 'INACTIVE') return 'UNPUBLISHED';
   return 'STATUS_CHANGED';
 }
@@ -215,6 +216,7 @@ export function eventEntry(
     previousValue?: unknown;
     newValue?: unknown;
     section?: string;
+    meta?: ChangeHistoryEntry['meta'];
   },
   ctx: HistoryContext | undefined,
   now: Date = new Date(),
@@ -229,6 +231,7 @@ export function eventEntry(
     kind: input.kind,
     source: buildSource(ctx, input.section),
     groupId,
+    ...(input.meta ? { meta: input.meta } : {}),
   };
 }
 

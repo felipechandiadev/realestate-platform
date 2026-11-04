@@ -65,12 +65,77 @@ describe('groupHistory', () => {
   });
 });
 
+describe('juntar cargas seguidas de multimedia', () => {
+  const upload = (n: number, at: string, over: Partial<HistoryEntry> = {}, withMain = false): HistoryEntry[] => [
+    entry({
+      groupId: `up-${at}`, timestamp: at, kind: 'MEDIA', field: 'multimedia', previousValue: null,
+      newValue: 'Se agregó 1 imagen', meta: { images: n, videos: 0 }, ...over,
+    }),
+    ...(withMain
+      ? [entry({ groupId: `up-${at}`, timestamp: at, kind: 'UPDATED', field: 'mainImageUrl', previousValue: null, newValue: `http://x/${at}.jpg`, ...over })]
+      : []),
+  ];
+
+  it('tres imágenes subidas una a una se ven como un solo evento y conservan la imagen principal', () => {
+    const events = groupHistory([
+      ...upload(1, '2026-11-04T15:00:00.000Z', {}, true),
+      ...upload(1, '2026-11-04T15:00:03.000Z'),
+      ...upload(1, '2026-11-04T15:00:06.000Z'),
+    ]);
+    expect(events).toHaveLength(1);
+    expect(events[0].title).toBe('Multimedia');
+    const [summary, main] = events[0].entries;
+    expect(describeEntry(summary)).toBe('Se agregaron 3 imágenes');
+    expect(main.field).toBe('mainImageUrl');
+    expect(main.newValue).toBe('http://x/2026-11-04T15:00:00.000Z.jpg');
+    expect(events[0].timestamp.toISOString()).toBe('2026-11-04T15:00:06.000Z');
+  });
+
+  it('suma imágenes y videos', () => {
+    const events = groupHistory([
+      ...upload(2, '2026-11-04T15:00:00.000Z'),
+      ...upload(1, '2026-11-04T15:00:02.000Z', { meta: { images: 0, videos: 1 } }),
+    ]);
+    expect(describeEntry(events[0].entries[0])).toBe('Se agregaron 2 imágenes y 1 video');
+  });
+
+  it('no junta cargas de otro usuario, separadas por más de 10 minutos, ni con otro evento en medio', () => {
+    const otherUser = groupHistory([
+      ...upload(1, '2026-11-04T15:00:00.000Z'),
+      ...upload(1, '2026-11-04T15:00:03.000Z', { changedById: 'u2', changedBy: 'Luis' }),
+    ]);
+    expect(otherUser).toHaveLength(2);
+
+    const farApart = groupHistory([
+      ...upload(1, '2026-11-04T15:00:00.000Z'),
+      ...upload(1, '2026-11-04T15:30:00.000Z'),
+    ]);
+    expect(farApart).toHaveLength(2);
+
+    const withEditBetween = groupHistory([
+      ...upload(1, '2026-11-04T15:00:00.000Z'),
+      entry({ groupId: 'edit', timestamp: '2026-11-04T15:00:02.000Z', field: 'title' }),
+      ...upload(1, '2026-11-04T15:00:04.000Z'),
+    ]);
+    expect(withEditBetween).toHaveLength(3);
+  });
+
+  it('las entradas antiguas de multimedia (sin cantidades) no se tocan', () => {
+    const events = groupHistory([
+      entry({ groupId: 'a', timestamp: '2026-11-04T15:00:00.000Z', kind: 'MEDIA', field: 'multimedia', newValue: 'Se agregó 1 imagen' }),
+      entry({ groupId: 'b', timestamp: '2026-11-04T15:00:02.000Z', kind: 'MEDIA', field: 'multimedia', newValue: 'Se agregó 1 imagen' }),
+    ]);
+    expect(events).toHaveLength(2);
+  });
+});
+
 describe('tipo de evento y título', () => {
   it('deduce el tipo de las entradas antiguas', () => {
     expect(entryKind(entry({ field: 'creation' }))).toBe('CREATED');
     expect(entryKind(entry({ field: 'status', previousValue: 'INACTIVE', newValue: 'PUBLISHED' }))).toBe('PUBLISHED');
     expect(entryKind(entry({ field: 'status', previousValue: 'PUBLISHED', newValue: 'INACTIVE' }))).toBe('UNPUBLISHED');
     expect(entryKind(entry({ field: 'status', previousValue: 'PUBLISHED', newValue: 'SOLD' }))).toBe('STATUS_CHANGED');
+    expect(entryKind(entry({ field: 'status', previousValue: 'CONTRACT-IN-PROGRESS', newValue: 'PUBLISHED' }))).toBe('STATUS_CHANGED');
     expect(entryKind(entry({ field: 'title' }))).toBe('UPDATED');
     expect(entryKind(entry({ kind: 'MEDIA' }))).toBe('MEDIA');
   });

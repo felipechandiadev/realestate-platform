@@ -56,6 +56,8 @@ describe('property-history', () => {
       expect(kindForStatus('PUBLISHED', 'INACTIVE')).toBe('UNPUBLISHED');
       // Que arranque un contrato o se venda no es "despublicar".
       expect(kindForStatus('PUBLISHED', 'CONTRACT-IN-PROGRESS')).toBe('STATUS_CHANGED');
+      // Si un contrato falla, la propiedad se libera: no es una publicación.
+      expect(kindForStatus('CONTRACT-IN-PROGRESS', 'PUBLISHED')).toBe('STATUS_CHANGED');
       expect(kindForStatus('CONTRACT-IN-PROGRESS', 'SOLD')).toBe('STATUS_CHANGED');
       expect(kindForStatus('REQUEST', 'PRE-APPROVED')).toBe('STATUS_CHANGED');
     });
