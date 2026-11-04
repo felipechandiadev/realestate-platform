@@ -11,10 +11,8 @@ interface MultimediaUploaderProps {
   label?: string;
   accept?: string;
   maxFiles?: number;
-  /** Máximo de imágenes (los videos no cuentan). Útil para respetar el tope por propiedad. */
+  /** Máximo de imágenes por carga, es decir, las seleccionadas en este selector (los videos no cuentan). */
   maxImages?: number;
-  /** Oculta el contador "X de N imágenes" (si el padre muestra uno propio). */
-  hideImageCounter?: boolean;
   maxSize?: number;
   aspectRatio?: 'square' | 'video' | '16:9' | 'auto';
   buttonType?: 'icon' | 'normal';
@@ -75,7 +73,6 @@ function MultimediaUploaderDefault({
   accept = 'image/*,video/*',
   maxFiles = 5,
   maxImages,
-  hideImageCounter = false,
   maxSize = 9,
   aspectRatio = '16:9',
   buttonType = 'icon',
@@ -196,9 +193,11 @@ function MultimediaUploaderDefault({
       if (currentImages + incomingImages > maxImages) {
         const remaining = Math.max(maxImages - currentImages, 0);
         setLimitError(
-          remaining > 0
-            ? `Se superaría el máximo de imágenes por propiedad. Puedes agregar ${remaining} más.`
-            : 'Ya alcanzaste el máximo de imágenes por propiedad.',
+          currentImages === 0
+            ? `Máximo ${maxImages} imágenes por carga. Seleccionaste ${incomingImages}.`
+            : remaining > 0
+              ? `Máximo ${maxImages} imágenes por carga. Puedes agregar ${remaining} más.`
+              : `Máximo ${maxImages} imágenes por carga. Ya seleccionaste ${maxImages}.`,
         );
         if (inputRef.current) inputRef.current.value = "";
         return;
@@ -317,7 +316,7 @@ function MultimediaUploaderDefault({
                 Subir multimedia
               </Button>
             )}
-            {maxImages !== undefined && !hideImageCounter && (
+            {maxImages !== undefined && (
               <span className="text-xs text-muted-foreground">
                 {files.filter(f => f.type.startsWith('image/')).length} de {maxImages} imágenes
               </span>

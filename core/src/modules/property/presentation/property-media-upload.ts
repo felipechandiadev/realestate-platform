@@ -73,25 +73,22 @@ export function propertyMediaUploadOptions(maxFiles: number) {
   };
 }
 
-/** Máximo de imágenes por propiedad (los videos no cuentan). */
-export const MAX_PROPERTY_IMAGES = 10;
+/** Máximo de imágenes que se pueden subir en una misma carga (los videos no cuentan). */
+export const MAX_IMAGES_PER_UPLOAD = 10;
 
 /**
- * Rechaza si la propiedad superaría `MAX_PROPERTY_IMAGES` imágenes.
- * `existingImages` son las ya guardadas (0 al crear); `files` los archivos entrantes.
+ * Rechaza una carga con más de `MAX_IMAGES_PER_UPLOAD` imágenes. El tope es por carga:
+ * una propiedad puede tener más imágenes en total, subidas en varias cargas.
  */
 export function assertPropertyImageLimit(
   files: Pick<UploadedFile, 'mimetype'>[] = [],
-  existingImages = 0,
 ): void {
   const incoming = files.filter((file) =>
     IMAGE_MIMES.includes(file.mimetype),
   ).length;
-  if (existingImages + incoming > MAX_PROPERTY_IMAGES) {
-    const remaining = Math.max(MAX_PROPERTY_IMAGES - existingImages, 0);
+  if (incoming > MAX_IMAGES_PER_UPLOAD) {
     throw new BadRequestException(
-      `Máximo ${MAX_PROPERTY_IMAGES} imágenes por propiedad. ` +
-        `Ya tiene ${existingImages} y solo puedes agregar ${remaining} más.`,
+      `Máximo ${MAX_IMAGES_PER_UPLOAD} imágenes por carga. Seleccionaste ${incoming}.`,
     );
   }
 }

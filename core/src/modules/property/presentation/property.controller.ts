@@ -804,10 +804,7 @@ export class PropertyController {
     try {
       assertPropertyMediaSizes(files);
       await this.assertCanManagePropertyMedia(propertyId, req.user);
-      assertPropertyImageLimit(
-        files,
-        await this.propertyService.countPropertyImages(propertyId),
-      );
+      assertPropertyImageLimit(files);
 
       const userId = this.extractUserId(req);
       const uploadedMultimedia = await this.propertyService.uploadMultimedia(propertyId, files, dto, userId);

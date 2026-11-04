@@ -323,7 +323,7 @@ export const getMultimediaFields = (): BaseFormField[][] => [
       uploadPath: '/uploads/properties',
       accept: 'image/*,video/mp4,video/webm',
       maxFiles: 20,
-      maxImages: 10, // tope de imágenes por propiedad (videos aparte)
+      maxImages: 10, // tope de imágenes por carga (los videos no cuentan)
       maxSize: 10, // 10MB por archivo
       previewSize: 'sm',
       
