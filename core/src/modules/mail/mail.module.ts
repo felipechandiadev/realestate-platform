@@ -1,6 +1,7 @@
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/adapters/handlebars.adapter';
 import { join } from 'path';
 import { MailService } from './application/mail.service';
 import { MailController } from './presentation/mail.controller';
@@ -81,7 +82,7 @@ function trimEnv(value: string | undefined): string {
             },
             template: {
               dir: join(__dirname, '..', '..', '..', 'src', 'modules', 'mail', 'templates'),
-              adapter: new (require('@nestjs-modules/mailer/dist/adapters/handlebars.adapter').HandlebarsAdapter)(),
+              adapter: new HandlebarsAdapter(),
               options: { strict: true },
             },
           };

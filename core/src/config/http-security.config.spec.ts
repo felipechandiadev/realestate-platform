@@ -8,6 +8,13 @@ import {
 } from './http-security.config';
 
 describe('resolveCorsOrigins', () => {
+  it('incluye los dominios reales de producción usados por el portal y el backoffice', () => {
+    const origins = resolveCorsOrigins({ NODE_ENV: 'production' });
+    expect(origins).toContain('https://bravoschottpropiedades.cl');
+    expect(origins).toContain('https://www.bravoschottpropiedades.cl');
+    expect(origins).toContain('https://admin.bravoschottpropiedades.cl');
+  });
+
   it('producción sin CORS_ORIGINS: dominios de producción, sin localhost', () => {
     const origins = resolveCorsOrigins({
       NODE_ENV: 'production',

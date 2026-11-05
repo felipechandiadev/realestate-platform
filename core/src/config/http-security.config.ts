@@ -2,9 +2,9 @@ import type { HelmetOptions } from 'helmet';
 
 /** Orígenes de producción usados si no se define CORS_ORIGINS. */
 export const DEFAULT_PRODUCTION_ORIGINS = [
-  'https://bravoshottpropiedades.cl',
-  'https://www.bravoshottpropiedades.cl',
-  'https://admin.bravoshottpropiedades.cl',
+  'https://bravoschottpropiedades.cl',
+  'https://www.bravoschottpropiedades.cl',
+  'https://admin.bravoschottpropiedades.cl',
 ];
 
 /** Orígenes locales: solo se agregan fuera de producción. */

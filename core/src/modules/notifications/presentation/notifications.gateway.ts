@@ -21,9 +21,9 @@ type AuthenticatedSocket = Socket & {
     origin: [
       process.env.PORTAL_URL || 'http://localhost:8001',
       process.env.BACKOFFICE_URL || 'http://localhost:8002',
-      'https://bravoshottpropiedades.cl',
-      'https://www.bravoshottpropiedades.cl',
-      'https://admin.bravoshottpropiedades.cl',
+      'https://bravoschottpropiedades.cl',
+      'https://www.bravoschottpropiedades.cl',
+      'https://admin.bravoschottpropiedades.cl',
     ],
     credentials: true,
   },
