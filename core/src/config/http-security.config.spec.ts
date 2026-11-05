@@ -30,6 +30,11 @@ describe('resolveCorsOrigins', () => {
       expect(origins).toContain(o);
     }
   });
+
+  it('desarrollo: acepta 127.0.0.1 en el backoffice local', () => {
+    const origins = resolveCorsOrigins({ NODE_ENV: 'development' });
+    expect(origins).toContain('http://127.0.0.1:8002');
+  });
 });
 
 describe('isSwaggerEnabled / helmet', () => {
