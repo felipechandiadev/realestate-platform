@@ -63,7 +63,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // Pantallas solo para ADMIN: el resto vuelve al inicio en vez de ver un error.
-  if ((pathname.startsWith('/reports') || pathname.startsWith('/users/administrators')) && role !== 'ADMIN') {
+  if ((pathname.startsWith('/reports') || pathname.startsWith('/users/administrators') || pathname.startsWith('/users/ai-agents')) && role !== 'ADMIN') {
     return NextResponse.redirect(new URL('/', publicOrigin));
   }
 

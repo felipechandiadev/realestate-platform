@@ -33,6 +33,7 @@ const menuItems = [
       { label: 'Administradores', url: '/users/administrators' },
       { label: 'Agentes', url: '/users/agents' },
       { label: 'Comunidad', url: '/users/community' },
+      { label: 'Agentes de IA', url: '/users/ai-agents' },
     ],
   },
   {
@@ -103,7 +104,7 @@ export default function BackofficeShell({
         { label: 'Reportes', url: '/reports' },
         ...menuItems.slice(aboutIndex),
       ]
-    : // Administradores (GET /users/admins) es solo ADMIN en core: se oculta al resto.
+    : // Administradores (GET /users/admins) y Agentes de IA son solo ADMIN en core: se ocultan al resto.
       menuItems.map((item) =>
         item.children
           ? { ...item, children: item.children.filter((child) => child.url !== '/users/administrators') }
