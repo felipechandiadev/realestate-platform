@@ -383,7 +383,7 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, init
             />
           ) : null}
           {header.showCompanyName && companyName ? (
-            <span className="text-base md:text-lg lg:text-2xl font-medium text-inherit whitespace-nowrap">
+            <span className="text-base md:text-lg lg:text-xl xl:text-2xl font-medium text-inherit whitespace-nowrap">
               {companyName}
             </span>
           ) : null}
@@ -391,8 +391,8 @@ export default function PortalTopBar({ onMenuClick, initialIdentity = null, init
 
         {/* Centro: contacto y teléfono */}
         {(companyMail || companyPhone) && (
-        <div className="hidden lg:flex flex-col items-center justify-center flex-1">
-          <div className="flex items-center gap-6 justify-center">
+        <div className="hidden lg:flex flex-col items-center justify-center flex-1 min-w-0">
+          <div className="flex items-center gap-4 xl:gap-6 justify-center">
             {companyMail ? (
             <a 
               href={`mailto:${companyMail}`}
