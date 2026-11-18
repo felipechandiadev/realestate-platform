@@ -5,6 +5,7 @@ import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { resolveAuthAudience } from '../../application/auth-audience.util';
 import { JweService } from '../../infrastructure/jwe/jwe.service';
 import { SessionUserService } from '../../application/session-user.service';
+import { AgentKeysService, isAgentToken } from '../../../agent-keys/application/agent-keys.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -13,6 +14,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     private readonly reflector: Reflector,
     // Solo la instancia global (AuthModule) lo tiene; sin él la vía alternativa no se usa.
     @Optional() private readonly sessionUsers?: SessionUserService,
+    // Igual: solo la instancia global lo tiene.
+    @Optional() private readonly agentKeys?: AgentKeysService,
   ) {
     super();
   }
@@ -46,6 +49,20 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   }
 
   private async authenticate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest();
+
+    // Un agente ya autenticado por la instancia global no se vuelve a validar como JWT
+    // en las instancias locales (@UseGuards(JwtAuthGuard)).
+    if (request.user?.agent) return true;
+
+    // Key de agente (Bearer rek_...): se valida contra la tabla de keys, no como JWE.
+    const bearer = String(request.headers?.authorization ?? '');
+    if (bearer.startsWith('Bearer ') && isAgentToken(bearer.substring(7).trim())) {
+      if (!this.agentKeys) return false;
+      request.user = await this.agentKeys.authenticate(bearer.substring(7).trim());
+      return true;
+    }
+
     // First attempt normal passport jwt flow
     try {
       const result = (await super.canActivate(context)) as boolean;

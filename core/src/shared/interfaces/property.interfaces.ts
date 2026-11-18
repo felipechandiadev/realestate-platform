@@ -12,7 +12,7 @@ export interface PostRequest {
 }
 
 /** Desde dónde se ejecutó un cambio. */
-export type HistoryChannel = 'BACKOFFICE' | 'PORTAL' | 'CONTRACT' | 'SYSTEM';
+export type HistoryChannel = 'BACKOFFICE' | 'PORTAL' | 'CONTRACT' | 'SYSTEM' | 'AGENT';
 
 /** Tipo de evento (para titular la tarjeta del historial). */
 export type HistoryKind =

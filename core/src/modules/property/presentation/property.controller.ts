@@ -56,6 +56,7 @@ import { PropertyOperationType } from '../../../shared/enums/property-operation-
 import { UploadPropertyMultimediaDto } from '../dto/upload-property-multimedia.dto';
 import { CreateInternalNoteDto } from '../dto/create-internal-note.dto';
 import { historyContextFromRequest } from '../application/property-history';
+import { assertAgentCreatePayload } from '../application/agent-create-validation';
 import { FileUploadService } from '../../../shared/services/file-upload.service';
 import {
   assertPropertyImageLimit,
@@ -214,6 +215,11 @@ export class PropertyController {
       } else {
         // Fallback: assume the body is the DTO directly
         createPropertyDto = body;
+      }
+
+      // Agentes de IA: validación estricta (el formulario humano corrige en silencio).
+      if (request.user?.agent) {
+        assertAgentCreatePayload(createPropertyDto, request.user);
       }
 
       // Validate the DTO (sin agregar archivos que pueden ser filtrados)

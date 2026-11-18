@@ -3,6 +3,7 @@ import { PushSubscriptionOrmEntity } from '../modules/notifications/infrastructu
 import { DocumentTypeOrmEntity } from '../modules/document-types/infrastructure/persistence/document-type.orm-entity';
 import { Identity } from '../modules/identities/domain/identity.entity';
 import { PasswordResetTokenOrmEntity } from '../modules/password-recovery/infrastructure/persistence/password-reset-token.orm-entity';
+import { AgentKey } from '../modules/agent-keys/domain/agent-key.entity';
 import { User } from '../modules/users/domain/user.entity';
 import { Document } from '../modules/document/domain/document.entity';
 import { Multimedia } from '../modules/multimedia/domain/multimedia.entity';
@@ -32,6 +33,7 @@ export const entities = [
   Identity,
   PasswordResetTokenOrmEntity,
   User,
+  AgentKey,
   Document,
   Multimedia,
   MultimediaVariant,

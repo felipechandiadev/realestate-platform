@@ -16,7 +16,7 @@ export type HistoryKind =
   | 'NOTE'
   | 'DELETED';
 
-export type HistoryChannel = 'BACKOFFICE' | 'PORTAL' | 'CONTRACT' | 'SYSTEM';
+export type HistoryChannel = 'BACKOFFICE' | 'PORTAL' | 'CONTRACT' | 'SYSTEM' | 'AGENT';
 
 export interface HistoryEntry {
   timestamp: string | Date;
@@ -96,6 +96,7 @@ const CHANNEL_LABELS: Record<HistoryChannel, string> = {
   PORTAL: 'Portal',
   CONTRACT: 'Contrato',
   SYSTEM: 'Sistema',
+  AGENT: 'Agente IA',
 };
 
 /** Tipo de evento de una entrada; las anteriores al registro de eventos se deducen del campo. */
@@ -147,6 +148,7 @@ export function originLabel(entries: HistoryEntry[]): string | null {
   if (sources.length === 0) return null;
   const { channel, ref } = sources[0];
   if (channel === 'CONTRACT') return ref ? `Contrato ${ref}` : 'Contrato';
+  if (channel === 'AGENT' && !sources.some((s) => s.section)) return ref ? `Agente IA · ${ref}` : 'Agente IA';
   const sections = Array.from(new Set(sources.map((s) => s.section).filter((v): v is string => !!v)));
   const base = CHANNEL_LABELS[channel] ?? channel;
   return sections.length ? `${base} · ${sections.join(', ')}` : base;

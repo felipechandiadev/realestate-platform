@@ -27,6 +27,7 @@ import { AppearanceModule } from './modules/appearance/appearance.module';
 import { AboutUsModule } from './modules/about-us/about-us.module';
 import { UsersModule } from './modules/users/users.module';
 import { PropertyModule } from './modules/property/property.module';
+import { AgentMcpModule } from './modules/agent-mcp/agent-mcp.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
 import { PersonModule } from './modules/person/person.module';
 import { MultimediaModule } from './modules/multimedia/multimedia.module';
@@ -82,6 +83,7 @@ import { TestAdminModule } from './shared/init/test-admin.module';
     AboutUsModule,
     UsersModule,
     PropertyModule,
+    AgentMcpModule,
     ContractsModule,
     PersonModule,
     MultimediaModule,

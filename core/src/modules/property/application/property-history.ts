@@ -83,7 +83,9 @@ export const sectionForField = (field: string): string | undefined =>
 export function channelFromUser(user?: {
   authAudience?: string;
   role?: string;
+  agent?: unknown;
 }): HistoryChannel {
+  if (user?.agent) return 'AGENT';
   if (user?.authAudience === 'staff') return 'BACKOFFICE';
   if (user?.authAudience === 'community') return 'PORTAL';
   if (user?.role === 'ADMIN' || user?.role === 'AGENT') return 'BACKOFFICE';
@@ -98,7 +100,13 @@ export function historyContextFromRequest(
 ): HistoryContext {
   const user = req?.user;
   const userId = user?.id || user?.sub || (typeof user === 'string' ? user : undefined);
-  return { userId, channel: channelFromUser(user), ...extra };
+  const agentName: string | undefined = user?.agent?.name;
+  return {
+    userId,
+    channel: channelFromUser(user),
+    ...(agentName ? { ref: agentName } : {}),
+    ...extra,
+  };
 }
 
 const isEmptyish = (v: unknown): boolean =>

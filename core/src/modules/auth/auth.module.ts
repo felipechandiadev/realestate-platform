@@ -9,6 +9,8 @@ import { SessionUserService } from './application/session-user.service';
 import { JwtStrategy } from './infrastructure/strategies/jwt.strategy';
 import { JwtAuthGuard } from './presentation/guards/jwt-auth.guard';
 import { RolesGuard } from './presentation/guards/roles.guard';
+import { AgentAccessGuard } from './presentation/guards/agent-access.guard';
+import { AgentKeysModule } from '../agent-keys/agent-keys.module';
 import { JweService } from './infrastructure/jwe/jwe.service';
 import { AuthService } from './application/auth.service';
 import { AuthController } from './presentation/auth.controller';
@@ -32,6 +34,7 @@ import { ResendVerificationEmailUseCase } from './application/use-cases/resend-v
     }),
     forwardRef(() => UsersModule),
     MailModule,
+    AgentKeysModule,
     TypeOrmModule.forFeature([User]),
   ],
   providers: [
@@ -39,10 +42,13 @@ import { ResendVerificationEmailUseCase } from './application/use-cases/resend-v
     JwtStrategy,
     JwtAuthGuard,
     RolesGuard,
+    AgentAccessGuard,
     // Guards globales, deny-by-default: todo endpoint exige token salvo @Public().
     // El orden importa: primero autenticación (req.user), luego roles.
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
+    // Recorta lo que puede hacer un agente de IA (no afecta a las personas).
+    { provide: APP_GUARD, useClass: AgentAccessGuard },
     JweService,
     AuthService,
     SignInUseCase,

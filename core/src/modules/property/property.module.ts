@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Property } from './domain/property.entity';
 import { PropertyController } from './presentation/property.controller';
+import { PropertyAgentController } from './presentation/property-agent.controller';
 import { PropertyService } from './application/property.service';
 import { User } from '../users/domain/user.entity';
 import { PropertyType } from '../property-types/domain/property-type.entity';
@@ -39,7 +40,7 @@ import { SharePropertyByEmailUseCase } from './application/use-cases/share-prope
 
 @Module({
   imports: [ConfigModule, MailModule, TypeOrmModule.forFeature([Property, User, Multimedia, PropertyType]), AuditModule, NotificationsModule, MultimediaModule, AuthModule],
-  controllers: [PropertyController],
+  controllers: [PropertyController, PropertyAgentController],
   providers: [
     PropertyService,
     FileUploadService,
