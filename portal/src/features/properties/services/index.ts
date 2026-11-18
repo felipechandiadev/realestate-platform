@@ -5,64 +5,54 @@ const BASE_URL = "/properties";
 
 export const propertiesService = {
   async getProperties(params?: { page?: number; pageSize?: number; filters?: PropertyFilterInput }) {
-    // If there are advanced filters (bedrooms, bathrooms, parking, operators), use the sale/rent endpoints
-    if (params?.filters && (
-      params.filters.bedrooms !== undefined || 
-      params.filters.bathrooms !== undefined || 
-      params.filters.parkingSpaces !== undefined ||
-      params.filters.state ||
-      params.filters.typeProperty
-    )) {
-      const endpoint = params.filters.listingType === 'rent' ? `${BASE_URL}/rent` : `${BASE_URL}/sale`;
-      
-      // Build query params from filters
-      const queryParams: Record<string, unknown> = {
-        page: params.page || 1,
-        limit: params.pageSize || 24,
-        currency: params.filters.currency || 'CLP',
-      };
-      
-      if (params.filters.bedrooms !== undefined && params.filters.bedrooms > 0) {
-        queryParams.bedrooms = params.filters.bedrooms;
-        queryParams.bedroomsOperator = params.filters.bedroomsOperator || 'gte';
-      }
-      if (params.filters.bathrooms !== undefined && params.filters.bathrooms > 0) {
-        queryParams.bathrooms = params.filters.bathrooms;
-        queryParams.bathroomsOperator = params.filters.bathroomsOperator || 'gte';
-      }
-      if (params.filters.parkingSpaces !== undefined && params.filters.parkingSpaces > 0) {
-        queryParams.parkingSpaces = params.filters.parkingSpaces;
-        queryParams.parkingSpacesOperator = params.filters.parkingSpacesOperator || 'gte';
-      }
-      if (params.filters.state) {
-        queryParams.state = params.filters.state;
-      }
-      if (params.filters.city) {
-        queryParams.city = params.filters.city;
-      }
-      if (params.filters.typeProperty) {
-        queryParams.typeProperty = params.filters.typeProperty;
-      }
-      
-      const response = await apiClient.get<
-        Property[] | { data: Property[]; total?: number; page?: number; limit?: number }
-      >(endpoint, { params: queryParams });
-      // Convert response format if needed
-      const body = response.data;
-      if (Array.isArray(body)) {
-        return { items: body, total: 0, page: 1, pageSize: params.pageSize || 24 };
-      }
-      return {
-        items: body.data,
-        total: body.total || 0,
-        page: body.page || 1,
-        pageSize: body.limit || params.pageSize || 24,
-      };
+    // El listado público siempre usa los endpoints de venta / arriendo. El endpoint genérico
+    // GET /properties es solo para personal (da 401 a visitantes) y no entiende el objeto `filters`.
+    const filters = params?.filters ?? {};
+    const endpoint = filters.listingType === 'rent' ? `${BASE_URL}/rent` : `${BASE_URL}/sale`;
+
+    // Build query params from filters
+    const queryParams: Record<string, unknown> = {
+      page: params?.page || 1,
+      limit: params?.pageSize || 24,
+      currency: filters.currency || 'CLP',
+    };
+    
+    if (filters.bedrooms !== undefined && filters.bedrooms > 0) {
+      queryParams.bedrooms = filters.bedrooms;
+      queryParams.bedroomsOperator = filters.bedroomsOperator || 'gte';
+    }
+    if (filters.bathrooms !== undefined && filters.bathrooms > 0) {
+      queryParams.bathrooms = filters.bathrooms;
+      queryParams.bathroomsOperator = filters.bathroomsOperator || 'gte';
+    }
+    if (filters.parkingSpaces !== undefined && filters.parkingSpaces > 0) {
+      queryParams.parkingSpaces = filters.parkingSpaces;
+      queryParams.parkingSpacesOperator = filters.parkingSpacesOperator || 'gte';
+    }
+    if (filters.state) {
+      queryParams.state = filters.state;
+    }
+    if (filters.city) {
+      queryParams.city = filters.city;
+    }
+    if (filters.typeProperty) {
+      queryParams.typeProperty = filters.typeProperty;
     }
     
-    // Otherwise use the generic endpoint
-    const response = await apiClient.get<PropertyListResponse>(BASE_URL, { params });
-    return response.data;
+    const response = await apiClient.get<
+      Property[] | { data: Property[]; total?: number; page?: number; limit?: number }
+    >(endpoint, { params: queryParams });
+    // Convert response format if needed
+    const body = response.data;
+    if (Array.isArray(body)) {
+      return { items: body, total: 0, page: 1, pageSize: params?.pageSize || 24 };
+    }
+    return {
+      items: body.data,
+      total: body.total || 0,
+      page: body.page || 1,
+      pageSize: body.limit || params?.pageSize || 24,
+    };
   },
 
   async getProperty(id: string) {
