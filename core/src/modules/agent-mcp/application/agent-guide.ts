@@ -1,7 +1,8 @@
 /** Textos que se le entregan al agente: cómo trabajar con la plataforma y cómo subir imágenes. */
 
 export function resolveApiBaseUrl(req: { protocol?: string; get?: (h: string) => string | undefined }): string {
-  const fromEnv = process.env.API_PUBLIC_URL?.trim();
+  // Misma variable que usa el resto de core para la URL pública de la API.
+  const fromEnv = process.env.BACKEND_PUBLIC_URL?.trim();
   if (fromEnv) return fromEnv.replace(/\/+$/, '');
   const host = req.get?.('host') ?? 'TU_API';
   // En producción todo va por https, aunque el proxy no reenvíe el protocolo original.

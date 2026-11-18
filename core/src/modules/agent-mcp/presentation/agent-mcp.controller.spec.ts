@@ -6,7 +6,7 @@ const call = (c: AgentMcpController, body: any) => c.rpc(body, req, res);
 
 describe('AgentMcpController', () => {
   const c = new AgentMcpController();
-  afterEach(() => { jest.restoreAllMocks(); delete process.env.API_PUBLIC_URL; });
+  afterEach(() => { jest.restoreAllMocks(); delete process.env.BACKEND_PUBLIC_URL; });
 
   it('initialize entrega las instrucciones, incluida la subida directa de imágenes', async () => {
     const r: any = await call(c, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18' } });
@@ -22,7 +22,7 @@ describe('AgentMcpController', () => {
   });
 
   it('get_image_upload_instructions devuelve el comando con la URL de la propiedad', async () => {
-    process.env.API_PUBLIC_URL = 'https://api.mi-sitio.cl/';
+    process.env.BACKEND_PUBLIC_URL = 'https://api.mi-sitio.cl/';
     jest.spyOn(global, 'fetch').mockResolvedValue({ ok: true, status: 200, text: async () => '{}' } as any);
     const r: any = await call(c, { jsonrpc: '2.0', id: 3, method: 'tools/call', params: { name: 'get_image_upload_instructions', arguments: { id: 'abc' } } });
     const t = r.result.content[0].text;
