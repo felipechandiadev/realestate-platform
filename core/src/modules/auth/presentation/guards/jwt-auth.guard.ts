@@ -57,9 +57,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
     // Key de agente (Bearer rek_...): se valida contra la tabla de keys, no como JWE.
     const bearer = String(request.headers?.authorization ?? '');
-    if (bearer.startsWith('Bearer ') && isAgentToken(bearer.substring(7).trim())) {
+    let agentToken: string | null =
+      bearer.startsWith('Bearer ') && isAgentToken(bearer.substring(7).trim()) ? bearer.substring(7).trim() : null;
+    // Los conectores de claude.ai no permiten headers: solo en /mcp se acepta la key por ?key=.
+    if (!agentToken && !bearer && /^\/mcp\/?$/.test(String(request.path ?? ''))) {
+      const key = request.query?.key;
+      if (typeof key === 'string' && isAgentToken(key.trim())) agentToken = key.trim();
+    }
+    if (agentToken) {
       if (!this.agentKeys) return false;
-      request.user = await this.agentKeys.authenticate(bearer.substring(7).trim());
+      request.user = await this.agentKeys.authenticate(agentToken);
       return true;
     }
 
