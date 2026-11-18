@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import { Property } from '../domain/property.entity';
 import { InternalNote } from '../domain/internal-note';
 import { appendNote, buildInternalNote, readNotes, removeNote } from './internal-notes';
-import { User, UserRole } from '../../users/domain/user.entity';
+import { User, UserRole, UserStatus } from '../../users/domain/user.entity';
 import { Multimedia } from '../../multimedia/domain/multimedia.entity';
 import { PropertyType } from '../../property-types/domain/property-type.entity';
 import { PropertyRepository } from '../domain/property.repository';
@@ -131,6 +131,21 @@ export class PropertyService {
         }),
       ],
     };
+  }
+
+  /** El agente asignado debe existir, estar activo y ser ADMIN o AGENT. */
+  async assertAssignableAgent(agentId: string): Promise<void> {
+    const user = await this.userRepository.findOne({
+      where: { id: agentId },
+      select: { id: true, role: true, status: true },
+    });
+    const ok = !!user && user.status === UserStatus.ACTIVE &&
+      (user.role === UserRole.AGENT || user.role === UserRole.ADMIN);
+    if (!ok) {
+      throw new BadRequestException(
+        'assignedAgentId: no corresponde a un agente activo (ver GET /agent/catalogs > agents)',
+      );
+    }
   }
 
   async createPropertyWithFiles(dto: any, creatorId: string, files: any[], ctx?: HistoryContext) {

@@ -1,14 +1,16 @@
-import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
+import { Controller, Get, NotFoundException, Param, Query } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Repository } from 'typeorm';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
-import { UserRole } from '../../users/domain/user.entity';
+import { User, UserRole, UserStatus } from '../../users/domain/user.entity';
+import { IsNull } from 'typeorm';
+import { Property } from '../domain/property.entity';
 import { PropertyType } from '../../property-types/domain/property-type.entity';
 import { PropertyService } from '../application/property.service';
 import { PropertyStatus } from '../../../shared/enums/property-status.enum';
 import { REGION_COMMUNES } from '../../../shared/regions/regions.data';
-import { AGENT_CREATE_FIELDS } from '../application/agent-create-validation';
+import { AGENT_CREATE_FIELDS, STATUSES_REQUIRING_AGENT } from '../application/agent-create-validation';
 import { MAX_IMAGES_PER_UPLOAD, MAX_IMAGE_BYTES, MAX_VIDEO_BYTES } from './property-media-upload';
 
 const STATUS_MEANING: Record<string, string> = {
@@ -30,13 +32,25 @@ export class PropertyAgentController {
   constructor(
     private readonly propertyService: PropertyService,
     @InjectRepository(PropertyType) private readonly types: Repository<PropertyType>,
+    @InjectRepository(User) private readonly users: Repository<User>,
+    @InjectRepository(Property) private readonly properties: Repository<Property>,
   ) {}
 
   @Get('catalogs')
   @ApiOperation({ summary: 'Valores válidos y reglas para crear y editar propiedades' })
   async catalogs() {
     const propertyTypes = await this.types.find({ order: { name: 'ASC' } });
+    const agents = await this.users.find({
+      where: [
+        { role: UserRole.AGENT, status: UserStatus.ACTIVE, deletedAt: IsNull() },
+        { role: UserRole.ADMIN, status: UserStatus.ACTIVE, deletedAt: IsNull() },
+      ],
+      select: { id: true, username: true, email: true, role: true },
+      order: { username: 'ASC' },
+    });
     return {
+      agents: agents.map((u) => ({ id: u.id, name: u.username, email: u.email, role: u.role })),
+      statusesRequiringAgent: STATUSES_REQUIRING_AGENT,
       propertyTypes: propertyTypes.map((t) => ({ id: t.id, name: t.name, description: t.description ?? null })),
       statuses: Object.values(PropertyStatus).map((value) => ({ value, meaning: STATUS_MEANING[value] })),
       operationTypes: [
@@ -50,6 +64,7 @@ export class PropertyAgentController {
       regions: Object.entries(REGION_COMMUNES).map(([name, communes]) => ({ name, communes })),
       createFields: AGENT_CREATE_FIELDS,
       required: ['title', 'status', 'operationType', 'state', 'city'],
+      requiredWhen: `assignedAgentId (id de agents) es obligatorio si status es ${STATUSES_REQUIRING_AGENT.join(', ')}; con REQUEST no hace falta.`,
       media: {
         maxImagesPerUpload: MAX_IMAGES_PER_UPLOAD,
         maxImageBytes: MAX_IMAGE_BYTES,
@@ -62,8 +77,39 @@ export class PropertyAgentController {
       notes: [
         'state y city deben ser nombres exactos de este catálogo (la comuna debe pertenecer a la región).',
         'Un campo inválido se rechaza con 400 y un mensaje por campo; nada se corrige en silencio.',
+        'Para publicar: status PUBLISHED, un assignedAgentId de la lista agents y la key con permiso properties:publish.',
         'Publicar (status PUBLISHED) exige que la key tenga el permiso properties:publish.',
       ],
+    };
+  }
+
+  @Get('properties')
+  @ApiOperation({ summary: 'Lista liviana y paginada de propiedades (incluye borradores REQUEST)' })
+  async list(@Query() q: Record<string, string>) {
+    const page = Math.max(1, parseInt(q.page ?? '1', 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(q.limit ?? '20', 10) || 20));
+    const qb = this.properties
+      .createQueryBuilder('p')
+      .select(['p.id', 'p.code', 'p.title', 'p.status', 'p.operationType', 'p.price', 'p.currencyPrice', 'p.state', 'p.city', 'p.assignedAgentId', 'p.mainImageUrl', 'p.createdAt', 'p.updatedAt'])
+      .where('p.deletedAt IS NULL')
+      .orderBy('p.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+    if (q.status) qb.andWhere('p.status = :status', { status: q.status });
+    if (q.operationType) qb.andWhere('p.operationType = :op', { op: q.operationType });
+    if (q.state) qb.andWhere('p.state = :state', { state: q.state });
+    if (q.city) qb.andWhere('p.city = :city', { city: q.city });
+    if (q.q) qb.andWhere('(p.title LIKE :t OR p.code LIKE :t)', { t: `%${q.q}%` });
+    const [rows, total] = await qb.getManyAndCount();
+    return {
+      page, limit, total, totalPages: Math.ceil(total / limit),
+      data: rows.map((p) => ({
+        id: p.id, code: p.code, title: p.title, status: p.status, operationType: p.operationType,
+        price: p.price == null ? null : { amount: Number(p.price), currency: p.currencyPrice },
+        region: p.state ?? null, commune: p.city ?? null,
+        assignedAgentId: p.assignedAgentId ?? null, hasMainImage: !!p.mainImageUrl,
+        createdAt: p.createdAt, updatedAt: p.updatedAt,
+      })),
     };
   }
 
@@ -73,8 +119,8 @@ export class PropertyAgentController {
     const p: any = await this.propertyService.findOne(id, false);
     if (!p) throw new NotFoundException('Propiedad no encontrada');
 
-    const images = (p.multimedia ?? []).filter((m: any) => m.type === 'IMAGE' || m.type === 'image');
-    const videos = (p.multimedia ?? []).filter((m: any) => m.type === 'VIDEO' || m.type === 'video');
+    const images = (p.multimedia ?? []).filter((m: any) => m.format === 'IMG');
+    const videos = (p.multimedia ?? []).filter((m: any) => m.format === 'VIDEO');
 
     // Datos recomendados antes de publicar (no son obligatorios para guardar).
     const recommended: Array<[string, unknown]> = [

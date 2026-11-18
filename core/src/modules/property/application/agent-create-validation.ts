@@ -6,7 +6,7 @@ import { assertAgentMayPublish } from '../../auth/presentation/guards/agent-acce
 
 /** Campos que acepta el create (los demás se rechazan para agentes en vez de ignorarse). */
 export const AGENT_CREATE_FIELDS = [
-  'title', 'description', 'status', 'operationType', 'propertyTypeId',
+  'title', 'description', 'status', 'operationType', 'propertyTypeId', 'assignedAgentId',
   'state', 'city', 'address', 'location',
   'bedrooms', 'bathrooms', 'parkingSpaces', 'floors',
   'builtSquareMeters', 'landSquareMeters', 'constructionYear', 'otherFeatures',
@@ -15,6 +15,16 @@ export const AGENT_CREATE_FIELDS = [
 ] as const;
 
 const CURRENCIES = ['CLP', 'UF'];
+
+/** Estados a los que solo se puede pasar con un agente asignado (misma regla que al editar). */
+export const STATUSES_REQUIRING_AGENT: string[] = [
+  PropertyStatus.PRE_APPROVED,
+  PropertyStatus.PUBLISHED,
+  PropertyStatus.CONTRACT_IN_PROGRESS,
+  PropertyStatus.SOLD,
+  PropertyStatus.RENTED,
+];
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**
  * El formulario humano corrige en silencio un estado, operación o moneda inválidos
@@ -40,6 +50,12 @@ export function agentCreateErrors(raw: any): string[] {
   const operations = Object.values(PropertyOperationType) as string[];
   if (!operations.includes(raw.operationType)) {
     errors.push(`operationType: obligatorio, uno de ${operations.join(', ')}`);
+  }
+
+  if (raw.assignedAgentId !== undefined && !UUID_V4.test(String(raw.assignedAgentId))) {
+    errors.push('assignedAgentId: debe ser el id de un agente (ver GET /agent/catalogs > agents)');
+  } else if (STATUSES_REQUIRING_AGENT.includes(raw.status) && !raw.assignedAgentId) {
+    errors.push(`assignedAgentId: obligatorio cuando status es ${raw.status} (ver GET /agent/catalogs > agents). Con status REQUEST no hace falta.`);
   }
 
   if (raw.currencyPrice !== undefined && !CURRENCIES.includes(raw.currencyPrice)) {

@@ -23,12 +23,16 @@ const TOOLS = [
   },
   {
     name: 'search_properties',
-    description: 'Lista propiedades en venta o en arriendo, paginadas.',
+    description: 'Lista propiedades (incluye borradores REQUEST), paginadas y con filtros opcionales.',
     inputSchema: obj({
+      status: { type: 'string', description: 'REQUEST, PRE-APPROVED, PUBLISHED, INACTIVE, SOLD, RENTED o CONTRACT-IN-PROGRESS' },
       operationType: { type: 'string', enum: ['SALE', 'RENT'] },
+      state: { type: 'string', description: 'Región (nombre exacto)' },
+      city: { type: 'string', description: 'Comuna (nombre exacto)' },
+      q: { type: 'string', description: 'Texto a buscar en título o código' },
       page: { type: 'integer', minimum: 1 },
       limit: { type: 'integer', minimum: 1, maximum: 50 },
-    }, ['operationType']),
+    }),
   },
   {
     name: 'get_property',
@@ -37,7 +41,7 @@ const TOOLS = [
   },
   {
     name: 'create_property',
-    description: 'Crea una propiedad. Obligatorios: title, status, operationType, state, city (nombres exactos de get_catalogs). Con price indica también currencyPrice (CLP entero o UF). Para publicar directo usa status PUBLISHED (requiere permiso). Después sube las imágenes con get_image_upload_instructions.',
+    description: 'Crea una propiedad. Obligatorios: title, status, operationType, state, city (nombres exactos de get_catalogs). Con price indica también currencyPrice (CLP entero o UF). Para publicar directo usa status PUBLISHED junto con assignedAgentId (requiere permiso de publicar). Después sube las imágenes con get_image_upload_instructions.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -45,6 +49,7 @@ const TOOLS = [
         status: { type: 'string', enum: ['REQUEST', 'PRE-APPROVED', 'PUBLISHED', 'INACTIVE', 'SOLD', 'RENTED', 'CONTRACT-IN-PROGRESS'] },
         operationType: { type: 'string', enum: ['SALE', 'RENT'] },
         propertyTypeId: { type: 'string', description: 'id de un tipo de get_catalogs' },
+        assignedAgentId: { type: 'string', description: 'id de un agente de get_catalogs > agents. OBLIGATORIO si status es PRE-APPROVED, PUBLISHED, CONTRACT-IN-PROGRESS, SOLD o RENTED' },
         state: { type: 'string', description: 'Región, nombre exacto del catálogo' },
         city: { type: 'string', description: 'Comuna de esa región, nombre exacto del catálogo' },
         address: { type: 'string' },
@@ -62,7 +67,7 @@ const TOOLS = [
   },
   {
     name: 'update_property',
-    description: 'Edita una sección de una propiedad. basic: title, description, status, operationType, propertyTypeId, isFeatured, price, currencyPrice. price: price, currencyPrice. characteristics: bedrooms, bathrooms, parkingSpaces, floors, builtSquareMeters, landSquareMeters, constructionYear, otherFeatures. location: address, state, city, latitude, longitude. seo: seoTitle, seoDescription. Enviar solo los campos a cambiar.',
+    description: 'Edita una sección de una propiedad. basic: title, description, status, operationType, propertyTypeId, assignedAgentId, isFeatured, price, currencyPrice. price: price, currencyPrice. characteristics: bedrooms, bathrooms, parkingSpaces, floors, builtSquareMeters, landSquareMeters, constructionYear, otherFeatures. location: address, state, city, latitude, longitude. seo: seoTitle, seoDescription. Enviar solo los campos a cambiar.',
     inputSchema: obj({
       id,
       section: { type: 'string', enum: ['basic', 'price', 'characteristics', 'location', 'seo'] },
@@ -173,9 +178,11 @@ export class AgentMcpController {
         case 'get_catalogs':
           return run('GET', '/agent/catalogs');
         case 'search_properties': {
-          const op = a.operationType === 'RENT' ? 'grid-rent' : 'grid-sale';
-          const qs = new URLSearchParams({ page: String(a.page ?? 1), limit: String(a.limit ?? 20) });
-          return run('GET', `/properties/${op}?${qs}`);
+          const qs = new URLSearchParams();
+          for (const k of ['status', 'operationType', 'state', 'city', 'q', 'page', 'limit']) {
+            if (a[k] !== undefined && a[k] !== '') qs.set(k, String(a[k]));
+          }
+          return run('GET', `/agent/properties?${qs}`);
         }
         case 'get_property':
           return run('GET', `/agent/properties/${pid}`);

@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsObject, IsArray, ValidateNested, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsNumber, IsObject, IsArray, ValidateNested, IsNotEmpty } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { Multer } from 'multer';
 
@@ -228,6 +228,11 @@ export class CreatePropertyDto {
   @IsOptional()
   @IsString()
   mainImageUrl?: string;
+
+  // Agente asignado (solo lo usan los agentes de IA; para personas se ignora)
+  @IsOptional()
+  @IsUUID('4')
+  assignedAgentId?: string;
 
   // Internos
   @IsOptional()

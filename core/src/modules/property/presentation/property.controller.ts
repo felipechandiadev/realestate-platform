@@ -234,6 +234,15 @@ export class PropertyController {
         throw new UnauthorizedException('Autenticación requerida');
       }
 
+      if (request.user?.agent) {
+        if (validatedDto.assignedAgentId) {
+          await this.propertyService.assertAssignableAgent(validatedDto.assignedAgentId);
+        }
+      } else {
+        // Para personas el campo se sigue ignorando, como antes de existir en el DTO.
+        delete (validatedDto as any).assignedAgentId;
+      }
+
       // Pasar archivos como parámetro separado en lugar de dentro del DTO
       const result = await this.propertyService.createPropertyWithFiles(
         validatedDto,
@@ -393,6 +402,9 @@ export class PropertyController {
   ): Promise<Property> {
     const user = request?.user;
     const userId = user?.id || user?.sub || (typeof user === 'string' ? user : undefined);
+    if (user?.agent && dto.assignedAgentId) {
+      await this.propertyService.assertAssignableAgent(dto.assignedAgentId);
+    }
     return await this.propertyService.update(id, dto as UpdatePropertyDto, userId, historyContextFromRequest(request));
   }
 

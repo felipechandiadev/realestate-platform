@@ -19,9 +19,15 @@ describe('agentCreateErrors', () => {
     expect(agentCreateErrors(noCur).join()).toMatch(/currencyPrice: obligatorio/);
     expect(agentCreateErrors({ ...ok, currencyPrice: 'CLP', price: 10.5 }).join()).toMatch(/entero/);
   });
+  it('exige agente asignado para PUBLISHED / PRE-APPROVED y valida su formato', () => {
+    expect(agentCreateErrors({ ...ok, status: 'PUBLISHED' }).join()).toMatch(/assignedAgentId: obligatorio/);
+    expect(agentCreateErrors({ ...ok, status: 'PRE-APPROVED' }).join()).toMatch(/assignedAgentId: obligatorio/);
+    expect(agentCreateErrors({ ...ok, status: 'PUBLISHED', assignedAgentId: 'no-uuid' }).join()).toMatch(/id de un agente/);
+    expect(agentCreateErrors({ ...ok, status: 'PUBLISHED', assignedAgentId: '11111111-1111-4111-8111-111111111111' })).toEqual([]);
+  });
   it('bloquea publicar sin permiso', () => {
     const user = { agent: { keyId: 'k', name: 'b', scopes: ['properties:read', 'properties:write'] } };
-    expect(() => assertAgentCreatePayload({ ...ok, status: 'PUBLISHED' }, user)).toThrow(/publicar/);
+    expect(() => assertAgentCreatePayload({ ...ok, status: 'PUBLISHED', assignedAgentId: '11111111-1111-4111-8111-111111111111' }, user)).toThrow(/publicar/);
     expect(() => assertAgentCreatePayload(ok, user)).not.toThrow();
   });
 });

@@ -43,5 +43,5 @@ export const MCP_INSTRUCTIONS = [
   'Flujo recomendado: get_catalogs (valores válidos) -> create_property -> subir imágenes por HTTP directo -> update_property / set_main_image -> get_property para revisar.',
   'Los valores inválidos se rechazan con un mensaje por campo; nada se corrige en silencio: lee el error y corrige. state y city deben ser nombres exactos del catálogo.',
   'Las imágenes se suben con una petición HTTP multipart directa, no por MCP: llama a get_image_upload_instructions con el id de la propiedad y sigue el comando que devuelve.',
-  'Publicar (status PUBLISHED) solo funciona si tu key tiene el permiso properties:publish; si no, deja la propiedad en REQUEST o PRE-APPROVED. No puedes eliminar propiedades.',
+  'PRE-APPROVED, PUBLISHED, CONTRACT-IN-PROGRESS, SOLD y RENTED exigen assignedAgentId (elige uno de get_catalogs > agents). Publicar (status PUBLISHED) solo funciona si tu key tiene el permiso properties:publish; si no, deja la propiedad en REQUEST o PRE-APPROVED. No puedes eliminar propiedades.',
 ].join('\n');
