@@ -3,6 +3,7 @@ import { IsNull } from 'typeorm';
 import { Property } from '../../domain/property.entity';
 import { PropertyRepository } from '../../domain/property.repository';
 import { UpdatePropertyDto } from '../../dto/property.dto';
+import { STATUSES_REQUIRING_AGENT } from '../../domain/status-rules';
 import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 import { PropertyType } from '../../../property-types/domain/property-type.entity';
 import { User } from '../../../users/domain/user.entity';
@@ -75,19 +76,11 @@ export class UpdatePropertyUseCase {
         ? cleanDto.assignedAgentId
         : property.assignedAgentId;
 
-    const statusesRequiringAgent: PropertyStatus[] = [
-      PropertyStatus.PUBLISHED,
-      PropertyStatus.PRE_APPROVED,
-      PropertyStatus.CONTRACT_IN_PROGRESS,
-      PropertyStatus.SOLD,
-      PropertyStatus.RENTED,
-    ];
-
     const statusIsChanging =
       cleanDto.status !== undefined && cleanDto.status !== oldStatus;
     const movingToStatusRequiringAgent =
       statusIsChanging &&
-      statusesRequiringAgent.includes(cleanDto.status as PropertyStatus);
+      STATUSES_REQUIRING_AGENT.includes(cleanDto.status as PropertyStatus);
 
     if (movingToStatusRequiringAgent && !nextAgentId) {
       throw new BadRequestException(

@@ -43,7 +43,8 @@ export const useCreatePropertyForm = (
     otherFeatures: [],
     seoTitle: '',
     seoDescription: '',
-    status: 'PUBLISHED',
+    // Una propiedad nueva parte como «Solicitud» (borrador); publicarla es una decisión explícita.
+    status: 'REQUEST',
     propertyTypeId: '',
     internalNotes: '',
   });

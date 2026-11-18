@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { STATUSES_REQUIRING_AGENT } from '../domain/status-rules';
 import { PropertyStatus } from '../../../shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../../shared/enums/property-operation-type.enum';
 import { REGION_COMMUNES } from '../../../shared/regions/regions.data';
@@ -16,14 +17,7 @@ export const AGENT_CREATE_FIELDS = [
 
 const CURRENCIES = ['CLP', 'UF'];
 
-/** Estados a los que solo se puede pasar con un agente asignado (misma regla que al editar). */
-export const STATUSES_REQUIRING_AGENT: string[] = [
-  PropertyStatus.PRE_APPROVED,
-  PropertyStatus.PUBLISHED,
-  PropertyStatus.CONTRACT_IN_PROGRESS,
-  PropertyStatus.SOLD,
-  PropertyStatus.RENTED,
-];
+export { STATUSES_REQUIRING_AGENT };
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 /**

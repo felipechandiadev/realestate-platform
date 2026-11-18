@@ -5,6 +5,7 @@ import { PropertyRepository } from '../../domain/property.repository';
 import { CreatePropertyDto } from '../../dto/property.dto';
 import { PropertyStatus } from '../../../../shared/enums/property-status.enum';
 import { PropertyOperationType } from '../../../../shared/enums/property-operation-type.enum';
+import { STATUSES_REQUIRING_AGENT } from '../../domain/status-rules';
 import { normalizeOtherFeatures } from '../../domain/other-features';
 import { HistoryContext, eventEntry } from '../property-history';
 
@@ -63,8 +64,20 @@ export class CreatePropertyUseCase {
         ? normalizeOtherFeatures(createPropertyDto.otherFeatures)
         : undefined;
 
+    const status = createPropertyDto.status || PropertyStatus.REQUEST;
+    const realCreatorId =
+      creatorId && creatorId !== 'anonymous' ? creatorId : undefined;
+    // Mismo criterio que al editar: PRE-APPROVED, PUBLISHED, etc. exigen agente. Si quien crea
+    // no eligió uno, el propio creador (personal) queda como agente responsable.
+    const assignedAgentId =
+      (createPropertyDto as any).assignedAgentId ||
+      (STATUSES_REQUIRING_AGENT.includes(status) ? realCreatorId : undefined);
+
     const property = this.propertyRepository.create({
       ...createPropertyDto,
+      assignedAgentId,
+      publishedAt:
+        status === PropertyStatus.PUBLISHED ? new Date() : undefined,
       code,
       description: createPropertyDto.description ?? undefined,
       address: createPropertyDto.address ?? undefined,
@@ -84,7 +97,7 @@ export class CreatePropertyUseCase {
         (createPropertyDto as any).propertyTypeId ||
         (createPropertyDto as any).propertyType ||
         undefined,
-      status: createPropertyDto.status || PropertyStatus.REQUEST,
+      status,
       otherFeatures,
       createdAt: new Date(),
       lastModifiedAt: new Date(),
