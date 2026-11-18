@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { env } from '@/lib/env'
+import { revalidatePortal } from '../infrastructure/portal-revalidate'
 import type { AppearanceColors } from '@realestate/ui/theme/appearance-theme'
 
 export type AppearanceTemplate = AppearanceColors & {
@@ -55,7 +56,9 @@ export async function updateAppearance(colors: AppearanceColors): Promise<Appear
     const errorText = await res.text()
     throw new Error(readApiError(res.status, errorText, 'No se pudo guardar la apariencia'))
   }
-  return res.json()
+  const data = await res.json()
+  await revalidatePortal(['appearance'])
+  return data
 }
 
 async function authorizedJson(path: string, init: RequestInit, fallback: string) {

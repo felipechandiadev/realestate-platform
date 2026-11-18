@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { env } from '@/lib/env'
+import { revalidatePortal } from '../infrastructure/portal-revalidate'
 
 export type ListingsFilterVariant = 'classic' | 'sidebar_v2'
 
@@ -62,6 +63,7 @@ export async function updatePortalListingsSettings(
     throw new Error(readApiError(res.status, errorText, 'No se pudo guardar la configuración de listados'))
   }
   const data = await res.json()
+  await revalidatePortal(['portal-listings-settings'])
   return {
     id: data?.id,
     listingsFilterVariant:

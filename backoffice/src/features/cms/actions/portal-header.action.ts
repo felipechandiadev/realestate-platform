@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { env } from '@/lib/env'
+import { revalidatePortal } from '../infrastructure/portal-revalidate'
 
 function readApiError(status: number, errorText: string, fallback: string): string {
   try {
@@ -44,5 +45,7 @@ export async function updatePortalHeader(payload: FormData) {
     const errorText = await res.text()
     throw new Error(readApiError(res.status, errorText, 'No se pudo guardar la barra superior'))
   }
-  return res.json()
+  const data = await res.json()
+  await revalidatePortal(['portal-header'])
+  return data
 }

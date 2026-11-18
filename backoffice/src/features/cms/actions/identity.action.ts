@@ -3,6 +3,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { env } from '@/lib/env'
+import { revalidatePortal } from '../infrastructure/portal-revalidate'
 
 type IdentityPayload = FormData | Record<string, unknown>
 
@@ -123,7 +124,9 @@ export async function updateIdentity(id: string, payload: IdentityPayload) {
     throw new Error(readApiError(res.status, errorText, 'No se pudo actualizar la identidad'))
   }
 
-  return res.json()
+  const data = await res.json()
+  await revalidatePortal(['identity'])
+  return data
 }
 
 export async function createIdentity(payload: IdentityPayload) {
@@ -146,5 +149,7 @@ export async function createIdentity(payload: IdentityPayload) {
     throw new Error(readApiError(res.status, errorText, 'No se pudo crear la identidad'))
   }
 
-  return res.json()
+  const data = await res.json()
+  await revalidatePortal(['identity'])
+  return data
 }
